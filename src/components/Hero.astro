@@ -1,0 +1,53 @@
+---
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../assets/stephanie.jpg';
+---
+
+<section id="hero">
+  <div class="hero-inner">
+    <div class="hero-left fade-up">
+      <div class="hero-badge">Courtière hypothécaire agréée · Montréal</div>
+      <h1>Votre hypothèque,<br /><em>enfin expliquée</em><br />simplement.</h1>
+      <p>
+        Je vous accompagne dans l'un des projets les plus importants de votre vie — sans jargon,
+        sans pression, avec les meilleurs taux parmi plus de 20 prêteurs.
+      </p>
+      <div class="hero-btns">
+        <a href="#contact" class="btn-primary">Consultation gratuite →</a>
+        <a href="#calculateur" class="btn-secondary">Calculer mon paiement</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="stat-num">20+</div>
+          <div class="stat-label">Prêteurs partenaires</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">100%</div>
+          <div class="stat-label">Gratuit pour vous</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">48h</div>
+          <div class="stat-label">Réponse garantie</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-right fade-up" style="transition-delay:.2s">
+      <div class="photo-frame">
+        <Image
+          src={stephaniePhoto}
+          alt="Stéphanie Weyman, courtière hypothécaire Montréal"
+          width={600}
+          height={750}
+        />
+      </div>
+      <div class="floating-card card-tl">
+        <div class="card-sm">Taux variable indicatif</div>
+        <div class="card-val" id="hero-taux">...</div>
+      </div>
+      <div class="floating-card card-br">
+        <div class="card-sm">Satisfaction client</div>
+        <div class="card-val">⭐ 5 / 5</div>
+      </div>
+    </div>
+  </div>
+</section>
