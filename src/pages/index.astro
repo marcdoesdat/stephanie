@@ -27,6 +27,9 @@ import '../styles/global.css';
   <Footer />
 
   <script>
+    // Enable JS-based fade-up animations
+    document.documentElement.classList.add('js-enabled');
+
     // Fade-up animation observer
     const obs = new IntersectionObserver(
       (entries) =>

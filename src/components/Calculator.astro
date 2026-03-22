@@ -97,7 +97,12 @@
     const amort = parseInt(amortEl.value) || 25;
     const freq = parseInt(freqEl.value) || 12;
 
-    if (!prix || !mise || !taux) return;
+    if (!prix || !taux) return;
+
+    if (mise > prix) {
+      document.getElementById('res-mensuel')!.textContent = 'Mise invalide';
+      return;
+    }
 
     const pctMise = (mise / prix) * 100;
     let prime = 0;

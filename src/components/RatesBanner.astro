@@ -48,8 +48,11 @@
       const res = await fetch(
         'https://www.bankofcanada.ca/valet/observations/V39079/json?recent=1'
       );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const obs = data.observations[0];
+      const obs = data?.observations?.[0];
+      if (!obs || !obs.V39079?.v) throw new Error('Données introuvables');
+
       const directeur = parseFloat(obs.V39079.v);
       const preferentiel = +(directeur + 2.2).toFixed(2);
       const variable = +(preferentiel - 0.65).toFixed(2);
@@ -79,13 +82,22 @@
     } catch {
       const heroTaux = document.getElementById('hero-taux');
       if (heroTaux) heroTaux.textContent = 'Dès 4,49 %';
+      const banner = document.getElementById('tv-directeur');
+      if (banner) {
+        ['tv-directeur', 'tv-preferentiel', 'tv-variable', 'tv-date'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = 'Indisponible';
+        });
+      }
     }
   }
 
   const tauxInput = document.getElementById('taux') as HTMLInputElement | null;
   if (tauxInput) {
-    tauxInput.addEventListener('input', () => {
-      userEditedInputs.add(tauxInput);
+    tauxInput.addEventListener('input', (event: Event) => {
+      if (event.isTrusted) {
+        userEditedInputs.add(tauxInput);
+      }
     });
   }
 

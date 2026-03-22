@@ -3,14 +3,20 @@
 
 <nav id="navbar">
   <a href="#hero" class="nav-logo">Stéphanie <span>Weyman</span></a>
-  <ul class="nav-links">
+  <ul class="nav-links" id="nav-menu">
     <li><a href="#apropos">À propos</a></li>
     <li><a href="#services">Services</a></li>
     <li><a href="#calculateur">Calculateur</a></li>
     <li><a href="#temoignages">Témoignages</a></li>
     <li><a href="#contact" class="nav-cta">Consultation gratuite</a></li>
   </ul>
-  <button class="hamburger" id="hamburger-btn"><span></span><span></span><span></span></button>
+  <button
+    class="hamburger"
+    id="hamburger-btn"
+    aria-label="Ouvrir le menu"
+    aria-expanded="false"
+    aria-controls="nav-menu"
+  ><span></span><span></span><span></span></button>
 </nav>
 
 <script>
@@ -19,8 +25,11 @@
   });
 
   let menuOpen = false;
-  document.getElementById('hamburger-btn')!.addEventListener('click', () => {
+  const btn = document.getElementById('hamburger-btn')!;
+  btn.addEventListener('click', () => {
     menuOpen = !menuOpen;
+    btn.setAttribute('aria-expanded', String(menuOpen));
+    btn.setAttribute('aria-label', menuOpen ? 'Fermer le menu' : 'Ouvrir le menu');
     const l = document.querySelector('.nav-links') as HTMLElement;
     if (menuOpen) {
       l.style.cssText =

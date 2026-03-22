@@ -36,20 +36,20 @@
         <div id="form-content">
           <div class="form-row">
             <div>
-              <label class="cform-label">Prénom</label>
-              <input type="text" placeholder="Marie" />
+              <label class="cform-label" for="contact-prenom">Prénom</label>
+              <input type="text" id="contact-prenom" placeholder="Marie" />
             </div>
             <div>
-              <label class="cform-label">Nom</label>
-              <input type="text" placeholder="Tremblay" />
+              <label class="cform-label" for="contact-nom">Nom</label>
+              <input type="text" id="contact-nom" placeholder="Tremblay" />
             </div>
           </div>
-          <label class="cform-label">Courriel</label>
-          <input type="email" placeholder="marie@exemple.com" />
-          <label class="cform-label">Téléphone</label>
-          <input type="tel" placeholder="514 000-0000" />
-          <label class="cform-label">Votre situation</label>
-          <select>
+          <label class="cform-label" for="contact-email">Courriel</label>
+          <input type="email" id="contact-email" placeholder="marie@exemple.com" />
+          <label class="cform-label" for="contact-tel">Téléphone</label>
+          <input type="tel" id="contact-tel" placeholder="514 000-0000" />
+          <label class="cform-label" for="contact-situation">Votre situation</label>
+          <select id="contact-situation">
             <option value="">Sélectionnez...</option>
             <option>Premier achat</option>
             <option>Renouvellement</option>
@@ -58,9 +58,9 @@
             <option>Travailleur autonome</option>
             <option>Autre</option>
           </select>
-          <label class="cform-label">Message (optionnel)</label>
-          <textarea placeholder="Décrivez brièvement votre situation..."></textarea>
-          <button class="contact-submit" id="contact-submit-btn">Envoyer ma demande →</button>
+          <label class="cform-label" for="contact-message">Message (optionnel)</label>
+          <textarea id="contact-message" placeholder="Décrivez brièvement votre situation..."></textarea>
+          <button type="button" class="contact-submit" id="contact-submit-btn">Envoyer ma demande →</button>
         </div>
         <div class="form-success" id="form-success">
           <span class="check">✅</span>
