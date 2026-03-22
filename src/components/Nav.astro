@@ -1,0 +1,41 @@
+---
+---
+
+<nav id="navbar">
+  <a href="#hero" class="nav-logo">Stéphanie <span>Weyman</span></a>
+  <ul class="nav-links" id="nav-menu">
+    <li><a href="#apropos">À propos</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#calculateur">Calculateur</a></li>
+    <li><a href="#temoignages">Témoignages</a></li>
+    <li><a href="#contact" class="nav-cta">Consultation gratuite</a></li>
+  </ul>
+  <button
+    class="hamburger"
+    id="hamburger-btn"
+    aria-label="Ouvrir le menu"
+    aria-expanded="false"
+    aria-controls="nav-menu"
+  ><span></span><span></span><span></span></button>
+</nav>
+
+<script>
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar')!.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  let menuOpen = false;
+  const btn = document.getElementById('hamburger-btn')!;
+  btn.addEventListener('click', () => {
+    menuOpen = !menuOpen;
+    btn.setAttribute('aria-expanded', String(menuOpen));
+    btn.setAttribute('aria-label', menuOpen ? 'Fermer le menu' : 'Ouvrir le menu');
+    const l = document.querySelector('.nav-links') as HTMLElement;
+    if (menuOpen) {
+      l.style.cssText =
+        'display:flex;flex-direction:column;position:absolute;top:68px;left:0;right:0;background:var(--white);padding:1.5rem 2rem;border-bottom:1px solid var(--border);gap:1rem;z-index:199';
+    } else {
+      l.style.display = 'none';
+    }
+  });
+</script>
