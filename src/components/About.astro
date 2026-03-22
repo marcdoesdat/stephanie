@@ -1,0 +1,52 @@
+---
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../assets/stephanie.jpg';
+---
+
+<section id="apropos">
+  <div class="section-inner">
+    <div class="apropos-grid">
+      <div class="apropos-img fade-up">
+        <Image
+          src={stephaniePhoto}
+          alt="Stéphanie Weyman"
+          width={500}
+          height={500}
+        />
+      </div>
+      <div class="fade-up" style="transition-delay:.15s">
+        <div class="section-tag">À propos</div>
+        <div class="apropos-text">
+          <h3>Bonjour, je suis Stéphanie.</h3>
+          <p>
+            Courtière hypothécaire chez Hypotheca depuis plusieurs années, j'accompagne les
+            Montréalais à travers l'une des décisions financières les plus importantes de leur vie.
+          </p>
+          <p>
+            Mon approche est simple : je prends le temps de comprendre votre situation, vos
+            objectifs et vos contraintes — avant même de parler de taux. Parce qu'une bonne
+            hypothèque, c'est d'abord une hypothèque qui vous correspond.
+          </p>
+          <p>
+            Que vous achetiez votre première propriété, que vous renouveliez, ou que votre banque
+            vous ait dit non — il y a toujours une solution. Mon rôle, c'est de la trouver.
+          </p>
+          <div class="apropos-values">
+            <div class="val-item">
+              <div class="val-icon">🤝</div>
+              Transparence totale sur les taux et les conditions
+            </div>
+            <div class="val-item">
+              <div class="val-icon">⚡</div>
+              Réponse rapide, accompagnement jusqu'à la signature
+            </div>
+            <div class="val-item">
+              <div class="val-icon">🆓</div>
+              Mes services sont gratuits pour vous — payés par le prêteur
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

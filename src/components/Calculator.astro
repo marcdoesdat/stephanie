@@ -1,0 +1,145 @@
+---
+---
+
+<section id="calculateur">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-tag">Outil</div>
+      <div class="section-title">Calculez votre<br /><em>paiement mensuel</em></div>
+      <p class="section-sub">
+        Une estimation rapide pour vous aider à planifier. Pour un calcul précis adapté à votre
+        situation, contactez-moi.
+      </p>
+    </div>
+    <div class="calc-wrapper">
+      <div class="calc-form fade-up">
+        <div class="form-group">
+          <label for="prix">Prix de la propriété ($)</label>
+          <input type="number" id="prix" placeholder="450 000" value="450000" />
+        </div>
+        <div class="form-group">
+          <label for="mise">Mise de fonds ($)</label>
+          <input type="number" id="mise" placeholder="45 000" value="45000" />
+        </div>
+        <div class="form-group">
+          <label for="taux">Taux d'intérêt (%)</label>
+          <input type="number" id="taux" placeholder="4.99" value="4.99" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label for="amort">Amortissement</label>
+          <select id="amort">
+            <option value="25">25 ans</option>
+            <option value="30">30 ans</option>
+            <option value="20">20 ans</option>
+            <option value="15">15 ans</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="freq">Fréquence</label>
+          <select id="freq">
+            <option value="12">Mensuel</option>
+            <option value="26">Aux deux semaines</option>
+            <option value="52">Hebdomadaire</option>
+          </select>
+        </div>
+        <button class="calc-btn" id="calc-btn">Calculer →</button>
+      </div>
+      <div class="calc-results fade-up" style="transition-delay:.2s">
+        <div class="result-card main">
+          <div class="result-label">Paiement estimé</div>
+          <div class="result-value" id="res-mensuel">— $</div>
+          <div class="result-detail" id="res-freq-label">Paiement mensuel</div>
+        </div>
+        <div class="results-grid">
+          <div class="result-card small">
+            <div class="result-label">Montant hypothécaire</div>
+            <div class="result-value" id="res-montant">— $</div>
+          </div>
+          <div class="result-card small">
+            <div class="result-label">Prime SCHL</div>
+            <div class="result-value" id="res-schl">— $</div>
+          </div>
+          <div class="result-card small">
+            <div class="result-label">Intérêts totaux</div>
+            <div class="result-value" id="res-interets">— $</div>
+          </div>
+          <div class="result-card small">
+            <div class="result-label">Mise de fonds</div>
+            <div class="result-value" id="res-mise">— %</div>
+          </div>
+        </div>
+        <p class="calc-disclaimer">
+          * Estimation indicative seulement. Ne tient pas compte des taxes ni des frais de notaire.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function fmt(n: number): string {
+    return Math.round(n).toLocaleString('fr-CA') + ' $';
+  }
+  function fmtPct(n: number): string {
+    return n.toFixed(1) + ' %';
+  }
+
+  function calculer() {
+    const prixEl = document.getElementById('prix') as HTMLInputElement;
+    const miseEl = document.getElementById('mise') as HTMLInputElement;
+    const tauxEl = document.getElementById('taux') as HTMLInputElement;
+    const amortEl = document.getElementById('amort') as HTMLSelectElement;
+    const freqEl = document.getElementById('freq') as HTMLSelectElement;
+
+    const prix = parseFloat(prixEl.value) || 0;
+    const mise = parseFloat(miseEl.value) || 0;
+    const taux = parseFloat(tauxEl.value) || 0;
+    const amort = parseInt(amortEl.value) || 25;
+    const freq = parseInt(freqEl.value) || 12;
+
+    if (!prix || !mise || !taux) return;
+
+    const pctMise = (mise / prix) * 100;
+    let prime = 0;
+    if (pctMise < 5) {
+      document.getElementById('res-mensuel')!.textContent = 'Mise insuffisante';
+      return;
+    }
+    if (pctMise < 10) prime = 0.04;
+    else if (pctMise < 15) prime = 0.031;
+    else if (pctMise < 20) prime = 0.028;
+
+    const montant = (prix - mise) * (1 + prime);
+    const schl = (prix - mise) * prime;
+    const r = taux / 100 / freq;
+    const n = amort * freq;
+    const pmt = (montant * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
+    const total = pmt * n;
+    const interets = total - montant;
+
+    const freqLabels: Record<number, string> = {
+      12: 'mensuel',
+      26: 'aux deux semaines',
+      52: 'hebdomadaire',
+    };
+
+    document.getElementById('res-mensuel')!.textContent = fmt(pmt);
+    document.getElementById('res-freq-label')!.textContent = 'Paiement ' + freqLabels[freq];
+    document.getElementById('res-montant')!.textContent = fmt(montant);
+    document.getElementById('res-schl')!.textContent = prime > 0 ? fmt(schl) : '0 $';
+    document.getElementById('res-interets')!.textContent = fmt(interets);
+    document.getElementById('res-mise')!.textContent = fmtPct(pctMise);
+  }
+
+  // Bind input events
+  ['prix', 'mise', 'taux'].forEach((id) => {
+    document.getElementById(id)!.addEventListener('input', calculer);
+  });
+  ['amort', 'freq'].forEach((id) => {
+    document.getElementById(id)!.addEventListener('change', calculer);
+  });
+  document.getElementById('calc-btn')!.addEventListener('click', calculer);
+
+  // Initial calculation
+  calculer();
+</script>

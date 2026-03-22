@@ -1,0 +1,40 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import About from '../components/About.astro';
+import Services from '../components/Services.astro';
+import Calculator from '../components/Calculator.astro';
+import RatesBanner from '../components/RatesBanner.astro';
+import Testimonials from '../components/Testimonials.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+---
+
+<MainLayout
+  title="Stéphanie Weyman — Courtière Hypothécaire · Montréal"
+  description="Courtière hypothécaire agréée à Montréal. Je vous accompagne dans l'achat, le renouvellement ou le refinancement de votre hypothèque — sans jargon, sans pression, avec les meilleurs taux parmi plus de 20 prêteurs."
+>
+  <Nav />
+  <Hero />
+  <About />
+  <Services />
+  <Calculator />
+  <RatesBanner />
+  <Testimonials />
+  <Contact />
+  <Footer />
+
+  <script>
+    // Fade-up animation observer
+    const obs = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((x) => {
+          if (x.isIntersecting) x.target.classList.add('visible');
+        }),
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.fade-up').forEach((el) => obs.observe(el));
+  </script>
+</MainLayout>
