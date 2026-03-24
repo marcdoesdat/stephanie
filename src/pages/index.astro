@@ -22,7 +22,7 @@ const defaultRate = hypothecaRates.fixe_5ans ?? 4.99;
   description="Courtière hypothécaire agréée à Montréal. Je vous accompagne dans l'achat, le renouvellement ou le refinancement de votre hypothèque — sans jargon, sans pression, avec les meilleurs taux parmi plus de 20 prêteurs."
 >
   <Nav />
-  <Hero />
+  <Hero baseRate={hypothecaRates.variable}/>
   <About />
   <Services />
   <Calculator defaultRate={defaultRate} />

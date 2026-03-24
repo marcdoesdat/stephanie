@@ -1,6 +1,10 @@
 ---
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.jpg';
+
+
+const { baseRate = 4.99 } = Astro.props;
+
 ---
 
 <section id="hero">
@@ -42,7 +46,7 @@ import stephaniePhoto from '../assets/stephanie.jpg';
       </div>
       <div class="floating-card card-tl">
         <div class="card-sm">Taux variable indicatif</div>
-        <div class="card-val" id="hero-taux">...</div>
+        <div class="card-val" id="hero-taux">Dès {baseRate}</div>
       </div>
       <div class="floating-card card-br">
         <div class="card-sm">Satisfaction client</div>
