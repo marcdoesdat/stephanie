@@ -15,6 +15,8 @@ import { fetchHypothecaRates } from '../services/ratesService';
 const hypothecaRates = await fetchHypothecaRates();
 // Use 5-year fixed as the calculator default; fall back to 4.99 if unavailable.
 const defaultRate = hypothecaRates.fixe_5ans ?? 4.99;
+const hypothecaVariable = hypothecaRates.variable ?? 5.99;
+
 ---
 
 <MainLayout
@@ -22,7 +24,7 @@ const defaultRate = hypothecaRates.fixe_5ans ?? 4.99;
   description="Courtière hypothécaire agréée à Montréal. Je vous accompagne dans l'achat, le renouvellement ou le refinancement de votre hypothèque — sans jargon, sans pression, avec les meilleurs taux parmi plus de 20 prêteurs."
 >
   <Nav />
-  <Hero baseRate={hypothecaRates.variable}/>
+  <Hero baseRate={hypothecaVariable}/>
   <About />
   <Services />
   <Calculator defaultRate={defaultRate} />

@@ -4,7 +4,10 @@ import stephaniePhoto from '../assets/stephanie.jpg';
 
 
 const { baseRate = 4.99 } = Astro.props;
-
+function fmtRate(val: number | null | undefined): string {
+  if (val == null) return '—';
+  return val.toFixed(2).replace('.', ',') + ' %';
+}
 ---
 
 <section id="hero">
@@ -46,7 +49,7 @@ const { baseRate = 4.99 } = Astro.props;
       </div>
       <div class="floating-card card-tl">
         <div class="card-sm">Taux variable indicatif</div>
-        <div class="card-val" id="hero-taux">Dès {baseRate}</div>
+        <div class="card-val" id="hero-taux">Dès {fmtRate(baseRate)}</div>
       </div>
       <div class="floating-card card-br">
         <div class="card-sm">Satisfaction client</div>
