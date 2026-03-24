@@ -12,45 +12,6 @@ function fmtRate(val: number | null | undefined): string {
 }
 ---
 
-<div id="taux-bandeau">
-  <div class="taux-inner">
-    <div class="taux-header">
-      <div>
-        <div class="taux-title-tag">Taux en vigueur · mis à jour automatiquement</div>
-        <div class="taux-title">Taux de référence — Banque du Canada</div>
-      </div>
-      <div id="taux-source" style="font-size:.68rem;color:var(--muted);text-align:right;line-height:1.6"></div>
-    </div>
-    <div class="taux-grid">
-      <div class="taux-cell">
-        <div class="taux-label">Taux directeur BdC</div>
-        <div class="taux-val" id="tv-directeur">—</div>
-        <div class="taux-note">Banque du Canada officiel</div>
-      </div>
-      <div class="taux-cell">
-        <div class="taux-label">Taux préférentiel</div>
-        <div class="taux-val" id="tv-preferentiel">—</div>
-        <div class="taux-note">Taux directeur + 2,20 %</div>
-      </div>
-      <div class="taux-cell accent">
-        <div class="taux-label">Taux variable indicatif</div>
-        <div class="taux-val" id="tv-variable">—</div>
-        <div class="taux-note">Taux préf. − escompte typique</div>
-      </div>
-      <div class="taux-cell">
-        <div class="taux-label">Dernière mise à jour</div>
-        <div class="taux-val" id="tv-date" style="font-size:1.1rem">—</div>
-        <div class="taux-note">Source : bankofcanada.ca</div>
-      </div>
-    </div>
-    <div class="taux-disclaimer">
-      ⚠️ Les taux affichés sont <strong>indicatifs</strong> et calculés à partir du taux directeur
-      officiel de la Banque du Canada. Ils ne constituent pas une offre de financement. Consultez
-      Stéphanie pour un taux personnalisé.
-    </div>
-  </div>
-</div>
-
 {hypothecaRates && (
   <div id="hypotheca-bandeau">
     <div class="taux-inner">
@@ -58,13 +19,13 @@ function fmtRate(val: number | null | undefined): string {
         <div>
           <div class="taux-title-tag">
             Taux hypothécaires du marché ·
-            {hypothecaRates.source === 'live' ? 'mis à jour à la compilation' : 'taux indicatifs'}
+            {hypothecaRates.source === 'live' ? ' mis à jour automatiquement' : ' taux indicatifs'}
           </div>
           <div class="taux-title">Taux du marché — Hypotheca.ca</div>
         </div>
         <div style="font-size:.68rem;color:var(--muted);text-align:right;line-height:1.6">
           Source : <strong>hypotheca.ca</strong><br />
-          {hypothecaRates.source === 'fallback' ? 'Taux de secours statiques' : 'Données récupérées à la compilation'}
+          {hypothecaRates.source === 'fallback' ? 'Taux de secours statiques' : 'Données synchronisées'}
         </div>
       </div>
       <div class="taux-grid">
@@ -96,67 +57,3 @@ function fmtRate(val: number | null | undefined): string {
     </div>
   </div>
 )}
-
-<script>
-  const userEditedInputs = new WeakSet<HTMLInputElement>();
-
-  async function fetchTauxBdC() {
-    try {
-      const res = await fetch(
-        'https://www.bankofcanada.ca/valet/observations/V39079/json?recent=1'
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const obs = data?.observations?.[0];
-      if (!obs || !obs.V39079?.v) throw new Error('Données introuvables');
-
-      const directeur = parseFloat(obs.V39079.v);
-      const preferentiel = +(directeur + 2.2).toFixed(2);
-      const variable = +(preferentiel - 0.65).toFixed(2);
-      const dateStr = new Date(obs.d + 'T12:00:00').toLocaleDateString('fr-CA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-      const f = (n: number) => n.toFixed(2).replace('.', ',') + ' %';
-
-      const heroTaux = document.getElementById('hero-taux');
-      if (heroTaux) heroTaux.textContent = 'Dès ' + f(variable);
-
-      document.getElementById('tv-directeur')!.textContent = f(directeur);
-      document.getElementById('tv-preferentiel')!.textContent = f(preferentiel);
-      document.getElementById('tv-variable')!.textContent = f(variable);
-      document.getElementById('tv-date')!.textContent = dateStr;
-
-      const tauxInput = document.getElementById('taux') as HTMLInputElement | null;
-      if (tauxInput && !userEditedInputs.has(tauxInput)) {
-        tauxInput.value = variable.toFixed(2);
-        tauxInput.dispatchEvent(new Event('input'));
-      }
-
-      document.getElementById('taux-source')!.innerHTML =
-        'Source : <strong>Banque du Canada</strong><br>Série V39079 · Valet API';
-    } catch {
-      const heroTaux = document.getElementById('hero-taux');
-      if (heroTaux) heroTaux.textContent = 'Dès 4,49 %';
-      const banner = document.getElementById('tv-directeur');
-      if (banner) {
-        ['tv-directeur', 'tv-preferentiel', 'tv-variable', 'tv-date'].forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = 'Indisponible';
-        });
-      }
-    }
-  }
-
-  const tauxInput = document.getElementById('taux') as HTMLInputElement | null;
-  if (tauxInput) {
-    tauxInput.addEventListener('input', (event: Event) => {
-      if (event.isTrusted) {
-        userEditedInputs.add(tauxInput);
-      }
-    });
-  }
-
-  fetchTauxBdC();
-</script>
