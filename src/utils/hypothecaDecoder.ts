@@ -2,9 +2,10 @@
  * Reproduces the `occ()` obfuscation function used on hypotheca.ca.
  *
  * Decoding rules:
- *  - Letters [a-zA-Z]: ROT13
- *  - Digits  [0-9]:    ROT5 (> 4 → subtract 5, ≤ 4 → add 5)
- *  - Other chars (.%): left unchanged
+ * - Letters [a-zA-Z]: ROT13
+ * - Digits  [0-9]:    ROT5 (> 4 → subtract 5, ≤ 4 → add 5)
+ * - Char '?':         Shift +1
+ * - Escaped slashes:  Cleaned up (\/ becomes /)
  */
 export function decodeHypotheca(str: string): string {
   return str
@@ -16,5 +17,9 @@ export function decodeHypotheca(str: string): string {
     .replace(/\d/g, (digit) => {
       const val = parseInt(digit);
       return (val > 4 ? val - 5 : val + 5).toString();
-    });
+    })
+    .replace(/\?/g, (char) => {
+      return String.fromCharCode(char.charCodeAt(0) + 1);
+    })
+    .replace(/\\\//g, '/'); // C'est cette ligne qui sauve la mise !
 }

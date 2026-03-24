@@ -48,62 +48,36 @@ function extractRatesByContext(
     variable: null,
   };
 
-  // Ordered list: first matching label wins for each key.
-  const termLabels: Array<[keyof typeof result, string[]]> = [
-    ['fixe_5ans', ['5 ans', '5ans', '60 mois', '60mois']],
-    ['fixe_3ans', ['3 ans', '3ans', '36 mois', '36mois']],
-    ['fixe_2ans', ['2 ans', '2ans', '24 mois', '24mois']],
-    ['fixe_1ans', ['1 an', '1an', '12 mois', '12mois']],
-    ['variable', ['variable', 'var.']],
-  ];
-
-  const positionalKeys: Array<keyof typeof result> = [
-    'fixe_5ans',
-    'fixe_3ans',
-    'fixe_2ans',
-    'fixe_1ans',
-    'variable',
-  ];
-
-  // Collect all valid decoded rates, tracking which sequential index each comes from.
-  const allRates: Array<{ val: number; seqIdx: number }> = [];
-  const usedSeqIndices = new Set<number>();
-  let seqIdx = 0;
-
+  // On cherche toutes les chaînes encodées dans la page
   for (const match of html.matchAll(/occ\("([^"]+)"\)/g)) {
-    const decoded = decodeHypotheca(match[1]);
-    if (!RATE_RE.test(decoded)) continue;
-    const val = parseFloat(decoded);
+    // Le décodage retourne du HTML brut : <tr><td>5 ans variable</td><td>3.70%</td><td>4.40%</td></tr>
+    const decodedHtml = decodeHypotheca(match[1]);
+    
+    // On extrait le contenu texte de toutes les balises <td>
+    const tdMatches = [...decodedHtml.matchAll(/<td[^>]*>(.*?)<\/td>/g)];
+    
+    // S'il n'y a pas au moins 2 colonnes (Terme et Taux), on ignore
+    if (tdMatches.length < 2) continue;
+
+    const termLabel = tdMatches[0][1].toLowerCase(); // ex: "5 ans variable"
+    const rateString = tdMatches[1][1];              // ex: "3.70%"
+
+    // On nettoie la chaîne (enlever le %) et on convertit en float
+    const val = parseFloat(rateString.replace('%', '').trim());
+
     if (!isValidRate(val)) continue;
 
-    const currentSeq = seqIdx++;
-    allRates.push({ val, seqIdx: currentSeq });
-
-    // Look at the 300 characters before this occ() call for a term label.
-    const startIdx = Math.max(0, (match.index ?? 0) - 300);
-    const context = html.slice(startIdx, match.index).toLowerCase();
-
-    for (const [key, labels] of termLabels) {
-      if (result[key] !== null) continue; // already found
-      if (labels.some((l) => context.includes(l))) {
-        result[key] = val;
-        usedSeqIndices.add(currentSeq);
-        break;
-      }
-    }
-  }
-
-  // Positional fallback: fill remaining null keys from rates not already
-  // assigned by context matching, in document order.
-  let posIdx = 0;
-  for (const key of positionalKeys) {
-    if (result[key] !== null) continue;
-    // Skip rates that were already claimed by context matching.
-    while (posIdx < allRates.length && usedSeqIndices.has(allRates[posIdx].seqIdx)) {
-      posIdx++;
-    }
-    if (posIdx < allRates.length) {
-      result[key] = allRates[posIdx++].val;
+    // On assigne la valeur à la bonne clé en se fiant au texte du <td>
+    if (termLabel.includes('variable')) {
+      result.variable = val;
+    } else if (termLabel.includes('5 ans') || termLabel.includes('5ans')) {
+      result.fixe_5ans = val;
+    } else if (termLabel.includes('3 ans') || termLabel.includes('3ans')) {
+      result.fixe_3ans = val;
+    } else if (termLabel.includes('2 ans') || termLabel.includes('2ans')) {
+      result.fixe_2ans = val;
+    } else if (termLabel.includes('1 an') || termLabel.includes('1an')) {
+      result.fixe_1ans = val;
     }
   }
 
