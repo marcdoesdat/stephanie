@@ -1,4 +1,15 @@
 ---
+import type { HypothecaRates } from '../services/ratesService';
+
+interface Props {
+  hypothecaRates?: HypothecaRates;
+}
+const { hypothecaRates } = Astro.props;
+
+function fmtRate(val: number | null | undefined): string {
+  if (val == null) return '—';
+  return val.toFixed(2).replace('.', ',') + ' %';
+}
 ---
 
 <div id="taux-bandeau">
@@ -39,6 +50,52 @@
     </div>
   </div>
 </div>
+
+{hypothecaRates && (
+  <div id="hypotheca-bandeau">
+    <div class="taux-inner">
+      <div class="taux-header">
+        <div>
+          <div class="taux-title-tag">
+            Taux hypothécaires du marché ·
+            {hypothecaRates.source === 'live' ? 'mis à jour à la compilation' : 'taux indicatifs'}
+          </div>
+          <div class="taux-title">Taux du marché — Hypotheca.ca</div>
+        </div>
+        <div style="font-size:.68rem;color:var(--muted);text-align:right;line-height:1.6">
+          Source : <strong>hypotheca.ca</strong><br />
+          {hypothecaRates.source === 'fallback' ? 'Taux de secours statiques' : 'Données récupérées à la compilation'}
+        </div>
+      </div>
+      <div class="taux-grid">
+        <div class="taux-cell accent">
+          <div class="taux-label">5 ans fixe</div>
+          <div class="taux-val">{fmtRate(hypothecaRates.fixe_5ans)}</div>
+          <div class="taux-note">Taux fixe 5 ans</div>
+        </div>
+        <div class="taux-cell">
+          <div class="taux-label">3 ans fixe</div>
+          <div class="taux-val">{fmtRate(hypothecaRates.fixe_3ans)}</div>
+          <div class="taux-note">Taux fixe 3 ans</div>
+        </div>
+        <div class="taux-cell">
+          <div class="taux-label">2 ans fixe</div>
+          <div class="taux-val">{fmtRate(hypothecaRates.fixe_2ans)}</div>
+          <div class="taux-note">Taux fixe 2 ans</div>
+        </div>
+        <div class="taux-cell">
+          <div class="taux-label">1 an fixe</div>
+          <div class="taux-val">{fmtRate(hypothecaRates.fixe_1ans)}</div>
+          <div class="taux-note">Taux fixe 1 an</div>
+        </div>
+      </div>
+      <div class="taux-disclaimer">
+        ⚠️ Les taux affichés sont <strong>indicatifs</strong> et proviennent de hypotheca.ca. Ils ne
+        constituent pas une offre de financement. Consultez Stéphanie pour un taux personnalisé.
+      </div>
+    </div>
+  </div>
+)}
 
 <script>
   const userEditedInputs = new WeakSet<HTMLInputElement>();
