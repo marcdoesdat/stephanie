@@ -92,7 +92,6 @@ const displayRows = hypothecaRates.rows.length > 0
       const ob = data.observations[0];
       const directeur = parseFloat(ob.V39079.v);
       const preferentiel = +(directeur + 2.20).toFixed(2);
-      const variable = +(preferentiel - 0.65).toFixed(2);
       const dateStr = new Date(ob.d + 'T12:00:00').toLocaleDateString('fr-CA', {
         year: 'numeric', month: 'long', day: 'numeric'
       });
@@ -109,9 +108,6 @@ const displayRows = hypothecaRates.rows.length > 0
 
       const tvDateInline = document.getElementById('tv-date-inline');
       if (tvDateInline) tvDateInline.textContent = dateStr;
-
-      const heroTaux = document.getElementById('hero-taux');
-      if (heroTaux) heroTaux.textContent = 'Dès ' + f(variable);
     } catch {
       const tvDate = document.getElementById('tv-date');
       if (tvDate) tvDate.textContent = 'Données indisponibles';
