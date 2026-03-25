@@ -1,0 +1,57 @@
+---
+---
+
+<section id="faq">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-tag">FAQ</div>
+      <div class="section-title">Questions<br /><em>fréquentes</em></div>
+      <p class="section-sub">Les réponses aux questions que tout le monde se pose — mais que personne n'ose poser à sa banque.</p>
+    </div>
+    <div class="faq-list fade-up">
+      <div class="faq-item">
+        <div class="faq-q">Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ? <div class="faq-icon">+</div></div>
+        <div class="faq-a"><div class="faq-a-inner">Non, mes services sont entièrement gratuits pour vous. Je suis rémunérée par le prêteur qui vous accorde le financement — pas par vous. Vous bénéficiez donc d'un accompagnement professionnel complet sans frais supplémentaires.</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Quelle est la différence entre un courtier et ma banque ? <div class="faq-icon">+</div></div>
+        <div class="faq-a"><div class="faq-a-inner">Votre banque ne vous propose que ses propres produits. Moi, j'ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution.</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">J'ai été refusé par ma banque. Puis-je quand même obtenir une hypothèque ? <div class="faq-icon">+</div></div>
+        <div class="faq-a"><div class="faq-a-inner">Absolument. Un refus bancaire ne signifie pas que vous ne pouvez pas acheter — cela signifie que cette banque ne peut pas vous aider. J'ai accès à des prêteurs alternatifs spécialisés dans les dossiers complexes : mauvais crédit, travailleur autonome, revenus atypiques, etc.</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">De combien de mise de fonds ai-je besoin pour acheter ? <div class="faq-icon">+</div></div>
+        <div class="faq-a"><div class="faq-a-inner">Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 999 999 $, c'est 5 % sur la première tranche et 10 % sur le reste. À partir de 1 000 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l'assurance SCHL.</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">C'est quoi le test de résistance hypothécaire ? <div class="faq-icon">+</div></div>
+        <div class="faq-a"><div class="faq-a-inner">Depuis 2018, tous les emprunteurs doivent prouver qu'ils pourraient rembourser leur hypothèque à un taux plus élevé que celui négocié — soit le taux contractuel + 2 %, soit 5,25 %, selon le plus élevé des deux. Ce test réduit le montant que vous pouvez emprunter, mais je vous aide à optimiser votre dossier pour maximiser votre capacité.</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Taux fixe ou taux variable — lequel choisir ? <div class="faq-icon">+</div></div>
+        <div class="faq-a"><div class="faq-a-inner">Ça dépend entièrement de votre profil, de votre tolérance au risque et de votre horizon d'achat. Le taux fixe offre une stabilité et une prévisibilité — idéal si vous avez un budget serré ou une aversion au risque. Le taux variable suit le taux directeur de la Banque du Canada et peut être avantageux sur le long terme, mais avec plus d'incertitude. On analyse votre situation ensemble pour faire le meilleur choix.</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Travailleur autonome — est-ce difficile d'obtenir une hypothèque ? <div class="faq-icon">+</div></div>
+        <div class="faq-a"><div class="faq-a-inner">C'est plus complexe, mais tout à fait possible. Les prêteurs regardent vos deux dernières années de déclarations de revenus et peuvent utiliser votre revenu brut déclaré ou votre revenu net selon le type de prêt. Certains prêteurs alternatifs offrent des programmes spéciaux pour les travailleurs autonomes. J'ai l'expérience pour naviguer ces dossiers.</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Combien de temps prend le processus d'approbation ? <div class="faq-icon">+</div></div>
+        <div class="faq-a"><div class="faq-a-inner">Une pré-approbation peut être obtenue en 24 à 48 heures une fois que votre dossier est complet. L'approbation finale, après une offre d'achat acceptée, prend généralement 3 à 5 jours ouvrables. Je vous accompagne à chaque étape pour que le processus soit le plus fluide possible.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.faq-q').forEach((q) => {
+    q.addEventListener('click', () => {
+      const item = q.parentElement!;
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach((i) => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+</script>

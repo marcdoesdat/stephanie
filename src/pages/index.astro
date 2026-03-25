@@ -4,15 +4,21 @@ import Nav from '../components/Nav.astro';
 import Hero from '../components/Hero.astro';
 import About from '../components/About.astro';
 import Services from '../components/Services.astro';
+import Simulator from '../components/Simulator.astro';
+import TauxSection from '../components/TauxSection.astro';
 import Calculator from '../components/Calculator.astro';
-import RatesBanner from '../components/RatesBanner.astro';
+import Faq from '../components/Faq.astro';
+import Rdv from '../components/Rdv.astro';
 import Testimonials from '../components/Testimonials.astro';
 import Contact from '../components/Contact.astro';
 import Footer from '../components/Footer.astro';
+import MessengerBtn from '../components/MessengerBtn.astro';
 import '../styles/global.css';
 import { fetchHypothecaRates } from '../services/ratesService';
+import { loadSiteConfig } from '../config';
 
 const hypothecaRates = await fetchHypothecaRates();
+const config = loadSiteConfig();
 // Use 5-year fixed as the calculator default; fall back to 4.99 if unavailable.
 const defaultRate = hypothecaRates.fixe_5ans ?? 4.99;
 const hypothecaVariable = hypothecaRates.variable ?? 5.99;
@@ -20,15 +26,19 @@ const hypothecaVariable = hypothecaRates.variable ?? 5.99;
 ---
 
 <MainLayout
-  title="Stéphanie Weyman — Courtière Hypothécaire · Montréal"
-  description="Courtière hypothécaire agréée à Montréal. Je vous accompagne dans l'achat, le renouvellement ou le refinancement de votre hypothèque — sans jargon, sans pression, avec les meilleurs taux parmi plus de 20 prêteurs."
+  title={config.meta_title}
+  description={config.meta_description}
 >
+  <MessengerBtn />
   <Nav />
   <Hero baseRate={hypothecaVariable}/>
   <About />
   <Services />
+  <Simulator defaultRate={defaultRate} />
+  <TauxSection hypothecaRates={hypothecaRates} />
   <Calculator defaultRate={defaultRate} />
-  <RatesBanner hypothecaRates={hypothecaRates} />
+  <Faq />
+  <Rdv />
   <Testimonials />
   <Contact />
   <Footer />

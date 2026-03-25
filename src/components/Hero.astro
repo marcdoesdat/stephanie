@@ -1,8 +1,9 @@
 ---
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.jpg';
+import { loadSiteConfig } from '../config';
 
-
+const config = loadSiteConfig();
 const { baseRate = 4.99 } = Astro.props;
 function fmtRate(val: number | null | undefined): string {
   if (val == null) return '—';
@@ -13,15 +14,15 @@ function fmtRate(val: number | null | undefined): string {
 <section id="hero">
   <div class="hero-inner">
     <div class="hero-left fade-up">
-      <div class="hero-badge">Courtière hypothécaire agréée · Montréal</div>
+      <div class="hero-badge">Courtière hypothécaire agréée · {config.region}</div>
       <h1>Votre hypothèque,<br /><em>enfin expliquée</em><br />simplement.</h1>
       <p>
         Je vous accompagne dans l'un des projets les plus importants de votre vie — sans jargon,
         sans pression, avec les meilleurs taux parmi plus de 20 prêteurs.
       </p>
       <div class="hero-btns">
-        <a href="#contact" class="btn-primary">Consultation gratuite →</a>
-        <a href="#calculateur" class="btn-secondary">Calculer mon paiement</a>
+        <a href="#rdv" class="btn-primary">Prendre rendez-vous →</a>
+        <a href="#simulateur" class="btn-secondary">Combien puis-je emprunter ?</a>
       </div>
       <div class="hero-stats">
         <div class="stat-item">
@@ -33,7 +34,7 @@ function fmtRate(val: number | null | undefined): string {
           <div class="stat-label">Gratuit pour vous</div>
         </div>
         <div class="stat-item">
-          <div class="stat-num">48h</div>
+          <div class="stat-num">24h</div>
           <div class="stat-label">Réponse garantie</div>
         </div>
       </div>

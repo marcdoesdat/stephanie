@@ -1,4 +1,6 @@
 ---
+import { loadSiteConfig } from '../config';
+const config = loadSiteConfig();
 ---
 
 <section id="contact">
@@ -15,19 +17,19 @@
           <div class="contact-details">
             <div class="contact-item">
               <div class="contact-icon">📞</div>
-              <span><strong>VOTRE NUMÉRO</strong></span>
+              <span><strong>{config.telephone}</strong></span>
             </div>
             <div class="contact-item">
               <div class="contact-icon">✉️</div>
-              <span><strong>stephanie@stephanieweyman.ca</strong></span>
+              <span><strong>{config.courriel}</strong></span>
             </div>
             <div class="contact-item">
               <div class="contact-icon">📍</div>
-              <span>Montréal et grand Montréal</span>
+              <span>{config.region}</span>
             </div>
             <div class="contact-item">
               <div class="contact-icon">🏢</div>
-              <span>Hypotheca</span>
+              <span>{config.organisation}</span>
             </div>
           </div>
         </div>
@@ -60,12 +62,15 @@
           </select>
           <label class="cform-label" for="contact-message">Message (optionnel)</label>
           <textarea id="contact-message" placeholder="Décrivez brièvement votre situation..."></textarea>
+          <div class="form-error" id="form-error">Veuillez remplir tous les champs obligatoires.</div>
           <button type="button" class="contact-submit" id="contact-submit-btn">Envoyer ma demande →</button>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:.8rem;text-align:center;">🔒 Vos informations sont confidentielles et ne seront jamais partagées.</div>
         </div>
         <div class="form-success" id="form-success">
           <span class="check">✅</span>
           <strong>Merci, votre message a bien été envoyé !</strong><br />
-          Je vous recontacte dans les 24 heures ouvrables.
+          Stéphanie vous recontacte dans les 24 heures ouvrables.<br /><br />
+          <a href={config.messenger_url} style="color:var(--forest);font-weight:600;">💬 Ou écrire sur Messenger maintenant →</a>
         </div>
       </div>
     </div>
@@ -74,6 +79,17 @@
 
 <script>
   document.getElementById('contact-submit-btn')!.addEventListener('click', () => {
+    const prenom = (document.getElementById('contact-prenom') as HTMLInputElement).value.trim();
+    const email = (document.getElementById('contact-email') as HTMLInputElement).value.trim();
+    const errEl = document.getElementById('form-error')!;
+    if (!prenom || !email) {
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    const btn = document.getElementById('contact-submit-btn') as HTMLButtonElement;
+    btn.textContent = 'Envoi en cours...';
+    btn.disabled = true;
     document.getElementById('form-content')!.style.display = 'none';
     document.getElementById('form-success')!.style.display = 'block';
   });

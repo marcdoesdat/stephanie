@@ -9,10 +9,13 @@
     "check": "astro check"
   },
   "dependencies": {
-    "astro": "^6.0.8"
+    "astro": "^6.0.8",
+    "js-yaml": "^4.1.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.5.0",
     "typescript": "^5.9.3"
   }
 }
