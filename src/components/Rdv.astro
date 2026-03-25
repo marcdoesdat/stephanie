@@ -1,0 +1,37 @@
+---
+import { loadSiteConfig } from '../config';
+const config = loadSiteConfig();
+---
+
+<section id="rdv">
+  <div class="section-inner">
+    <div class="rdv-wrapper">
+      <div class="fade-up">
+        <div class="section-tag">Rendez-vous</div>
+        <div class="section-title">Planifiez votre<br /><em>consultation gratuite</em></div>
+        <p style="font-size:.95rem;color:var(--muted);line-height:1.9;margin-bottom:1.5rem;">
+          Choisissez le moment qui vous convient. La consultation se fait par téléphone, visio ou en personne — selon vos préférences.
+        </p>
+        <div class="rdv-benefits">
+          <div class="rdv-benefit">Consultation 100 % gratuite et sans engagement</div>
+          <div class="rdv-benefit">Disponible en soirée et la fin de semaine</div>
+          <div class="rdv-benefit">Par téléphone, Zoom ou en personne</div>
+          <div class="rdv-benefit">Réponse confirmée en moins de 24h</div>
+        </div>
+        <a href={`tel:${config.telephone.replace(/-/g, '')}`} class="btn-primary">📞 Appeler directement : {config.telephone}</a>
+      </div>
+      <div class="calendly-placeholder fade-up" style="transition-delay:.2s">
+        <div class="cp-icon">📅</div>
+        <h4>Réservation en ligne</h4>
+        <p>Bientôt disponible — réservez votre consultation directement dans mon agenda en quelques clics.</p>
+        <div class="cp-steps">
+          <strong>Comment activer cette fonctionnalité :</strong><br />
+          1. Créer un compte sur <strong>calendly.com</strong> (gratuit)<br />
+          2. Configurer vos disponibilités<br />
+          3. Me donner votre lien Calendly<br />
+          4. Je l'intègre au site en 5 minutes ✅
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

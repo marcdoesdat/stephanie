@@ -1,31 +1,28 @@
 ---
+import { loadSiteConfig } from '../config';
+const config = loadSiteConfig();
 ---
 
 <footer>
-  <span class="footer-name">Stéphanie Weyman</span>
-  Courtière hypothécaire agréée · Hypotheca · Montréal<br />
-  Numéro AMF : <strong>VOTRE NUMÉRO AMF</strong><br /><br />
-  © 2025 Stéphanie Weyman · <a href="#">stephanieweyman.ca</a> · Tous droits réservés
+  <span class="footer-name">{config.nom}</span>
+  {config.titre} · {config.organisation} · {config.region}<br />
+  Numéro AMF : <strong>{config.amf}</strong><br /><br />
+  © 2025 {config.nom} · <a href={config.site_url}>stephanieweyman.ca</a> · Tous droits réservés
   <div class="footer-disclaimer">
     <strong
       style="color:rgba(255,255,255,.55);letter-spacing:.08em;text-transform:uppercase;font-size:.62rem"
       >Clause de non-responsabilité — Taux et informations financières</strong
     ><br /><br />
-    Les taux affichés sur ce site sont fournis à titre <strong style="color:rgba(255,255,255,.45)"
+    Les taux et estimations affichés sur ce site sont fournis à titre <strong style="color:rgba(255,255,255,.45)"
       >indicatif uniquement</strong
-    > et sont calculés automatiquement à partir du taux directeur publié par la Banque du Canada,
-    auquel est appliquée une marge estimée représentative des conditions générales du marché. Ils ne
-    constituent en aucun cas une offre de financement, une promesse de taux ni un engagement de la
-    part de Stéphanie Weyman, de Hypotheca ou de tout prêteur partenaire.<br /><br />
-    Le taux hypothécaire réel accordé à un emprunteur dépend de plusieurs facteurs propres à sa
-    situation, notamment son profil de crédit, ses revenus, la valeur de la propriété, le type et la
-    durée du prêt, l'institution prêteuse retenue ainsi que les conditions du marché en vigueur au
-    moment de la demande.<br /><br />
-    Stéphanie Weyman, courtière hypothécaire inscrite auprès de l'<strong
-      style="color:rgba(255,255,255,.45)"
+    >. Ils ne constituent en aucun cas une offre de financement, une promesse de taux ni un
+    engagement de la part de {config.nom}, de {config.organisation} ou de tout prêteur partenaire.
+    Le taux hypothécaire réel dépend de votre profil de crédit, vos revenus, la valeur de la
+    propriété et les conditions du marché. {config.nom}, courtière hypothécaire inscrite auprès de
+    l'<strong style="color:rgba(255,255,255,.45)"
       >Autorité des marchés financiers (AMF) du Québec</strong
-    >, décline toute responsabilité pour les décisions financières prises sur la base des
-    informations présentées sur ce site. Ce site est fourni à titre informatif seulement et ne
-    constitue pas un avis juridique, fiscal ou financier.
+    > sous le numéro <strong style="color:rgba(255,255,255,.45)">{config.amf}</strong>, décline
+    toute responsabilité pour les décisions financières prises sur la base des informations
+    présentées sur ce site.
   </div>
 </footer>

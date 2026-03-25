@@ -1,0 +1,17 @@
+---
+import { loadSiteConfig } from '../config';
+const config = loadSiteConfig();
+---
+
+<a
+  href={config.messenger_url}
+  class="messenger-btn"
+  target="_blank"
+  rel="noopener"
+  aria-label="Écrire sur Messenger"
+>
+  <span class="messenger-tooltip">Écrire sur Messenger</span>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="26" height="26">
+    <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.908 1.438 5.504 3.686 7.199V22l3.371-1.85c.9.25 1.853.385 2.943.385 5.523 0 10-4.145 10-9.243S17.523 2 12 2zm1.043 12.454l-2.546-2.714-4.97 2.714 5.467-5.805 2.607 2.714 4.909-2.714-5.467 5.805z" />
+  </svg>
+</a>
