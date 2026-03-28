@@ -1,24 +1,31 @@
 ---
+// Importe le composant SEO (assure-toi que le chemin est bon)
+import SEO from '../components/SEO.astro';
+
 interface Props {
   title: string;
   description: string;
+  ogImage?: string; // Optionnel : pour une image de partage spécifique
 }
 
-const { title, description } = Astro.props;
+const { title, description, ogImage } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="fr">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
+    <SEO 
+      title={title} 
+      description={description} 
+      ogImage={ogImage} 
+    />
+
     <link
       href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-  </head>
+    
+    </head>
   <body>
     <slot />
   </body>

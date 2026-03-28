@@ -1,0 +1,72 @@
+---
+// src/components/SEO.astro
+
+// Définition des propriétés que ce composant accepte
+interface Props {
+  title?: string; // Titre de la page (si différent du par défaut)
+  description?: string; // Description SEO (crucial pour Google)
+  canonicalURL?: string | URL; // URL canonique pour éviter le contenu dupliqué
+  ogImage?: string; // Image pour le partage sur les réseaux sociaux
+  lang?: string; // Langue de la page (important pour l'accessibilité et SEO)
+}
+
+// Valeurs par défaut pour ton site
+const {
+  title = "Stéphanie Weyman - Conseillère en Cautionnement",
+  description = "Services de cautionnement professionnels à Repentigny et environs. Contactez Stéphanie Weyman pour vos besoins de cautionnement d'entreprise.",
+  canonicalURL = new URL(Astro.url.pathname, Astro.site),
+  ogImage = "/images/og-image.jpg", // Crée une image par défaut à cet emplacement
+  lang = "fr-CA",
+} = Astro.props;
+
+// Construire le titre final
+const formattedTitle = title === "Stéphanie Weyman - Conseillère en Cautionnement" ? title : `${title} | Stéphanie Weyman`;
+
+// Données structurées JSON-LD (Schema.org) pour une Personne (Stéphanie)
+// C'est ce qui aide Google à comprendre que c'est le site d'une personne offrant des services
+const personSchema = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Stéphanie Weyman",
+  "jobTitle": "Conseillère en Cautionnement",
+  "url": Astro.site?.toString() ?? canonicalURL.toString(),
+  "sameAs": [
+    // Ajoute ici ses liens professionnels s'ils existent (ex: LinkedIn)
+    // "https://www.linkedin.com/in/stephanieweyman", 
+  ],
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Repentigny",
+    "addressRegion": "QC",
+    "addressCountry": "CA"
+  },
+  "description": description
+};
+---
+
+<title>{formattedTitle}</title>
+<meta name="description" content={description} />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="generator" content={Astro.generator} />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href={canonicalURL} />
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<html lang={lang}>
+
+<meta property="og:type" content="website" />
+<meta property="og:url" content={canonicalURL} />
+<meta property="og:title" content={formattedTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={new URL(ogImage, Astro.site)} />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content={canonicalURL} />
+<meta name="twitter:title" content={formattedTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={new URL(ogImage, Astro.site)} />
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="alternate icon" type="image/png" href="/favicon.png" />
+
+<script type="application/ld+json" set:html={JSON.stringify(personSchema)} is:inline />
