@@ -12,7 +12,7 @@ interface Props {
 
 // Valeurs par défaut pour ton site
 const {
-  title = "Stéphanie Weyman - Conseillère en Cautionnement",
+  title = "Stéphanie Weyman - Courtière hypothécaire",
   description = "Services de cautionnement professionnels à Repentigny et environs. Contactez Stéphanie Weyman pour vos besoins de cautionnement d'entreprise.",
   canonicalURL = new URL(Astro.url.pathname, Astro.site),
   ogImage = "/images/og-image.jpg", // Crée une image par défaut à cet emplacement
@@ -20,7 +20,7 @@ const {
 } = Astro.props;
 
 // Construire le titre final
-const formattedTitle = title === "Stéphanie Weyman - Conseillère en Cautionnement" ? title : `${title} | Stéphanie Weyman`;
+const formattedTitle = title === "Stéphanie Weyman - Courtière hypothécaire" ? title : `${title} | Stéphanie Weyman`;
 
 // Données structurées JSON-LD (Schema.org) pour une Personne (Stéphanie)
 // C'est ce qui aide Google à comprendre que c'est le site d'une personne offrant des services
@@ -28,14 +28,14 @@ const personSchema = {
   "@context": "https://schema.org",
   "@type": "Person",
   "name": "Stéphanie Weyman",
-  "jobTitle": "Conseillère en Cautionnement",
+  "jobTitle": "Courtière hypothécaire",
   "url": Astro.site?.toString() ?? canonicalURL.toString(),
   "sameAs": [
     // Ajoute ici ses liens professionnels s'ils existent (ex: LinkedIn)
-    // "https://www.linkedin.com/in/stephanieweyman", 
+    // "https://hypotheca.ca/sweyman", 
   ],
   "address": {
-    "@type": "PostalAddress",
+    "@type": "54 rue Bourbon",
     "addressLocality": "Repentigny",
     "addressRegion": "QC",
     "addressCountry": "CA"
