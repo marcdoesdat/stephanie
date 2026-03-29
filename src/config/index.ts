@@ -1,6 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import yaml from 'js-yaml';
+// On importe le fichier YAML directement
+import config from './siteConfig.yaml';
 
 export interface SiteConfig {
   nom: string;
@@ -17,15 +16,7 @@ export interface SiteConfig {
   meta_description: string;
 }
 
-let _cached: SiteConfig | null = null;
-
 export function loadSiteConfig(): SiteConfig {
-  if (_cached) return _cached;
-  const configPath = path.resolve(
-    process.cwd(),
-    'src/config/siteConfig.yaml'
-  );
-  const raw = fs.readFileSync(configPath, 'utf-8');
-  _cached = yaml.load(raw) as SiteConfig;
-  return _cached;
+  // Pas besoin de fs ou de path, Vite a déjà fait le travail !
+  return config as SiteConfig;
 }
