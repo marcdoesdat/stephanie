@@ -1,49 +1,68 @@
 ---
+// src/components/FAQ.astro
+
+const faqs = [
+  {
+    q: "Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ?",
+    a: "Non, mes services sont entièrement gratuits pour vous. Je suis rémunérée par le prêteur qui vous accorde le financement — pas par vous. Vous bénéficiez donc d'un accompagnement professionnel complet sans frais supplémentaires."
+  },
+  {
+    q: "Quelle est la différence entre un courtier et ma banque ?",
+    a: "Votre banque ne vous propose que ses propres produits. Moi, j'ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution."
+  },
+  {
+    q: "J'ai été refusé par ma banque. Puis-je quand même obtenir une hypothèque ?",
+    a: "Absolument. Un refus bancaire ne signifie pas que vous ne pouvez pas acheter — cela signifie que cette banque ne peut pas vous aider. J'ai accès à des prêteurs alternatifs spécialisés dans les dossiers complexes : mauvais crédit, travailleur autonome, revenus atypiques, etc."
+  },
+  {
+    q: "De combien de mise de fonds ai-je besoin pour acheter au Québec ?",
+    a: "Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 999 999 $, c'est 5 % sur la première tranche et 10 % sur le reste. À partir de 1 000 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l'assurance SCHL."
+  }
+  // Tu peux ajouter les autres ici de la même façon...
+];
+
+// Génération automatique du JSON-LD pour Google
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map(item => ({
+    "@type": "Question",
+    "name": item.q,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": item.a
+    }
+  }))
+};
 ---
 
 <section id="faq">
   <div class="section-inner">
     <div class="fade-up">
       <div class="section-tag">FAQ</div>
-      <div class="section-title">Questions<br /><em>fréquentes</em></div>
-      <p class="section-sub">Les réponses aux questions que tout le monde se pose — mais que personne n'ose poser à sa banque.</p>
+      <h2 class="section-title">Questions <em>fréquentes</em></h2>
+      <p class="section-sub">
+        Les réponses à vos questions sur l'hypothèque à <strong>Repentigny</strong> — sans le jargon bancaire.
+      </p>
     </div>
+
     <div class="faq-list fade-up">
-      <div class="faq-item">
-        <div class="faq-q">Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ? <div class="faq-icon">+</div></div>
-        <div class="faq-a"><div class="faq-a-inner">Non, mes services sont entièrement gratuits pour vous. Je suis rémunérée par le prêteur qui vous accorde le financement — pas par vous. Vous bénéficiez donc d'un accompagnement professionnel complet sans frais supplémentaires.</div></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Quelle est la différence entre un courtier et ma banque ? <div class="faq-icon">+</div></div>
-        <div class="faq-a"><div class="faq-a-inner">Votre banque ne vous propose que ses propres produits. Moi, j'ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution.</div></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">J'ai été refusé par ma banque. Puis-je quand même obtenir une hypothèque ? <div class="faq-icon">+</div></div>
-        <div class="faq-a"><div class="faq-a-inner">Absolument. Un refus bancaire ne signifie pas que vous ne pouvez pas acheter — cela signifie que cette banque ne peut pas vous aider. J'ai accès à des prêteurs alternatifs spécialisés dans les dossiers complexes : mauvais crédit, travailleur autonome, revenus atypiques, etc.</div></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">De combien de mise de fonds ai-je besoin pour acheter ? <div class="faq-icon">+</div></div>
-        <div class="faq-a"><div class="faq-a-inner">Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 999 999 $, c'est 5 % sur la première tranche et 10 % sur le reste. À partir de 1 000 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l'assurance SCHL.</div></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">C'est quoi le test de résistance hypothécaire ? <div class="faq-icon">+</div></div>
-        <div class="faq-a"><div class="faq-a-inner">Depuis 2018, tous les emprunteurs doivent prouver qu'ils pourraient rembourser leur hypothèque à un taux plus élevé que celui négocié — soit le taux contractuel + 2 %, soit 5,25 %, selon le plus élevé des deux. Ce test réduit le montant que vous pouvez emprunter, mais je vous aide à optimiser votre dossier pour maximiser votre capacité.</div></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Taux fixe ou taux variable — lequel choisir ? <div class="faq-icon">+</div></div>
-        <div class="faq-a"><div class="faq-a-inner">Ça dépend entièrement de votre profil, de votre tolérance au risque et de votre horizon d'achat. Le taux fixe offre une stabilité et une prévisibilité — idéal si vous avez un budget serré ou une aversion au risque. Le taux variable suit le taux directeur de la Banque du Canada et peut être avantageux sur le long terme, mais avec plus d'incertitude. On analyse votre situation ensemble pour faire le meilleur choix.</div></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Travailleur autonome — est-ce difficile d'obtenir une hypothèque ? <div class="faq-icon">+</div></div>
-        <div class="faq-a"><div class="faq-a-inner">C'est tout à fait possible, mais cela exige généralement deux ans d'historique de revenus nets stables et une documentation fiscale (avis de cotisation) irréprochable.</div></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Combien de temps prend le processus d'approbation ? <div class="faq-icon">+</div></div>
-        <div class="faq-a"><div class="faq-a-inner">Une pré-approbation peut être obtenue en 24 à 48 heures une fois que votre dossier est complet. L'approbation finale, après une offre d'achat acceptée, prend généralement 3 à 5 jours ouvrables. Je vous accompagne à chaque étape pour que le processus soit le plus fluide possible.</div></div>
-      </div>
+      {faqs.map((item) => (
+        <div class="faq-item">
+          <div class="faq-q">
+            {item.q} 
+            <div class="faq-icon">+</div>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">{item.a}</div>
+          </div>
+        </div>
+      ))}
     </div>
   </div>
 </section>
+
+<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} is:inline />
 
 <script>
   document.querySelectorAll('.faq-q').forEach((q) => {
