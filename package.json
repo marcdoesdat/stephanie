@@ -11,6 +11,7 @@
   "dependencies": {
     "astro": "^6.0.8",
     "js-yaml": "^4.1.1"
+    "@astrojs/sitemap": "^3.2.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
