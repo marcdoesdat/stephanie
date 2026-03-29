@@ -1,5 +1,4 @@
-// On importe le fichier YAML directement
-import config from './siteConfig.yaml';
+import config from './siteConfig.json';
 
 export interface SiteConfig {
   nom: string;
@@ -17,6 +16,6 @@ export interface SiteConfig {
 }
 
 export function loadSiteConfig(): SiteConfig {
-  // Pas besoin de fs ou de path, Vite a déjà fait le travail !
+  // Astro comprend le JSON parfaitement sans outils supplémentaires
   return config as SiteConfig;
 }
