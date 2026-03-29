@@ -1,18 +1,24 @@
 ---
 import { loadSiteConfig } from '../config';
 const config = loadSiteConfig();
+
+// Définit l'année actuelle dynamiquement
+const currentYear = new Date().getFullYear();
 ---
 
 <footer>
   <span class="footer-name">{config.nom}</span>
   {config.titre} · {config.organisation} · {config.region}<br />
   Numéro AMF : <strong>{config.amf}</strong><br /><br />
-  © 2025 {config.nom} · <a href={config.site_url}>stephanieweyman.ca</a> · Tous droits réservés
+
+  © {currentYear} {config.nom} · <a href={config.site_url}>stephanieweyman.ca</a> · Tous droits réservés
+
   <div class="footer-disclaimer">
     <strong
       style="color:rgba(255,255,255,.55);letter-spacing:.08em;text-transform:uppercase;font-size:.62rem"
       >Clause de non-responsabilité — Taux et informations financières</strong
     ><br /><br />
+
     Les taux et estimations affichés sur ce site sont fournis à titre <strong style="color:rgba(255,255,255,.45)"
       >indicatif uniquement</strong
     >. Ils ne constituent en aucun cas une offre de financement, une promesse de taux ni un
@@ -26,3 +32,41 @@ const config = loadSiteConfig();
     présentées sur ce site.
   </div>
 </footer>
+
+<style>
+  /* Ajoute un peu de style pour que le texte ne soit pas collé sur les bords */
+  footer {
+    text-align: center;
+    padding: 60px 20px;
+    background-color: #1a1a1a; /* Ajuste selon ton design */
+    color: #ffffff;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .footer-name {
+    display: block;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+  }
+
+  .footer-disclaimer {
+    max-width: 800px;
+    margin: 40px auto 0;
+    padding-top: 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    text-align: justify;
+  }
+
+  a {
+    color: #00b4d8;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+</style>
