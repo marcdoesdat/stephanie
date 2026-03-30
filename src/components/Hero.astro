@@ -72,6 +72,12 @@ function fmtRate(val: number | null | undefined): string {
 <style>
   /* --- AJUSTEMENTS POUR HARMONISER AVEC GLOBAL.CSS --- */
 
+  /* Force la disparition du point du global.css pour ce badge spécifiquement */
+  .hero-badge::before {
+    display: none !important;
+    content: none !important;
+  }
+
   /* Force l'affichage de la photo sur mobile (ton global.css la cache) */
   @media (max-width: 900px) {
     #hero {
@@ -80,53 +86,4 @@ function fmtRate(val: number | null | undefined): string {
     }
     .hero-right {
       display: flex !important; /* Force le display qui est à none dans global.css */
-      justify-content: center;
-      margin-top: 3rem;
-      width: 100%;
-    }
-    .photo-container {
-      width: 280px; /* Taille optimisée pour mobile */
-      position: relative;
-    }
-    .hero-left h1 {
-      font-size: 2.6rem;
-    }
-  }
-
-  /* Style des bulles (Blobs) avec tes couleurs exactes */
-  .hero-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(40px);
-    z-index: -1;
-    opacity: 0.15;
-    animation: pulse 10s ease-in-out infinite;
-  }
-
-  .blob-1 {
-    width: 120%;
-    height: 120%;
-    background: var(--clay);
-    top: -10%;
-    left: -10%;
-  }
-
-  .blob-2 {
-    width: 80%;
-    height: 80%;
-    background: var(--forest);
-    bottom: -5%;
-    right: -5%;
-    animation-delay: 2s;
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.15; }
-    50% { transform: scale(1.1); opacity: 0.2; }
-  }
-
-  /* On s'assure que les cartes flottantes utilisent tes variables */
-  .floating-card {
-    z-index: 10;
-  }
-</style>
+      justify
