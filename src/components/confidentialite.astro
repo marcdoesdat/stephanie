@@ -1,0 +1,189 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+const currentYear = new Date().getFullYear();
+
+// On extrait juste le prénom pour une touche plus personnelle dans le texte
+const prenom = config.nom.split(' ')[0];
+---
+
+<Layout 
+  title={`Confidentialité | ${config.nom}`} 
+  description={`Politique de protection des renseignements personnels de ${config.nom}, courtière hypothécaire.`}
+>
+  <Nav />
+
+  <main class="privacy-page">
+    <section class="container">
+      <header class="privacy-header">
+        <h1>Politique de confidentialité</h1>
+        <p class="last-updated">Dernière mise à jour : Mars {currentYear}</p>
+      </header>
+
+      <div class="privacy-content">
+        <p>
+          Chez <strong>{config.nom}</strong>, la protection de votre vie privée est au cœur de ma pratique. 
+          En tant que courtière hypothécaire régie par l'Autorité des marchés financiers (AMF), je m'engage 
+          à protéger les renseignements personnels que vous me confiez conformément à la <em>Loi sur la protection 
+          des renseignements personnels dans le secteur privé</em> (Loi 25).
+        </p>
+
+        <hr />
+
+        <h2>1. Responsable de la protection des données</h2>
+        <p>
+          Pour toute question, accès ou demande de rectification de vos informations, la personne responsable est :
+        </p>
+        <div class="contact-box">
+          <strong>{config.nom}</strong><br />
+          Courriel : <a href={`mailto:${config.courriel}`}>{config.courriel}</a><br />
+          Téléphone : {config.telephone}
+        </div>
+
+        <h2>2. Renseignements collectés</h2>
+        <p>
+          Nous collectons uniquement les informations nécessaires pour répondre à vos besoins hypothécaires, soit :
+        </p>
+        <ul>
+          <li><strong>Identité :</strong> Nom et prénom.</li>
+          <li><strong>Coordonnées :</strong> Adresse courriel et numéro de téléphone.</li>
+          <li><strong>Données financières :</strong> Informations saisies dans nos simulateurs (revenus, mise de fonds, prix d'achat) afin de vous fournir une estimation personnalisée.</li>
+        </ul>
+
+        <h2>3. Utilisation et partage des données</h2>
+        <p>
+          Vos renseignements sont utilisés exclusivement pour :
+        </p>
+        <ul>
+          <li>Vous contacter suite à une demande de votre part.</li>
+          <li>Analyser votre capacité d'emprunt et préparer votre dossier hypothécaire.</li>
+        </ul>
+        <p>
+          <strong>Aucune vente de données :</strong> Vos renseignements personnels ne sont jamais vendus, loués ou partagés à des fins marketing à des tiers. Ils ne sont transmis aux prêteurs hypothécaires (institutions financières) qu'avec votre consentement explicite lors du dépôt d'une demande officielle.
+        </p>
+
+        <h2>4. Technologies et Cookies (Vie privée)</h2>
+        <p>
+          Contrairement à la majorité des sites web, <strong>ce site n'utilise aucun cookie de pistage publicitaire</strong>.
+        </p>
+        <ul>
+          <li><strong>Analytique :</strong> Nous utilisons <em>Umami Analytics</em>, une solution qui anonymise vos données de navigation. Nous ne collectons aucune adresse IP personnelle et nous ne vous suivons pas sur d'autres sites.</li>
+          <li><strong>Sécurité :</strong> Toutes les communications entre votre navigateur et ce site sont chiffrées via un certificat SSL (protocole HTTPS).</li>
+        </ul>
+
+        <h2>5. Vos droits</h2>
+        <p>
+          Conformément à la Loi 25, vous disposez des droits suivants :
+        </p>
+        <ul>
+          <li>Droit d'accès à vos renseignements personnels.</li>
+          <li>Droit de rectification si une information est incomplète ou inexacte.</li>
+          <li>Droit de retirer votre consentement à l'utilisation de vos données à tout moment.</li>
+        </ul>
+
+        <div class="legal-notice">
+          <p>
+            <em>Note : En tant que courtière hypothécaire, je suis tenue par l'AMF de conserver certains dossiers de clients pendant une période minimale de 7 ans suivant la fin de notre relation d'affaires.</em>
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .privacy-page {
+    padding: 120px 20px 80px;
+    background-color: var(--white, #fdfdfd);
+    color: #333;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .privacy-header {
+    text-align: center;
+    margin-bottom: 50px;
+  }
+
+  h1 {
+    font-family: 'Lora', serif;
+    font-size: 2.5rem;
+    color: var(--ink, #1a1a1a);
+    margin-bottom: 10px;
+  }
+
+  .last-updated {
+    font-size: 0.9rem;
+    color: #666;
+    font-style: italic;
+  }
+
+  h2 {
+    font-family: 'Lora', serif;
+    font-size: 1.5rem;
+    color: var(--clay, #c47a52);
+    margin-top: 40px;
+    margin-bottom: 20px;
+  }
+
+  .contact-box {
+    background-color: #f4f1ee; /* Couleur "Sand" légère */
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px dotted var(--clay, #c47a52);
+    margin: 20px 0;
+  }
+
+  .privacy-content p {
+    margin-bottom: 1.5rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  ul {
+    margin-bottom: 1.5rem;
+    padding-left: 20px;
+  }
+
+  li {
+    margin-bottom: 10px;
+  }
+
+  .legal-notice {
+    margin-top: 50px;
+    padding: 20px;
+    font-size: 0.85rem;
+    color: #777;
+    border-top: 1px solid #eee;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 40px 0;
+  }
+
+  a {
+    color: var(--clay, #c47a52);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 2rem; }
+    .privacy-page { padding-top: 100px; }
+  }
+</style>
