@@ -14,7 +14,8 @@ function fmtRate(val: number | null | undefined): string {
 <section id="hero">
   <div class="hero-inner">
     <div class="hero-left fade-up">
-      <div class="hero-badge">Courtière hypothécaire · {config.region}</div>
+      <div class="hero-badge">Courtière hypothécaire agréée · {config.region}</div>
+      
       <h1>Votre hypothèque,<br /><em>enfin expliquée</em><br />simplement.</h1>
       <p>
         Je vous accompagne dans l'un des projets les plus importants de votre vie — sans jargon,
@@ -69,13 +70,29 @@ function fmtRate(val: number | null | undefined): string {
 <style>
   #hero {
     overflow: hidden;
-    padding: 80px 0 40px; /* Espace en haut pour la nav */
+    padding: 80px 0 40px;
   }
 
-  /* Configuration du conteneur principal */
+  .hero-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background-color: rgba(0, 119, 182, 0.08);
+    color: #0077b6;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+    border: 1px solid rgba(0, 119, 182, 0.2);
+    list-style: none;
+  }
+
+  .hero-badge::before {
+    content: none !important;
+  }
+
   .hero-inner {
     display: flex;
-    flex-direction: column; /* MOBILE : Texte en haut, Photo en bas */
+    flex-direction: column;
     gap: 40px;
     align-items: center;
     max-width: 1200px;
@@ -88,18 +105,17 @@ function fmtRate(val: number | null | undefined): string {
     z-index: 5;
   }
 
-  /* --- SECTION PHOTO --- */
   .hero-right {
     position: relative;
     width: 100%;
-    display: flex !important; /* Force l'affichage */
+    display: flex !important;
     justify-content: center;
     padding: 40px 0;
   }
 
   .photo-wrapper {
     position: relative;
-    width: 280px; /* Taille sur mobile */
+    width: 280px;
   }
 
   .photo-frame {
@@ -116,7 +132,6 @@ function fmtRate(val: number | null | undefined): string {
     display: block;
   }
 
-  /* --- BULLES --- */
   .bubble {
     position: absolute;
     border-radius: 50%;
@@ -136,42 +151,9 @@ function fmtRate(val: number | null | undefined): string {
     50% { transform: translate(10px, -15px); }
   }
 
-  /* --- CARTES FLOTTANTES --- */
   .floating-card {
     position: absolute;
     background: white;
     padding: 10px 15px;
     border-radius: 12px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    z-index: 3;
-    min-width: 120px;
-  }
-  .card-tl { top: 10%; left: -20px; }
-  .card-br { bottom: 10%; right: -20px; }
-  .card-sm { font-size: 0.65rem; color: #666; text-transform: uppercase; }
-  .card-val { font-weight: bold; color: #0077b6; font-size: 0.9rem; }
-
-  /* --- VERSION TABLETTE / WEB --- */
-  @media (min-width: 1024px) {
-    .hero-inner {
-      flex-direction: row; /* WEB : Texte à gauche, Photo à droite */
-      text-align: left;
-      justify-content: space-between;
-      min-height: 80vh;
-      gap: 0;
-    }
-    .hero-left {
-      text-align: left;
-      flex: 1;
-    }
-    .hero-right {
-      flex: 1;
-      justify-content: flex-end;
-    }
-    .photo-wrapper {
-      width: 400px; /* Plus grand sur ordi */
-    }
-    .bubble-tl { width: 150px; height: 150px; top: -40px; left: -60px; }
-    .bubble-br { width: 200px; height: 200px; bottom: -40px; right: -80px; }
-  }
-</style>
+    box-shadow: 0 10px 20px
