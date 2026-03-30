@@ -1,8 +1,5 @@
 ---
-import { Image } from 'astro:assets';
 import { loadSiteConfig } from '../config';
-// Assure-toi que le nom du fichier correspond à celui dans ton dossier assets
-import logoHypotheca from '../assets/logo-hypotheca.png'; 
 
 const config = loadSiteConfig();
 
@@ -19,11 +16,10 @@ const nomDeFamille = nomArr.join(' ');
           {prenom} <span>{nomDeFamille}</span>
         </div>
         <div class="nav-separator" aria-hidden="true"></div>
-        <Image 
-          src={logoHypotheca} 
+        
+        <img 
+          src="/images/logo-hypotheca-standard.svg" 
           alt="Hypotheca" 
-          height={28} 
-          format="webp"
           class="agency-logo"
         />
       </div>
@@ -61,7 +57,7 @@ const nomDeFamille = nomArr.join(' ');
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1300px; /* Légèrement plus large pour accommoder le logo */
+    max-width: 1300px;
     margin: 0 auto;
     width: 100%;
     padding: 0 1.5rem;
@@ -87,7 +83,7 @@ const nomDeFamille = nomArr.join(' ');
   }
 
   .broker-identity span {
-    font-weight: 400; /* Style plus léger pour le nom de famille comme tu avais */
+    font-weight: 400;
     color: var(--clay);
   }
 
@@ -106,15 +102,15 @@ const nomDeFamille = nomArr.join(' ');
 
   /* --- STYLES SPÉCIFIQUES POUR LE MENU MOBILE --- */
   
-  @media (max-width: 1150px) {
-    /* On ajuste le menu un peu plus tôt car la barre est plus large maintenant */
+  /* On aligne tout à 1000px pour éviter la zone morte sur iPad */
+  @media (max-width: 1000px) {
     .nav-links { display: none; }
     .hamburger { display: flex; }
   }
 
   @media (max-width: 600px) {
     .nav-separator {
-      display: none; /* Gain de place sur mobile */
+      display: none;
     }
     .broker-identity {
       font-size: 1rem;
@@ -127,7 +123,6 @@ const nomDeFamille = nomArr.join(' ');
     }
   }
 
-  /* Ton style existant pour le hamburger... */
   .hamburger span {
     transition: transform 0.3s ease, opacity 0.3s ease;
     transform-origin: center;
@@ -143,12 +138,13 @@ const nomDeFamille = nomArr.join(' ');
     transform: translateY(-7px) rotate(-45deg);
   }
 
-  @media (max-width: 900px) {
+  /* Le menu déroulant s'active aussi à 1000px */
+  @media (max-width: 1000px) {
     .nav-links.open {
       display: flex !important;
       flex-direction: column;
       position: absolute;
-      top: 100%; /* S'aligne parfaitement sous la nav */
+      top: 100%;
       left: 0;
       right: 0;
       background: var(--white);
@@ -168,7 +164,6 @@ const nomDeFamille = nomArr.join(' ');
 </style>
 
 <script>
-  // Ton script reste identique car les IDs n'ont pas changé
   document.addEventListener('DOMContentLoaded', () => {
     const navbar = document.getElementById('navbar');
     const btn = document.getElementById('hamburger-btn');
@@ -201,8 +196,9 @@ const nomDeFamille = nomArr.join(' ');
       });
     });
 
+    // Ajusté à 1000px pour correspondre au CSS
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 900 && menuOpen) {
+      if (window.innerWidth > 1000 && menuOpen) {
         toggleMenu();
       }
     });
