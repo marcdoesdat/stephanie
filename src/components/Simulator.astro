@@ -1,4 +1,8 @@
 ---
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+
 interface Props {
   defaultRate?: number;
 }
@@ -7,116 +11,175 @@ const { defaultRate = 3.79 } = Astro.props;
 
 <section id="simulateur">
   <div class="section-inner">
+    
     <div class="fade-up">
       <div class="section-tag">Simulateur</div>
-      <div class="section-title">Combien puis-je<br /><em>emprunter ?</em></div>
-      <p class="section-sub">Entrez vos informations pour obtenir une estimation de votre capacité d'emprunt en quelques secondes.</p>
+      <h2 class="section-title">Combien puis-je<br /><em>emprunter ?</em></h2>
+      <p class="section-sub">
+        Entrez vos informations pour obtenir une estimation de votre capacité d'emprunt au Québec en quelques secondes.
+      </p>
     </div>
+    
     <div class="sim-wrapper">
+      
       <div class="sim-form fade-up">
         <div class="sim-group">
-          <label for="sim-revenu">Revenu annuel brut ($)</label>
-          <input type="number" id="sim-revenu" value="80000" />
+          <label for="sim-revenu">Revenu annuel brut de votre ménage ($)</label>
+          <input type="number" id="sim-revenu" value="80000" inputmode="decimal" min="0" />
         </div>
+        
         <div class="sim-group">
-          <label for="sim-dettes">Dettes mensuelles ($) <span style="font-weight:400;text-transform:none;letter-spacing:0">(auto, carte, prêt étudiant...)</span></label>
-          <input type="number" id="sim-dettes" value="500" />
+          <label for="sim-dettes">Dettes mensuelles ($) <span style="font-weight:400;text-transform:none;letter-spacing:0">(auto, cartes, prêts...)</span></label>
+          <input type="number" id="sim-dettes" value="500" inputmode="decimal" min="0" />
         </div>
+        
         <div class="sim-group">
           <label for="sim-mise">Mise de fonds disponible ($)</label>
-          <input type="number" id="sim-mise" value="50000" />
+          <input type="number" id="sim-mise" value="50000" inputmode="decimal" min="0" />
         </div>
+        
         <div class="sim-group">
           <label for="sim-taux">Taux d'intérêt estimé (%)</label>
-          <input type="number" id="sim-taux" value={defaultRate.toFixed(2)} step="0.01" />
+          <input type="number" id="sim-taux" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" />
         </div>
+        
         <div class="sim-group">
           <label for="sim-amort">Amortissement</label>
           <select id="sim-amort">
             <option value="25">25 ans</option>
-            <option value="30">30 ans</option>
+            <option value="30">30 ans (Mise de fonds > 20% requise)</option>
             <option value="20">20 ans</option>
           </select>
         </div>
+        
         <button class="sim-btn" id="sim-btn">Calculer ma capacité →</button>
       </div>
-      <div class="sim-results fade-up" style="transition-delay:.2s">
+      
+      <div class="sim-results fade-up" style="transition-delay:.2s" aria-live="polite">
         <div class="sim-result-main">
           <div class="sr-label">Prix d'achat maximal estimé</div>
           <div class="sr-val" id="sim-max">—</div>
           <div class="sr-sub" id="sim-sub">Entrez vos informations</div>
         </div>
+        
         <div class="sim-cards">
-          <div class="sim-card"><div class="sc-label">Prêt hypothécaire max</div><div class="sc-val" id="sim-pret">—</div></div>
-          <div class="sim-card"><div class="sc-label">Paiement mensuel</div><div class="sc-val" id="sim-pmt">—</div></div>
-          <div class="sim-card"><div class="sc-label">Ratio ABD</div><div class="sc-val" id="sim-abd">—</div></div>
-          <div class="sim-card"><div class="sc-label">Ratio ATD</div><div class="sc-val" id="sim-atd">—</div></div>
+          <div class="sim-card">
+            <div class="sc-label">Prêt hypothécaire max</div>
+            <div class="sc-val" id="sim-pret">—</div>
+          </div>
+          <div class="sim-card">
+            <div class="sc-label">Paiement mensuel</div>
+            <div class="sc-val" id="sim-pmt">—</div>
+          </div>
+          <div class="sim-card">
+            <div class="sc-label">Ratio ABD</div>
+            <div class="sc-val" id="sim-abd">—</div>
+          </div>
+          <div class="sim-card">
+            <div class="sc-label">Ratio ATD</div>
+            <div class="sc-val" id="sim-atd">—</div>
+          </div>
         </div>
+        
         <div class="sim-note">
-          💡 <strong>ABD</strong> (amortissement brut de la dette) : maximum 39% ·
-          <strong>ATD</strong> (amortissement total de la dette) : maximum 44%.
-          Ces ratios sont utilisés par les prêteurs pour approuver votre hypothèque.
+          💡 <strong>Stress Test :</strong> Capacité calculée selon le taux de qualification canadien (Taux + 2% ou 5.25%).<br/>
+          * Ce calcul inclut une estimation prudente de 250 $/mois pour les taxes et le chauffage.
+          <a href="#contact" style="display:block; margin-top:0.5rem; color:var(--clay); font-weight:bold; text-decoration:none;">
+            Validez ces chiffres avec {config.nom.split(' ')[0]} →
+          </a>
         </div>
       </div>
+      
     </div>
   </div>
 </section>
 
 <script>
-  function fmtSim(n: number): string {
-    return Math.round(n).toLocaleString('fr-CA') + ' $';
-  }
-
-  function simuler() {
-    const revenu = parseFloat((document.getElementById('sim-revenu') as HTMLInputElement).value) || 0;
-    const dettes = parseFloat((document.getElementById('sim-dettes') as HTMLInputElement).value) || 0;
-    const mise = parseFloat((document.getElementById('sim-mise') as HTMLInputElement).value) || 0;
-    const taux = parseFloat((document.getElementById('sim-taux') as HTMLInputElement).value) || 3.79;
-    const amort = parseInt((document.getElementById('sim-amort') as HTMLSelectElement).value) || 25;
-
-    if (!revenu) return;
-
-    const revMensuel = revenu / 12;
-    const tauxStress = Math.max(taux + 2, 5.25);
-    const r = tauxStress / 100 / 12;
-    const n = amort * 12;
-    const pmtMaxABD = revMensuel * 0.39;
-    const pmtMaxATD = revMensuel * 0.44 - dettes;
-    const pmtMax = Math.min(pmtMaxABD, pmtMaxATD);
-
-    if (pmtMax <= 0) {
-      document.getElementById('sim-max')!.textContent = 'Dettes trop élevées';
-      return;
+  document.addEventListener('DOMContentLoaded', () => {
+    function fmtSim(n: number): string {
+      return Math.round(n).toLocaleString('fr-CA') + ' $';
     }
 
-    const pretMax = pmtMax * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
-    const prixMax = pretMax + mise;
-    const rReel = taux / 100 / 12;
-    const pmtReel = pretMax * (rReel * Math.pow(1 + rReel, n)) / (Math.pow(1 + rReel, n) - 1);
-    const abd = (pmtReel / revMensuel) * 100;
-    const atd = ((pmtReel + dettes) / revMensuel) * 100;
+    function simuler() {
+      const revenu = parseFloat((document.getElementById('sim-revenu') as HTMLInputElement).value) || 0;
+      const dettes = parseFloat((document.getElementById('sim-dettes') as HTMLInputElement).value) || 0;
+      const mise = parseFloat((document.getElementById('sim-mise') as HTMLInputElement).value) || 0;
+      const taux = parseFloat((document.getElementById('sim-taux') as HTMLInputElement).value) || 3.79;
+      const amort = parseInt((document.getElementById('sim-amort') as HTMLSelectElement).value) || 25;
 
-    document.getElementById('sim-max')!.textContent = fmtSim(prixMax);
-    document.getElementById('sim-sub')!.textContent = 'Mise de fonds de ' + fmtSim(mise) + ' incluse';
-    document.getElementById('sim-pret')!.textContent = fmtSim(pretMax);
-    document.getElementById('sim-pmt')!.textContent = fmtSim(pmtReel) + '/mois';
+      if (!revenu) return;
 
-    const abdEl = document.getElementById('sim-abd')!;
-    abdEl.textContent = abd.toFixed(1) + '%';
-    abdEl.style.color = abd > 39 ? '#c0392b' : 'var(--clay)';
+      const revMensuel = revenu / 12;
+      
+      // Stress test Canadien (Le plus élevé entre 5.25% ou le taux + 2%)
+      const tauxStress = Math.max(taux + 2, 5.25);
+      
+      // Formule d'intérêt composé semestriellement (Standard Canadien)
+      const rStress = Math.pow(Math.pow(1 + (tauxStress / 100) / 2, 2), 1 / 12) - 1;
+      const rReel = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 12) - 1;
+      const n = amort * 12;
 
-    const atdEl = document.getElementById('sim-atd')!;
-    atdEl.textContent = atd.toFixed(1) + '%';
-    atdEl.style.color = atd > 44 ? '#c0392b' : 'var(--clay)';
-  }
+      // Estimation des frais de propriété mensuels (Taxes municipales, scolaires, chauffage)
+      // Sans cela, le simulateur donne une capacité d'emprunt faussement élevée.
+      const fraisProprieteEstimes = 250; 
 
-  // Bind events
-  ['sim-revenu', 'sim-dettes', 'sim-mise', 'sim-taux'].forEach((id) => {
-    document.getElementById(id)!.addEventListener('input', simuler);
+      // Calcul des mensualités maximales permises (Ratios normés au Canada)
+      const pmtMaxABD = (revMensuel * 0.39) - fraisProprieteEstimes;
+      const pmtMaxATD = (revMensuel * 0.44) - dettes - fraisProprieteEstimes;
+      const pmtMax = Math.min(pmtMaxABD, pmtMaxATD);
+
+      const maxEl = document.getElementById('sim-max')!;
+      if (pmtMax <= 0) {
+        maxEl.textContent = 'Dettes trop élevées';
+        maxEl.style.fontSize = '1.8rem';
+        return;
+      } else {
+        maxEl.style.fontSize = ''; // Reset
+      }
+
+      // Calcul de la valeur présente (Prêt Max) avec le taux de stress
+      const pretMax = pmtMax * (Math.pow(1 + rStress, n) - 1) / (rStress * Math.pow(1 + rStress, n));
+      const prixMax = pretMax + mise;
+
+      // Calcul du paiement réel avec le vrai taux (pas le taux de stress)
+      const pmtReel = pretMax * (rReel * Math.pow(1 + rReel, n)) / (Math.pow(1 + rReel, n) - 1);
+
+      // Calcul des ratios finaux avec le paiement de qualification (Stress Test) pour l'affichage
+      const paiementQualification = pmtMax;
+      const abd = ((paiementQualification + fraisProprieteEstimes) / revMensuel) * 100;
+      const atd = ((paiementQualification + fraisProprieteEstimes + dettes) / revMensuel) * 100;
+
+      // Mise à jour de l'interface
+      document.getElementById('sim-max')!.textContent = fmtSim(prixMax);
+      document.getElementById('sim-sub')!.textContent = 'Mise de fonds de ' + fmtSim(mise) + ' incluse';
+      document.getElementById('sim-pret')!.textContent = fmtSim(pretMax);
+      document.getElementById('sim-pmt')!.textContent = fmtSim(pmtReel) + ' / mois';
+
+      const abdEl = document.getElementById('sim-abd')!;
+      abdEl.textContent = abd.toFixed(1) + ' %';
+      abdEl.style.color = abd > 39.1 ? '#c0392b' : 'var(--clay)';
+
+      const atdEl = document.getElementById('sim-atd')!;
+      atdEl.textContent = atd.toFixed(1) + ' %';
+      atdEl.style.color = atd > 44.1 ? '#c0392b' : 'var(--clay)';
+    }
+
+    // Écouteurs d'événements pour la mise à jour en temps réel
+    ['sim-revenu', 'sim-dettes', 'sim-mise', 'sim-taux'].forEach((id) => {
+      document.getElementById(id)!.addEventListener('input', simuler);
+    });
+    document.getElementById('sim-amort')!.addEventListener('change', simuler);
+    
+    document.getElementById('sim-btn')!.addEventListener('click', (e) => {
+      e.preventDefault();
+      simuler();
+      // Petite animation de feedback visuel
+      const btn = document.getElementById('sim-btn')!;
+      btn.style.transform = 'scale(0.98)';
+      setTimeout(() => btn.style.transform = 'none', 150);
+    });
+
+    // Calcul initial au chargement
+    simuler();
   });
-  document.getElementById('sim-amort')!.addEventListener('change', simuler);
-  document.getElementById('sim-btn')!.addEventListener('click', simuler);
-
-  // Initial calculation
-  simuler();
 </script>
