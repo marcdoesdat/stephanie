@@ -1,4 +1,8 @@
 ---
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+
 interface Props {
   defaultRate?: number;
 }
@@ -11,8 +15,8 @@ const { defaultRate = 4.99 } = Astro.props;
       <div class="section-tag">Outil gratuit</div>
       <h2 class="section-title">Calculez vos <em>versements hypothécaires</em></h2>
       <p class="section-sub">
-        Utilisez notre simulateur pour estimer vos paiements à <strong>Repentigny</strong> ou ailleurs au Québec. 
-        Pour un calcul précis adapté à votre dossier, contactez Stéphanie.
+        Utilisez notre simulateur pour estimer vos paiements à <strong>{config.region.split(' ')[0]}</strong> ou ailleurs au Québec. 
+        Pour un calcul précis adapté à votre dossier, contactez {config.nom.split(' ')[0]}.
       </p>
     </div>
     
@@ -20,38 +24,165 @@ const { defaultRate = 4.99 } = Astro.props;
       <div class="calc-form fade-up">
         <div class="form-group">
           <label for="prix">Prix de la propriété ($)</label>
-          <input type="number" id="prix" placeholder="450 000" value="450000" inputmode="decimal" />
+          <input type="number" id="prix" placeholder="450000" value="450000" inputmode="decimal" min="0" />
         </div>
+        
         <div class="form-group">
           <label for="mise">Mise de fonds ($)</label>
-          <input type="number" id="mise" placeholder="45 000" value="45000" inputmode="decimal" />
+          <input type="number" id="mise" placeholder="45000" value="45000" inputmode="decimal" min="0" />
         </div>
+        
         <div class="form-group">
           <label for="taux">Taux d'intérêt (%)</label>
-          <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" />
+          <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" />
         </div>
-        <div class="form-group">
-          <label for="amort">Amortissement</label>
-          <select id="amort">
-            <option value="25">25 ans</option>
-            <option value="30">30 ans</option>
-            <option value="20">20 ans</option>
-            <option value="15">15 ans</option>
-          </select>
+        
+        <div class="form-row">
+          <div class="form-group" style="width: 100%;">
+            <label for="amort">Amortissement</label>
+            <select id="amort">
+              <option value="25">25 ans</option>
+              <option value="30">30 ans (Mise de fonds > 20%)</option>
+              <option value="20">20 ans</option>
+              <option value="15">15 ans</option>
+            </select>
+          </div>
+          <div class="form-group" style="width: 100%;">
+            <label for="freq">Fréquence</label>
+            <select id="freq">
+              <option value="12">Mensuel</option>
+              <option value="26">Aux deux semaines</option>
+              <option value="52">Hebdomadaire</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="freq">Fréquence des paiements</label>
-          <select id="freq">
-            <option value="12">Mensuel</option>
-            <option value="26">Aux deux semaines</option>
-            <option value="52">Hebdomadaire</option>
-          </select>
-        </div>
+        
         <button class="calc-btn" id="calc-btn">Obtenir mon estimation →</button>
       </div>
 
       <div class="calc-results fade-up" style="transition-delay:.2s">
+        <div class="result-card main">
+          <div class="result-label" id="label-freq">Versement mensuel</div>
+          <div class="result-value" id="res-paiement">0 $</div>
+          <div class="result-detail">Capital et intérêts seulement</div>
         </div>
+        
+        <div class="results-grid">
+          <div class="result-card small">
+            <div class="result-label">Montant du prêt</div>
+            <div class="result-value" id="res-pret">0 $</div>
+          </div>
+          <div class="result-card small">
+            <div class="result-label">Prime SCHL estimée</div>
+            <div class="result-value" id="res-schl">0 $</div>
+          </div>
+        </div>
+        
+        <div class="calc-disclaimer">
+          * Les résultats de ce calculateur sont fournis à titre indicatif et ne constituent pas une pré-approbation. 
+          Le calcul de la prime SCHL est une estimation basée sur les taux standards. <br/>
+          <a href="#contact" style="color: #a8c5b5; text-decoration: underline;">Obtenez une analyse personnalisée avec {config.nom.split(' ')[0]}</a>.
+        </div>
+      </div>
     </div>
   </div>
 </section>
+
+<script>
+  // On encapsule dans un DOMContentLoaded pour s'assurer que le HTML est chargé
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('calc-btn');
+    if (!btn) return;
+
+    // Fonction de calcul de la prime d'assurance prêt hypothécaire (SCHL/Sagen/CG)
+    function calculateSCHL(prix: number, mise: number): number {
+      const pourcentageMise = (mise / prix) * 100;
+      let tauxPrime = 0;
+
+      if (pourcentageMise < 5) return 0; // Impossible légalement
+      else if (pourcentageMise < 10) tauxPrime = 0.0400; // 4.00%
+      else if (pourcentageMise < 15) tauxPrime = 0.0310; // 3.10%
+      else if (pourcentageMise < 20) tauxPrime = 0.0280; // 2.80%
+      else return 0; // Pas de prime si 20% ou plus
+
+      return (prix - mise) * tauxPrime;
+    }
+
+    // Fonction de formatage en monnaie canadienne
+    function formatMoney(amount: number): string {
+      return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(amount);
+    }
+
+    // Le moteur de calcul principal
+    function doCalculation() {
+      // Récupération des valeurs des inputs
+      const prix = parseFloat((document.getElementById('prix') as HTMLInputElement).value) || 0;
+      const mise = parseFloat((document.getElementById('mise') as HTMLInputElement).value) || 0;
+      let taux = parseFloat((document.getElementById('taux') as HTMLInputElement).value) || 0;
+      const amort = parseInt((document.getElementById('amort') as HTMLSelectElement).value) || 25;
+      const freq = parseInt((document.getElementById('freq') as HTMLSelectElement).value) || 12;
+
+      // Validation de base
+      if (prix <= 0) return alert("Veuillez entrer un prix valide.");
+      if (mise >= prix) return alert("La mise de fonds ne peut pas être supérieure au prix.");
+
+      // Calcul SCHL et Prêt total
+      const schl = calculateSCHL(prix, mise);
+      const pretTotal = (prix - mise) + schl;
+
+      // Calcul de la mensualité canadienne (intérêt composé semestriellement)
+      // Formule exacte pour le Canada
+      const tauxMensuelCdn = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 12) - 1;
+      const totalMois = amort * 12;
+      
+      let paiementMensuel = 0;
+      if (taux > 0) {
+        paiementMensuel = (pretTotal * tauxMensuelCdn) / (1 - Math.pow(1 + tauxMensuelCdn, -totalMois));
+      } else {
+        paiementMensuel = pretTotal / totalMois;
+      }
+
+      // Ajustement selon la fréquence (Simplifié pour le web)
+      let paiementFinal = paiementMensuel;
+      let labelTexte = "Versement mensuel";
+
+      if (freq === 26) {
+        paiementFinal = (paiementMensuel * 12) / 26;
+        labelTexte = "Versement aux deux semaines";
+      } else if (freq === 52) {
+        paiementFinal = (paiementMensuel * 12) / 52;
+        labelTexte = "Versement hebdomadaire";
+      }
+
+      // Mise à jour de l'interface (DOM)
+      document.getElementById('res-paiement')!.textContent = formatMoney(paiementFinal);
+      document.getElementById('res-pret')!.textContent = formatMoney(pretTotal);
+      document.getElementById('res-schl')!.textContent = formatMoney(schl);
+      document.getElementById('label-freq')!.textContent = labelTexte;
+
+      // Animation des résultats
+      const resultsDiv = document.querySelector('.calc-results');
+      if (resultsDiv) {
+        resultsDiv.classList.remove('fade-up');
+        // Petit hack pour relancer l'animation
+        void (resultsDiv as HTMLElement).offsetWidth; 
+        resultsDiv.classList.add('fade-up', 'visible');
+      }
+    }
+
+    // Écouteurs d'événements
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      doCalculation();
+    });
+
+    // Optionnel : recalculer en temps réel si l'utilisateur change une valeur
+    const inputs = document.querySelectorAll('#calculateur input, #calculateur select');
+    inputs.forEach(input => {
+      input.addEventListener('change', doCalculation);
+    });
+
+    // Lancer un premier calcul au chargement pour remplir les zéros
+    doCalculation();
+  });
+</script>

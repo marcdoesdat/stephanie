@@ -1,5 +1,7 @@
 ---
-// src/components/FAQ.astro
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
 
 const faqs = [
   {
@@ -42,18 +44,24 @@ const faqSchema = {
       <div class="section-tag">FAQ</div>
       <h2 class="section-title">Questions <em>fréquentes</em></h2>
       <p class="section-sub">
-        Les réponses à vos questions sur l'hypothèque à <strong>Repentigny</strong> — sans le jargon bancaire.
+        Les réponses à vos questions sur l'hypothèque à <strong>{config.region.split(' ')[0]}</strong> — sans le jargon bancaire.
       </p>
     </div>
 
     <div class="faq-list fade-up">
-      {faqs.map((item) => (
+      {faqs.map((item, index) => (
         <div class="faq-item">
-          <div class="faq-q">
-            {item.q} 
-            <div class="faq-icon">+</div>
-          </div>
-          <div class="faq-a">
+          <h3>
+            <button 
+              class="faq-q" 
+              aria-expanded="false" 
+              aria-controls={`faq-answer-${index}`}
+            >
+              <span>{item.q}</span>
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-a" id={`faq-answer-${index}`}>
             <div class="faq-a-inner">{item.a}</div>
           </div>
         </div>
@@ -62,15 +70,47 @@ const faqSchema = {
   </div>
 </section>
 
+<style>
+  .faq-item h3 {
+    margin: 0;
+    padding: 0;
+  }
+  
+  button.faq-q {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    /* On hérite de tous tes styles du global.css */
+  }
+</style>
+
 <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} is:inline />
 
 <script>
-  document.querySelectorAll('.faq-q').forEach((q) => {
-    q.addEventListener('click', () => {
-      const item = q.parentElement!;
-      const isOpen = item.classList.contains('open');
-      document.querySelectorAll('.faq-item').forEach((i) => i.classList.remove('open'));
-      if (!isOpen) item.classList.add('open');
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.faq-q').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        if (!item) return;
+        
+        const isOpen = item.classList.contains('open');
+        
+        // Ferme tous les autres onglets et met à jour leur attribut ARIA
+        document.querySelectorAll('.faq-item').forEach((i) => {
+          i.classList.remove('open');
+          const otherBtn = i.querySelector('.faq-q');
+          if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+        });
+        
+        // Ouvre l'onglet cliqué si ce n'était pas déjà ouvert
+        if (!isOpen) {
+          item.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
     });
   });
 </script>
