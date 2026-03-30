@@ -4,7 +4,7 @@ import stephaniePhoto from '../assets/stephanie.jpg';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
-const { baseRate = 4.99 } = Astro.props;
+const { baseRate = 3.70 } = Astro.props; // J'ai mis 3.70 pour matcher ta capture
 function fmtRate(val: number | null | undefined): string {
   if (val == null) return '—';
   return val.toFixed(2).replace('.', ',') + ' %';
@@ -17,12 +17,14 @@ function fmtRate(val: number | null | undefined): string {
       <div class="hero-badge">Courtière hypothécaire agréée · {config.region}</div>
       
       <h1>Votre hypothèque,<br /><em>enfin expliquée</em><br />simplement.</h1>
+      
       <p>
         Je vous accompagne dans l'un des projets les plus importants de votre vie — sans jargon,
         sans pression, avec les meilleurs taux parmi plus de 20 prêteurs.
       </p>
+
       <div class="hero-btns">
-        <a href="#contact" class="btn-primary">Prendre rendez-vous →</a>
+        <a href="#contact" class="btn-primary">Prendre rendez-vous</a>
         <a href="#simulateur" class="btn-secondary">Calculateur</a>
       </div>
       
@@ -39,7 +41,7 @@ function fmtRate(val: number | null | undefined): string {
     </div>
     
     <div class="hero-right fade-up" style="transition-delay:.2s">
-      <div class="photo-wrapper">
+      <div class="photo-container">
         <div class="photo-frame">
           <Image
             src={stephaniePhoto}
@@ -50,14 +52,14 @@ function fmtRate(val: number | null | undefined): string {
           />
         </div>
         
-        <div class="bubble bubble-tl"></div>
-        <div class="bubble bubble-br"></div>
-        <div class="bubble bubble-center"></div>
+        <div class="hero-blob blob-1"></div>
+        <div class="hero-blob blob-2"></div>
         
         <div class="floating-card card-tl">
           <div class="card-sm">Taux variable</div>
           <div class="card-val">Dès {fmtRate(baseRate)}</div>
         </div>
+        
         <div class="floating-card card-br">
           <div class="card-sm">Satisfaction</div>
           <div class="card-val">⭐ 5 / 5</div>
@@ -68,92 +70,63 @@ function fmtRate(val: number | null | undefined): string {
 </section>
 
 <style>
-  #hero {
-    overflow: hidden;
-    padding: 80px 0 40px;
+  /* --- AJUSTEMENTS POUR HARMONISER AVEC GLOBAL.CSS --- */
+
+  /* Force l'affichage de la photo sur mobile (ton global.css la cache) */
+  @media (max-width: 900px) {
+    #hero {
+      padding: 6rem 1.5rem;
+      min-height: auto;
+    }
+    .hero-right {
+      display: flex !important; /* Force le display qui est à none dans global.css */
+      justify-content: center;
+      margin-top: 3rem;
+      width: 100%;
+    }
+    .photo-container {
+      width: 280px; /* Taille optimisée pour mobile */
+      position: relative;
+    }
+    .hero-left h1 {
+      font-size: 2.6rem;
+    }
   }
 
-  .hero-badge {
-    display: inline-block;
-    padding: 6px 16px;
-    background-color: rgba(0, 119, 182, 0.08);
-    color: #0077b6;
-    border-radius: 100px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-bottom: 24px;
-    border: 1px solid rgba(0, 119, 182, 0.2);
-    list-style: none;
-  }
-
-  .hero-badge::before {
-    content: none !important;
-  }
-
-  .hero-inner {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-  }
-
-  .hero-left {
-    text-align: center;
-    z-index: 5;
-  }
-
-  .hero-right {
-    position: relative;
-    width: 100%;
-    display: flex !important;
-    justify-content: center;
-    padding: 40px 0;
-  }
-
-  .photo-wrapper {
-    position: relative;
-    width: 280px;
-  }
-
-  .photo-frame {
-    position: relative;
-    z-index: 2;
-    border-radius: 24px;
-    overflow: hidden;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-  }
-
-  .photo-frame :global(img) {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-
-  .bubble {
+  /* Style des bulles (Blobs) avec tes couleurs exactes */
+  .hero-blob {
     position: absolute;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0077b6, #90e0ef);
-    opacity: 0.2;
-    filter: blur(8px);
-    z-index: 1;
-    animation: float 6s ease-in-out infinite;
+    filter: blur(40px);
+    z-index: -1;
+    opacity: 0.15;
+    animation: pulse 10s ease-in-out infinite;
   }
 
-  .bubble-tl { width: 80px; height: 80px; top: -20px; left: -30px; }
-  .bubble-br { width: 120px; height: 120px; bottom: -20px; right: -30px; animation-delay: 2s; }
-  .bubble-center { width: 60px; height: 60px; top: 40%; left: -40px; animation-delay: 4s; }
-
-  @keyframes float {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(10px, -15px); }
+  .blob-1 {
+    width: 120%;
+    height: 120%;
+    background: var(--clay);
+    top: -10%;
+    left: -10%;
   }
 
+  .blob-2 {
+    width: 80%;
+    height: 80%;
+    background: var(--forest);
+    bottom: -5%;
+    right: -5%;
+    animation-delay: 2s;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.15; }
+    50% { transform: scale(1.1); opacity: 0.2; }
+  }
+
+  /* On s'assure que les cartes flottantes utilisent tes variables */
   .floating-card {
-    position: absolute;
-    background: white;
-    padding: 10px 15px;
-    border-radius: 12px;
-    box-shadow: 0 10px 20px
+    z-index: 10;
+  }
+</style>
