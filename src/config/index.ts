@@ -1,4 +1,4 @@
-import config from './siteConfig.json';
+import configData from './siteConfig.json';
 
 export interface SiteConfig {
   nom: string;
@@ -9,13 +9,21 @@ export interface SiteConfig {
   telephone: string;
   courriel: string;
   site_url: string;
-  messenger_url: string;
-  calendly_url?: string;
+  messenger_url?: string; // Optionnel (au cas où il serait vidé)
+  calendly_url?: string;  // Optionnel
   meta_title: string;
   meta_description: string;
 }
 
+// Typage strict : TypeScript va lever une erreur ici si ton fichier JSON 
+// oublie une propriété obligatoire (contrairement à "as SiteConfig" qui forçait la validation).
+const config: SiteConfig = configData;
+
+/**
+ * Charge la configuration globale du site.
+ * Les données proviennent de `src/config/siteConfig.json`.
+ * * @returns {SiteConfig} Les informations centralisées de la courtière (Stéphanie).
+ */
 export function loadSiteConfig(): SiteConfig {
-  // Astro comprend le JSON parfaitement sans outils supplémentaires
-  return config as SiteConfig;
+  return config;
 }

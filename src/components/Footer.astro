@@ -1,9 +1,13 @@
 ---
 import { loadSiteConfig } from '../config';
+
 const config = loadSiteConfig();
 
 // Définit l'année actuelle dynamiquement
 const currentYear = new Date().getFullYear();
+
+// Nettoie l'URL pour l'affichage visuel (ex: "https://stephanieweyman.ca" devient "stephanieweyman.ca")
+const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 ---
 
 <footer>
@@ -11,62 +15,37 @@ const currentYear = new Date().getFullYear();
   {config.titre} · {config.organisation} · {config.region}<br />
   Numéro AMF : <strong>{config.amf}</strong><br /><br />
 
-  © {currentYear} {config.nom} · <a href={config.site_url}>stephanieweyman.ca</a> · Tous droits réservés
+  © {currentYear} {config.nom} · <a href={config.site_url} target="_blank" rel="noopener noreferrer">{displayUrl}</a> · Tous droits réservés
 
   <div class="footer-disclaimer">
-    <strong
-      style="color:rgba(255,255,255,.55);letter-spacing:.08em;text-transform:uppercase;font-size:.62rem"
-      >Clause de non-responsabilité — Taux et informations financières</strong
-    ><br /><br />
+    <strong class="disclaimer-title">
+      Clause de non-responsabilité — Taux et informations financières
+    </strong>
+    <br /><br />
 
-    Les taux et estimations affichés sur ce site sont fournis à titre <strong style="color:rgba(255,255,255,.45)"
-      >indicatif uniquement</strong
-    >. Ils ne constituent en aucun cas une offre de financement, une promesse de taux ni un
-    engagement de la part de {config.nom}, de {config.organisation} ou de tout prêteur partenaire.
-    Le taux hypothécaire réel dépend de votre profil de crédit, vos revenus, la valeur de la
-    propriété et les conditions du marché. {config.nom}, courtière hypothécaire inscrite auprès de
-    l'<strong style="color:rgba(255,255,255,.45)"
-      >Autorité des marchés financiers (AMF) du Québec</strong
-    > sous le numéro <strong style="color:rgba(255,255,255,.45)">{config.amf}</strong>, décline
-    toute responsabilité pour les décisions financières prises sur la base des informations
-    présentées sur ce site.
+    Les taux et estimations affichés sur ce site sont fournis à titre <strong>indicatif uniquement</strong>. 
+    Ils ne constituent en aucun cas une offre de financement, une promesse de taux ni un engagement de la part de {config.nom}, de {config.organisation} ou de tout prêteur partenaire. 
+    Le taux hypothécaire réel dépend de votre profil de crédit, de vos revenus, de la valeur de la propriété et des conditions du marché. 
+    <br /><br />
+    {config.nom}, courtière hypothécaire inscrite auprès de l'<strong>Autorité des marchés financiers (AMF) du Québec</strong> sous le numéro <strong>{config.amf}</strong>, décline toute responsabilité pour les décisions financières prises sur la base des informations présentées sur ce site.
   </div>
 </footer>
 
 <style>
-  /* Ajoute un peu de style pour que le texte ne soit pas collé sur les bords */
-  footer {
-    text-align: center;
-    padding: 60px 20px;
-    background-color: #1a1a1a; /* Ajuste selon ton design */
-    color: #ffffff;
-    font-size: 0.9rem;
-    line-height: 1.6;
+  /* La majorité du style provient déjà de ton global.css !
+    On ajoute juste de petits ajustements spécifiques ici.
+  */
+  .disclaimer-title {
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
   }
 
-  .footer-name {
-    display: block;
-    font-weight: bold;
-    font-size: 1.2rem;
-    margin-bottom: 5px;
-  }
-
-  .footer-disclaimer {
-    max-width: 800px;
-    margin: 40px auto 0;
-    padding-top: 30px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.75rem;
-    text-align: justify;
-  }
-
-  a {
-    color: #00b4d8;
-    text-decoration: none;
-  }
-
-  a:hover {
-    text-decoration: underline;
+  /* Sur mobile, on s'assure que le long texte légal est aligné à gauche pour une meilleure lecture */
+  @media (max-width: 900px) {
+    .footer-disclaimer {
+      text-align: left;
+    }
   }
 </style>

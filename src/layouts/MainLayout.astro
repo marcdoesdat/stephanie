@@ -1,5 +1,5 @@
 ---
-// Importe le composant SEO (assure-toi que le chemin est bon)
+// Importe le composant SEO
 import SEO from '../components/SEO.astro';
 
 interface Props {
@@ -12,21 +12,41 @@ const { title, description, ogImage } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="fr">
+<html lang="fr-CA">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
     <SEO 
       title={title} 
       description={description} 
       ogImage={ogImage} 
     />
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    
-    </head>
+  </head>
   <body>
     <slot />
   </body>
 </html>
+
+<style is:global>
+  /* --- STYLES GLOBAUX DU SITE --- */
+  
+  /* Assure un défilement fluide pour les ancres du menu (ex: #services) */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Rend le texte beaucoup plus net et lisible sur les écrans modernes (Mac/iPhone) */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+</style>
