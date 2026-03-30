@@ -1,11 +1,13 @@
 ---
-// Importe le composant SEO
 import SEO from '../components/SEO.astro';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
 
 interface Props {
   title: string;
   description: string;
-  ogImage?: string; // Optionnel : pour une image de partage spécifique
+  ogImage?: string;
 }
 
 const { title, description, ogImage } = Astro.props;
@@ -18,35 +20,70 @@ const { title, description, ogImage } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     
-    <SEO 
-      title={title} 
-      description={description} 
-      ogImage={ogImage} 
-    />
+    <SEO title={title} description={description} ogImage={ogImage} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <link 
+      rel="preload" 
+      as="style" 
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=DM+Sans:wght@400;500&display=swap" 
+    />
     <link
       href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
+
+    <script 
+      defer 
+      src="https://cloud.umami.is/script.js" 
+      data-website-id="9a2bb5e1-afd5-4d94-a89f-5584d5c44b12"
+      data-domains={config.site_url.replace(/^https?:\/\//, '')}
+    ></script>
   </head>
   <body>
-    <slot />
+    <a href="#main-content" class="sr-only">Passer au contenu principal</a>
+    
+    <main id="main-content">
+      <slot />
+    </main>
   </body>
 </html>
 
 <style is:global>
-  /* --- STYLES GLOBAUX DU SITE --- */
+  /* --- RÉGLAGES GLOBAUX --- */
   
-  /* Assure un défilement fluide pour les ancres du menu (ex: #services) */
   html {
     scroll-behavior: smooth;
+    /* Empêche le décalage horizontal sur mobile */
+    overflow-x: hidden;
   }
   
-  /* Rend le texte beaucoup plus net et lisible sur les écrans modernes (Mac/iPhone) */
   body {
+    margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Couleur de fond par défaut pour éviter le flash blanc en mode sombre */
+    background-color: var(--white, #ffffff);
+  }
+
+  /* Classe utilitaire pour cacher des éléments visuellement mais les garder pour les lecteurs d'écran */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Focus visible pour l'accessibilité au clavier */
+  :focus-visible {
+    outline: 2px solid var(--clay, #c47a52);
+    outline-offset: 4px;
   }
 </style>
