@@ -1,44 +1,133 @@
 ---
+import { Image } from 'astro:assets';
 import { loadSiteConfig } from '../config';
+// Assure-toi que le nom du fichier correspond à celui dans ton dossier assets
+import logoHypotheca from '../assets/logo-hypotheca.png'; 
 
 const config = loadSiteConfig();
 
-// On sépare le prénom et le nom pour appliquer le style "span" sur le nom de famille
+// On sépare le prénom et le nom
 const [prenom, ...nomArr] = config.nom.split(' ');
 const nomDeFamille = nomArr.join(' ');
 ---
 
 <nav id="navbar">
-  <a href="#hero" class="nav-logo">{prenom} <span>{nomDeFamille}</span></a>
-  
-  <ul class="nav-links" id="nav-menu">
-    <li><a href="#apropos">À propos</a></li>
-    <li><a href="#services">Services</a></li>
-    <li><a href="#taux-section">Taux</a></li>
-    <li><a href="#simulateur">Simulateur</a></li>
-    <li><a href="#calculateur">Calculateur</a></li>
-    <li><a href="#faq">FAQ</a></li>
-    <li><a href="#temoignages">Témoignages</a></li>
-    <li><a href="#contact" class="nav-cta">Consultation gratuite</a></li>
-  </ul>
-  
-  <button
-    class="hamburger"
-    id="hamburger-btn"
-    aria-label="Ouvrir le menu"
-    aria-expanded="false"
-    aria-controls="nav-menu"
-  >
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
+  <div class="nav-container">
+    <a href="#hero" class="nav-logo">
+      <div class="brand-wrapper">
+        <div class="broker-identity">
+          {prenom} <span>{nomDeFamille}</span>
+        </div>
+        <div class="nav-separator" aria-hidden="true"></div>
+        <Image 
+          src={logoHypotheca} 
+          alt="Hypotheca" 
+          height={28} 
+          format="webp"
+          class="agency-logo"
+        />
+      </div>
+    </a>
+    
+    <ul class="nav-links" id="nav-menu">
+      <li><a href="#apropos">À propos</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#taux-section">Taux</a></li>
+      <li><a href="#simulateur">Simulateur</a></li>
+      <li><a href="#calculateur">Calculateur</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#temoignages">Témoignages</a></li>
+      <li><a href="#contact" class="nav-cta">Consultation gratuite</a></li>
+    </ul>
+    
+    <button
+      class="hamburger"
+      id="hamburger-btn"
+      aria-label="Ouvrir le menu"
+      aria-expanded="false"
+      aria-controls="nav-menu"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
 </nav>
 
 <style>
+  /* --- AJUSTEMENTS POUR LE LOGO --- */
+  
+  .nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1300px; /* Légèrement plus large pour accommoder le logo */
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 1.5rem;
+  }
+
+  .nav-logo {
+    text-decoration: none;
+    z-index: 201;
+  }
+
+  .brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .broker-identity {
+    font-family: 'Lora', serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .broker-identity span {
+    font-weight: 400; /* Style plus léger pour le nom de famille comme tu avais */
+    color: var(--clay);
+  }
+
+  .nav-separator {
+    width: 1px;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.15);
+  }
+
+  .agency-logo {
+    width: auto;
+    height: 28px;
+    display: block;
+    object-fit: contain;
+  }
+
   /* --- STYLES SPÉCIFIQUES POUR LE MENU MOBILE --- */
   
-  /* L'animation du bouton Hamburger (Transformation en X) */
+  @media (max-width: 1150px) {
+    /* On ajuste le menu un peu plus tôt car la barre est plus large maintenant */
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+  }
+
+  @media (max-width: 600px) {
+    .nav-separator {
+      display: none; /* Gain de place sur mobile */
+    }
+    .broker-identity {
+      font-size: 1rem;
+    }
+    .agency-logo {
+      height: 22px;
+    }
+    .brand-wrapper {
+      gap: 0.5rem;
+    }
+  }
+
+  /* Ton style existant pour le hamburger... */
   .hamburger span {
     transition: transform 0.3s ease, opacity 0.3s ease;
     transform-origin: center;
@@ -54,13 +143,12 @@ const nomDeFamille = nomArr.join(' ');
     transform: translateY(-7px) rotate(-45deg);
   }
 
-  /* La classe .open qui gère l'affichage mobile via CSS plutôt que JS */
   @media (max-width: 900px) {
     .nav-links.open {
       display: flex !important;
       flex-direction: column;
       position: absolute;
-      top: 68px; /* Hauteur de ta barre de navigation */
+      top: 100%; /* S'aligne parfaitement sous la nav */
       left: 0;
       right: 0;
       background: var(--white);
@@ -80,6 +168,7 @@ const nomDeFamille = nomArr.join(' ');
 </style>
 
 <script>
+  // Ton script reste identique car les IDs n'ont pas changé
   document.addEventListener('DOMContentLoaded', () => {
     const navbar = document.getElementById('navbar');
     const btn = document.getElementById('hamburger-btn');
@@ -88,7 +177,6 @@ const nomDeFamille = nomArr.join(' ');
     
     let menuOpen = false;
 
-    // 1. Effet de défilement (Ombre sous la barre)
     window.addEventListener('scroll', () => {
       if (window.scrollY > 40) {
         navbar?.classList.add('scrolled');
@@ -97,30 +185,22 @@ const nomDeFamille = nomArr.join(' ');
       }
     });
 
-    // 2. Fonction pour ouvrir/fermer proprement
     function toggleMenu() {
       menuOpen = !menuOpen;
-      
-      // Accessibilité
       btn?.setAttribute('aria-expanded', String(menuOpen));
       btn?.setAttribute('aria-label', menuOpen ? 'Fermer le menu' : 'Ouvrir le menu');
-      
-      // Ajout/Retrait des classes CSS
       menu?.classList.toggle('open', menuOpen);
       btn?.classList.toggle('open', menuOpen);
     }
 
-    // 3. Clic sur le bouton hamburger
     btn?.addEventListener('click', toggleMenu);
 
-    // 4. Fermeture automatique quand on clique sur un lien (Crucial sur mobile !)
     links?.forEach(link => {
       link.addEventListener('click', () => {
         if (menuOpen) toggleMenu();
       });
     });
 
-    // 5. Sécurité : On referme le menu si l'utilisateur tourne sa tablette/redimensionne l'écran
     window.addEventListener('resize', () => {
       if (window.innerWidth > 900 && menuOpen) {
         toggleMenu();
