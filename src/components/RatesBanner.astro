@@ -124,7 +124,6 @@ function fmtRate(val: number | null | undefined): string {
     line-height: 1.6;
   }
 
-  /* Le petit point lumineux de statut */
   .status-indicator {
     display: inline-flex;
     align-items: center;
@@ -145,10 +144,11 @@ function fmtRate(val: number | null | undefined): string {
     background-color: #f59e0b; 
   }
 
-  /* La grille des cartes de taux */
+  /* --- MODIFICATION ICI --- */
   .taux-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    /* On définit des colonnes inégales : la première prend 0.7 part, les autres 1 part */
+    grid-template-columns: 0.7fr 1fr 1fr 1fr; 
     gap: 1.5rem;
     margin-bottom: 2rem;
   }
@@ -167,7 +167,6 @@ function fmtRate(val: number | null | undefined): string {
     box-shadow: 0 12px 24px rgba(0,0,0,0.06);
   }
 
-  /* La carte mise en évidence */
   .taux-cell.accent {
     background: var(--clay);
     border-color: var(--clay);
@@ -232,8 +231,19 @@ function fmtRate(val: number | null | undefined): string {
     display: none;
   }
 
-  /* Ajustements pour les petits écrans (téléphones) */
-  @media (max-width: 768px) {
+  /* --- AJUSTEMENTS RESPONSIFS --- */
+  @media (max-width: 1000px) {
+    .taux-grid {
+      /* Si l'écran devient trop petit, on revient à des colonnes égales ou 2x2 */
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .taux-grid {
+      /* Sur mobile, on empile tout sur une seule colonne */
+      grid-template-columns: 1fr;
+    }
     .taux-header {
       flex-direction: column;
       align-items: flex-start;
