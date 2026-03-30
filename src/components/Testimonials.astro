@@ -1,57 +1,80 @@
 ---
+import { loadSiteConfig } from '../config';
+const config = loadSiteConfig();
+
+// Tes témoignages (Facile à modifier ici !)
+const reviews = [
+  {
+    texte: "Une vraie championne des chiffres. Je la recommande fortement.",
+    auteur: "Steven W.",
+    detail: "Travailleur autonome · St-Jérome",
+    etoiles: 5
+  },
+  {
+    texte: "Très bon service avec Stéphanie! Je vous la recommande sans hésitations",
+    auteur: "Romanica A.",
+    detail: "Nouvel achat · Montréal",
+    etoiles: 5
+  },
+  {
+    texte: "Je suis client avec ma banque depuis que j'ai 7 ans et Stéphanie m'a trouvé un meilleur taux qu'eux. Merci!",
+    auteur: "Marc-André L.",
+    detail: "Renouvellement · Repentigny",
+    etoiles: 5
+  }
+];
+
+// Données structurées pour que Google affiche les petites étoiles dans les recherches
+const reviewSchema = {
+  "@context": "https://schema.org",
+  "@type": "FinancialService",
+  "name": config.nom,
+  "url": config.site_url,
+  // Modifie le "reviewCount" avec le vrai nombre d'avis Google de Stéphanie
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5",
+    "reviewCount": "12" 
+  }
+};
 ---
 
 <section id="temoignages">
   <div class="section-inner">
     <div class="fade-up" style="text-align:center">
       <div class="section-tag">Témoignages</div>
-      <div class="section-title">Ce que disent<br />mes <em>clients</em></div>
+      <h2 class="section-title">Ce que disent<br />mes <em>clients</em></h2>
     </div>
+    
     <div class="temoignages-grid">
-      <div class="temoignage-card fade-up">
-        <div class="stars">★★★★★</div>
-        <blockquote>
-          "Stéphanie nous a guidés à travers notre premier achat avec une patience et une clarté
-          remarquables. Elle nous a obtenu un taux qu'on n'aurait jamais trouvé seuls. Je recommande
-          à 100 %."
-        </blockquote>
-        <div class="temoignage-author">
-          <div class="author-avatar">👤</div>
-          <div>
-            <div class="author-name">Marie-Pier & François</div>
-            <div class="author-detail">Premiers acheteurs · Rosemont</div>
+      {reviews.map((review, index) => (
+        <div class="temoignage-card fade-up" style={`transition-delay: ${index * 0.1}s`}>
+          <div class="stars" aria-label={`${review.etoiles} étoiles sur 5`}>
+            {"★".repeat(review.etoiles)}
+          </div>
+          <blockquote>
+            "{review.texte}"
+          </blockquote>
+          <div class="temoignage-author">
+            <div class="author-avatar" aria-hidden="true">👤</div>
+            <div>
+              <div class="author-name">{review.auteur}</div>
+              <div class="author-detail">{review.detail}</div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="temoignage-card fade-up" style="transition-delay:.1s">
-        <div class="stars">★★★★★</div>
-        <blockquote>
-          "Après un refus de ma banque principale, Stéphanie a trouvé une solution en moins de 48h.
-          Professionnelle, disponible et vraiment à l'écoute. Je ne pourrais pas être plus
-          satisfait."
-        </blockquote>
-        <div class="temoignage-author">
-          <div class="author-avatar">👤</div>
-          <div>
-            <div class="author-name">Karim B.</div>
-            <div class="author-detail">Travailleur autonome · Laval</div>
-          </div>
-        </div>
-      </div>
-      <div class="temoignage-card fade-up" style="transition-delay:.2s">
-        <div class="stars">★★★★★</div>
-        <blockquote>
-          "Mon renouvellement approchait et je signais automatiquement avec ma banque. Stéphanie m'a
-          économisé plusieurs milliers de dollars juste en magasinant pour moi. Merci !"
-        </blockquote>
-        <div class="temoignage-author">
-          <div class="author-avatar">👤</div>
-          <div>
-            <div class="author-name">Isabelle T.</div>
-            <div class="author-detail">Renouvellement · Plateau-Mont-Royal</div>
-          </div>
-        </div>
-      </div>
+      ))}
+    </div>
+
+    <div class="fade-up" style="text-align: center; margin-top: 3.5rem; transition-delay: 0.3s;">
+      <a href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#c47a52">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        Voir tous mes avis sur Google
+      </a>
     </div>
   </div>
 </section>
+
+<script type="application/ld+json" set:html={JSON.stringify(reviewSchema)} is:inline />
