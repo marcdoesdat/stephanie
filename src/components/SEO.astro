@@ -1,72 +1,76 @@
 ---
-// src/components/SEO.astro
+import { loadSiteConfig } from '../config';
 
-// Définition des propriétés que ce composant accepte
+const config = loadSiteConfig();
+
 interface Props {
-  title?: string; // Titre de la page (si différent du par défaut)
-  description?: string; // Description SEO (crucial pour Google)
-  canonicalURL?: string | URL; // URL canonique pour éviter le contenu dupliqué
-  ogImage?: string; // Image pour le partage sur les réseaux sociaux
-  lang?: string; // Langue de la page (important pour l'accessibilité et SEO)
+  title?: string;
+  description?: string;
+  canonicalURL?: string | URL;
+  ogImage?: string;
 }
 
-// Valeurs par défaut pour ton site
+// On utilise ta configuration JSON pour les valeurs par défaut
 const {
-  title = "Stéphanie Weyman - Courtière hypothécaire",
-  description = "Services de cautionnement professionnels à Repentigny et environs. Contactez Stéphanie Weyman pour vos besoins de cautionnement d'entreprise.",
-  canonicalURL = new URL(Astro.url.pathname, Astro.site),
-  ogImage = "/images/og-image.jpg", // Crée une image par défaut à cet emplacement
-  lang = "fr-CA",
+  title,
+  description = config.meta_description,
+  // On utilise le site_url de ta config pour éviter les crashs de build si Astro.site n'est pas défini
+  canonicalURL = new URL(Astro.url.pathname, config.site_url),
+  ogImage = "/images/og-image.jpg", 
 } = Astro.props;
 
-// Construire le titre final
-const formattedTitle = title === "Stéphanie Weyman - Courtière hypothécaire" ? title : `${title} | Stéphanie Weyman`;
+// Construction intelligente du titre
+const formattedTitle = title ? `${title} | ${config.nom}` : config.meta_title;
 
-// Données structurées JSON-LD (Schema.org) pour une Personne (Stéphanie)
-// C'est ce qui aide Google à comprendre que c'est le site d'une personne offrant des services
-const personSchema = {
+// L'URL de l'image de partage (Facebook/LinkedIn) sécurisée
+const resolvedOgImage = new URL(ogImage, config.site_url);
+
+// Données structurées JSON-LD optimisées pour le SEO Local (Courtière)
+const schema = {
   "@context": "https://schema.org",
-  "@type": "Person",
-  "name": "Stéphanie Weyman",
-  "jobTitle": "Courtière hypothécaire",
-  "url": Astro.site?.toString() ?? canonicalURL.toString(),
-  "sameAs": [
-    // Ajoute ici ses liens professionnels s'ils existent (ex: LinkedIn)
-    // "https://hypotheca.ca/sweyman", 
-  ],
+  "@type": "FinancialService", // Plus spécifique et meilleur pour Google que "Person"
+  "name": config.nom,
+  "image": resolvedOgImage.toString(),
+  "url": config.site_url,
+  "telephone": config.telephone,
+  "email": config.courriel,
   "address": {
-    "@type": "54 rue Bourbon",
+    "@type": "PostalAddress",
+    "streetAddress": "54 rue Bourbon",
     "addressLocality": "Repentigny",
     "addressRegion": "QC",
     "addressCountry": "CA"
   },
+  "sameAs": [
+    config.messenger_url
+  ],
   "description": description
 };
 ---
 
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
 <title>{formattedTitle}</title>
 <meta name="description" content={description} />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="generator" content={Astro.generator} />
 <meta name="robots" content="index, follow" />
 <link rel="canonical" href={canonicalURL} />
-<meta charset="UTF-8" />
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<html lang={lang}>
 
 <meta property="og:type" content="website" />
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:title" content={formattedTitle} />
 <meta property="og:description" content={description} />
-<meta property="og:image" content={new URL(ogImage, Astro.site)} />
+<meta property="og:image" content={resolvedOgImage} />
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:url" content={canonicalURL} />
 <meta name="twitter:title" content={formattedTitle} />
 <meta name="twitter:description" content={description} />
-<meta name="twitter:image" content={new URL(ogImage, Astro.site)} />
+<meta name="twitter:image" content={resolvedOgImage} />
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="alternate icon" type="image/png" href="/favicon.png" />
 
-<script type="application/ld+json" set:html={JSON.stringify(personSchema)} is:inline />
+<script type="application/ld+json" set:html={JSON.stringify(schema)} is:inline />

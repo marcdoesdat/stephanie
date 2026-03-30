@@ -1,26 +1,32 @@
 ---
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.jpg';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
 ---
 
 <section id="apropos">
   <div class="section-inner">
     <div class="apropos-grid">
+      
       <div class="apropos-img fade-up">
         <Image
           src={stephaniePhoto}
-          alt="Stéphanie Weyman - Courtière hypothécaire chez Hypotheca"
+          alt={`${config.nom} - ${config.titre} chez ${config.organisation}`}
           width={500}
           height={500}
           loading="lazy"
         />
       </div>
+      
       <div class="fade-up" style="transition-delay:.15s">
         <div class="section-tag">À propos</div>
         <div class="apropos-text">
-          <h2>Bonjour, je suis Stéphanie Weyman.</h2>
+          <h2>Bonjour, je suis {config.nom}.</h2>
+          
           <p>
-            Courtière hypothécaire chez <strong>Hypotheca</strong> depuis plusieurs années, j'accompagne les
+            Courtière hypothécaire chez <strong>{config.organisation}</strong> depuis plusieurs années, j'accompagne les
             résidents de <strong>Repentigny</strong> ainsi que de partout au <strong>Québec</strong> à travers l'une des décisions financières les plus importantes de leur vie.
           </p>
           <p>
@@ -35,20 +41,34 @@ import stephaniePhoto from '../assets/stephanie.jpg';
           
           <ul class="apropos-values">
             <li class="val-item">
-              <span class="val-icon">🤝</span>
+              <span class="val-icon" aria-hidden="true">🤝</span>
               Transparence totale sur les taux et les conditions
             </li>
             <li class="val-item">
-              <span class="val-icon">⚡</span>
+              <span class="val-icon" aria-hidden="true">⚡</span>
               Réponse rapide, accompagnement jusqu'à la signature
             </li>
             <li class="val-item">
-              <span class="val-icon">🆓</span>
+              <span class="val-icon" aria-hidden="true">🆓</span>
               Mes services sont gratuits pour vous — payés par le prêteur
             </li>
           </ul>
         </div>
       </div>
+      
     </div>
   </div>
 </section>
+
+<style>
+  /* On redonne au H2 le look exact qu'avait le H3 dans ton global.css 
+    (Police Lora, couleur Clay, style Italique) 
+  */
+  .apropos-text h2 {
+    font-family: "Lora", serif;
+    font-size: 2rem;
+    font-style: italic;
+    color: var(--clay);
+    margin-bottom: 1.2rem;
+  }
+</style>
