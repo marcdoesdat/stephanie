@@ -1,45 +1,130 @@
 ---
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+
+// On sépare le prénom et le nom pour appliquer le style "span" sur le nom de famille
+const [prenom, ...nomArr] = config.nom.split(' ');
+const nomDeFamille = nomArr.join(' ');
 ---
 
 <nav id="navbar">
-  <a href="#hero" class="nav-logo">Stéphanie <span>Weyman</span></a>
+  <a href="#hero" class="nav-logo">{prenom} <span>{nomDeFamille}</span></a>
+  
   <ul class="nav-links" id="nav-menu">
     <li><a href="#apropos">À propos</a></li>
     <li><a href="#services">Services</a></li>
-    <li><a href="#simulateur">Simulateur</a></li>
     <li><a href="#taux-section">Taux</a></li>
+    <li><a href="#simulateur">Simulateur</a></li>
     <li><a href="#calculateur">Calculateur</a></li>
     <li><a href="#faq">FAQ</a></li>
     <li><a href="#temoignages">Témoignages</a></li>
-    <li><a href="#contact">Contact</a></li>
     <li><a href="#contact" class="nav-cta">Consultation gratuite</a></li>
   </ul>
+  
   <button
     class="hamburger"
     id="hamburger-btn"
     aria-label="Ouvrir le menu"
     aria-expanded="false"
     aria-controls="nav-menu"
-  ><span></span><span></span><span></span></button>
+  >
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
 </nav>
 
-<script>
-  window.addEventListener('scroll', () => {
-    document.getElementById('navbar')!.classList.toggle('scrolled', window.scrollY > 40);
-  });
+<style>
+  /* --- STYLES SPÉCIFIQUES POUR LE MENU MOBILE --- */
+  
+  /* L'animation du bouton Hamburger (Transformation en X) */
+  .hamburger span {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+  }
+  
+  .hamburger.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .hamburger.open span:nth-child(2) {
+    opacity: 0;
+  }
+  .hamburger.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
 
-  let menuOpen = false;
-  const btn = document.getElementById('hamburger-btn')!;
-  btn.addEventListener('click', () => {
-    menuOpen = !menuOpen;
-    btn.setAttribute('aria-expanded', String(menuOpen));
-    btn.setAttribute('aria-label', menuOpen ? 'Fermer le menu' : 'Ouvrir le menu');
-    const l = document.querySelector('.nav-links') as HTMLElement;
-    if (menuOpen) {
-      l.style.cssText =
-        'display:flex;flex-direction:column;position:absolute;top:68px;left:0;right:0;background:var(--white);padding:1.5rem 2rem;border-bottom:1px solid var(--border);gap:1rem;z-index:199';
-    } else {
-      l.style.display = 'none';
+  /* La classe .open qui gère l'affichage mobile via CSS plutôt que JS */
+  @media (max-width: 900px) {
+    .nav-links.open {
+      display: flex !important;
+      flex-direction: column;
+      position: absolute;
+      top: 68px; /* Hauteur de ta barre de navigation */
+      left: 0;
+      right: 0;
+      background: var(--white);
+      padding: 2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      gap: 1.5rem;
+      z-index: 199;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      animation: slideDown 0.3s ease forwards;
     }
+    
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const navbar = document.getElementById('navbar');
+    const btn = document.getElementById('hamburger-btn');
+    const menu = document.getElementById('nav-menu');
+    const links = menu?.querySelectorAll('a');
+    
+    let menuOpen = false;
+
+    // 1. Effet de défilement (Ombre sous la barre)
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 40) {
+        navbar?.classList.add('scrolled');
+      } else {
+        navbar?.classList.remove('scrolled');
+      }
+    });
+
+    // 2. Fonction pour ouvrir/fermer proprement
+    function toggleMenu() {
+      menuOpen = !menuOpen;
+      
+      // Accessibilité
+      btn?.setAttribute('aria-expanded', String(menuOpen));
+      btn?.setAttribute('aria-label', menuOpen ? 'Fermer le menu' : 'Ouvrir le menu');
+      
+      // Ajout/Retrait des classes CSS
+      menu?.classList.toggle('open', menuOpen);
+      btn?.classList.toggle('open', menuOpen);
+    }
+
+    // 3. Clic sur le bouton hamburger
+    btn?.addEventListener('click', toggleMenu);
+
+    // 4. Fermeture automatique quand on clique sur un lien (Crucial sur mobile !)
+    links?.forEach(link => {
+      link.addEventListener('click', () => {
+        if (menuOpen) toggleMenu();
+      });
+    });
+
+    // 5. Sécurité : On referme le menu si l'utilisateur tourne sa tablette/redimensionne l'écran
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 900 && menuOpen) {
+        toggleMenu();
+      }
+    });
   });
 </script>
