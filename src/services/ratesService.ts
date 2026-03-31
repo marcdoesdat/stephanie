@@ -77,13 +77,23 @@ function readCache(): HypothecaRates | null {
 
     const raw = fs.readFileSync(CACHE_FILE, 'utf-8');
     const cached: CachedRates = JSON.parse(raw);
-    const age = Date.now() - cached.timestamp;
 
-    if (age > CACHE_TTL_MS) {
-      console.log('[ratesService] Cache expired, will refresh');
+    // Basic validation of cached timestamp to avoid treating malformed
+    // cache files as fresh data.
+    if (
+      !cached ||
+      typeof cached.timestamp !== 'number' ||
+      !Number.isFinite(cached.timestamp)
+    ) {
+      console.warn('[ratesService] Ignoring cache: invalid or missing timestamp');
       return null;
     }
 
+    const age = Date.now() - cached.timestamp;
+    if (!Number.isFinite(age) || age < 0 || age > CACHE_TTL_MS) {
+      console.log('[ratesService] Cache expired or invalid age, will refresh');
+      return null;
+    }
     console.log(
       `[ratesService] Using cached rates (age: ${Math.round(age / 60_000)} min)`,
     );
