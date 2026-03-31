@@ -24,7 +24,7 @@ region: "Partout au Québec"
 
 amf: "3002365315"
 telephone: "514-949-7627"
-courriel: "stephanie@hypotheca.ca"
+courriel: "sweyman@hypotheca.ca"
 
 site_url: "https://stephanieweyman.ca"
 messenger_url: "https://m.me/stephanie.weyman.courtiere.hypothecaire"
