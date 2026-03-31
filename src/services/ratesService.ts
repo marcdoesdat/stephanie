@@ -1,3 +1,5 @@
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import { decodeHypotheca } from '../utils/hypothecaDecoder';
 
 export interface RateEntry {
@@ -50,6 +52,81 @@ const FALLBACK_ROWS: RateEntry[] = [
   { terme: '7 ans fixe',     hypotheca: 4.59, affiche: 6.69, type: 'fixe' },
   { terme: '10 ans fixe',    hypotheca: 5.04, affiche: 7.14, type: 'fixe' },
 ];
+
+/* ------------------------------------------------------------------ */
+/*  24-hour file-based cache                                          */
+/* ------------------------------------------------------------------ */
+
+const CACHE_DIR = path.resolve('.cache');
+const CACHE_FILE = path.join(CACHE_DIR, 'hypotheca-rates.json');
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+interface CachedRates {
+  timestamp: number;
+  rates: HypothecaRates;
+}
+
+/**
+ * Reads cached rates from disk.
+ * Returns the cached `HypothecaRates` if the file exists and is younger
+ * than 24 h, otherwise returns `null`.
+ */
+async function readCache(): Promise<HypothecaRates | null> {
+  try {
+    const raw = await fs.readFile(CACHE_FILE, 'utf-8');
+    const cached: CachedRates = JSON.parse(raw);
+
+    // Basic validation of cached timestamp to avoid treating malformed
+    // cache files as fresh data.
+    if (
+      !cached ||
+      typeof cached.timestamp !== 'number' ||
+      !Number.isFinite(cached.timestamp)
+    ) {
+      console.warn('[ratesService] Ignoring cache: invalid or missing timestamp');
+      return null;
+    }
+
+    const age = Date.now() - cached.timestamp;
+    if (!Number.isFinite(age) || age < 0 || age > CACHE_TTL_MS) {
+      console.log('[ratesService] Cache expired or invalid age, will refresh');
+      return null;
+    }
+    console.log(
+      `[ratesService] Using cached rates (age: ${Math.round(age / 60_000)} min)`,
+    );
+    return cached.rates;
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
+      return null; // no cache file yet – not an error
+    }
+    console.warn('[ratesService] Failed to read cache:', err);
+    return null;
+  }
+}
+
+/**
+ * Persists rates to disk so subsequent builds within 24 h can skip
+ * the network call to hypotheca.ca.
+ */
+async function writeCache(rates: HypothecaRates): Promise<void> {
+  try {
+    await fs.mkdir(CACHE_DIR, { recursive: true });
+    const data: CachedRates = { timestamp: Date.now(), rates };
+    const cacheDir = path.dirname(CACHE_FILE);
+    const tempFile = path.join(
+      cacheDir,
+      `.rates-cache.tmp-${process.pid}-${Date.now()}`,
+    );
+    await fs.writeFile(tempFile, JSON.stringify(data, null, 2), 'utf-8');
+    await fs.rename(tempFile, CACHE_FILE);
+    console.log('[ratesService] Rates cached successfully');
+  } catch (err) {
+    console.warn('[ratesService] Failed to write cache:', err);
+  }
+}
+
+/* ------------------------------------------------------------------ */
 
 function isValidRate(val: number): boolean {
   return val >= 0.5 && val <= 20;
@@ -190,9 +267,16 @@ function buildFull(rows: RateEntry[], flat: Partial<HypothecaRates>, source: 'li
 /**
  * Fetches live mortgage rates from hypotheca.ca, decodes the obfuscated
  * `occ("…")` values, and returns a structured rates object.
- * Falls back to static rates if the fetch or parse fails.
+ *
+ * A 24-hour file-based cache avoids redundant network requests during
+ * frequent builds.  Only *live* results are cached – fallback data is
+ * never written so the next build retries the remote fetch.
  */
 export async function fetchHypothecaRates(): Promise<HypothecaRates> {
+  // 1. Return cached rates if still valid (< 24 h old)
+  const cached = await readCache();
+  if (cached) return cached;
+
   const fetchedAt = new Date().toISOString();
   try {
     const res = await fetch('https://hypotheca.ca/taux-hypothecaires', {
@@ -220,7 +304,10 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates> {
     const hasAnyRate = Object.values(flat).some((v) => v !== null);
     if (!hasAnyRate) throw new Error('No valid rates decoded from the page');
 
-    return buildFull(rows, flat, 'live', fetchedAt);
+    // 2. Cache live results for subsequent builds
+    const result = buildFull(rows, flat, 'live', fetchedAt);
+    await writeCache(result);
+    return result;
   } catch (err) {
     console.warn('[ratesService] Failed to fetch Hypotheca rates, using fallback:', err);
     const flat = rowsToFlat(FALLBACK_ROWS);

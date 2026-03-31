@@ -2,6 +2,9 @@
 dist/
 .output/
 
+# local cache (hypotheca rates, etc.)
+.cache/
+
 # generated types
 .astro/
 
