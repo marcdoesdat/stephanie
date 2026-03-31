@@ -123,13 +123,30 @@ const { defaultRate = 3.79 } = Astro.props;
       // Sans cela, le simulateur donne une capacité d'emprunt faussement élevée.
       const fraisProprieteEstimes = 250; 
 
-      // Calcul des mensualités maximales permises (Ratios normés au Canada)
-      const pmtMaxABD = (revMensuel * 0.39) - fraisProprieteEstimes;
-      const pmtMaxATD = (revMensuel * 0.44) - dettes - fraisProprieteEstimes;
-      const pmtMax = Math.min(pmtMaxABD, pmtMaxATD);
+      // Fonction utilitaire pour calculer le prêt max selon les ratios ABD/ATD
+      function calcPretMax(abdRatio: number, atdRatio: number) {
+        const pmtABD = (revMensuel * abdRatio) - fraisProprieteEstimes;
+        const pmtATD = (revMensuel * atdRatio) - dettes - fraisProprieteEstimes;
+        const pmt = Math.min(pmtABD, pmtATD);
+        if (pmt <= 0) return { pmt: 0, pret: 0, prix: 0 };
+        const pret = pmt * (Math.pow(1 + rStress, n) - 1) / (rStress * Math.pow(1 + rStress, n));
+        return { pmt, pret, prix: pret + mise };
+      }
+
+      // Prêt assuré (mise < 20%) : ABD 39%, ATD 44%
+      // Prêt conventionnel (mise ≥ 20%) : ABD 35%, ATD 42%
+      const resAssure = calcPretMax(0.39, 0.44);
+      const resConventionnel = calcPretMax(0.35, 0.42);
+
+      // Déterminer le bon scénario selon le ratio mise / prix d'achat
+      const isAssure = resAssure.prix > 0 && (mise / resAssure.prix) < 0.20;
+      const res = isAssure ? resAssure : resConventionnel;
+      const abdLimit = isAssure ? 0.39 : 0.35;
+      const atdLimit = isAssure ? 0.44 : 0.42;
+      const typeLabel = isAssure ? 'assuré' : 'conventionnel';
 
       const maxEl = document.getElementById('sim-max')!;
-      if (pmtMax <= 0) {
+      if (res.pmt <= 0) {
         maxEl.textContent = 'Dettes trop élevées';
         maxEl.style.fontSize = '1.8rem';
         return;
@@ -137,9 +154,9 @@ const { defaultRate = 3.79 } = Astro.props;
         maxEl.style.fontSize = ''; // Reset
       }
 
-      // Calcul de la valeur présente (Prêt Max) avec le taux de stress
-      const pretMax = pmtMax * (Math.pow(1 + rStress, n) - 1) / (rStress * Math.pow(1 + rStress, n));
-      const prixMax = pretMax + mise;
+      const pretMax = res.pret;
+      const prixMax = res.prix;
+      const pmtMax = res.pmt;
 
       // Calcul du paiement réel avec le vrai taux (pas le taux de stress)
       const pmtReel = pretMax * (rReel * Math.pow(1 + rReel, n)) / (Math.pow(1 + rReel, n) - 1);
@@ -151,7 +168,7 @@ const { defaultRate = 3.79 } = Astro.props;
 
       // Mise à jour de l'interface
       document.getElementById('sim-max')!.textContent = fmtSim(prixMax);
-      document.getElementById('sim-sub')!.textContent = 'Mise de fonds de ' + fmtSim(mise) + ' incluse';
+      document.getElementById('sim-sub')!.textContent = 'Prêt ' + typeLabel + ' · Mise de fonds de ' + fmtSim(mise) + ' (' + (mise / prixMax * 100).toFixed(1) + ' %)';
       document.getElementById('sim-pret')!.textContent = fmtSim(pretMax);
       document.getElementById('sim-pmt')!.textContent = fmtSim(pmtReel) + ' / mois';
 

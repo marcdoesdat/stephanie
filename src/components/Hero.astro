@@ -37,20 +37,10 @@ function fmtRate(val: number | null | undefined): string {
           <div class="stat-num">100%</div>
           <div class="stat-label">Gratuit</div>
         </div>
-        <div class="hero-stats">
-  <div class="stat-item">
-    <div class="stat-num">20+</div>
-    <div class="stat-label">Prêteurs</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">100%</div>
-    <div class="stat-label">Gratuit</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">24h</div>
-    <div class="stat-label">Premier contact garanti</div>
-  </div>
-</div>
+        <div class="stat-item">
+          <div class="stat-num">24h</div>
+          <div class="stat-label">Premier contact garanti</div>
+        </div>
       </div>
     </div>
     
@@ -78,26 +68,71 @@ function fmtRate(val: number | null | undefined): string {
           <div class="card-sm">Satisfaction</div>
           <div class="card-val">⭐ 5 / 5</div>
         </div>
+
+        <div class="floating-card card-bl">
+          <img src="/images/logo-hypotheca.png" alt="Hypotheca" style="height:56px;width:auto;display:block;" />
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <style>
-  /* --- AJUSTEMENTS POUR HARMONISER AVEC GLOBAL.CSS --- */
-
-  /* Force la disparition du point du global.css pour ce badge spécifiquement */
   .hero-badge::before {
     display: none !important;
     content: none !important;
   }
 
-  /* Force l'affichage de la photo sur mobile (ton global.css la cache) */
   @media (max-width: 900px) {
     #hero {
       padding: 6rem 1.5rem;
       min-height: auto;
     }
     .hero-right {
-      display: flex !important; /* Force le display qui est à none dans global.css */
-      justify
+      display: flex !important;
+      justify-content: center;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+    .photo-container {
+      position: relative;
+      width: 100%;
+    }
+    .floating-card.card-tl {
+      left: -5%;
+      top: 5%;
+      transform: scale(0.85);
+    }
+    .floating-card.card-br {
+      right: -5%;
+      bottom: 8%;
+      transform: scale(0.85);
+    }
+    .floating-card.card-bl {
+      left: -5%;
+      bottom: 8%;
+      transform: scale(0.85);
+    }
+  }
+
+  @media (max-width: 520px) {
+    .hero-right {
+      max-width: 260px;
+    }
+    .floating-card.card-tl {
+      left: -2%;
+      top: 3%;
+      transform: scale(0.75);
+    }
+    .floating-card.card-br {
+      right: -2%;
+      bottom: 5%;
+      transform: scale(0.75);
+    }
+    .floating-card.card-bl {
+      left: -2%;
+      bottom: 5%;
+      transform: scale(0.75);
+    }
+  }
+</style>

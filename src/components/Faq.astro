@@ -2,6 +2,7 @@
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
 
 const faqs = [
   {
@@ -19,11 +20,22 @@ const faqs = [
   {
     q: "De combien de mise de fonds ai-je besoin pour acheter au Québec ?",
     a: "Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 999 999 $, c'est 5 % sur la première tranche et 10 % sur le reste. À partir de 1 000 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l'assurance SCHL."
-  }
-  // Tu peux ajouter les autres ici de la même façon...
+  },
+  {
+    q: "Combien de temps prend le processus d'approbation ?",
+    a: "En général, une pré-approbation peut être obtenue en 24 à 48 heures. Pour une approbation finale, comptez quelques jours à deux semaines selon la complexité de votre dossier. Je m'occupe de tout le suivi avec le prêteur pour accélérer le processus."
+  },
+  {
+    q: "C'est quoi la différence entre un taux fixe et un taux variable ?",
+    a: "Un taux fixe reste le même pendant toute la durée du terme — vos paiements ne changent jamais. Un taux variable fluctue selon le taux directeur de la Banque du Canada — vos paiements peuvent monter ou descendre. Le meilleur choix dépend de votre tolérance au risque et du contexte économique. On en discute ensemble."
+  },
+  {
+    q: "Mon renouvellement approche. Que dois-je faire ?",
+    a: "N'acceptez surtout pas la première offre de votre prêteur sans comparer ! Contactez-moi idéalement 4 à 6 mois avant l'échéance — c'est le moment idéal pour magasiner un meilleur taux. Le transfert vers un autre prêteur est souvent gratuit, et je m'occupe de tout."
+  },
 ];
 
-// Génération automatique du JSON-LD pour Google
+// JSON-LD FAQPage pour les résultats enrichis Google
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -44,7 +56,7 @@ const faqSchema = {
       <div class="section-tag">FAQ</div>
       <h2 class="section-title">Questions <em>fréquentes</em></h2>
       <p class="section-sub">
-        Les réponses à vos questions sur l'hypothèque à <strong>{config.region.split(' ')[0]}</strong> — sans le jargon bancaire.
+        Les réponses à vos questions sur l'hypothèque — sans le jargon bancaire.
       </p>
     </div>
 
@@ -61,11 +73,16 @@ const faqSchema = {
               <span class="faq-icon" aria-hidden="true">+</span>
             </button>
           </h3>
-          <div class="faq-a" id={`faq-answer-${index}`}>
+          <div class="faq-a" role="region" id={`faq-answer-${index}`}>
             <div class="faq-a-inner">{item.a}</div>
           </div>
         </div>
       ))}
+    </div>
+
+    <div class="fade-up" style="text-align:center;margin-top:2.5rem;">
+      <p style="font-size:.9rem;color:var(--muted);margin-bottom:1rem;">Vous avez une autre question ?</p>
+      <a href="#contact" class="btn-primary" style="font-size:.85rem;padding:.7rem 1.6rem;">Poser ma question à {prenom} →</a>
     </div>
   </div>
 </section>
@@ -83,7 +100,6 @@ const faqSchema = {
     color: inherit;
     font-family: inherit;
     text-align: left;
-    /* On hérite de tous tes styles du global.css */
   }
 </style>
 
@@ -98,14 +114,12 @@ const faqSchema = {
         
         const isOpen = item.classList.contains('open');
         
-        // Ferme tous les autres onglets et met à jour leur attribut ARIA
         document.querySelectorAll('.faq-item').forEach((i) => {
           i.classList.remove('open');
           const otherBtn = i.querySelector('.faq-q');
           if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
         });
         
-        // Ouvre l'onglet cliqué si ce n'était pas déjà ouvert
         if (!isOpen) {
           item.classList.add('open');
           btn.setAttribute('aria-expanded', 'true');

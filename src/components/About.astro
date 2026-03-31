@@ -4,6 +4,7 @@ import stephaniePhoto from '../assets/stephanie.jpg';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
 ---
 
 <section id="apropos">
@@ -13,17 +14,18 @@ const config = loadSiteConfig();
       <div class="apropos-img fade-up">
         <Image
           src={stephaniePhoto}
-          alt={`${config.nom} - ${config.titre} chez ${config.organisation}`}
+          alt={`${config.nom}, ${config.titre} chez ${config.organisation} à Repentigny`}
           width={500}
           height={500}
           loading="lazy"
+          decoding="async"
         />
       </div>
       
       <div class="fade-up" style="transition-delay:.15s">
         <div class="section-tag">À propos</div>
         <div class="apropos-text">
-          <h2>Bonjour, je suis {config.nom}.</h2>
+          <h2>Bonjour, je suis {prenom}.</h2>
           
           <p>
             Courtière hypothécaire chez <strong>{config.organisation}</strong> depuis plusieurs années, j'accompagne les
@@ -42,17 +44,19 @@ const config = loadSiteConfig();
           <ul class="apropos-values">
             <li class="val-item">
               <span class="val-icon" aria-hidden="true">🤝</span>
-              Transparence totale sur les taux et les conditions
+              <span>Transparence totale sur les taux et les conditions</span>
             </li>
             <li class="val-item">
               <span class="val-icon" aria-hidden="true">⚡</span>
-              Réponse rapide, accompagnement jusqu'à la signature
+              <span>Réponse rapide, accompagnement jusqu'à la signature</span>
             </li>
             <li class="val-item">
               <span class="val-icon" aria-hidden="true">🆓</span>
-              Mes services sont gratuits pour vous — payés par le prêteur
+              <span>Mes services sont gratuits pour vous — payés par le prêteur</span>
             </li>
           </ul>
+
+          <a href="#contact" class="btn-primary" style="margin-top:2rem;display:inline-block;font-size:.85rem;padding:.7rem 1.6rem;">Prendre rendez-vous →</a>
         </div>
       </div>
       
@@ -61,9 +65,6 @@ const config = loadSiteConfig();
 </section>
 
 <style>
-  /* On redonne au H2 le look exact qu'avait le H3 dans ton global.css 
-    (Police Lora, couleur Clay, style Italique) 
-  */
   .apropos-text h2 {
     font-family: "Lora", serif;
     font-size: 2rem;

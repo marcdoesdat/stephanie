@@ -10,67 +10,86 @@ interface Props {
   ogImage?: string;
 }
 
-// On utilise ta configuration JSON pour les valeurs par défaut
 const {
   title,
   description = config.meta_description,
-  // On utilise le site_url de ta config pour éviter les crashs de build si Astro.site n'est pas défini
   canonicalURL = new URL(Astro.url.pathname, config.site_url),
   ogImage = "/images/og-image.jpg", 
 } = Astro.props;
 
-// Construction intelligente du titre
 const formattedTitle = title ? `${title} | ${config.nom}` : config.meta_title;
-
-// L'URL de l'image de partage (Facebook/LinkedIn) sécurisée
 const resolvedOgImage = new URL(ogImage, config.site_url);
 
-// Données structurées JSON-LD optimisées pour le SEO Local (Courtière)
+// JSON-LD : FinancialService + Person (courtière)
 const schema = {
   "@context": "https://schema.org",
-  "@type": "FinancialService", // Plus spécifique et meilleur pour Google que "Person"
-  "name": config.nom,
+  "@type": "FinancialService",
+  "name": `${config.nom} — ${config.titre}`,
+  "alternateName": config.nom,
   "image": resolvedOgImage.toString(),
   "url": config.site_url,
   "telephone": config.telephone,
   "email": config.courriel,
+  "areaServed": {
+    "@type": "AdministrativeArea",
+    "name": config.region
+  },
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "54 rue Bourbon",
     "addressLocality": "Repentigny",
     "addressRegion": "QC",
+    "postalCode": "J6A 3V7",
     "addressCountry": "CA"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 45.7422,
+    "longitude": -73.4501
   },
   "sameAs": [
     config.messenger_url
-  ],
-  "description": description
+  ].filter(Boolean),
+  "description": description,
+  "priceRange": "Gratuit — consultation sans frais",
+  "serviceType": ["Courtage hypothécaire", "Prêt hypothécaire", "Refinancement", "Renouvellement hypothécaire"],
+  "hasCredential": {
+    "@type": "EducationalOccupationalCredential",
+    "credentialCategory": "Permis AMF",
+    "recognizedBy": {
+      "@type": "Organization",
+      "name": "Autorité des marchés financiers"
+    },
+    "identifier": config.amf
+  },
+  "parentOrganization": {
+    "@type": "Organization",
+    "name": config.organisation,
+    "url": "https://hypotheca.ca"
+  }
 };
 ---
-
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
 <title>{formattedTitle}</title>
 <meta name="description" content={description} />
 <meta name="generator" content={Astro.generator} />
 <meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#2D5A3D" />
 <link rel="canonical" href={canonicalURL} />
 
 <meta property="og:type" content="website" />
+<meta property="og:locale" content="fr_CA" />
+<meta property="og:site_name" content={config.nom} />
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:title" content={formattedTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={resolvedOgImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:url" content={canonicalURL} />
 <meta name="twitter:title" content={formattedTitle} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={resolvedOgImage} />
-
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="alternate icon" type="image/png" href="/favicon.png" />
 
 <script type="application/ld+json" set:html={JSON.stringify(schema)} is:inline />

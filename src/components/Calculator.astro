@@ -21,7 +21,7 @@ const { defaultRate = 4.99 } = Astro.props;
     </div>
     
     <div class="calc-wrapper">
-      <div class="calc-form fade-up">
+      <form class="calc-form fade-up" id="calc-form" novalidate>
         <div class="form-group">
           <label for="prix">Prix de la propriété ($)</label>
           <input type="number" id="prix" placeholder="450000" value="450000" inputmode="decimal" min="0" />
@@ -30,11 +30,12 @@ const { defaultRate = 4.99 } = Astro.props;
         <div class="form-group">
           <label for="mise">Mise de fonds ($)</label>
           <input type="number" id="mise" placeholder="45000" value="45000" inputmode="decimal" min="0" />
+          <small id="mise-pct" style="color:rgba(255,255,255,.5);font-size:.75rem;margin-top:.3rem;display:block;"></small>
         </div>
         
         <div class="form-group">
           <label for="taux">Taux d'intérêt (%)</label>
-          <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" />
+          <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="25" />
         </div>
         
         <div class="form-row">
@@ -42,7 +43,7 @@ const { defaultRate = 4.99 } = Astro.props;
             <label for="amort">Amortissement</label>
             <select id="amort">
               <option value="25">25 ans</option>
-              <option value="30">30 ans (Mise de fonds > 20%)</option>
+              <option value="30">30 ans (mise ≥ 20 %)</option>
               <option value="20">20 ans</option>
               <option value="15">15 ans</option>
             </select>
@@ -57,8 +58,8 @@ const { defaultRate = 4.99 } = Astro.props;
           </div>
         </div>
         
-        <button class="calc-btn" id="calc-btn">Obtenir mon estimation →</button>
-      </div>
+        <button type="submit" class="calc-btn">Obtenir mon estimation →</button>
+      </form>
 
       <div class="calc-results fade-up" style="transition-delay:.2s">
         <div class="result-card main">
@@ -77,6 +78,17 @@ const { defaultRate = 4.99 } = Astro.props;
             <div class="result-value" id="res-schl">0 $</div>
           </div>
         </div>
+
+        <div class="results-grid">
+          <div class="result-card small">
+            <div class="result-label">Intérêts totaux estimés</div>
+            <div class="result-value" id="res-interets">0 $</div>
+          </div>
+          <div class="result-card small">
+            <div class="result-label">Coût total</div>
+            <div class="result-value" id="res-cout-total">0 $</div>
+          </div>
+        </div>
         
         <div class="calc-disclaimer">
           * Les résultats de ce calculateur sont fournis à titre indicatif et ne constituent pas une pré-approbation. 
@@ -89,100 +101,123 @@ const { defaultRate = 4.99 } = Astro.props;
 </section>
 
 <script>
-  // On encapsule dans un DOMContentLoaded pour s'assurer que le HTML est chargé
   document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('calc-btn');
-    if (!btn) return;
+    const form = document.getElementById('calc-form');
+    if (!form) return;
 
-    // Fonction de calcul de la prime d'assurance prêt hypothécaire (SCHL/Sagen/CG)
+    const prixEl = document.getElementById('prix') as HTMLInputElement;
+    const miseEl = document.getElementById('mise') as HTMLInputElement;
+    const tauxEl = document.getElementById('taux') as HTMLInputElement;
+    const amortEl = document.getElementById('amort') as HTMLSelectElement;
+    const freqEl = document.getElementById('freq') as HTMLSelectElement;
+    const misePctEl = document.getElementById('mise-pct');
+
+    // Prime SCHL/Sagen/CG — taux standard 2024+
+    // Pour propriétés > 500K$, la tranche jusqu'à 500K est à un taux et le reste à un autre
     function calculateSCHL(prix: number, mise: number): number {
-      const pourcentageMise = (mise / prix) * 100;
-      let tauxPrime = 0;
+      const ratio = (mise / prix) * 100;
+      if (ratio >= 20) return 0;
+      if (ratio < 5) return 0; // illégal sous 5%
 
-      if (pourcentageMise < 5) return 0; // Impossible légalement
-      else if (pourcentageMise < 10) tauxPrime = 0.0400; // 4.00%
-      else if (pourcentageMise < 15) tauxPrime = 0.0310; // 3.10%
-      else if (pourcentageMise < 20) tauxPrime = 0.0280; // 2.80%
-      else return 0; // Pas de prime si 20% ou plus
+      const pret = prix - mise;
+      let tauxPrime: number;
 
-      return (prix - mise) * tauxPrime;
+      if (ratio < 10) tauxPrime = 0.0400;
+      else if (ratio < 15) tauxPrime = 0.0310;
+      else tauxPrime = 0.0280;
+
+      return pret * tauxPrime;
     }
 
-    // Fonction de formatage en monnaie canadienne
     function formatMoney(amount: number): string {
       return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(amount);
     }
 
-    // Le moteur de calcul principal
+    function updateMisePct() {
+      const prix = parseFloat(prixEl.value) || 0;
+      const mise = parseFloat(miseEl.value) || 0;
+      if (misePctEl && prix > 0) {
+        const pct = ((mise / prix) * 100).toFixed(1);
+        misePctEl.textContent = `≈ ${pct} % du prix`;
+      }
+    }
+
     function doCalculation() {
-      // Récupération des valeurs des inputs
-      const prix = parseFloat((document.getElementById('prix') as HTMLInputElement).value) || 0;
-      const mise = parseFloat((document.getElementById('mise') as HTMLInputElement).value) || 0;
-      let taux = parseFloat((document.getElementById('taux') as HTMLInputElement).value) || 0;
-      const amort = parseInt((document.getElementById('amort') as HTMLSelectElement).value) || 25;
-      const freq = parseInt((document.getElementById('freq') as HTMLSelectElement).value) || 12;
+      const prix = parseFloat(prixEl.value) || 0;
+      const mise = parseFloat(miseEl.value) || 0;
+      const taux = parseFloat(tauxEl.value) || 0;
+      const amort = parseInt(amortEl.value) || 25;
+      const freq = parseInt(freqEl.value) || 12;
 
-      // Validation de base
-      if (prix <= 0) return alert("Veuillez entrer un prix valide.");
-      if (mise >= prix) return alert("La mise de fonds ne peut pas être supérieure au prix.");
+      // Validation
+      if (prix <= 0 || mise < 0 || mise >= prix) return;
 
-      // Calcul SCHL et Prêt total
+      // Validation : 30 ans exige mise ≥ 20 %
+      if (amort === 30 && (mise / prix) < 0.2) {
+        amortEl.value = '25';
+        return doCalculation();
+      }
+
       const schl = calculateSCHL(prix, mise);
       const pretTotal = (prix - mise) + schl;
 
-      // Calcul de la mensualité canadienne (intérêt composé semestriellement)
-      // Formule exacte pour le Canada
+      // Calcul canadien : intérêt composé semestriellement
       const tauxMensuelCdn = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 12) - 1;
       const totalMois = amort * 12;
       
-      let paiementMensuel = 0;
+      let paiementMensuel: number;
       if (taux > 0) {
         paiementMensuel = (pretTotal * tauxMensuelCdn) / (1 - Math.pow(1 + tauxMensuelCdn, -totalMois));
       } else {
         paiementMensuel = pretTotal / totalMois;
       }
 
-      // Ajustement selon la fréquence (Simplifié pour le web)
+      // Intérêts totaux
+      const interetsTotaux = (paiementMensuel * totalMois) - pretTotal;
+      const coutTotal = pretTotal + interetsTotaux;
+
+      // Ajustement fréquence
       let paiementFinal = paiementMensuel;
-      let labelTexte = "Versement mensuel";
+      let labelTexte = 'Versement mensuel';
 
       if (freq === 26) {
         paiementFinal = (paiementMensuel * 12) / 26;
-        labelTexte = "Versement aux deux semaines";
+        labelTexte = 'Versement aux deux semaines';
       } else if (freq === 52) {
         paiementFinal = (paiementMensuel * 12) / 52;
-        labelTexte = "Versement hebdomadaire";
+        labelTexte = 'Versement hebdomadaire';
       }
 
-      // Mise à jour de l'interface (DOM)
       document.getElementById('res-paiement')!.textContent = formatMoney(paiementFinal);
       document.getElementById('res-pret')!.textContent = formatMoney(pretTotal);
       document.getElementById('res-schl')!.textContent = formatMoney(schl);
+      document.getElementById('res-interets')!.textContent = formatMoney(interetsTotaux);
+      document.getElementById('res-cout-total')!.textContent = formatMoney(coutTotal);
       document.getElementById('label-freq')!.textContent = labelTexte;
 
-      // Animation des résultats
+      updateMisePct();
+
       const resultsDiv = document.querySelector('.calc-results');
       if (resultsDiv) {
         resultsDiv.classList.remove('fade-up');
-        // Petit hack pour relancer l'animation
-        void (resultsDiv as HTMLElement).offsetWidth; 
+        void (resultsDiv as HTMLElement).offsetWidth;
         resultsDiv.classList.add('fade-up', 'visible');
       }
     }
 
-    // Écouteurs d'événements
-    btn.addEventListener('click', (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
       doCalculation();
     });
 
-    // Optionnel : recalculer en temps réel si l'utilisateur change une valeur
+    // Recalcul en temps réel
     const inputs = document.querySelectorAll('#calculateur input, #calculateur select');
-    inputs.forEach(input => {
-      input.addEventListener('change', doCalculation);
-    });
+    inputs.forEach(input => input.addEventListener('change', doCalculation));
 
-    // Lancer un premier calcul au chargement pour remplir les zéros
+    // Afficher le % de mise de fonds en temps réel
+    prixEl.addEventListener('input', updateMisePct);
+    miseEl.addEventListener('input', updateMisePct);
+
     doCalculation();
   });
 </script>

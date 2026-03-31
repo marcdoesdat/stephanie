@@ -1,0 +1,207 @@
+---
+import Layout from '../layouts/MainLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+const currentYear = new Date().getFullYear();
+---
+
+<Layout 
+  title={`Conditions d'utilisation | ${config.nom}`} 
+  description={`Conditions d'utilisation du site web de ${config.nom}, courtière hypothécaire.`}
+>
+  <Nav />
+
+  <main class="privacy-page">
+    <section class="container">
+      <header class="privacy-header">
+        <h1>Conditions d'utilisation</h1>
+        <p class="last-updated">Dernière mise à jour : Mars {currentYear}</p>
+      </header>
+
+      <div class="privacy-content">
+        <p>
+          Bienvenue sur le site web de <strong>{config.nom}</strong>, courtière hypothécaire chez <strong>{config.organisation}</strong>.
+          En utilisant ce site, vous acceptez les présentes conditions d'utilisation. Veuillez les lire attentivement.
+        </p>
+
+        <hr />
+
+        <h2>1. Objet du site</h2>
+        <p>
+          Ce site a pour but de présenter les services de courtage hypothécaire offerts par {config.nom}
+          et de fournir des outils d'estimation (calculateurs, simulateurs) à titre informatif uniquement.
+        </p>
+
+        <h2>2. Avertissement — Outils de calcul</h2>
+        <p>
+          Les résultats fournis par les calculateurs et simulateurs présents sur ce site sont des <strong>estimations à titre indicatif</strong> seulement. 
+          Ils ne constituent en aucun cas :
+        </p>
+        <ul>
+          <li>Une offre de financement ou un engagement de prêt.</li>
+          <li>Une pré-approbation hypothécaire.</li>
+          <li>Un conseil financier personnalisé.</li>
+        </ul>
+        <p>
+          Les taux affichés, les primes d'assurance (SCHL/Sagen/Canada Guaranty) et les montants calculés peuvent 
+          différer des conditions réelles offertes par les prêteurs. Seule une analyse complète de votre dossier 
+          par {config.nom.split(' ')[0]} permettra d'obtenir des chiffres précis.
+        </p>
+
+        <h2>3. Taux hypothécaires affichés</h2>
+        <p>
+          Les taux présentés sur ce site sont sujets à changement sans préavis et peuvent varier selon :
+        </p>
+        <ul>
+          <li>Votre profil de crédit et vos revenus.</li>
+          <li>Le type de propriété et sa valeur.</li>
+          <li>Le terme et le type de taux choisi (fixe ou variable).</li>
+          <li>Les conditions du marché au moment de votre demande.</li>
+        </ul>
+        <p>
+          Certaines conditions s'appliquent. Contactez {config.nom.split(' ')[0]} pour obtenir un taux personnalisé.
+        </p>
+
+        <h2>4. Propriété intellectuelle</h2>
+        <p>
+          L'ensemble du contenu de ce site (textes, images, logo, design) est protégé par le droit d'auteur. 
+          Toute reproduction, distribution ou utilisation sans autorisation préalable est interdite.
+        </p>
+
+        <h2>5. Responsabilité</h2>
+        <p>
+          {config.nom} s'efforce de maintenir les informations de ce site à jour et exactes, mais ne garantit pas 
+          l'absence d'erreurs ou d'omissions. En aucun cas {config.nom.split(' ')[0]} ne pourra être tenue responsable 
+          de décisions prises sur la base des informations présentées sur ce site sans consultation préalable.
+        </p>
+
+        <h2>6. Liens externes</h2>
+        <p>
+          Ce site peut contenir des liens vers des sites tiers (Banque du Canada, {config.organisation}, etc.). 
+          Ces liens sont fournis à titre informatif et {config.nom.split(' ')[0]} n'est pas responsable du contenu 
+          ni des pratiques de confidentialité de ces sites externes.
+        </p>
+
+        <h2>7. Réglementation applicable</h2>
+        <p>
+          {config.nom} est courtière hypothécaire détentrice d'un permis de l'Autorité des marchés financiers (AMF) 
+          du Québec, numéro de permis : <strong>{config.amf}</strong>. Les présentes conditions sont régies par les 
+          lois en vigueur dans la province de Québec, Canada.
+        </p>
+
+        <h2>8. Contact</h2>
+        <p>
+          Pour toute question concernant ces conditions d'utilisation :
+        </p>
+        <div class="contact-box">
+          <strong>{config.nom}</strong><br />
+          Courriel : <a href={`mailto:${config.courriel}`}>{config.courriel}</a><br />
+          Téléphone : {config.telephone}
+        </div>
+
+        <div class="legal-notice">
+          <p>
+            <em>Ces conditions peuvent être modifiées à tout moment. La date de dernière mise à jour en haut de cette page 
+            fait foi de la version en vigueur.</em>
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .privacy-page {
+    padding: 120px 20px 80px;
+    background-color: var(--white, #fdfdfd);
+    color: #333;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .privacy-header {
+    text-align: center;
+    margin-bottom: 50px;
+  }
+
+  h1 {
+    font-family: 'Lora', serif;
+    font-size: 2.5rem;
+    color: var(--ink, #1a1a1a);
+    margin-bottom: 10px;
+  }
+
+  .last-updated {
+    font-size: 0.9rem;
+    color: #666;
+    font-style: italic;
+  }
+
+  h2 {
+    font-family: 'Lora', serif;
+    font-size: 1.5rem;
+    color: var(--clay, #c47a52);
+    margin-top: 40px;
+    margin-bottom: 20px;
+  }
+
+  .contact-box {
+    background-color: #f4f1ee;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px dotted var(--clay, #c47a52);
+    margin: 20px 0;
+  }
+
+  .privacy-content p {
+    margin-bottom: 1.5rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  ul {
+    margin-bottom: 1.5rem;
+    padding-left: 20px;
+  }
+
+  li {
+    margin-bottom: 10px;
+  }
+
+  .legal-notice {
+    margin-top: 50px;
+    padding: 20px;
+    font-size: 0.85rem;
+    color: #777;
+    border-top: 1px solid #eee;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 40px 0;
+  }
+
+  a {
+    color: var(--clay, #c47a52);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 2rem; }
+    .privacy-page { padding-top: 100px; }
+  }
+</style>

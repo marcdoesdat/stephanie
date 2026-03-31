@@ -54,9 +54,9 @@ const displayRows = hypothecaRates?.rows?.length > 0
       <table style="min-width: 600px;">
         <thead>
           <tr>
-            <th scope="col">Terme</th>
+              <th scope="col" style="min-width: 110px; width: 1%; white-space: nowrap;">Terme</th>
             <th scope="col">Taux affiché</th>
-            <th scope="col" style="color:var(--forest);">Taux {config.organisation}</th>
+            <th scope="col" style="color:var(--forest); border-left:1px solid rgba(255,255,255,0.15);"><img src="/images/logo-hypotheca-standard.svg" alt="Hypotheca" style="height:6.7em;vertical-align:middle;" loading="lazy" /></th>
           </tr>
         </thead>
         <tbody>
@@ -69,7 +69,7 @@ const displayRows = hypothecaRates?.rows?.length > 0
                 {row.terme}
               </td>
               <td class="td-affiche">{fmtRate(row.affiche)}</td>
-              <td class={`td-hypotheca${row.type === 'variable' ? ' variable' : ''}`}>
+              <td class={`td-hypotheca${row.type === 'variable' ? ' variable' : ''}`} style="border-left:1px solid rgba(0,0,0,0.06);">
                 {fmtRate(row.hypotheca)}
               </td>
             </tr>

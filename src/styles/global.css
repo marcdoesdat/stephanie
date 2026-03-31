@@ -38,7 +38,7 @@ nav.scrolled{box-shadow:0 4px 30px rgba(0,0,0,.06)}
 .btn-primary:hover{background:var(--clay-dk);transform:translateY(-1px)}
 .btn-secondary{background:transparent;color:var(--ink);padding:.9rem 2rem;border-radius:50px;border:1.5px solid var(--border);font-size:.9rem;font-weight:500;text-decoration:none;transition:border-color .2s,transform .15s;display:inline-block}
 .btn-secondary:hover{border-color:var(--clay);transform:translateY(-1px)}
-.hero-stats{display:flex;gap:2rem;margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border)}
+.hero-stats{display:flex;gap:2rem;margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border);justify-content:center;text-align:center}
 .stat-num{font-family:"Lora",serif;font-size:2rem;font-weight:700;color:var(--clay);line-height:1}
 .stat-label{font-size:.75rem;color:var(--muted);margin-top:.2rem}
 .hero-right{position:relative}
@@ -49,6 +49,7 @@ nav.scrolled{box-shadow:0 4px 30px rgba(0,0,0,.06)}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .card-tl{top:8%;left:-10%;animation-delay:0s}
 .card-br{bottom:12%;right:-8%;animation-delay:1.5s}
+.card-bl{bottom:12%;left:-10%;animation-delay:3s}
 .card-sm{font-size:.75rem;color:var(--muted)}
 .card-val{font-family:"Lora",serif;font-size:1.1rem;font-weight:600;color:var(--forest)}
 
@@ -111,18 +112,22 @@ section{padding:6rem 4rem}
 
 /* TAUX SECTION (TABLE) */
 #taux-section{background:var(--white)}
-.taux-table-wrap{border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-top:3rem}
+.taux-table-wrap{border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-top:3rem;max-width:800px;margin-left:auto;margin-right:auto}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
 thead tr{background:var(--ink);color:white}
 th{padding:1.2rem 2rem;text-align:left;font-weight:600;font-size:.78rem;letter-spacing:.05em}
-th:not(:first-child){text-align:center}
+th:first-child{width:35%;text-align:left}
+th:nth-child(2){width:30%;text-align:center}
+th:last-child{width:35%;text-align:center}
 .taux-row td{padding:1.1rem 2rem;border-bottom:1px solid var(--border)}
 .taux-row:last-child td{border-bottom:none}
 .taux-row:nth-child(even) td{background:var(--sand)}
 .taux-row.featured td{background:#fef6f2}
-td:not(:first-child){text-align:center}
+td:first-child{text-align:left}
+td:nth-child(2){text-align:center}
+td:last-child{text-align:center}
 .td-affiche{color:var(--muted);text-decoration:line-through;font-size:.85rem}
-.td-hypotheca{font-family:"Lora",serif;font-size:1.2rem;font-weight:700;color:var(--forest)}
+.td-hypotheca{font-family:"Lora",serif;font-size:1rem;font-weight:700;color:var(--forest)}
 .td-hypotheca.variable{color:var(--clay)}
 .badge-pop{background:var(--clay);color:white;font-size:.58rem;padding:.2rem .6rem;border-radius:20px;letter-spacing:.08em;margin-right:.6rem;vertical-align:middle}
 .badge-pop.green{background:var(--forest)}
@@ -161,7 +166,7 @@ td:not(:first-child){text-align:center}
 .faq-item.open .faq-icon{transform:rotate(45deg);background:var(--clay);color:white}
 .faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s}
 .faq-a-inner{padding:0 1.8rem 1.4rem;font-size:.88rem;color:var(--muted);line-height:1.9}
-.faq-item.open .faq-a{max-height:300px}
+.faq-item.open .faq-a{max-height:500px}
 
 /* CALENDLY / RDV */
 #rdv{background:var(--white)}
