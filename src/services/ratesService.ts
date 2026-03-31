@@ -1,4 +1,4 @@
-import * as fs from 'node:fs';
+import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { decodeHypotheca } from '../utils/hypothecaDecoder';
 
@@ -71,11 +71,9 @@ interface CachedRates {
  * Returns the cached `HypothecaRates` if the file exists and is younger
  * than 24 h, otherwise returns `null`.
  */
-function readCache(): HypothecaRates | null {
+async function readCache(): Promise<HypothecaRates | null> {
   try {
-    if (!fs.existsSync(CACHE_FILE)) return null;
-
-    const raw = fs.readFileSync(CACHE_FILE, 'utf-8');
+    const raw = await fs.readFile(CACHE_FILE, 'utf-8');
     const cached: CachedRates = JSON.parse(raw);
 
     // Basic validation of cached timestamp to avoid treating malformed
@@ -98,7 +96,10 @@ function readCache(): HypothecaRates | null {
       `[ratesService] Using cached rates (age: ${Math.round(age / 60_000)} min)`,
     );
     return cached.rates;
-  } catch (err) {
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
+      return null; // no cache file yet – not an error
+    }
     console.warn('[ratesService] Failed to read cache:', err);
     return null;
   }
@@ -108,17 +109,17 @@ function readCache(): HypothecaRates | null {
  * Persists rates to disk so subsequent builds within 24 h can skip
  * the network call to hypotheca.ca.
  */
-function writeCache(rates: HypothecaRates): void {
+async function writeCache(rates: HypothecaRates): Promise<void> {
   try {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
+    await fs.mkdir(CACHE_DIR, { recursive: true });
     const data: CachedRates = { timestamp: Date.now(), rates };
     const cacheDir = path.dirname(CACHE_FILE);
     const tempFile = path.join(
       cacheDir,
       `.rates-cache.tmp-${process.pid}-${Date.now()}`,
     );
-    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
-    fs.renameSync(tempFile, CACHE_FILE);
+    await fs.writeFile(tempFile, JSON.stringify(data, null, 2), 'utf-8');
+    await fs.rename(tempFile, CACHE_FILE);
     console.log('[ratesService] Rates cached successfully');
   } catch (err) {
     console.warn('[ratesService] Failed to write cache:', err);
@@ -273,7 +274,7 @@ function buildFull(rows: RateEntry[], flat: Partial<HypothecaRates>, source: 'li
  */
 export async function fetchHypothecaRates(): Promise<HypothecaRates> {
   // 1. Return cached rates if still valid (< 24 h old)
-  const cached = readCache();
+  const cached = await readCache();
   if (cached) return cached;
 
   const fetchedAt = new Date().toISOString();
@@ -305,7 +306,7 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates> {
 
     // 2. Cache live results for subsequent builds
     const result = buildFull(rows, flat, 'live', fetchedAt);
-    writeCache(result);
+    await writeCache(result);
     return result;
   } catch (err) {
     console.warn('[ratesService] Failed to fetch Hypotheca rates, using fallback:', err);
