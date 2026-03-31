@@ -29,12 +29,19 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
     <br /><br />
     {config.nom}, courtière hypothécaire inscrite auprès de l'<strong>Autorité des marchés financiers (AMF) du Québec</strong> sous le numéro <strong>{config.amf}</strong>, décline toute responsabilité pour les décisions financières prises sur la base des informations présentées sur ce site.
   </div>
+
+  <div class="footer-legal-links">
+    <a href="/confidentialite">Confidentialité</a>
+    <span class="footer-sep">|</span>
+    <a href="/conditions">Conditions d'utilisation</a>
+    <span class="footer-sep">|</span>
+    <a href="https://hypotheca.ca/politique-du-cabinet" target="_blank" rel="noopener noreferrer">Politique du cabinet &amp; traitement des plaintes</a>
+    <span class="footer-sep">|</span>
+    <a href="https://hypotheca.ca/trouver-un-courtier-hypothecaire" target="_blank" rel="noopener noreferrer">Trouver un courtier Hypotheca</a>
+  </div>
 </footer>
 
 <style>
-  /* La majorité du style provient déjà de ton global.css !
-    On ajoute juste de petits ajustements spécifiques ici.
-  */
   .disclaimer-title {
     color: rgba(255, 255, 255, 0.7);
     letter-spacing: 0.08em;
@@ -42,16 +49,42 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
     font-size: 0.7rem;
   }
 
-  /* Sur mobile, on s'assure que le long texte légal est aligné à gauche pour une meilleure lecture */
+  .footer-legal-links {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 0.8rem;
+    font-size: 0.7rem;
+  }
+
+  .footer-legal-links a {
+    color: rgba(255, 255, 255, 0.45);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-legal-links a:hover {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .footer-sep {
+    color: rgba(255, 255, 255, 0.2);
+  }
+
   @media (max-width: 900px) {
     .footer-disclaimer {
       text-align: left;
     }
+    .footer-legal-links {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .footer-sep {
+      display: none;
+    }
   }
 </style>
-<p class="legal-links">
-  <a href="/confidentialite">Confidentialité</a> | 
-  <a href="/conditions">Conditions d'utilisation</a> | 
-  <a href="https://hypotheca.ca/politique-du-cabinet" target="_blank" rel="noopener noreferrer">Politique du cabinet & traitement des plaintes</a> | 
-  <a href="https://hypotheca.ca/trouver-un-courtier-hypothecaire" target="_blank" rel="noopener noreferrer">Trouver un courtier Hypotheca</a>
-</p>
