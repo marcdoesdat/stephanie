@@ -112,7 +112,13 @@ function writeCache(rates: HypothecaRates): void {
   try {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
     const data: CachedRates = { timestamp: Date.now(), rates };
-    fs.writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    const cacheDir = path.dirname(CACHE_FILE);
+    const tempFile = path.join(
+      cacheDir,
+      `.rates-cache.tmp-${process.pid}-${Date.now()}`,
+    );
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tempFile, CACHE_FILE);
     console.log('[ratesService] Rates cached successfully');
   } catch (err) {
     console.warn('[ratesService] Failed to write cache:', err);
