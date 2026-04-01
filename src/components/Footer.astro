@@ -11,11 +11,12 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
 ---
 
 <footer>
-  <span class="footer-name">{config.nom}</span>
-  {config.titre} · {config.organisation} · {config.region}<br />
-  Numéro AMF : <strong>{config.amf}</strong><br /><br />
+  <div class="footer-identity">
+    <span class="footer-name">{config.nom}</span> {config.titre} · {config.organisation} · {config.region}<br />
+    Hypotheca — Cabinet en courtage hypothécaire · AMF {config.amf} · {config.adresse}
+  </div>
 
-  © {currentYear} {config.nom} · <a href={config.site_url} target="_blank" rel="noopener noreferrer">{displayUrl}</a> · Tous droits réservés
+  <div class="footer-copy">© {currentYear} {config.nom} · <a href={config.site_url} target="_blank" rel="noopener noreferrer">{displayUrl}</a> · Tous droits réservés</div>
 
   <div class="footer-disclaimer">
     <strong class="disclaimer-title">
@@ -47,6 +48,16 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
     letter-spacing: 0.08em;
     text-transform: uppercase;
     font-size: 0.7rem;
+  }
+
+  .footer-identity {
+    line-height: 1.8;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .footer-copy {
+    margin-top: 1rem;
   }
 
   .footer-legal-links {

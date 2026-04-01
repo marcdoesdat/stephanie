@@ -36,9 +36,9 @@ const displayRows = hypothecaRates?.rows?.length > 0
     <div class="fade-up" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;margin-bottom:3rem;">
       <div>
         <div class="section-tag">Taux en vigueur</div>
-        <h2 class="section-title">Nos meilleurs<br /><em>taux hypothécaires</em></h2>
+        <h2 class="section-title">Taux hypothécaires<br /><em>via notre réseau</em></h2>
         <p class="section-sub">
-          Taux négociés exclusivement pour nos clients.
+          Taux obtenus via notre réseau de 20+ prêteurs.
           {hypothecaRates?.source === 'live' ? ' Mis à jour automatiquement.' : ' Taux indicatifs.'}
         </p>
       </div>
@@ -51,11 +51,16 @@ const displayRows = hypothecaRates?.rows?.length > 0
     </div>
     
     <div class="taux-table-wrap fade-up" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-      <table style="min-width: 600px;">
+      <table class="taux-table" style="min-width: 660px;">
         <thead>
           <tr>
-              <th scope="col" style="min-width: 110px; width: 1%; white-space: nowrap;">Terme</th>
-            <th scope="col" style="color:var(--forest);"><img src="/images/logo-hypotheca-standard.svg" alt="Hypotheca" style="height:6.7em;vertical-align:middle;" loading="lazy" /></th>
+            <th scope="col" style="min-width: 110px; width: 1%; white-space: nowrap;">Terme</th>
+            <th scope="col" class="th-hypotheca" style="color:var(--forest);">
+              <div class="th-hypotheca-inner">
+                 <img src="/images/logo-hypotheca.svg" alt="Hypotheca" style="height:6.7em;vertical-align:middle;" loading="lazy" />
+                <span class="th-hypotheca-label">Votre taux</span>
+              </div>
+            </th>
             <th scope="col" style="border-left:1px solid rgba(255,255,255,0.15);">Taux affiché</th>
           </tr>
         </thead>

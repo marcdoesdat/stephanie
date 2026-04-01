@@ -1,6 +1,7 @@
 import configData from './siteConfig.json';
 
 export interface SiteConfig {
+  adresse: string;
   nom: string;
   titre: string;
   organisation: string;

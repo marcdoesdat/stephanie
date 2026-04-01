@@ -14,6 +14,7 @@ const nomDeFamille = nomArr.join(' ');
       <div class="brand-wrapper">
         <div class="broker-identity">
           {prenom} <span>{nomDeFamille}</span>
+          <div class="cabinet-name">Hypotheca — Cabinet en courtage hypothécaire</div>
         </div>
       </div>
     </a>
@@ -78,6 +79,15 @@ const nomDeFamille = nomArr.join(' ');
   .broker-identity span {
     font-weight: 400;
     color: var(--clay);
+  }
+
+  .cabinet-name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 0.65rem;
+    color: var(--clay);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
   }
 
   .nav-separator {

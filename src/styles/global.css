@@ -116,14 +116,16 @@ section{padding:6rem 4rem}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
 thead tr{background:var(--ink);color:white}
 th{padding:1.2rem 2rem;text-align:left;font-weight:600;font-size:.78rem;letter-spacing:.05em}
-th:first-child{width:35%;text-align:left}
-th:nth-child(2){width:30%;text-align:center}
-th:last-child{width:35%;text-align:center}
+th:first-child{width:40%;text-align:left}
+th:nth-child(2){width:28%;text-align:center}
+th:last-child{width:32%;text-align:center}
+.th-hypotheca-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.15rem}
+.th-hypotheca-label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:white;line-height:1.2}
 .taux-row td{padding:1.1rem 2rem;border-bottom:1px solid var(--border)}
 .taux-row:last-child td{border-bottom:none}
 .taux-row:nth-child(even) td{background:var(--sand)}
 .taux-row.featured td{background:#fef6f2}
-td:first-child{text-align:left}
+td:first-child{text-align:left;white-space:nowrap}
 td:nth-child(2){text-align:center}
 td:last-child{text-align:center}
 .td-affiche{color:var(--muted);text-decoration:line-through;font-size:.85rem}
@@ -134,6 +136,10 @@ td:last-child{text-align:center}
 .taux-footer{margin-top:1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
 .taux-note-text{font-size:.7rem;color:var(--muted);line-height:1.8}
 .bdc-bar{margin-top:1.5rem;padding:1rem 1.5rem;background:var(--sand);border-radius:12px;font-size:.75rem;color:var(--muted);line-height:1.8}
+
+@media (max-width: 720px){
+  .taux-table{min-width:660px}
+}
 
 /* SIMULATEUR */
 #simulateur{background:var(--warm)}
@@ -155,6 +161,7 @@ td:last-child{text-align:center}
 .sim-card .sc-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem}
 .sim-card .sc-val{font-family:"Lora",serif;font-size:1.4rem;font-weight:700;color:var(--clay)}
 .sim-note{font-size:.7rem;color:var(--muted);line-height:1.7;margin-top:1rem;padding:1rem;background:var(--sand);border-radius:12px}
+.sim-warning{background:#fef3cd;color:#856404;border:1px solid #ffc107;border-radius:12px;padding:.8rem 1rem;font-size:.8rem;line-height:1.5}
 
 /* FAQ */
 #faq{background:var(--sand)}
