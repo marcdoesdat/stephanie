@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://stephanieweyman.ca/sitemap-index.xml
