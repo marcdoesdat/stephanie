@@ -2,6 +2,7 @@
 import SEO from '../components/SEO.astro';
 import { loadSiteConfig } from '../config';
 import '../styles/global.css';
+import stephanieFace from '../assets/stephanie.jpg';
 
 const config = loadSiteConfig();
 
@@ -19,7 +20,7 @@ const { title, description, ogImage } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/jpeg" href={stephanieFace.src} />
     
     <SEO title={title} description={description} ogImage={ogImage} />
 
