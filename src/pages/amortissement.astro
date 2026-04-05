@@ -1,0 +1,343 @@
+---
+import Layout from '../layouts/MainLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+---
+
+<Layout 
+  title={`Tableau d'amortissement | ${config.nom}`} 
+  description="Tableau d'amortissement hypothécaire complet — capital, intérêts et solde pour chaque versement."
+>
+  <Nav />
+
+  <main class="amort-page">
+    <div class="amort-hero">
+      <div class="amort-hero-inner">
+        <a href="/#calculateur" class="back-link">← Retour au calculateur</a>
+        <h1>Tableau d'<em>amortissement</em> complet</h1>
+        <p class="amort-params" id="amort-params"></p>
+      </div>
+    </div>
+
+    <div class="amort-summary-wrap">
+      <div class="amort-summary" id="amort-summary"></div>
+    </div>
+
+    <div class="amort-body">
+      <div class="amort-table-wrap">
+        <table class="amort-table" id="amort-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Versement</th>
+              <th>Capital</th>
+              <th>Intérêts</th>
+              <th>Solde restant</th>
+            </tr>
+          </thead>
+          <tbody id="amort-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="amort-footer-note">
+        * Ce tableau est fourni à titre indicatif seulement et ne constitue pas une pré-approbation.
+        <a href="/#contact">Contactez {config.nom.split(' ')[0]} pour une analyse personnalisée.</a>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const prix = parseFloat(params.get('prix') || '0');
+    const mise = parseFloat(params.get('mise') || '0');
+    const taux = parseFloat(params.get('taux') || '0');
+    const amort = parseInt(params.get('amort') || '25');
+    const freq = parseInt(params.get('freq') || '12');
+
+    if (prix <= 0) {
+      document.getElementById('amort-params')!.textContent = 'Le prix doit être supérieur à zéro. Retournez au calculateur.';
+      return;
+    }
+
+    if (mise < 0) {
+      document.getElementById('amort-params')!.textContent = 'La mise de fonds ne peut pas être négative. Retournez au calculateur.';
+      return;
+    }
+
+    if (mise >= prix) {
+      document.getElementById('amort-params')!.textContent = 'La mise de fonds doit être inférieure au prix de la propriété. Retournez au calculateur.';
+      return;
+    }
+    // SCHL
+    function calculateSCHL(prix: number, mise: number): number {
+      const ratio = (mise / prix) * 100;
+      if (ratio >= 20) return 0;
+      if (ratio < 5) return 0;
+      const pret = prix - mise;
+      let tauxPrime: number;
+      if (ratio < 10) tauxPrime = 0.0400;
+      else if (ratio < 15) tauxPrime = 0.0310;
+      else tauxPrime = 0.0280;
+      return pret * tauxPrime;
+    }
+
+    function formatMoney(amount: number): string {
+      return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 2 }).format(amount);
+    }
+
+    const schl = calculateSCHL(prix, mise);
+    const pretTotal = (prix - mise) + schl;
+
+    // Canadian mortgage: semi-annual compounding
+    const tauxMensuelCdn = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 12) - 1;
+    const totalMois = amort * 12;
+
+    let paiementMensuel: number;
+    if (taux > 0) {
+      paiementMensuel = (pretTotal * tauxMensuelCdn) / (1 - Math.pow(1 + tauxMensuelCdn, -totalMois));
+    } else {
+      paiementMensuel = pretTotal / totalMois;
+    }
+
+    // Frequency adjustment
+    let periodsPerYear = freq;
+    let tauxPeriode: number;
+    let totalPeriodes: number;
+    let paiementPeriode: number;
+    let freqLabel: string;
+
+    if (freq === 26) {
+      // Bi-weekly: recalculate properly
+      tauxPeriode = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 26) - 1;
+      totalPeriodes = amort * 26;
+      freqLabel = 'aux deux semaines';
+    } else if (freq === 52) {
+      tauxPeriode = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 52) - 1;
+      totalPeriodes = amort * 52;
+      freqLabel = 'hebdomadaire';
+    } else {
+      tauxPeriode = tauxMensuelCdn;
+      totalPeriodes = totalMois;
+      freqLabel = 'mensuel';
+    }
+
+    if (taux > 0) {
+      paiementPeriode = (pretTotal * tauxPeriode) / (1 - Math.pow(1 + tauxPeriode, -totalPeriodes));
+    } else {
+      paiementPeriode = pretTotal / totalPeriodes;
+    }
+
+    // Display params
+    const paramsEl = document.getElementById('amort-params')!;
+    paramsEl.textContent = `Prêt de ${formatMoney(pretTotal)} à ${taux}% sur ${amort} ans — versement ${freqLabel} de ${formatMoney(paiementPeriode)}`;
+
+    // Summary
+    const interetsTotaux = (paiementPeriode * totalPeriodes) - pretTotal;
+    const summaryEl = document.getElementById('amort-summary')!;
+    summaryEl.innerHTML = `
+      <div class="summary-card"><span class="s-label">Montant du prêt</span><span class="s-val">${formatMoney(pretTotal)}</span></div>
+      <div class="summary-card featured"><span class="s-label">Versement ${freqLabel}</span><span class="s-val">${formatMoney(paiementPeriode)}</span></div>
+      <div class="summary-card"><span class="s-label">Intérêts totaux</span><span class="s-val">${formatMoney(interetsTotaux)}</span></div>
+      <div class="summary-card"><span class="s-label">Coût total</span><span class="s-val">${formatMoney(pretTotal + interetsTotaux)}</span></div>
+    `;
+
+    // Build amortization table
+    const tbody = document.getElementById('amort-tbody')!;
+    let solde = pretTotal;
+
+    // For very long schedules, limit displayed rows but show all
+    const fragment = document.createDocumentFragment();
+
+    for (let i = 1; i <= totalPeriodes; i++) {
+      const interet = solde * tauxPeriode;
+      const capital = paiementPeriode - interet;
+      solde = Math.max(0, solde - capital);
+
+      // Last payment adjustment
+      if (i === totalPeriodes) {
+        solde = 0;
+      }
+
+      const tr = document.createElement('tr');
+      const cells = [
+        String(i),
+        formatMoney(paiementPeriode),
+        formatMoney(capital),
+        formatMoney(interet),
+        formatMoney(solde)
+      ];
+
+      cells.forEach((value) => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        tr.appendChild(td);
+      });
+      fragment.appendChild(tr);
+    }
+
+    tbody.appendChild(fragment);
+  });
+</script>
+
+<style is:global>
+  /* ── PAGE LAYOUT ── */
+  .amort-page {
+    background: var(--white);
+    min-height: 100vh;
+  }
+  .amort-hero {
+    background: var(--forest);
+    padding: 7rem 2rem 3rem;
+  }
+  .amort-hero-inner {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .82rem;
+    color: rgba(255,255,255,.55);
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 1.8rem;
+    transition: color .2s;
+  }
+  .back-link:hover { color: white; }
+  .amort-hero h1 {
+    font-family: "Lora", serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: .7rem;
+    line-height: 1.15;
+  }
+  .amort-hero h1 em { font-style: italic; color: #a8c5b5; }
+  .amort-params {
+    font-size: .9rem;
+    color: rgba(255,255,255,.55);
+    line-height: 1.7;
+  }
+
+  /* ── SUMMARY CARDS ── */
+  .amort-summary-wrap {
+    background: var(--sand);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem;
+  }
+  .amort-summary {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  .summary-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.4rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+  .summary-card.featured {
+    background: var(--forest);
+    border-color: transparent;
+  }
+  .s-label {
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .summary-card.featured .s-label { color: rgba(255,255,255,.55); }
+  .s-val {
+    font-family: "Lora", serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--forest);
+    line-height: 1;
+  }
+  .summary-card.featured .s-val { color: white; }
+
+  /* ── TABLE ── */
+  .amort-body {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+  }
+  .amort-table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    max-height: 65vh;
+    overflow-y: auto;
+  }
+  .amort-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+  }
+  .amort-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .amort-table thead tr { background: var(--ink); }
+  .amort-table th {
+    padding: 1rem 1.4rem;
+    text-align: right;
+    font-weight: 600;
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.7);
+    border-bottom: none;
+  }
+  .amort-table th:first-child { text-align: center; width: 56px; color: rgba(255,255,255,.4); }
+  .amort-table td {
+    padding: .75rem 1.4rem;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .amort-table td:first-child {
+    text-align: center;
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 500;
+  }
+  .amort-table tbody tr:nth-child(even) td { background: var(--sand); }
+  .amort-table tbody tr:hover td { background: var(--warm); }
+
+  .amort-footer-note {
+    margin-top: 1.8rem;
+    font-size: .75rem;
+    color: var(--muted);
+    line-height: 1.9;
+    padding: 1rem 1.2rem;
+    background: var(--sand);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .amort-footer-note a { color: var(--clay); text-decoration: underline; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .amort-summary { grid-template-columns: 1fr 1fr; }
+    .amort-table-wrap { overflow-x: auto; }
+    .amort-table { min-width: 480px; }
+    .amort-hero h1 { font-size: 1.8rem; }
+  }
+</style>

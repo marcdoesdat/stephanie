@@ -109,6 +109,15 @@ section{padding:6rem 4rem}
 .result-card.small{padding:1.3rem 1.5rem}
 .result-card.small .result-value{font-size:1.6rem}
 .calc-disclaimer{font-size:.7rem;color:rgba(255,255,255,.35);margin-top:1.5rem;line-height:1.6}
+.mise-input-row{display:flex;gap:.5rem;align-items:stretch}
+.mise-input-row input{flex:1;min-width:0}
+.mise-toggle-group{display:flex;flex-shrink:0;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.2)}
+.mise-toggle-btn{width:40px;background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.45);font-family:"DM Sans",sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:background .2s,color .2s}
+.mise-toggle-btn:first-child{border-right:1px solid rgba(255,255,255,.15)}
+.mise-toggle-btn.active{background:rgba(255,255,255,.22);color:white}
+.mise-toggle-btn:hover:not(.active){background:rgba(255,255,255,.14)}
+.amort-link{display:block;text-align:center;color:#a8c5b5;font-size:.88rem;font-weight:600;text-decoration:none;padding:.9rem 1.2rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px;transition:background .2s}
+.amort-link:hover{background:rgba(255,255,255,.12)}
 
 /* TAUX SECTION (TABLE) */
 #taux-section{background:var(--white)}
@@ -218,6 +227,7 @@ td:last-child{text-align:center}
 .contact-icon{width:40px;height:40px;border-radius:12px;background:var(--white);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1rem}
 .contact-form{background:var(--white);border-radius:24px;padding:2.5rem;border:1px solid var(--border)}
 .contact-form .cform-label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
+.cform-optional{font-size:.68rem;font-weight:400;letter-spacing:.03em;text-transform:none;color:var(--muted);margin-left:.3rem}
 .contact-form input,.contact-form select,.contact-form textarea{width:100%;padding:.85rem 1.1rem;background:var(--sand);border:1.5px solid var(--border);border-radius:12px;color:var(--ink);font-family:"DM Sans",sans-serif;font-size:.95rem;transition:border-color .2s;margin-bottom:1.2rem}
 .contact-form input:focus,.contact-form select:focus,.contact-form textarea:focus{outline:none;border-color:var(--clay);background:var(--white)}
 .contact-form textarea{resize:vertical;min-height:110px}
