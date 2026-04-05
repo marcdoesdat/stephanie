@@ -146,7 +146,7 @@ const { defaultRate = 4.99 } = Astro.props;
         btnDollar.classList.add('active');
         btnPct.classList.remove('active');
         if (prix > 0) {
-          miseEl.value = Math.round(prix * miseVal / 100).toString();
+          miseEl.value = Math.round(prix * (miseVal / 100)).toString();
         }
         miseEl.placeholder = '45000';
         miseEl.removeAttribute('max');

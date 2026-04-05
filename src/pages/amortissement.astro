@@ -61,11 +61,20 @@ const config = loadSiteConfig();
     const amort = parseInt(params.get('amort') || '25');
     const freq = parseInt(params.get('freq') || '12');
 
-    if (prix <= 0 || mise < 0 || mise >= prix) {
-      document.getElementById('amort-params')!.textContent = 'Paramètres invalides. Retournez au calculateur.';
+    if (prix <= 0) {
+      document.getElementById('amort-params')!.textContent = 'Le prix doit être supérieur à zéro. Retournez au calculateur.';
       return;
     }
 
+    if (mise < 0) {
+      document.getElementById('amort-params')!.textContent = 'La mise de fonds ne peut pas être négative. Retournez au calculateur.';
+      return;
+    }
+
+    if (mise >= prix) {
+      document.getElementById('amort-params')!.textContent = 'La mise de fonds doit être inférieure au prix de la propriété. Retournez au calculateur.';
+      return;
+    }
     // SCHL
     function calculateSCHL(prix: number, mise: number): number {
       const ratio = (mise / prix) * 100;
@@ -157,13 +166,19 @@ const config = loadSiteConfig();
       }
 
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${i}</td>
-        <td>${formatMoney(paiementPeriode)}</td>
-        <td>${formatMoney(capital)}</td>
-        <td>${formatMoney(interet)}</td>
-        <td>${formatMoney(solde)}</td>
-      `;
+      const cells = [
+        String(i),
+        formatMoney(paiementPeriode),
+        formatMoney(capital),
+        formatMoney(interet),
+        formatMoney(solde)
+      ];
+
+      cells.forEach((value) => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        tr.appendChild(td);
+      });
       fragment.appendChild(tr);
     }
 

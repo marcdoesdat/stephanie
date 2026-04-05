@@ -93,7 +93,7 @@ section{padding:6rem 4rem}
 .calc-form{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:2.5rem}
 .form-group{margin-bottom:1.5rem}
 .form-group label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:.6rem}
-.form-group input,.form-group select{width:100%;padding:.85rem 1.1rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:white;font-family:"DM Sans",sans-serif;font-size:.95rem;transition:border-color .2s;-webkit-appearance:none}
+.form-group input,.form-group select{width:100%;padding:.85rem 1.1rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:white;font-family:"DM Sans",sans-serif;font-size:.95rem;transition:border-color .2s;-webkit-appearance:none;appearance:none}
 .form-group input:focus,.form-group select:focus{outline:none;border-color:rgba(196,122,82,.7)}
 .form-group input::placeholder{color:rgba(255,255,255,.3)}
 .form-group select option{background:var(--forest);color:white}
@@ -156,7 +156,7 @@ td:last-child{text-align:center}
 .sim-form{background:var(--white);border-radius:24px;padding:2.5rem;border:1px solid var(--border)}
 .sim-group{margin-bottom:1.4rem}
 .sim-group label{display:block;font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
-.sim-group input,.sim-group select{width:100%;padding:.8rem 1.1rem;background:var(--sand);border:1.5px solid var(--border);border-radius:12px;color:var(--ink);font-family:"DM Sans",sans-serif;font-size:.95rem;-webkit-appearance:none}
+.sim-group input,.sim-group select{width:100%;padding:.8rem 1.1rem;background:var(--sand);border:1.5px solid var(--border);border-radius:12px;color:var(--ink);font-family:"DM Sans",sans-serif;font-size:.95rem;-webkit-appearance:none;appearance:none}
 .sim-group input:focus,.sim-group select:focus{outline:none;border-color:var(--clay)}
 .sim-btn{width:100%;padding:1rem;background:var(--clay);border:none;border-radius:12px;color:white;font-family:"DM Sans",sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:.5rem;transition:background .2s}
 .sim-btn:hover{background:var(--clay-dk)}
@@ -227,7 +227,7 @@ td:last-child{text-align:center}
 .contact-icon{width:40px;height:40px;border-radius:12px;background:var(--white);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1rem}
 .contact-form{background:var(--white);border-radius:24px;padding:2.5rem;border:1px solid var(--border)}
 .contact-form .cform-label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
-.cform-optional{font-size:.68rem;font-weight:400;letter-spacing:.03em;text-transform:none;color:var(--muted);opacity:.7;margin-left:.3rem}
+.cform-optional{font-size:.68rem;font-weight:400;letter-spacing:.03em;text-transform:none;color:var(--muted);margin-left:.3rem}
 .contact-form input,.contact-form select,.contact-form textarea{width:100%;padding:.85rem 1.1rem;background:var(--sand);border:1.5px solid var(--border);border-radius:12px;color:var(--ink);font-family:"DM Sans",sans-serif;font-size:.95rem;transition:border-color .2s;margin-bottom:1.2rem}
 .contact-form input:focus,.contact-form select:focus,.contact-form textarea:focus{outline:none;border-color:var(--clay);background:var(--white)}
 .contact-form textarea{resize:vertical;min-height:110px}
