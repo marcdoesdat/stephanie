@@ -72,7 +72,16 @@ const config = loadSiteConfig();
               <option value="Autre">Autre</option>
             </select>
             
-            <label class="cform-label" for="contact-message">Message (optionnel)</label>
+            <label class="cform-label" for="contact-delai">Quand souhaitez-vous réaliser votre projet ? <span class="cform-optional">(optionnel)</span></label>
+            <select id="contact-delai" name="delai">
+              <option value="">Sélectionnez...</option>
+              <option value="URGENT">🔴 URGENT</option>
+              <option value="30 jours ou moins">Dans un délai de 30 jours ou moins</option>
+              <option value="6 mois ou moins">Dans un délai de 6 mois ou moins</option>
+              <option value="6 mois ou plus">Dans un délai de 6 mois ou plus</option>
+            </select>
+
+            <label class="cform-label" for="contact-message">Message <span class="cform-optional">(optionnel)</span></label>
             <textarea id="contact-message" name="message" placeholder="Décrivez brièvement votre situation..."></textarea>
             
             <div class="form-error" id="form-error">Une erreur s'est produite. Veuillez réessayer.</div>

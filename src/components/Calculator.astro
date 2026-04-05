@@ -27,8 +27,14 @@ const { defaultRate = 4.99 } = Astro.props;
         </div>
         
         <div class="form-group">
-          <label for="mise">Mise de fonds ($)</label>
-          <input type="number" id="mise" placeholder="45000" value="45000" inputmode="decimal" min="0" />
+          <label for="mise">Mise de fonds</label>
+          <div class="mise-input-row">
+            <input type="number" id="mise" placeholder="45000" value="45000" inputmode="decimal" min="0" />
+            <div class="mise-toggle-group">
+              <button type="button" id="mise-btn-dollar" class="mise-toggle-btn active" title="Montant en dollars">$</button>
+              <button type="button" id="mise-btn-pct" class="mise-toggle-btn" title="Pourcentage du prix">%</button>
+            </div>
+          </div>
           <small id="mise-pct" style="color:rgba(255,255,255,.5);font-size:.75rem;margin-top:.3rem;display:block;"></small>
         </div>
         
@@ -89,6 +95,10 @@ const { defaultRate = 4.99 } = Astro.props;
           </div>
         </div>
         
+        <a id="lien-amortissement" href="/amortissement" target="_blank" class="amort-link" style="display:none;">
+          📊 Voir le tableau d'amortissement complet →
+        </a>
+
         <div class="calc-disclaimer">
           * Les résultats de ce calculateur sont fournis à titre indicatif et ne constituent pas une pré-approbation. 
           Le calcul de la prime SCHL est une estimation basée sur les taux standards. <br/>
@@ -110,6 +120,43 @@ const { defaultRate = 4.99 } = Astro.props;
     const amortEl = document.getElementById('amort') as HTMLSelectElement;
     const freqEl = document.getElementById('freq') as HTMLSelectElement;
     const misePctEl = document.getElementById('mise-pct');
+    const btnDollar = document.getElementById('mise-btn-dollar') as HTMLButtonElement;
+    const btnPct = document.getElementById('mise-btn-pct') as HTMLButtonElement;
+    const lienAmortEl = document.getElementById('lien-amortissement') as HTMLAnchorElement;
+
+    let miseEnPct = false; // false = $, true = %
+
+    function switchToMode(toPct: boolean) {
+      if (toPct === miseEnPct) return;
+      const prix = parseFloat(prixEl.value) || 0;
+      const miseVal = parseFloat(miseEl.value) || 0;
+
+      miseEnPct = toPct;
+
+      if (miseEnPct) {
+        btnPct.classList.add('active');
+        btnDollar.classList.remove('active');
+        if (prix > 0) {
+          miseEl.value = ((miseVal / prix) * 100).toFixed(1);
+        }
+        miseEl.placeholder = '10';
+        miseEl.max = '100';
+        miseEl.step = '0.1';
+      } else {
+        btnDollar.classList.add('active');
+        btnPct.classList.remove('active');
+        if (prix > 0) {
+          miseEl.value = Math.round(prix * miseVal / 100).toString();
+        }
+        miseEl.placeholder = '45000';
+        miseEl.removeAttribute('max');
+        miseEl.removeAttribute('step');
+      }
+      doCalculation();
+    }
+
+    btnDollar.addEventListener('click', () => switchToMode(false));
+    btnPct.addEventListener('click', () => switchToMode(true));
 
     // Prime SCHL/Sagen/CG — taux standard 2024+
     // Pour propriétés > 500K$, la tranche jusqu'à 500K est à un taux et le reste à un autre
@@ -134,16 +181,29 @@ const { defaultRate = 4.99 } = Astro.props;
 
     function updateMisePct() {
       const prix = parseFloat(prixEl.value) || 0;
-      const mise = parseFloat(miseEl.value) || 0;
+      const miseVal = parseFloat(miseEl.value) || 0;
       if (misePctEl && prix > 0) {
-        const pct = ((mise / prix) * 100).toFixed(1);
-        misePctEl.textContent = `≈ ${pct} % du prix`;
+        if (miseEnPct) {
+          // En mode %, afficher le montant en $
+          const montant = Math.round(prix * miseVal / 100);
+          misePctEl.textContent = `≈ ${formatMoney(montant)}`;
+        } else {
+          // En mode $, afficher le %
+          const pct = ((miseVal / prix) * 100).toFixed(1);
+          misePctEl.textContent = `≈ ${pct} % du prix`;
+        }
       }
     }
 
     function doCalculation() {
       const prix = parseFloat(prixEl.value) || 0;
-      const mise = parseFloat(miseEl.value) || 0;
+      let mise: number;
+      if (miseEnPct) {
+        const pct = parseFloat(miseEl.value) || 0;
+        mise = Math.round(prix * pct / 100);
+      } else {
+        mise = parseFloat(miseEl.value) || 0;
+      }
       const taux = parseFloat(tauxEl.value) || 0;
       const amort = parseInt(amortEl.value) || 25;
       const freq = parseInt(freqEl.value) || 12;
@@ -202,6 +262,17 @@ const { defaultRate = 4.99 } = Astro.props;
         void (resultsDiv as HTMLElement).offsetWidth;
         resultsDiv.classList.add('fade-up', 'visible');
       }
+
+      // Update amortization link
+      const params = new URLSearchParams({
+        prix: prix.toString(),
+        mise: mise.toString(),
+        taux: taux.toString(),
+        amort: amort.toString(),
+        freq: freq.toString(),
+      });
+      lienAmortEl.href = `/amortissement?${params.toString()}`;
+      lienAmortEl.style.display = '';
     }
 
     form.addEventListener('submit', (e) => {
