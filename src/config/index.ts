@@ -10,8 +10,9 @@ export interface SiteConfig {
   telephone: string;
   courriel: string;
   site_url: string;
-  messenger_url?: string; // Optionnel (au cas où il serait vidé)
-  calendly_url?: string;  // Optionnel
+  messenger_url?: string;      // Page Facebook (SEO sameAs)
+  messenger_chat_url?: string; // Lien chat direct m.me
+  calendly_url?: string;       // Optionnel
   meta_title: string;
   meta_description: string;
 }

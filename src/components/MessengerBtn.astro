@@ -3,13 +3,14 @@ import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
 
-// On vérifie que le lien existe et n'est pas vide avant de rendre le bouton
-const hasMessenger = Boolean(config.messenger_url && config.messenger_url.trim() !== '');
+// On utilise m.me pour ouvrir directement une conversation Messenger
+const chatUrl = config.messenger_chat_url || config.messenger_url;
+const hasMessenger = Boolean(chatUrl && chatUrl.trim() !== '');
 ---
 
 {hasMessenger && (
   <a
-    href={config.messenger_url}
+    href={chatUrl}
     class="messenger-btn"
     target="_blank"
     rel="noopener noreferrer"
