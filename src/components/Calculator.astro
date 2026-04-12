@@ -146,9 +146,12 @@ const { defaultRate = 4.99 } = Astro.props;
         <!-- Capture courriel -->
         <div class="email-capture" id="email-capture-section" style="display:none;">
           <div class="email-capture-label">Recevoir ce résumé par courriel</div>
+          <div class="email-capture-note">Stéphanie vous enverra personnellement le résumé. Merci d'indiquer vos coordonnées.</div>
           <form name="calculator-summary" data-netlify="true" data-netlify-honeypot="bot-field" style="display:none;" aria-hidden="true">
             <input type="hidden" name="form-name" value="calculator-summary" />
             <input type="text" name="bot-field" tabindex="-1" />
+            <input type="text" name="nom" />
+            <input type="tel" name="telephone" />
             <input type="email" name="email" />
             <input type="text" name="label_frequence" />
             <input type="text" name="versement" />
@@ -160,6 +163,10 @@ const { defaultRate = 4.99 } = Astro.props;
             <input type="text" name="frais_cloture" />
             <input type="text" name="amortissement_url" />
           </form>
+          <div class="email-capture-row">
+            <input type="text" id="calc-name" placeholder="Votre nom complet" class="email-capture-input" />
+            <input type="tel" id="calc-phone" placeholder="Votre téléphone" class="email-capture-input" />
+          </div>
           <div class="email-capture-row">
             <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" />
             <button type="button" id="calc-email-btn" class="email-capture-btn">Envoyer →</button>
@@ -203,6 +210,8 @@ const { defaultRate = 4.99 } = Astro.props;
 
     // Email capture
     const emailSection = document.getElementById('email-capture-section')!;
+    const nameInput    = document.getElementById('calc-name') as HTMLInputElement;
+    const phoneInput   = document.getElementById('calc-phone') as HTMLInputElement;
     const emailInput   = document.getElementById('calc-email') as HTMLInputElement;
     const emailBtn     = document.getElementById('calc-email-btn') as HTMLButtonElement;
     const emailMsg     = document.getElementById('calc-email-msg')!;
@@ -397,7 +406,24 @@ const { defaultRate = 4.99 } = Astro.props;
 
     // --- Email capture (send to Netlify Forms) ---
     emailBtn.addEventListener('click', async () => {
+      const nom = nameInput.value.trim();
+      const telephone = phoneInput.value.trim();
       const email = emailInput.value.trim();
+
+      if (nom.length < 2) {
+        emailMsg.textContent   = 'Veuillez entrer votre nom complet.';
+        emailMsg.style.display = '';
+        emailMsg.style.color   = '#c0392b';
+        return;
+      }
+
+      if (telephone.length < 7) {
+        emailMsg.textContent   = 'Veuillez entrer un numéro de téléphone valide.';
+        emailMsg.style.display = '';
+        emailMsg.style.color   = '#c0392b';
+        return;
+      }
+
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         emailMsg.textContent   = 'Veuillez entrer une adresse courriel valide.';
         emailMsg.style.display = '';
@@ -421,6 +447,8 @@ const { defaultRate = 4.99 } = Astro.props;
 
       const payload = new URLSearchParams({
         'form-name': 'calculator-summary',
+        nom,
+        telephone,
         email,
         label_frequence: labelFrequence,
         versement,
@@ -444,9 +472,11 @@ const { defaultRate = 4.99 } = Astro.props;
           throw new Error('Erreur serveur Netlify');
         }
 
-        emailMsg.textContent   = 'Merci. Votre résumé a bien été transmis.';
+        emailMsg.textContent   = 'Merci. Stéphanie vous enverra votre résumé sous peu.';
         emailMsg.style.display = '';
         emailMsg.style.color   = '#a8c5b5';
+        nameInput.value = '';
+        phoneInput.value = '';
         emailInput.value = '';
       } catch {
         emailMsg.textContent   = 'Impossible d\'envoyer le résumé pour le moment. Veuillez réessayer.';
@@ -468,7 +498,7 @@ const { defaultRate = 4.99 } = Astro.props;
       const field = el as HTMLInputElement | HTMLSelectElement;
 
       // Email capture input is not part of mortgage calculations
-      if (field.id === 'calc-email') return;
+      if (field.id === 'calc-name' || field.id === 'calc-phone' || field.id === 'calc-email') return;
 
       field.addEventListener('change', doCalculation);
       if (field.tagName === 'INPUT') {

@@ -146,6 +146,7 @@ section{padding:6rem 4rem}
 /* Email capture */
 .email-capture{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:1.2rem 1.4rem}
 .email-capture-label{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:.7rem}
+.email-capture-note{font-size:.75rem;color:rgba(255,255,255,.68);line-height:1.5;margin-bottom:.7rem}
 .email-capture-row{display:flex;gap:.5rem}
 .email-capture-input{flex:1;min-width:0;padding:.7rem 1rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:white;font-family:"DM Sans",sans-serif;font-size:.88rem}
 .email-capture-input:focus{outline:none;border-color:rgba(196,122,82,.7)}
@@ -153,6 +154,11 @@ section{padding:6rem 4rem}
 .email-capture-btn{background:var(--clay);border:none;border-radius:10px;color:white;font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:700;padding:.7rem 1rem;cursor:pointer;white-space:nowrap;transition:background .2s}
 .email-capture-btn:hover{background:var(--clay-dk)}
 .email-capture-msg{font-size:.75rem;margin-top:.5rem;line-height:1.5}
+
+@media (max-width: 720px){
+  .email-capture-row{flex-direction:column}
+  .email-capture-btn{width:100%}
+}
 
 /* TAUX SECTION (TABLE) */
 #taux-section{background:var(--white)}
