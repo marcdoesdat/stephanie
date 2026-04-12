@@ -1,4 +1,5 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
 :root{
   --sand:#f7f2eb;--warm:#f0e8da;--clay:#c47a52;--clay-dk:#a85f38;
   --forest:#3d5a4a;--ink:#1f1e1c;--muted:#7a7060;--border:#e3d9cc;--white:#fdfaf6;
@@ -119,6 +120,40 @@ section{padding:6rem 4rem}
 .amort-link{display:block;text-align:center;color:#a8c5b5;font-size:.88rem;font-weight:600;text-decoration:none;padding:.9rem 1.2rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px;transition:background .2s}
 .amort-link:hover{background:rgba(255,255,255,.12)}
 
+/* Options avancées — accordion (calculateur dark theme) */
+.adv-options{margin-bottom:1.5rem}
+.adv-toggle-btn{width:100%;background:none;border:1px solid rgba(255,255,255,.18);border-radius:12px;color:rgba(255,255,255,.65);font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.03em;padding:.7rem 1.1rem;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;transition:background .2s,color .2s}
+.adv-toggle-btn:hover{background:rgba(255,255,255,.07);color:white}
+.adv-panel{padding:.5rem 0 0;display:flex;flex-direction:column;gap:0}
+.adv-arrow{transition:transform .25s}
+
+/* SCHL card accent */
+.result-card--schl .result-detail{font-size:.7rem;color:rgba(255,255,255,.45);margin-top:.3rem}
+
+/* Total mensuel card */
+.result-card--total{background:rgba(168,197,181,.15);border-color:rgba(168,197,181,.35)}
+.result-card--total .result-value{font-size:2rem}
+
+/* Frais de clôture card */
+.result-card--closing{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1)}
+.result-card--closing .result-value{font-size:1.6rem}
+.result-card--closing .result-detail{font-size:.7rem;color:rgba(255,255,255,.4);margin-top:.4rem;line-height:1.5}
+
+/* CTA principal — calculateur */
+.calc-cta-btn{display:block;text-align:center;background:var(--clay);color:white;font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:700;padding:1.1rem 1.5rem;border-radius:14px;text-decoration:none;letter-spacing:.01em;transition:background .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 20px rgba(196,122,82,.35)}
+.calc-cta-btn:hover{background:var(--clay-dk);transform:translateY(-2px);box-shadow:0 8px 28px rgba(196,122,82,.45)}
+
+/* Email capture */
+.email-capture{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:1.2rem 1.4rem}
+.email-capture-label{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:.7rem}
+.email-capture-row{display:flex;gap:.5rem}
+.email-capture-input{flex:1;min-width:0;padding:.7rem 1rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:white;font-family:"DM Sans",sans-serif;font-size:.88rem}
+.email-capture-input:focus{outline:none;border-color:rgba(196,122,82,.7)}
+.email-capture-input::placeholder{color:rgba(255,255,255,.3)}
+.email-capture-btn{background:var(--clay);border:none;border-radius:10px;color:white;font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:700;padding:.7rem 1rem;cursor:pointer;white-space:nowrap;transition:background .2s}
+.email-capture-btn:hover{background:var(--clay-dk)}
+.email-capture-msg{font-size:.75rem;margin-top:.5rem;line-height:1.5}
+
 /* TAUX SECTION (TABLE) */
 #taux-section{background:var(--white)}
 .taux-table-wrap{border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-top:3rem;max-width:800px;margin-left:auto;margin-right:auto}
@@ -171,6 +206,27 @@ td:last-child{text-align:center}
 .sim-card .sc-val{font-family:"Lora",serif;font-size:1.4rem;font-weight:700;color:var(--clay)}
 .sim-note{font-size:.7rem;color:var(--muted);line-height:1.7;margin-top:1rem;padding:1rem;background:var(--sand);border-radius:12px}
 .sim-warning{background:#fef3cd;color:#856404;border:1px solid #ffc107;border-radius:12px;padding:.8rem 1rem;font-size:.8rem;line-height:1.5}
+
+/* Options avancées — simulateur (light theme) */
+.sim-adv-options{margin-top:1rem;margin-bottom:.5rem}
+.sim-adv-btn{width:100%;background:none;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.03em;padding:.65rem 1rem;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;transition:background .2s,color .2s}
+.sim-adv-btn:hover{background:var(--sand);color:var(--ink)}
+.sim-adv-panel{padding:.8rem 0 0;display:flex;flex-direction:column;gap:0}
+
+/* Carte potentiel absolu */
+.sim-absolute-max{border-radius:20px;padding:1.8rem 2rem;border:2px solid var(--clay);background:linear-gradient(135deg,#fef6f2 0%,#fdf0e8 100%);position:relative;overflow:hidden}
+.sim-absolute-max::before{content:"";position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:rgba(196,122,82,.08);pointer-events:none}
+.sam-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem}
+.sam-tag{background:var(--clay);color:white;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .7rem;border-radius:20px}
+.sam-info{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--clay);color:var(--clay);font-size:.68rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help}
+.sam-label{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--clay);margin-bottom:.3rem}
+.sam-val{font-family:"Lora",serif;font-size:2.4rem;font-weight:700;color:var(--ink);line-height:1;margin-bottom:.6rem}
+.sam-sub{font-size:.75rem;color:var(--muted);margin-bottom:.1rem}
+.sam-mise{font-family:"Lora",serif;font-size:1.3rem;font-weight:700;color:var(--clay)}
+
+/* CTA principal — simulateur */
+.sim-cta-btn{display:block;text-align:center;background:var(--clay);color:white;font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:700;padding:1.15rem 1.5rem;border-radius:14px;text-decoration:none;letter-spacing:.01em;transition:background .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 20px rgba(196,122,82,.3);margin-top:.5rem}
+.sim-cta-btn:hover{background:var(--clay-dk);transform:translateY(-2px);box-shadow:0 8px 28px rgba(196,122,82,.42)}
 
 /* FAQ */
 #faq{background:var(--sand)}

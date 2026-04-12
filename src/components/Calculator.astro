@@ -18,14 +18,15 @@ const { defaultRate = 4.99 } = Astro.props;
         Utilisez notre simulateur pour estimer vos versements hypothécaires. Pour un calcul précis adapté à votre dossier, contactez {config.nom.split(' ')[0]}.
       </p>
     </div>
-    
+
     <div class="calc-wrapper">
       <form class="calc-form fade-up" id="calc-form" novalidate>
+
         <div class="form-group">
           <label for="prix">Prix de la propriété ($)</label>
           <input type="number" id="prix" placeholder="450000" value="450000" inputmode="decimal" min="0" />
         </div>
-        
+
         <div class="form-group">
           <label for="mise">Mise de fonds</label>
           <div class="mise-input-row">
@@ -37,12 +38,12 @@ const { defaultRate = 4.99 } = Astro.props;
           </div>
           <small id="mise-pct" style="color:rgba(255,255,255,.5);font-size:.75rem;margin-top:.3rem;display:block;"></small>
         </div>
-        
+
         <div class="form-group">
           <label for="taux">Taux d'intérêt (%)</label>
           <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="25" />
         </div>
-        
+
         <div class="form-row">
           <div class="form-group" style="width: 100%;">
             <label for="amort">Amortissement</label>
@@ -62,25 +63,56 @@ const { defaultRate = 4.99 } = Astro.props;
             </select>
           </div>
         </div>
-        
+
+        <!-- Options avancées -->
+        <div class="adv-options">
+          <button type="button" class="adv-toggle-btn" id="adv-toggle-btn" aria-expanded="false" aria-controls="adv-panel">
+            Options avancées <span class="adv-arrow" aria-hidden="true">▾</span>
+          </button>
+          <div class="adv-panel" id="adv-panel" hidden>
+            <div class="form-group">
+              <label for="calc-taxes">Taxes municipales et scolaires ($/mois)</label>
+              <input type="number" id="calc-taxes" value="250" inputmode="decimal" min="0" />
+            </div>
+            <div class="form-group">
+              <label for="calc-chauffage">Frais de chauffage ($/mois)</label>
+              <input type="number" id="calc-chauffage" value="100" inputmode="decimal" min="0" />
+            </div>
+            <div class="form-group">
+              <label for="calc-condo">Frais de copropriété / condo ($/mois)</label>
+              <input type="number" id="calc-condo" value="0" inputmode="decimal" min="0" />
+              <small style="color:rgba(255,255,255,.4);font-size:.7rem;margin-top:.25rem;display:block;">50 % inclus dans le calcul du coût total mensuel</small>
+            </div>
+          </div>
+        </div>
+
         <button type="submit" class="calc-btn">Obtenir mon estimation →</button>
       </form>
 
       <div class="calc-results fade-up" style="transition-delay:.2s">
+
         <div class="result-card main">
           <div class="result-label" id="label-freq">Versement mensuel</div>
           <div class="result-value" id="res-paiement">0 $</div>
           <div class="result-detail">Capital et intérêts seulement</div>
         </div>
-        
+
+        <!-- Coût mensuel total (avec taxes, chauffage, condo) -->
+        <div class="result-card small result-card--total" id="card-cout-mensuel" style="display:none;">
+          <div class="result-label">Coût mensuel total estimé</div>
+          <div class="result-value" id="res-cout-mensuel">0 $</div>
+          <div class="result-detail" id="res-cout-detail">Capital + intérêts + taxes + chauffage</div>
+        </div>
+
         <div class="results-grid">
           <div class="result-card small">
             <div class="result-label">Montant du prêt</div>
             <div class="result-value" id="res-pret">0 $</div>
           </div>
-          <div class="result-card small">
-            <div class="result-label">Prime SCHL estimée</div>
+          <div class="result-card small result-card--schl">
+            <div class="result-label">Prime SCHL ajoutée au prêt</div>
             <div class="result-value" id="res-schl">0 $</div>
+            <div class="result-detail" id="res-schl-detail" style="display:none;"></div>
           </div>
         </div>
 
@@ -90,19 +122,41 @@ const { defaultRate = 4.99 } = Astro.props;
             <div class="result-value" id="res-interets">0 $</div>
           </div>
           <div class="result-card small">
-            <div class="result-label">Coût total</div>
+            <div class="result-label">Coût total du prêt</div>
             <div class="result-value" id="res-cout-total">0 $</div>
           </div>
         </div>
-        
+
+        <!-- Frais de clôture -->
+        <div class="result-card small result-card--closing" id="card-closing" style="display:none;">
+          <div class="result-label">Frais de clôture estimés</div>
+          <div class="result-value" id="res-closing">0 $</div>
+          <div class="result-detail">≈ 1,5 % du prix · Taxe de bienvenue, notaire, inspection — prévoyez des liquidités supplémentaires</div>
+        </div>
+
         <a id="lien-amortissement" href="/amortissement" target="_blank" class="amort-link" style="display:none;">
-          📊 Voir le tableau d'amortissement complet →
+          Voir le tableau d'amortissement complet →
         </a>
 
+        <!-- CTA principal -->
+        <a href="#contact" class="calc-cta-btn">
+          Obtenir ma pré-approbation maintenant
+        </a>
+
+        <!-- Capture courriel -->
+        <div class="email-capture" id="email-capture-section" style="display:none;">
+          <div class="email-capture-label">Recevoir ce résumé par courriel</div>
+          <div class="email-capture-row">
+            <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" />
+            <button type="button" id="calc-email-btn" class="email-capture-btn">Envoyer →</button>
+          </div>
+          <div id="calc-email-msg" class="email-capture-msg" style="display:none;"></div>
+        </div>
+
         <div class="calc-disclaimer">
-          * Les résultats de ce calculateur sont fournis à titre indicatif et ne constituent pas une pré-approbation. 
-          Le calcul de la prime SCHL est une estimation basée sur les taux standards. <br/>
-          <a href="#contact" style="color: #a8c5b5; text-decoration: underline;">Obtenez une analyse personnalisée avec {config.nom.split(' ')[0]}</a>.
+          * Résultats indicatifs uniquement — non une pré-approbation.
+          La prime SCHL est une estimation aux taux standards.<br/>
+          <a href="#contact" style="color: #a8c5b5; text-decoration: underline;">Analyse personnalisée avec {config.nom.split(' ')[0]}</a>.
         </div>
       </div>
     </div>
@@ -110,44 +164,62 @@ const { defaultRate = 4.99 } = Astro.props;
 </section>
 
 <script>
+  import { calculateSCHL, formatMoney, tauxMensuel } from '../utils/mortgageCalc';
+
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('calc-form');
     if (!form) return;
 
-    const prixEl = document.getElementById('prix') as HTMLInputElement;
-    const miseEl = document.getElementById('mise') as HTMLInputElement;
-    const tauxEl = document.getElementById('taux') as HTMLInputElement;
-    const amortEl = document.getElementById('amort') as HTMLSelectElement;
-    const freqEl = document.getElementById('freq') as HTMLSelectElement;
-    const misePctEl = document.getElementById('mise-pct');
-    const btnDollar = document.getElementById('mise-btn-dollar') as HTMLButtonElement;
-    const btnPct = document.getElementById('mise-btn-pct') as HTMLButtonElement;
+    const prixEl      = document.getElementById('prix') as HTMLInputElement;
+    const miseEl      = document.getElementById('mise') as HTMLInputElement;
+    const tauxEl      = document.getElementById('taux') as HTMLInputElement;
+    const amortEl     = document.getElementById('amort') as HTMLSelectElement;
+    const freqEl      = document.getElementById('freq') as HTMLSelectElement;
+    const misePctEl   = document.getElementById('mise-pct');
+    const btnDollar   = document.getElementById('mise-btn-dollar') as HTMLButtonElement;
+    const btnPct      = document.getElementById('mise-btn-pct') as HTMLButtonElement;
     const lienAmortEl = document.getElementById('lien-amortissement') as HTMLAnchorElement;
 
-    let miseEnPct = false; // false = $, true = %
+    // Advanced options
+    const advBtn   = document.getElementById('adv-toggle-btn') as HTMLButtonElement;
+    const advPanel = document.getElementById('adv-panel') as HTMLDivElement;
+    const taxesEl    = document.getElementById('calc-taxes') as HTMLInputElement;
+    const chauffageEl= document.getElementById('calc-chauffage') as HTMLInputElement;
+    const condoEl    = document.getElementById('calc-condo') as HTMLInputElement;
 
+    // Email capture
+    const emailSection = document.getElementById('email-capture-section')!;
+    const emailInput   = document.getElementById('calc-email') as HTMLInputElement;
+    const emailBtn     = document.getElementById('calc-email-btn') as HTMLButtonElement;
+    const emailMsg     = document.getElementById('calc-email-msg')!;
+
+    let miseEnPct = false;
+
+    // --- Accordion ---
+    advBtn.addEventListener('click', () => {
+      const isOpen = !advPanel.hidden;
+      advPanel.hidden = isOpen;
+      advBtn.setAttribute('aria-expanded', String(!isOpen));
+      advBtn.querySelector('.adv-arrow')!.textContent = isOpen ? '▾' : '▴';
+    });
+
+    // --- Toggle $ / % ---
     function switchToMode(toPct: boolean) {
       if (toPct === miseEnPct) return;
       const prix = parseFloat(prixEl.value) || 0;
       const miseVal = parseFloat(miseEl.value) || 0;
-
       miseEnPct = toPct;
-
       if (miseEnPct) {
         btnPct.classList.add('active');
         btnDollar.classList.remove('active');
-        if (prix > 0) {
-          miseEl.value = ((miseVal / prix) * 100).toFixed(1);
-        }
+        if (prix > 0) miseEl.value = ((miseVal / prix) * 100).toFixed(1);
         miseEl.placeholder = '10';
         miseEl.max = '100';
         miseEl.step = '0.1';
       } else {
         btnDollar.classList.add('active');
         btnPct.classList.remove('active');
-        if (prix > 0) {
-          miseEl.value = Math.round(prix * (miseVal / 100)).toString();
-        }
+        if (prix > 0) miseEl.value = Math.round(prix * (miseVal / 100)).toString();
         miseEl.placeholder = '45000';
         miseEl.removeAttribute('max');
         miseEl.removeAttribute('step');
@@ -158,39 +230,14 @@ const { defaultRate = 4.99 } = Astro.props;
     btnDollar.addEventListener('click', () => switchToMode(false));
     btnPct.addEventListener('click', () => switchToMode(true));
 
-    // Prime SCHL/Sagen/CG — taux standard 2024+
-    // Pour propriétés > 500K$, la tranche jusqu'à 500K est à un taux et le reste à un autre
-    function calculateSCHL(prix: number, mise: number): number {
-      const ratio = (mise / prix) * 100;
-      if (ratio >= 20) return 0;
-      if (ratio < 5) return 0; // illégal sous 5%
-
-      const pret = prix - mise;
-      let tauxPrime: number;
-
-      if (ratio < 10) tauxPrime = 0.0400;
-      else if (ratio < 15) tauxPrime = 0.0310;
-      else tauxPrime = 0.0280;
-
-      return pret * tauxPrime;
-    }
-
-    function formatMoney(amount: number): string {
-      return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(amount);
-    }
-
     function updateMisePct() {
       const prix = parseFloat(prixEl.value) || 0;
       const miseVal = parseFloat(miseEl.value) || 0;
       if (misePctEl && prix > 0) {
         if (miseEnPct) {
-          // En mode %, afficher le montant en $
-          const montant = Math.round(prix * miseVal / 100);
-          misePctEl.textContent = `≈ ${formatMoney(montant)}`;
+          misePctEl.textContent = `≈ ${formatMoney(Math.round(prix * miseVal / 100))}`;
         } else {
-          // En mode $, afficher le %
-          const pct = ((miseVal / prix) * 100).toFixed(1);
-          misePctEl.textContent = `≈ ${pct} % du prix`;
+          misePctEl.textContent = `≈ ${((miseVal / prix) * 100).toFixed(1)} % du prix`;
         }
       }
     }
@@ -199,63 +246,111 @@ const { defaultRate = 4.99 } = Astro.props;
       const prix = parseFloat(prixEl.value) || 0;
       let mise: number;
       if (miseEnPct) {
-        const pct = parseFloat(miseEl.value) || 0;
-        mise = Math.round(prix * pct / 100);
+        mise = Math.round(prix * (parseFloat(miseEl.value) || 0) / 100);
       } else {
         mise = parseFloat(miseEl.value) || 0;
       }
-      const taux = parseFloat(tauxEl.value) || 0;
+      const taux  = parseFloat(tauxEl.value) || 0;
       const amort = parseInt(amortEl.value) || 25;
-      const freq = parseInt(freqEl.value) || 12;
+      const freq  = parseInt(freqEl.value) || 12;
 
-      // Validation
+      // Advanced options
+      const taxes    = parseFloat(taxesEl.value) || 0;
+      const chauffage= parseFloat(chauffageEl.value) || 0;
+      const condo    = parseFloat(condoEl.value) || 0;
+
       if (prix <= 0 || mise < 0 || mise >= prix) return;
 
-      // Validation : 30 ans exige mise ≥ 20 %
+      // 30-year amortization requires ≥ 20% down
       if (amort === 30 && (mise / prix) < 0.2) {
         amortEl.value = '25';
         return doCalculation();
       }
 
-      const schl = calculateSCHL(prix, mise);
+      const schl     = calculateSCHL(prix, mise);
       const pretTotal = (prix - mise) + schl;
+      const schlRate  = schl > 0 ? ((schl / (prix - mise)) * 100).toFixed(2) : null;
 
-      // Calcul canadien : intérêt composé semestriellement
-      const tauxMensuelCdn = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 12) - 1;
-      const totalMois = amort * 12;
-      
+      // Canadian semi-annual compounding
+      const rMensuel = tauxMensuel(taux);
+      const n        = amort * 12;
+
       let paiementMensuel: number;
       if (taux > 0) {
-        paiementMensuel = (pretTotal * tauxMensuelCdn) / (1 - Math.pow(1 + tauxMensuelCdn, -totalMois));
+        paiementMensuel = (pretTotal * rMensuel) / (1 - Math.pow(1 + rMensuel, -n));
       } else {
-        paiementMensuel = pretTotal / totalMois;
+        paiementMensuel = pretTotal / n;
       }
 
-      // Intérêts totaux
-      const interetsTotaux = (paiementMensuel * totalMois) - pretTotal;
-      const coutTotal = pretTotal + interetsTotaux;
+      const interetsTotaux = paiementMensuel * n - pretTotal;
+      const coutTotal      = pretTotal + interetsTotaux;
 
-      // Ajustement fréquence
+      // Frequency adjustment
       let paiementFinal = paiementMensuel;
-      let labelTexte = 'Versement mensuel';
-
+      let labelTexte    = 'Versement mensuel';
       if (freq === 26) {
         paiementFinal = (paiementMensuel * 12) / 26;
-        labelTexte = 'Versement aux deux semaines';
+        labelTexte    = 'Versement aux deux semaines';
       } else if (freq === 52) {
         paiementFinal = (paiementMensuel * 12) / 52;
-        labelTexte = 'Versement hebdomadaire';
+        labelTexte    = 'Versement hebdomadaire';
       }
 
-      document.getElementById('res-paiement')!.textContent = formatMoney(paiementFinal);
-      document.getElementById('res-pret')!.textContent = formatMoney(pretTotal);
-      document.getElementById('res-schl')!.textContent = formatMoney(schl);
-      document.getElementById('res-interets')!.textContent = formatMoney(interetsTotaux);
-      document.getElementById('res-cout-total')!.textContent = formatMoney(coutTotal);
-      document.getElementById('label-freq')!.textContent = labelTexte;
+      // Total monthly cost (always monthly, regardless of payment frequency)
+      const fraisCondo   = condo * 0.5;
+      const coutMensuel  = paiementMensuel + taxes + chauffage + fraisCondo;
+      const hasAvanced   = taxes > 0 || chauffage > 0 || condo > 0;
+
+      // Frais de clôture (1.5%)
+      const fraisClôture = prix * 0.015;
+
+      // --- Update DOM ---
+      document.getElementById('res-paiement')!.textContent  = formatMoney(paiementFinal);
+      document.getElementById('res-pret')!.textContent      = formatMoney(pretTotal);
+      document.getElementById('res-interets')!.textContent  = formatMoney(interetsTotaux);
+      document.getElementById('res-cout-total')!.textContent= formatMoney(coutTotal);
+      document.getElementById('label-freq')!.textContent    = labelTexte;
+
+      // SCHL
+      const schlEl     = document.getElementById('res-schl')!;
+      const schlDetail = document.getElementById('res-schl-detail')!;
+      schlEl.textContent = schl > 0 ? formatMoney(schl) : 'Aucune';
+      if (schl > 0 && schlRate) {
+        schlDetail.textContent = `Taux : ${schlRate} % du prêt de base`;
+        schlDetail.style.display = 'block';
+      } else {
+        schlDetail.style.display = 'none';
+      }
+
+      // Total mensuel
+      const cardCout = document.getElementById('card-cout-mensuel')!;
+      if (hasAvanced) {
+        cardCout.style.display = '';
+        document.getElementById('res-cout-mensuel')!.textContent = formatMoney(coutMensuel);
+        const parts: string[] = ['Capital + intérêts'];
+        if (taxes > 0)    parts.push(`taxes ${formatMoney(taxes)}/mois`);
+        if (chauffage > 0)parts.push(`chauffage ${formatMoney(chauffage)}/mois`);
+        if (condo > 0)    parts.push(`condo (50 %) ${formatMoney(fraisCondo)}/mois`);
+        document.getElementById('res-cout-detail')!.textContent = parts.join(' · ');
+      } else {
+        cardCout.style.display = 'none';
+      }
+
+      // Frais de clôture
+      const cardClosing = document.getElementById('card-closing')!;
+      if (prix > 0) {
+        cardClosing.style.display = '';
+        document.getElementById('res-closing')!.textContent = formatMoney(fraisClôture);
+      } else {
+        cardClosing.style.display = 'none';
+      }
 
       updateMisePct();
 
+      // Show email capture once we have results
+      emailSection.style.display = '';
+
+      // Animate results
       const resultsDiv = document.querySelector('.calc-results');
       if (resultsDiv) {
         resultsDiv.classList.remove('fade-up');
@@ -263,7 +358,7 @@ const { defaultRate = 4.99 } = Astro.props;
         resultsDiv.classList.add('fade-up', 'visible');
       }
 
-      // Update amortization link
+      // Amortization link
       const params = new URLSearchParams({
         prix: prix.toString(),
         mise: mise.toString(),
@@ -275,16 +370,31 @@ const { defaultRate = 4.99 } = Astro.props;
       lienAmortEl.style.display = '';
     }
 
+    // --- Email capture (UI structure + basic handler) ---
+    emailBtn.addEventListener('click', () => {
+      const email = emailInput.value.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        emailMsg.textContent   = 'Veuillez entrer une adresse courriel valide.';
+        emailMsg.style.display = '';
+        emailMsg.style.color   = '#c0392b';
+        return;
+      }
+      // TODO: Connecter à un service d'envoi (Netlify Forms, EmailJS, etc.)
+      emailMsg.textContent   = 'Merci ! Stéphanie vous enverra votre résumé sous peu.';
+      emailMsg.style.display = '';
+      emailMsg.style.color   = '#a8c5b5';
+      emailInput.value = '';
+    });
+
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       doCalculation();
     });
 
-    // Recalcul en temps réel
-    const inputs = document.querySelectorAll('#calculateur input, #calculateur select');
-    inputs.forEach(input => input.addEventListener('change', doCalculation));
-
-    // Afficher le % de mise de fonds en temps réel
+    // Real-time recalculation
+    document.querySelectorAll('#calculateur input, #calculateur select').forEach(
+      el => el.addEventListener('change', doCalculation)
+    );
     prixEl.addEventListener('input', updateMisePct);
     miseEl.addEventListener('input', updateMisePct);
 

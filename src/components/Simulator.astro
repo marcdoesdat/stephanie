@@ -11,7 +11,7 @@ const { defaultRate = 3.79 } = Astro.props;
 
 <section id="simulateur">
   <div class="section-inner">
-    
+
     <div class="fade-up">
       <div class="section-tag">Simulateur</div>
       <h2 class="section-title">Combien puis-je<br /><em>emprunter ?</em></h2>
@@ -19,30 +19,30 @@ const { defaultRate = 3.79 } = Astro.props;
         Entrez vos informations pour obtenir une estimation de votre capacité d'emprunt au Québec en quelques secondes.
       </p>
     </div>
-    
+
     <div class="sim-wrapper">
-      
+
       <div class="sim-form fade-up">
         <div class="sim-group">
           <label for="sim-revenu">Revenu annuel brut de votre ménage ($)</label>
           <input type="number" id="sim-revenu" value="80000" inputmode="decimal" min="0" />
         </div>
-        
+
         <div class="sim-group">
           <label for="sim-dettes">Dettes mensuelles ($) <span style="font-weight:400;text-transform:none;letter-spacing:0">(auto, cartes, prêts...)</span></label>
           <input type="number" id="sim-dettes" value="500" inputmode="decimal" min="0" />
         </div>
-        
+
         <div class="sim-group">
           <label for="sim-mise">Mise de fonds disponible ($)</label>
           <input type="number" id="sim-mise" value="50000" inputmode="decimal" min="0" />
         </div>
-        
+
         <div class="sim-group">
           <label for="sim-taux">Taux d'intérêt estimé (%)</label>
           <input type="number" id="sim-taux" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" />
         </div>
-        
+
         <div class="sim-group">
           <label for="sim-amort">Amortissement</label>
           <select id="sim-amort">
@@ -51,19 +51,42 @@ const { defaultRate = 3.79 } = Astro.props;
             <option value="20">20 ans</option>
           </select>
         </div>
-        
+
+        <!-- Options avancées -->
+        <div class="sim-adv-options">
+          <button type="button" class="sim-adv-btn" id="sim-adv-btn" aria-expanded="false" aria-controls="sim-adv-panel">
+            Options avancées <span class="adv-arrow" aria-hidden="true">▾</span>
+          </button>
+          <div class="sim-adv-panel" id="sim-adv-panel" hidden>
+            <div class="sim-group">
+              <label for="sim-taxes">Taxes municipales et scolaires ($/mois)</label>
+              <input type="number" id="sim-taxes" value="250" inputmode="decimal" min="0" />
+            </div>
+            <div class="sim-group">
+              <label for="sim-chauffage">Frais de chauffage ($/mois)</label>
+              <input type="number" id="sim-chauffage" value="100" inputmode="decimal" min="0" />
+            </div>
+            <div class="sim-group">
+              <label for="sim-condo">Frais de copropriété / condo ($/mois)</label>
+              <input type="number" id="sim-condo" value="0" inputmode="decimal" min="0" />
+              <small style="color:var(--muted);font-size:.7rem;margin-top:.25rem;display:block;">50 % de ce montant est inclus dans le calcul des ratios ABD/ATD</small>
+            </div>
+          </div>
+        </div>
+
         <button class="sim-btn" id="sim-btn">Calculer ma capacité →</button>
       </div>
-      
+
       <div class="sim-results fade-up" style="transition-delay:.2s" aria-live="polite">
         <div class="sim-warning" id="sim-warning" style="display:none"></div>
 
+        <!-- Résultat principal : basé sur la mise de fonds de l'utilisateur -->
         <div class="sim-result-main">
           <div class="sr-label">Prix d'achat maximal estimé</div>
           <div class="sr-val" id="sim-max">—</div>
           <div class="sr-sub" id="sim-sub">Entrez vos informations</div>
         </div>
-        
+
         <div class="sim-cards">
           <div class="sim-card">
             <div class="sc-label">Prêt hypothécaire</div>
@@ -82,82 +105,61 @@ const { defaultRate = 3.79 } = Astro.props;
             <div class="sc-val" id="sim-atd">—</div>
           </div>
         </div>
-        
-        <div class="sim-note">
-          💡 <strong>Stress test :</strong> Capacité calculée au taux de qualification canadien (taux + 2 % ou 5,25 %, le plus élevé).<br/>
-          * Inclut une estimation de 250 $/mois pour taxes municipales/scolaires et chauffage.<br/>
-          * Prime SCHL ajoutée au prêt pour les mises de fonds &lt; 20 %.
-          <a href="#contact" style="display:block; margin-top:0.5rem; color:var(--clay); font-weight:bold; text-decoration:none;">
-            Validez ces chiffres avec {config.nom.split(' ')[0]} →
-          </a>
+
+        <!-- Nouvelle carte : potentiel maximum absolu -->
+        <div class="sim-absolute-max" id="sim-absolute-card" style="display:none;">
+          <div class="sam-header">
+            <span class="sam-tag">Potentiel absolu</span>
+            <span class="sam-info" title="Capacité calculée uniquement sur vos revenus et dettes, sans tenir compte de votre mise de fonds actuelle.">ℹ</span>
+          </div>
+          <div class="sam-label">Prix d'achat maximum absolu</div>
+          <div class="sam-val" id="sim-abs-prix">—</div>
+          <div class="sam-sub" id="sim-abs-sub">Nécessite une mise de fonds minimale de</div>
+          <div class="sam-mise" id="sim-abs-mise">—</div>
         </div>
+
+        <div class="sim-note">
+          <strong>Stress test :</strong> Capacité calculée au taux de qualification canadien (taux + 2 % ou 5,25 %, le plus élevé).<br/>
+          * Inclut taxes, chauffage et 50 % des frais de condo dans les ratios d'endettement.<br/>
+          * Prime SCHL ajoutée au prêt si la mise de fonds est inférieure à 20 %.
+        </div>
+
+        <!-- CTA principal -->
+        <a href="#contact" class="sim-cta-btn">
+          Obtenir ma pré-approbation maintenant
+        </a>
       </div>
-      
+
     </div>
   </div>
 </section>
 
 <script>
+  import {
+    formatMoney,
+    tauxMensuel,
+    pvFromPmt,
+    tauxPrimeSCHL,
+    miseMinimale,
+    prixMaxParMise,
+    droitsMutation,
+    calcAbsoluteMax,
+  } from '../utils/mortgageCalc';
+
   document.addEventListener('DOMContentLoaded', () => {
     function fmt(n: number): string {
       return Math.round(n).toLocaleString('fr-CA') + ' $';
     }
 
-    // --- Prime SCHL (assurance hypothécaire canadienne) ---
-    function tauxPrimeSCHL(ltv: number): number {
-      if (ltv <= 0.65) return 0.0060;
-      if (ltv <= 0.75) return 0.0170;
-      if (ltv <= 0.80) return 0.0240;
-      if (ltv <= 0.85) return 0.0280;
-      if (ltv <= 0.90) return 0.0310;
-      if (ltv <= 0.95) return 0.0400;
-      return 0;
-    }
-
-    // --- Mise de fonds minimale (Canada) ---
-    function miseMinimale(prix: number): number {
-      if (prix <= 500_000) return prix * 0.05;
-      if (prix < 1_000_000) return 25_000 + (prix - 500_000) * 0.10;
-      return prix * 0.20;
-    }
-
-    // --- Prix max supporté par la mise de fonds ---
-    function prixMaxParMise(mise: number): number {
-      if (mise <= 25_000) return mise / 0.05;
-      const prixSup = (mise - 25_000) / 0.10 + 500_000;
-      if (prixSup < 1_000_000) return prixSup;
-      return mise / 0.20;
-    }
-
-    // --- Droits de mutation immobilière (Québec) ---
-    function droitsMutation(prix: number): number {
-      let dm = 0;
-      const tranches = [
-        { seuil: 58_900, taux: 0.005 },
-        { seuil: 294_600, taux: 0.010 },
-        { seuil: 500_000, taux: 0.015 },
-        { seuil: Infinity, taux: 0.020 },
-      ];
-      let prev = 0;
-      for (const t of tranches) {
-        const base = Math.min(prix, t.seuil);
-        if (base > prev) dm += (base - prev) * t.taux;
-        prev = t.seuil;
-        if (prix <= t.seuil) break;
-      }
-      return dm;
-    }
-
-    // --- Taux mensuel effectif (composé semestriellement, standard canadien) ---
-    function tauxMensuel(tauxAnnuel: number): number {
-      return Math.pow(Math.pow(1 + tauxAnnuel / 100 / 2, 2), 1 / 12) - 1;
-    }
-
-    // --- PV d'un paiement mensuel ---
-    function pvFromPmt(pmt: number, r: number, n: number): number {
-      if (pmt <= 0 || r <= 0) return 0;
-      return pmt * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
-    }
+    // --- Accordion ---
+    const advBtn   = document.getElementById('sim-adv-btn') as HTMLButtonElement;
+    const advPanel = document.getElementById('sim-adv-panel') as HTMLDivElement;
+    advBtn.addEventListener('click', () => {
+      const isOpen = !advPanel.hidden;
+      advPanel.hidden = isOpen;
+      advBtn.setAttribute('aria-expanded', String(!isOpen));
+      advBtn.querySelector('.adv-arrow')!.textContent = isOpen ? '▾' : '▴';
+    });
 
     function showWarning(msg: string | null) {
       const el = document.getElementById('sim-warning')!;
@@ -178,25 +180,40 @@ const { defaultRate = 3.79 } = Astro.props;
         el.textContent = '—';
         el.style.color = '';
       });
+      document.getElementById('sim-absolute-card')!.style.display = 'none';
+    }
+
+    /** Return a CSS color based on ABD or ATD ratio value vs thresholds */
+    function ratioColor(value: number, greenMax: number, orangeMax: number): string {
+      if (value <= greenMax)  return '#3d8a57'; // vert
+      if (value <= orangeMax) return '#b07a20'; // orange/ambre
+      return '#c0392b';                          // rouge
     }
 
     function simuler() {
       const revenu = parseFloat((document.getElementById('sim-revenu') as HTMLInputElement).value) || 0;
       const dettes = parseFloat((document.getElementById('sim-dettes') as HTMLInputElement).value) || 0;
-      let mise = parseFloat((document.getElementById('sim-mise') as HTMLInputElement).value) || 0;
+      let mise     = parseFloat((document.getElementById('sim-mise') as HTMLInputElement).value) || 0;
       const taux   = parseFloat((document.getElementById('sim-taux') as HTMLInputElement).value) || 3.79;
       const amort  = parseInt((document.getElementById('sim-amort') as HTMLSelectElement).value) || 25;
 
+      // Advanced options
+      const taxes    = parseFloat((document.getElementById('sim-taxes') as HTMLInputElement).value) || 0;
+      const chauffage= parseFloat((document.getElementById('sim-chauffage') as HTMLInputElement).value) || 0;
+      const condo    = parseFloat((document.getElementById('sim-condo') as HTMLInputElement).value) || 0;
+
       if (!revenu) { resetDisplay(); showWarning(null); return; }
 
-      const revMensuel = revenu / 12;
-      const tauxStress = Math.max(taux + 2, 5.25);
-      const rStress = tauxMensuel(tauxStress);
-      const rReel   = tauxMensuel(taux);
-      const n = amort * 12;
-      const fraisProp = 250;
+      const revMensuel  = revenu / 12;
+      const tauxStress  = Math.max(taux + 2, 5.25);
+      const rStress     = tauxMensuel(tauxStress);
+      const rReel       = tauxMensuel(taux);
+      const n           = amort * 12;
 
-      // --- Capacité max du prêt (PV au taux de stress) ---
+      // fraisProp = taxes + chauffage + 50% condo (included in ABD/ATD ratios)
+      const fraisProp = taxes + chauffage + condo * 0.5;
+
+      // --- Max loan capacity (at stress-test rate) ---
       function maxPret(abdR: number, atdR: number): number {
         const pmtABD = revMensuel * abdR - fraisProp;
         const pmtATD = revMensuel * atdR - dettes - fraisProp;
@@ -206,7 +223,7 @@ const { defaultRate = 3.79 } = Astro.props;
       const pretMaxAssure = maxPret(0.39, 0.44);
       const pretMaxConv   = maxPret(0.35, 0.42);
 
-      // --- Scénario assuré : itérer pour inclure la prime SCHL ---
+      // --- Insured scenario: iterate to include SCHL prime (with user's mise) ---
       let prixAssure = 0, baseAssure = 0, primeAssure = 0;
       if (pretMaxAssure > 0) {
         let prix = pretMaxAssure + mise;
@@ -223,14 +240,13 @@ const { defaultRate = 3.79 } = Astro.props;
 
       const prixConv = pretMaxConv + mise;
 
-      // --- Déterminer le scénario ---
+      // --- Determine scenario ---
       let isAssure: boolean, prixMax: number, pretBase: number, primeSCHL: number;
 
       if (amort > 25) {
-        // 30 ans → conventionnel obligatoire (assurance interdit > 25 ans)
-        isAssure = false;
-        prixMax  = prixConv;
-        pretBase = pretMaxConv;
+        isAssure  = false;
+        prixMax   = prixConv;
+        pretBase  = pretMaxConv;
         primeSCHL = 0;
         if (pretBase <= 0 || mise / prixMax < 0.20) {
           showWarning('L\'amortissement de 30 ans requiert une mise de fonds d\'au moins 20 % du prix d\'achat.');
@@ -261,11 +277,12 @@ const { defaultRate = 3.79 } = Astro.props;
         maxEl.textContent = 'Dettes trop élevées';
         maxEl.style.fontSize = '1.8rem';
         showWarning(null);
+        document.getElementById('sim-absolute-card')!.style.display = 'none';
         return;
       }
       maxEl.style.fontSize = '';
 
-      // --- Validation de la mise de fonds minimale ---
+      // --- Validate minimum down payment ---
       let warning: string | null = null;
       const miseMin = miseMinimale(prixMax);
       if (mise < miseMin) {
@@ -279,38 +296,61 @@ const { defaultRate = 3.79 } = Astro.props;
         }
       }
 
-      // Prêt total (base + prime SCHL)
+      // Total loan and real monthly payment
       const pretTotal = pretBase + primeSCHL;
+      const pmtReel   = pretTotal * (rReel * Math.pow(1 + rReel, n)) / (Math.pow(1 + rReel, n) - 1);
 
-      // Paiement mensuel réel (taux contractuel)
-      const pmtReel = pretTotal * (rReel * Math.pow(1 + rReel, n)) / (Math.pow(1 + rReel, n) - 1);
-
-      // Ratios ABD / ATD (au taux de stress)
+      // ABD / ATD at stress rate
       const pmtStress = pretTotal * (rStress * Math.pow(1 + rStress, n)) / (Math.pow(1 + rStress, n) - 1);
       const abd = ((pmtStress + fraisProp) / revMensuel) * 100;
       const atd = ((pmtStress + fraisProp + dettes) / revMensuel) * 100;
 
-      // Droits de mutation (Québec)
-      const dm = droitsMutation(prixMax);
-
-      // --- Mise à jour de l'interface ---
+      // --- Update DOM ---
       showWarning(warning);
 
       document.getElementById('sim-max')!.textContent = fmt(prixMax);
-      document.getElementById('sim-sub')!.textContent = 'Prêt ' + typeLabel + ' · Mise de fonds de ' + fmt(mise) + ' (' + (mise / prixMax * 100).toFixed(1) + ' %)';
+      document.getElementById('sim-sub')!.textContent =
+        'Prêt ' + typeLabel + ' · Mise de fonds de ' + fmt(mise) + ' (' + (mise / prixMax * 100).toFixed(1) + ' %)';
       document.getElementById('sim-pret')!.textContent = fmt(pretTotal);
-      document.getElementById('sim-pmt')!.textContent = fmt(pmtReel) + ' / mois';
+      document.getElementById('sim-pmt')!.textContent  = fmt(pmtReel) + ' / mois';
 
       const abdEl = document.getElementById('sim-abd')!;
       abdEl.textContent = abd.toFixed(1) + ' %';
-      abdEl.style.color = abd > abdLimit * 100 + 0.1 ? '#c0392b' : 'var(--clay)';
+      // Green < 32%, Orange 32–39%, Red > 39%
+      abdEl.style.color = ratioColor(abd, 32, abdLimit * 100);
 
       const atdEl = document.getElementById('sim-atd')!;
       atdEl.textContent = atd.toFixed(1) + ' %';
-      atdEl.style.color = atd > atdLimit * 100 + 0.1 ? '#c0392b' : 'var(--clay)';
+      // Green < 40%, Orange 40–44%, Red > 44%
+      atdEl.style.color = ratioColor(atd, 40, atdLimit * 100);
+
+      // --- Capacité maximale absolue ---
+      // Uses ABD 39% / ATD 44% (insured limits = most permissive)
+      const pmtAbsABD = revMensuel * 0.39 - fraisProp;
+      const pmtAbsATD = revMensuel * 0.44 - dettes - fraisProp;
+      const pmtAbsMax = Math.min(pmtAbsABD, pmtAbsATD);
+      const pretAbsMax = pvFromPmt(pmtAbsMax, rStress, n);
+
+      const absCard = document.getElementById('sim-absolute-card')!;
+      if (pretAbsMax > 0) {
+        const { prix: absPrix, miseMin: absMise } = calcAbsoluteMax(pretAbsMax);
+        if (absPrix > 0) {
+          absCard.style.display = '';
+          document.getElementById('sim-abs-prix')!.textContent = fmt(absPrix);
+          document.getElementById('sim-abs-mise')!.textContent = fmt(absMise);
+          document.getElementById('sim-abs-sub')!.textContent =
+            absPrix >= 1_000_000
+              ? 'Prêt conventionnel · Mise de fonds minimale de'
+              : 'Prêt assuré (SCHL) · Mise de fonds minimale de';
+        } else {
+          absCard.style.display = 'none';
+        }
+      } else {
+        absCard.style.display = 'none';
+      }
     }
 
-    ['sim-revenu', 'sim-dettes', 'sim-mise', 'sim-taux'].forEach((id) => {
+    ['sim-revenu', 'sim-dettes', 'sim-mise', 'sim-taux', 'sim-taxes', 'sim-chauffage', 'sim-condo'].forEach(id => {
       document.getElementById(id)!.addEventListener('input', simuler);
     });
     document.getElementById('sim-amort')!.addEventListener('change', simuler);
