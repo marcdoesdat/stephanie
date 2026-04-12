@@ -147,6 +147,9 @@ const { defaultRate = 3.79 } = Astro.props;
   } from '../utils/mortgageCalc';
 
   document.addEventListener('DOMContentLoaded', () => {
+    const INPUT_DEBOUNCE_MS = 120;
+    let simDebounceTimer: number | undefined;
+
     function fmt(n: number): string {
       return Math.round(n).toLocaleString('fr-CA') + ' $';
     }
@@ -350,8 +353,17 @@ const { defaultRate = 3.79 } = Astro.props;
       }
     }
 
+    function scheduleSimulation() {
+      if (simDebounceTimer) {
+        window.clearTimeout(simDebounceTimer);
+      }
+      simDebounceTimer = window.setTimeout(() => {
+        simuler();
+      }, INPUT_DEBOUNCE_MS);
+    }
+
     ['sim-revenu', 'sim-dettes', 'sim-mise', 'sim-taux', 'sim-taxes', 'sim-chauffage', 'sim-condo'].forEach(id => {
-      document.getElementById(id)!.addEventListener('input', simuler);
+      document.getElementById(id)!.addEventListener('input', scheduleSimulation);
     });
     document.getElementById('sim-amort')!.addEventListener('change', simuler);
 

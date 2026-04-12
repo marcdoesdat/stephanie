@@ -146,6 +146,20 @@ const { defaultRate = 4.99 } = Astro.props;
         <!-- Capture courriel -->
         <div class="email-capture" id="email-capture-section" style="display:none;">
           <div class="email-capture-label">Recevoir ce résumé par courriel</div>
+          <form name="calculator-summary" data-netlify="true" data-netlify-honeypot="bot-field" style="display:none;" aria-hidden="true">
+            <input type="hidden" name="form-name" value="calculator-summary" />
+            <input type="text" name="bot-field" tabindex="-1" />
+            <input type="email" name="email" />
+            <input type="text" name="label_frequence" />
+            <input type="text" name="versement" />
+            <input type="text" name="montant_pret" />
+            <input type="text" name="prime_schl" />
+            <input type="text" name="interets_totaux" />
+            <input type="text" name="cout_total_pret" />
+            <input type="text" name="cout_mensuel_total" />
+            <input type="text" name="frais_cloture" />
+            <input type="text" name="amortissement_url" />
+          </form>
           <div class="email-capture-row">
             <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" />
             <button type="button" id="calc-email-btn" class="email-capture-btn">Envoyer →</button>
@@ -192,6 +206,8 @@ const { defaultRate = 4.99 } = Astro.props;
     const emailInput   = document.getElementById('calc-email') as HTMLInputElement;
     const emailBtn     = document.getElementById('calc-email-btn') as HTMLButtonElement;
     const emailMsg     = document.getElementById('calc-email-msg')!;
+    const INPUT_DEBOUNCE_MS = 120;
+    let calcDebounceTimer: number | undefined;
 
     let miseEnPct = false;
 
@@ -370,8 +386,17 @@ const { defaultRate = 4.99 } = Astro.props;
       lienAmortEl.style.display = '';
     }
 
-    // --- Email capture (UI structure + basic handler) ---
-    emailBtn.addEventListener('click', () => {
+    function scheduleCalculation() {
+      if (calcDebounceTimer) {
+        window.clearTimeout(calcDebounceTimer);
+      }
+      calcDebounceTimer = window.setTimeout(() => {
+        doCalculation();
+      }, INPUT_DEBOUNCE_MS);
+    }
+
+    // --- Email capture (send to Netlify Forms) ---
+    emailBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         emailMsg.textContent   = 'Veuillez entrer une adresse courriel valide.';
@@ -379,11 +404,58 @@ const { defaultRate = 4.99 } = Astro.props;
         emailMsg.style.color   = '#c0392b';
         return;
       }
-      // TODO: Connecter à un service d'envoi (Netlify Forms, EmailJS, etc.)
-      emailMsg.textContent   = 'Merci ! Stéphanie vous enverra votre résumé sous peu.';
-      emailMsg.style.display = '';
-      emailMsg.style.color   = '#a8c5b5';
-      emailInput.value = '';
+
+      const labelFrequence  = document.getElementById('label-freq')?.textContent?.trim() || 'Versement mensuel';
+      const versement       = document.getElementById('res-paiement')?.textContent?.trim() || '-';
+      const montantPret     = document.getElementById('res-pret')?.textContent?.trim() || '-';
+      const primeSchl       = document.getElementById('res-schl')?.textContent?.trim() || '-';
+      const interetsTotaux  = document.getElementById('res-interets')?.textContent?.trim() || '-';
+      const coutTotalPret   = document.getElementById('res-cout-total')?.textContent?.trim() || '-';
+      const coutMensuel     = document.getElementById('res-cout-mensuel')?.textContent?.trim() || '';
+      const fraisCloture    = document.getElementById('res-closing')?.textContent?.trim() || '';
+      const amortissementUrl= lienAmortEl?.href || '';
+
+      emailBtn.textContent = 'Envoi...';
+      emailBtn.disabled = true;
+      emailMsg.style.display = 'none';
+
+      const payload = new URLSearchParams({
+        'form-name': 'calculator-summary',
+        email,
+        label_frequence: labelFrequence,
+        versement,
+        montant_pret: montantPret,
+        prime_schl: primeSchl,
+        interets_totaux: interetsTotaux,
+        cout_total_pret: coutTotalPret,
+        cout_mensuel_total: coutMensuel,
+        frais_cloture: fraisCloture,
+        amortissement_url: amortissementUrl,
+      }).toString();
+
+      try {
+        const response = await fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload,
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur serveur Netlify');
+        }
+
+        emailMsg.textContent   = 'Merci. Votre résumé a bien été transmis.';
+        emailMsg.style.display = '';
+        emailMsg.style.color   = '#a8c5b5';
+        emailInput.value = '';
+      } catch {
+        emailMsg.textContent   = 'Impossible d\'envoyer le résumé pour le moment. Veuillez réessayer.';
+        emailMsg.style.display = '';
+        emailMsg.style.color   = '#c0392b';
+      } finally {
+        emailBtn.textContent = 'Envoyer →';
+        emailBtn.disabled = false;
+      }
     });
 
     form.addEventListener('submit', (e) => {
@@ -391,12 +463,18 @@ const { defaultRate = 4.99 } = Astro.props;
       doCalculation();
     });
 
-    // Real-time recalculation
-    document.querySelectorAll('#calculateur input, #calculateur select').forEach(
-      el => el.addEventListener('change', doCalculation)
-    );
-    prixEl.addEventListener('input', updateMisePct);
-    miseEl.addEventListener('input', updateMisePct);
+    // Real-time recalculation while typing in numeric inputs
+    document.querySelectorAll('#calculateur input, #calculateur select').forEach((el) => {
+      const field = el as HTMLInputElement | HTMLSelectElement;
+
+      // Email capture input is not part of mortgage calculations
+      if (field.id === 'calc-email') return;
+
+      field.addEventListener('change', doCalculation);
+      if (field.tagName === 'INPUT') {
+        field.addEventListener('input', scheduleCalculation);
+      }
+    });
 
     doCalculation();
   });
