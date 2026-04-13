@@ -2,6 +2,15 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { decodeHypotheca } from '../utils/hypothecaDecoder';
 
+// Netlify Blobs — imported dynamically in production only
+let getStore: typeof import('@netlify/blobs').getStore | undefined;
+try {
+  const blobs = await import('@netlify/blobs');
+  getStore = blobs.getStore;
+} catch {
+  // @netlify/blobs unavailable (local dev without Netlify CLI)
+}
+
 export interface RateEntry {
   terme: string;
   hypotheca: number | null;
@@ -38,29 +47,19 @@ export interface HypothecaRates {
   fetchedAt: string;
 }
 
-/**
- * Static fallback rates used when the scrape fails.
- */
-const FALLBACK_ROWS: RateEntry[] = [
-  { terme: '5 ans variable', hypotheca: 3.70, affiche: 4.45, type: 'variable', populaire: true },
-  { terme: '1 an fixe',      hypotheca: 4.89, affiche: 6.99, type: 'fixe' },
-  { terme: '2 ans fixe',     hypotheca: 4.24, affiche: 6.69, type: 'fixe' },
-  { terme: '3 ans fixe',     hypotheca: 3.69, affiche: 6.39, type: 'fixe' },
-  { terme: '4 ans fixe',     hypotheca: 3.84, affiche: 6.29, type: 'fixe' },
-  { terme: '5 ans fixe',     hypotheca: 3.79, affiche: 6.39, type: 'fixe', populaire: true },
-  { terme: '6 ans fixe',     hypotheca: 4.59, affiche: 6.69, type: 'fixe' },
-  { terme: '7 ans fixe',     hypotheca: 4.59, affiche: 6.69, type: 'fixe' },
-  { terme: '10 ans fixe',    hypotheca: 5.04, affiche: 7.14, type: 'fixe' },
-];
+/* ------------------------------------------------------------------ */
+/*  6-hour cache — Netlify Blobs (prod) / file-based (dev)            */
+/* ------------------------------------------------------------------ */
 
-/* ------------------------------------------------------------------ */
-/*  24-hour file-based cache                                          */
-/* ------------------------------------------------------------------ */
+const BLOB_STORE = 'rates';
+const BLOB_KEY = 'hypotheca-rates';
 
 const CACHE_DIR = path.resolve('.cache');
 const CACHE_FILE = path.join(CACHE_DIR, 'hypotheca-rates.json');
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 const CACHE_STALE_MAX_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+const isDev = import.meta.env.DEV;
 
 interface CachedRates {
   timestamp: number;
@@ -72,41 +71,91 @@ interface CacheReadResult {
   ageMs: number;
 }
 
-async function readCacheAny(): Promise<CacheReadResult | null> {
-  try {
-    const raw = await fs.readFile(CACHE_FILE, 'utf-8');
-    const cached: CachedRates = JSON.parse(raw);
+/* ---------- Blob helpers (production) ---------- */
 
-    if (
-      !cached ||
-      typeof cached.timestamp !== 'number' ||
-      !Number.isFinite(cached.timestamp)
-    ) {
-      console.warn('[ratesService] Ignoring cache: invalid or missing timestamp');
+async function readBlobCache(): Promise<CacheReadResult | null> {
+  if (!getStore) return null;
+  try {
+    const store = getStore(BLOB_STORE);
+    const raw = await store.get(BLOB_KEY);
+    if (!raw) return null;
+
+    const cached: CachedRates = JSON.parse(raw);
+    if (!cached || typeof cached.timestamp !== 'number' || !Number.isFinite(cached.timestamp)) {
+      console.warn('[ratesService] Ignoring blob cache: invalid timestamp');
       return null;
     }
 
     const age = Date.now() - cached.timestamp;
     if (!Number.isFinite(age) || age < 0) {
-      console.warn('[ratesService] Ignoring cache: invalid age');
+      console.warn('[ratesService] Ignoring blob cache: invalid age');
+      return null;
+    }
+
+    return { rates: cached.rates, ageMs: age };
+  } catch (err) {
+    console.warn('[ratesService] Failed to read blob cache:', err);
+    return null;
+  }
+}
+
+async function writeBlobCache(rates: HypothecaRates): Promise<void> {
+  if (!getStore) return;
+  try {
+    const store = getStore(BLOB_STORE);
+    const data: CachedRates = { timestamp: Date.now(), rates };
+    await store.set(BLOB_KEY, JSON.stringify(data));
+    console.log('[ratesService] Rates cached to Netlify Blob');
+  } catch (err) {
+    console.warn('[ratesService] Failed to write blob cache:', err);
+  }
+}
+
+/* ---------- File helpers (dev) ---------- */
+
+async function readFileCache(): Promise<CacheReadResult | null> {
+  try {
+    const raw = await fs.readFile(CACHE_FILE, 'utf-8');
+    const cached: CachedRates = JSON.parse(raw);
+
+    if (!cached || typeof cached.timestamp !== 'number' || !Number.isFinite(cached.timestamp)) {
+      console.warn('[ratesService] Ignoring file cache: invalid timestamp');
+      return null;
+    }
+
+    const age = Date.now() - cached.timestamp;
+    if (!Number.isFinite(age) || age < 0) {
+      console.warn('[ratesService] Ignoring file cache: invalid age');
       return null;
     }
 
     return { rates: cached.rates, ageMs: age };
   } catch (err: unknown) {
-    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
-      return null;
-    }
-    console.warn('[ratesService] Failed to read cache:', err);
+    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') return null;
+    console.warn('[ratesService] Failed to read file cache:', err);
     return null;
   }
 }
 
-/**
- * Reads cached rates from disk.
- * Returns the cached `HypothecaRates` if the file exists and is younger
- * than 24 h, otherwise returns `null`.
- */
+async function writeFileCache(rates: HypothecaRates): Promise<void> {
+  try {
+    await fs.mkdir(CACHE_DIR, { recursive: true });
+    const data: CachedRates = { timestamp: Date.now(), rates };
+    const tempFile = path.join(CACHE_DIR, `.rates-cache.tmp-${process.pid}-${Date.now()}`);
+    await fs.writeFile(tempFile, JSON.stringify(data, null, 2), 'utf-8');
+    await fs.rename(tempFile, CACHE_FILE);
+    console.log('[ratesService] Rates cached to file');
+  } catch (err) {
+    console.warn('[ratesService] Failed to write file cache:', err);
+  }
+}
+
+/* ---------- Unified cache layer ---------- */
+
+async function readCacheAny(): Promise<CacheReadResult | null> {
+  return isDev ? readFileCache() : readBlobCache();
+}
+
 async function readCache(): Promise<HypothecaRates | null> {
   const cached = await readCacheAny();
   if (!cached) return null;
@@ -116,31 +165,12 @@ async function readCache(): Promise<HypothecaRates | null> {
     return null;
   }
 
-    console.log(
-      `[ratesService] Using cached rates (age: ${Math.round(cached.ageMs / 60_000)} min)`,
-    );
-    return cached.rates;
+  console.log(`[ratesService] Using cached rates (age: ${Math.round(cached.ageMs / 60_000)} min)`);
+  return cached.rates;
 }
 
-/**
- * Persists rates to disk so subsequent builds within 24 h can skip
- * the network call to hypotheca.ca.
- */
 async function writeCache(rates: HypothecaRates): Promise<void> {
-  try {
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-    const data: CachedRates = { timestamp: Date.now(), rates };
-    const cacheDir = path.dirname(CACHE_FILE);
-    const tempFile = path.join(
-      cacheDir,
-      `.rates-cache.tmp-${process.pid}-${Date.now()}`,
-    );
-    await fs.writeFile(tempFile, JSON.stringify(data, null, 2), 'utf-8');
-    await fs.rename(tempFile, CACHE_FILE);
-    console.log('[ratesService] Rates cached successfully');
-  } catch (err) {
-    console.warn('[ratesService] Failed to write cache:', err);
-  }
+  return isDev ? writeFileCache(rates) : writeBlobCache(rates);
 }
 
 /* ------------------------------------------------------------------ */
@@ -386,12 +416,11 @@ async function fetchRatesHtml(): Promise<string> {
  * Fetches live mortgage rates from hypotheca.ca, decodes the obfuscated
  * `occ("…")` values, and returns a structured rates object.
  *
- * A 24-hour file-based cache avoids redundant network requests during
- * frequent builds.  Only *live* results are cached – fallback data is
- * never written so the next build retries the remote fetch.
+ * Uses Netlify Blobs (prod) or file cache (dev) with a 6-hour TTL.
+ * Returns `null` when rates are unavailable — no fake fallback data.
  */
-export async function fetchHypothecaRates(): Promise<HypothecaRates> {
-  // 1. Return cached rates if still valid (< 24 h old)
+export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
+  // 1. Return cached rates if still valid (< 6 h old)
   const cached = await readCache();
   if (cached) return cached;
 
@@ -404,21 +433,25 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates> {
     const rows = extractAllRates(html);
 
     if (rows.length === 0) {
-      console.warn('[ratesService] No rows parsed from HTML, using fallback');
-      const flat = rowsToFlat(FALLBACK_ROWS);
-      return buildFull(FALLBACK_ROWS, flat, 'fallback', fetchedAt);
+      console.warn('[ratesService] No rows parsed from HTML');
+      // Return stale cache if available, otherwise null
+      if (staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.rates.source === 'live') {
+        console.log(`[ratesService] Using stale cache (age: ${Math.round(staleCache.ageMs / 60_000)} min)`);
+        return staleCache.rates;
+      }
+      return null;
     }
 
     const flat = rowsToFlat(rows);
     const hasAnyRate = Object.values(flat).some((v) => v !== null);
     if (!hasAnyRate) throw new Error('No valid rates decoded from the page');
 
-    // 2. Cache live results for subsequent builds
+    // 2. Cache live results
     const result = buildFull(rows, flat, 'live', fetchedAt);
     await writeCache(result);
     return result;
   } catch (err) {
-    console.warn('[ratesService] Failed to fetch Hypotheca rates, using fallback:', err);
+    console.warn('[ratesService] Failed to fetch Hypotheca rates:', err);
 
     if (
       staleCache &&
@@ -431,7 +464,6 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates> {
       return staleCache.rates;
     }
 
-    const flat = rowsToFlat(FALLBACK_ROWS);
-    return buildFull(FALLBACK_ROWS, flat, 'fallback', fetchedAt);
+    return null;
   }
 }

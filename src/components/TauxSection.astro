@@ -5,7 +5,7 @@ import { loadSiteConfig } from '../config';
 const config = loadSiteConfig();
 
 interface Props {
-  hypothecaRates: HypothecaRates;
+  hypothecaRates: HypothecaRates | null;
 }
 const { hypothecaRates } = Astro.props;
 
@@ -15,24 +15,28 @@ function fmtRate(val: number | null | undefined): string {
 }
 
 // Construction sécurisée des lignes (évite un crash si .rows est undefined)
-const displayRows = hypothecaRates?.rows?.length > 0
+const displayRows = hypothecaRates?.rows?.length
   ? hypothecaRates.rows
-  : [
-      { terme: '5 ans variable', hypotheca: hypothecaRates?.variable, affiche: hypothecaRates?.affiche_variable, type: 'variable' as const, populaire: true },
-      { terme: '1 an fixe', hypotheca: hypothecaRates?.fixe_1ans, affiche: hypothecaRates?.affiche_fixe_1ans, type: 'fixe' as const },
-      { terme: '2 ans fixe', hypotheca: hypothecaRates?.fixe_2ans, affiche: hypothecaRates?.affiche_fixe_2ans, type: 'fixe' as const },
-      { terme: '3 ans fixe', hypotheca: hypothecaRates?.fixe_3ans, affiche: hypothecaRates?.affiche_fixe_3ans, type: 'fixe' as const },
-      { terme: '4 ans fixe', hypotheca: hypothecaRates?.fixe_4ans, affiche: hypothecaRates?.affiche_fixe_4ans, type: 'fixe' as const },
-      { terme: '5 ans fixe', hypotheca: hypothecaRates?.fixe_5ans, affiche: hypothecaRates?.affiche_fixe_5ans, type: 'fixe' as const, populaire: true },
-      { terme: '6 ans fixe', hypotheca: hypothecaRates?.fixe_6ans, affiche: hypothecaRates?.affiche_fixe_6ans, type: 'fixe' as const },
-      { terme: '7 ans fixe', hypotheca: hypothecaRates?.fixe_7ans, affiche: hypothecaRates?.affiche_fixe_7ans, type: 'fixe' as const },
-      { terme: '10 ans fixe', hypotheca: hypothecaRates?.fixe_10ans, affiche: hypothecaRates?.affiche_fixe_10ans, type: 'fixe' as const },
-    ];
+  : hypothecaRates
+    ? [
+        { terme: '5 ans variable', hypotheca: hypothecaRates.variable, affiche: hypothecaRates.affiche_variable, type: 'variable' as const, populaire: true },
+        { terme: '1 an fixe', hypotheca: hypothecaRates.fixe_1ans, affiche: hypothecaRates.affiche_fixe_1ans, type: 'fixe' as const },
+        { terme: '2 ans fixe', hypotheca: hypothecaRates.fixe_2ans, affiche: hypothecaRates.affiche_fixe_2ans, type: 'fixe' as const },
+        { terme: '3 ans fixe', hypotheca: hypothecaRates.fixe_3ans, affiche: hypothecaRates.affiche_fixe_3ans, type: 'fixe' as const },
+        { terme: '4 ans fixe', hypotheca: hypothecaRates.fixe_4ans, affiche: hypothecaRates.affiche_fixe_4ans, type: 'fixe' as const },
+        { terme: '5 ans fixe', hypotheca: hypothecaRates.fixe_5ans, affiche: hypothecaRates.affiche_fixe_5ans, type: 'fixe' as const, populaire: true },
+        { terme: '6 ans fixe', hypotheca: hypothecaRates.fixe_6ans, affiche: hypothecaRates.affiche_fixe_6ans, type: 'fixe' as const },
+        { terme: '7 ans fixe', hypotheca: hypothecaRates.fixe_7ans, affiche: hypothecaRates.affiche_fixe_7ans, type: 'fixe' as const },
+        { terme: '10 ans fixe', hypotheca: hypothecaRates.fixe_10ans, affiche: hypothecaRates.affiche_fixe_10ans, type: 'fixe' as const },
+      ]
+    : [];
 ---
 
 <section id="taux-section">
   <div class="section-inner">
     
+    {hypothecaRates ? (
+    <Fragment>
     <div class="fade-up" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;margin-bottom:3rem;">
       <div>
         <div class="section-tag">Taux en vigueur</div>
@@ -94,6 +98,19 @@ const displayRows = hypothecaRates?.rows?.length > 0
       Mis à jour le <span id="tv-date-inline">—</span> ·
       <a href="https://www.bankofcanada.ca" target="_blank" rel="noopener noreferrer" style="color:var(--clay);text-decoration:none;">Source : bankofcanada.ca</a>
     </div>
+    </Fragment>
+    ) : (
+    <div class="fade-up">
+      <div class="section-tag">Taux en vigueur</div>
+      <h2 class="section-title">Taux hypothécaires<br /><em>via notre réseau</em></h2>
+      <div class="taux-unavailable">
+        <p>Les taux ne sont pas disponibles pour le moment.</p>
+        <a href="https://hypotheca.ca/fr/taux" target="_blank" rel="noopener noreferrer" class="btn-primary">
+          Voir les taux sur hypotheca.ca →
+        </a>
+      </div>
+    </div>
+    )}
     
   </div>
 </section>
@@ -141,3 +158,19 @@ const displayRows = hypothecaRates?.rows?.length > 0
     fetchTauxBdC();
   });
 </script>
+
+<style>
+  .taux-unavailable {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--sand);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-top: 2rem;
+  }
+  .taux-unavailable p {
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+</style>

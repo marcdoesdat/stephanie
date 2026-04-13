@@ -2,6 +2,9 @@
 dist/
 .output/
 
+# netlify build artifacts (functions, serverless)
+.netlify/
+
 # local cache (hypotheca rates, etc.)
 .cache/
 
@@ -19,6 +22,7 @@ pnpm-debug.log*
 
 # environment variables
 .env
+.env.local
 .env.production
 
 # macOS-specific files
