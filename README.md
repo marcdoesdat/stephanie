@@ -48,7 +48,7 @@ Ouvre ce fichier avec n'importe quel éditeur de texte (Bloc-notes, VS Code, etc
 ```json
 {
   "nom": "Stéphanie Weyman",
-  "titre": "Courtière hypothécaire agréée",
+  "titre": "Courtière hypothécaire",
   "organisation": "Hypotheca",
   "region": "Partout au Québec",
 
