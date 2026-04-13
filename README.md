@@ -38,37 +38,32 @@ Si les taux ne peuvent pas être récupérés et qu'aucun cache n'est disponible
 Tout ce qui est personnel se trouve dans **un seul fichier** :
 
 ```
-src/config/siteConfig.yaml
+src/config/siteConfig.json
 ```
 
 Ouvre ce fichier avec n'importe quel éditeur de texte (Bloc-notes, VS Code, etc.) et modifie les valeurs entre les guillemets `" "`.
 
 ### Exemple du fichier :
 
-```yaml
-nom: "Stéphanie Weyman"
-titre: "Courtière hypothécaire agréée"
-organisation: "Hypotheca"
-region: "Partout au Québec"
+```json
+{
+  "nom": "Stéphanie Weyman",
+  "titre": "Courtière hypothécaire agréée",
+  "organisation": "Hypotheca",
+  "region": "Partout au Québec",
 
-amf: "3002365315"
-telephone: "514-949-7627"
-courriel: "sweyman@hypotheca.ca"
+  "amf": "3002365315",
+  "telephone": "514-949-7627",
+  "courriel": "sweyman@hypotheca.ca",
 
-site_url: "https://stephanieweyman.ca"
-messenger_url: "https://m.me/stephanie.weyman.courtiere.hypothecaire"
-
-# Pour activer Calendly, enlève le # au début et colle ton lien :
-# calendly_url: "https://calendly.com/ton-lien"
-
-meta_title: "Stéphanie Weyman — Courtière Hypothécaire · Québec"
-meta_description: "Courtière hypothécaire agréée au Québec..."
+  "site_url": "https://stephanieweyman.ca",
+  "messenger_url": "https://m.me/stephanie.weyman.courtiere.hypothecaire"
+}
 ```
 
 ### Règles importantes :
 - Ne **jamais** effacer les guillemets `" "` autour des valeurs.
-- Les lignes qui commencent par `#` sont des **commentaires** — elles sont ignorées par le site. Tu peux les modifier librement.
-- Pour activer Calendly, retire le `#` devant `calendly_url:` et remplace par ton lien.
+- Ne **jamais** effacer les virgules `,` à la fin de chaque ligne (sauf la dernière ligne avant `}`).
 
 ---
 
@@ -157,7 +152,7 @@ Remplace le fichier `src/assets/stephanie.jpg` par une nouvelle photo en gardant
 1. Crée un compte gratuit sur [calendly.com](https://calendly.com)
 2. Configure tes disponibilités
 3. Copie ton lien Calendly (ex : `https://calendly.com/stephanie-weyman`)
-4. Dans `src/config/siteConfig.yaml`, retire le `#` devant `# calendly_url:` et colle ton lien
+4. Dans `src/config/siteConfig.json`, ajoute `"calendly_url": "https://calendly.com/ton-lien"` dans le fichier JSON
 5. Dans `src/components/Rdv.astro`, remplace le bloc `<div class="calendly-placeholder">` par le widget Calendly (Marc peut faire ça en 5 min)
 
  

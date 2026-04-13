@@ -2,13 +2,19 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { decodeHypotheca } from '../utils/hypothecaDecoder';
 
-// Netlify Blobs — imported dynamically in production only
-let getStore: typeof import('@netlify/blobs').getStore | undefined;
-try {
-  const blobs = await import('@netlify/blobs');
-  getStore = blobs.getStore;
-} catch {
-  // @netlify/blobs unavailable (local dev without Netlify CLI)
+// Netlify Blobs — imported lazily only when the Blob cache path is used
+let _getStorePromise: Promise<typeof import('@netlify/blobs').getStore | undefined> | undefined;
+
+async function loadGetStore(): Promise<typeof import('@netlify/blobs').getStore | undefined> {
+  if (!_getStorePromise) {
+    _getStorePromise = import('@netlify/blobs')
+      .then((blobs) => blobs.getStore)
+      .catch(() => {
+        // @netlify/blobs unavailable (local dev without Netlify CLI)
+        return undefined;
+      });
+  }
+  return _getStorePromise;
 }
 
 export interface RateEntry {
@@ -59,7 +65,9 @@ const CACHE_FILE = path.join(CACHE_DIR, 'hypotheca-rates.json');
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 const CACHE_STALE_MAX_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-const isDev = import.meta.env.DEV;
+// Use Netlify Blobs when running on the Netlify platform (production or `netlify dev`).
+// Falls back to the local file cache for plain `astro dev` / `astro preview` runs.
+const useBlobs = Boolean(process.env.NETLIFY);
 
 interface CachedRates {
   timestamp: number;
@@ -74,6 +82,7 @@ interface CacheReadResult {
 /* ---------- Blob helpers (production) ---------- */
 
 async function readBlobCache(): Promise<CacheReadResult | null> {
+  const getStore = await loadGetStore();
   if (!getStore) return null;
   try {
     const store = getStore(BLOB_STORE);
@@ -100,6 +109,7 @@ async function readBlobCache(): Promise<CacheReadResult | null> {
 }
 
 async function writeBlobCache(rates: HypothecaRates): Promise<void> {
+  const getStore = await loadGetStore();
   if (!getStore) return;
   try {
     const store = getStore(BLOB_STORE);
@@ -153,7 +163,7 @@ async function writeFileCache(rates: HypothecaRates): Promise<void> {
 /* ---------- Unified cache layer ---------- */
 
 async function readCacheAny(): Promise<CacheReadResult | null> {
-  return isDev ? readFileCache() : readBlobCache();
+  return useBlobs ? readBlobCache() : readFileCache();
 }
 
 async function readCache(): Promise<HypothecaRates | null> {
@@ -170,7 +180,7 @@ async function readCache(): Promise<HypothecaRates | null> {
 }
 
 async function writeCache(rates: HypothecaRates): Promise<void> {
-  return isDev ? writeFileCache(rates) : writeBlobCache(rates);
+  return useBlobs ? writeBlobCache(rates) : writeFileCache(rates);
 }
 
 /* ------------------------------------------------------------------ */
