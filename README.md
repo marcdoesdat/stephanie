@@ -1,6 +1,35 @@
 # Site web — Stéphanie Weyman, Courtière Hypothécaire
 
-Site statique construit avec [Astro](https://astro.build). Il se génère en quelques secondes et peut être hébergé gratuitement sur Vercel, Netlify ou GitHub Pages.
+Site hybride construit avec [Astro](https://astro.build) et hébergé sur [Netlify](https://netlify.com). La page d'accueil est rendue côté serveur (SSR) pour afficher les taux hypothécaires en temps réel. Les autres pages sont générées statiquement.
+
+---
+
+## 🏗️ Architecture des taux hypothécaires
+
+Les taux sont récupérés depuis hypotheca.ca et mis en cache via **Netlify Blobs** (production) ou un fichier local (développement).
+
+### Flux de données
+
+```
+hypotheca.ca  →  ratesService.ts  →  Netlify Blob (store: "rates")
+                                           ↓
+                       CDN cache (6h)  ←  index.astro (SSR)  →  HTML
+```
+
+### Stratégie de cache (TTL 6 heures)
+
+1. **Requête utilisateur** → le CDN Netlify sert la page HTML en cache (`s-maxage=21600`)
+2. **Après 6h**, le CDN revalide en arrière-plan (`stale-while-revalidate=3600`)
+3. **Côté serveur**, `ratesService.ts` vérifie le Blob cache :
+   - **Cache valide (< 6h)** → retourne les taux en cache
+   - **Cache expiré** → fetch hypotheca.ca, met à jour le Blob, retourne les taux frais
+   - **Fetch échoué + cache périmé (< 30 jours)** → retourne le stale cache
+   - **Aucune donnée disponible** → affiche un lien vers hypotheca.ca (pas de faux taux)
+
+### Taux indisponibles
+
+Si les taux ne peuvent pas être récupérés et qu'aucun cache n'est disponible, le tableau affiche :
+> « Les taux ne sont pas disponibles. Voir les taux sur hypotheca.ca → »
 
 ---
 
@@ -9,37 +38,32 @@ Site statique construit avec [Astro](https://astro.build). Il se génère en que
 Tout ce qui est personnel se trouve dans **un seul fichier** :
 
 ```
-src/config/siteConfig.yaml
+src/config/siteConfig.json
 ```
 
 Ouvre ce fichier avec n'importe quel éditeur de texte (Bloc-notes, VS Code, etc.) et modifie les valeurs entre les guillemets `" "`.
 
 ### Exemple du fichier :
 
-```yaml
-nom: "Stéphanie Weyman"
-titre: "Courtière hypothécaire agréée"
-organisation: "Hypotheca"
-region: "Partout au Québec"
+```json
+{
+  "nom": "Stéphanie Weyman",
+  "titre": "Courtière hypothécaire agréée",
+  "organisation": "Hypotheca",
+  "region": "Partout au Québec",
 
-amf: "3002365315"
-telephone: "514-949-7627"
-courriel: "sweyman@hypotheca.ca"
+  "amf": "3002365315",
+  "telephone": "514-949-7627",
+  "courriel": "sweyman@hypotheca.ca",
 
-site_url: "https://stephanieweyman.ca"
-messenger_url: "https://m.me/stephanie.weyman.courtiere.hypothecaire"
-
-# Pour activer Calendly, enlève le # au début et colle ton lien :
-# calendly_url: "https://calendly.com/ton-lien"
-
-meta_title: "Stéphanie Weyman — Courtière Hypothécaire · Québec"
-meta_description: "Courtière hypothécaire agréée au Québec..."
+  "site_url": "https://stephanieweyman.ca",
+  "messenger_url": "https://m.me/stephanie.weyman.courtiere.hypothecaire"
+}
 ```
 
 ### Règles importantes :
 - Ne **jamais** effacer les guillemets `" "` autour des valeurs.
-- Les lignes qui commencent par `#` sont des **commentaires** — elles sont ignorées par le site. Tu peux les modifier librement.
-- Pour activer Calendly, retire le `#` devant `calendly_url:` et remplace par ton lien.
+- Ne **jamais** effacer les virgules `,` à la fin de chaque ligne (sauf la dernière ligne avant `}`).
 
 ---
 
@@ -54,7 +78,20 @@ npm install      # À faire une seule fois au début
 npm run dev      # Lance le site sur http://localhost:4321
 ```
 
-Ouvre ton navigateur et va sur **http://localhost:4321** pour voir le site. Les modifications que tu fais au fichier YAML ou aux composants s'affichent immédiatement.
+En mode dev, les taux sont cachés dans un fichier local (`.cache/hypotheca-rates.json`). Pas besoin de Netlify CLI.
+
+#### Option : tester avec Netlify Blobs en local
+
+Pour simuler l'environnement de production (Blobs, SSR) :
+
+```bash
+npm install -g netlify-cli   # Une seule fois
+netlify login                # Authentification
+netlify link                 # Lier au site Netlify
+netlify dev                  # Lance le site avec l'émulation Netlify
+```
+
+Ouvre ton navigateur et va sur **http://localhost:8888** pour voir le site avec les Blobs.
 
 ---
 
@@ -64,7 +101,7 @@ Ouvre ton navigateur et va sur **http://localhost:4321** pour voir le site. Les 
 npm run build
 ```
 
-Le site généré se trouve dans le dossier `dist/`. C'est ce dossier que tu mets en ligne sur ton hébergeur.
+Le site généré se trouve dans le dossier `dist/`. En production sur Netlify, le déploiement est automatique via git push.
 
 ---
 
@@ -73,7 +110,9 @@ Le site généré se trouve dans le dossier `dist/`. C'est ce dossier que tu met
 ```
 src/
   config/
-    siteConfig.yaml   ← Modifie tes infos ici (téléphone, courriel, AMF...)
+    siteConfig.json    ← Modifie tes infos ici (téléphone, courriel, AMF...)
+  services/
+    ratesService.ts    Récupération et cache des taux (Netlify Blobs / fichier local)
   components/
     Nav.astro          Navigation en haut
     Hero.astro         Section principale (grande intro)
@@ -91,7 +130,9 @@ src/
   styles/
     global.css         Tous les styles visuels du site
   pages/
-    index.astro        Point d'entrée — assemble tous les composants
+    index.astro        Point d'entrée — SSR (taux en temps réel)
+    amortissement.astro  Tableau d'amortissement (statique)
+    404.astro          Page 404 (statique)
 ```
 
 ---
@@ -111,7 +152,7 @@ Remplace le fichier `src/assets/stephanie.jpg` par une nouvelle photo en gardant
 1. Crée un compte gratuit sur [calendly.com](https://calendly.com)
 2. Configure tes disponibilités
 3. Copie ton lien Calendly (ex : `https://calendly.com/stephanie-weyman`)
-4. Dans `src/config/siteConfig.yaml`, retire le `#` devant `# calendly_url:` et colle ton lien
+4. Dans `src/config/siteConfig.json`, ajoute `"calendly_url": "https://calendly.com/ton-lien"` dans le fichier JSON
 5. Dans `src/components/Rdv.astro`, remplace le bloc `<div class="calendly-placeholder">` par le widget Calendly (Marc peut faire ça en 5 min)
 
  

@@ -1,4 +1,6 @@
 ---
+export const prerender = false;
+
 import MainLayout from '../layouts/MainLayout.astro';
 import Nav from '../components/Nav.astro';
 import Hero from '../components/Hero.astro';
@@ -18,8 +20,11 @@ import { loadSiteConfig } from '../config';
 const hypothecaRates = await fetchHypothecaRates();
 const config = loadSiteConfig();
 // Use 5-year fixed as the calculator default; fall back to 4.99 if unavailable.
-const defaultRate = hypothecaRates.fixe_5ans ?? 4.99;
-const hypothecaVariable = hypothecaRates.variable ?? 5.99;
+const defaultRate = hypothecaRates?.fixe_5ans ?? 4.99;
+const hypothecaVariable = hypothecaRates?.variable ?? 5.99;
+
+// CDN cache: serve cached HTML for 6 h, revalidate in background for 1 h after expiry
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
 
 ---
 
