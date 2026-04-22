@@ -78,6 +78,26 @@ function fmtRate(val: number | null | undefined): string {
 </section>
 
 <style>
+  .hero-btns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    max-width: 430px;
+  }
+
+  .hero-btns .btn-primary,
+  .hero-btns .btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    padding: 0.65rem 1rem;
+    text-align: center;
+    min-width: 0;
+    white-space: nowrap;
+    line-height: 1.15;
+  }
+
   .hero-badge::before {
     display: none !important;
     content: none !important;
@@ -116,6 +136,16 @@ function fmtRate(val: number | null | undefined): string {
   }
 
   @media (max-width: 520px) {
+    .hero-btns {
+      gap: 0.65rem;
+    }
+
+    .hero-btns .btn-primary,
+    .hero-btns .btn-secondary {
+      min-height: 50px;
+      font-size: 0.95rem;
+    }
+
     .hero-right {
       max-width: 260px;
     }
@@ -133,6 +163,12 @@ function fmtRate(val: number | null | undefined): string {
       left: -2%;
       bottom: 5%;
       transform: scale(0.75);
+    }
+  }
+
+  @media (max-width: 390px) {
+    .hero-btns {
+      grid-template-columns: 1fr;
     }
   }
 </style>

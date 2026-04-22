@@ -9,7 +9,7 @@
     "check": "astro check"
   },
   "dependencies": {
-    "@astrojs/netlify": "^7.0.6",
+    "@astrojs/netlify": "^7.0.8",
     "@astrojs/sitemap": "^3.2.1",
     "@netlify/blobs": "^10.7.4",
     "astro": "^6.0.8",

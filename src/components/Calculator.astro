@@ -116,24 +116,6 @@ const { defaultRate = 4.99 } = Astro.props;
           </div>
         </div>
 
-        <div class="results-grid">
-          <div class="result-card small">
-            <div class="result-label">Intérêts totaux estimés</div>
-            <div class="result-value" id="res-interets">0 $</div>
-          </div>
-          <div class="result-card small">
-            <div class="result-label">Coût total du prêt</div>
-            <div class="result-value" id="res-cout-total">0 $</div>
-          </div>
-        </div>
-
-        <!-- Frais de clôture -->
-        <div class="result-card small result-card--closing" id="card-closing" style="display:none;">
-          <div class="result-label">Frais de clôture estimés</div>
-          <div class="result-value" id="res-closing">0 $</div>
-          <div class="result-detail">≈ 1,5 % du prix · Taxe de bienvenue, notaire, inspection — prévoyez des liquidités supplémentaires</div>
-        </div>
-
         <a id="lien-amortissement" href="/amortissement" target="_blank" class="amort-link" style="display:none;">
           Voir le tableau d'amortissement complet →
         </a>
@@ -157,10 +139,7 @@ const { defaultRate = 4.99 } = Astro.props;
             <input type="text" name="versement" />
             <input type="text" name="montant_pret" />
             <input type="text" name="prime_schl" />
-            <input type="text" name="interets_totaux" />
-            <input type="text" name="cout_total_pret" />
             <input type="text" name="cout_mensuel_total" />
-            <input type="text" name="frais_cloture" />
             <input type="text" name="amortissement_url" />
           </form>
           <div class="email-capture-row">
@@ -307,9 +286,6 @@ const { defaultRate = 4.99 } = Astro.props;
         paiementMensuel = pretTotal / n;
       }
 
-      const interetsTotaux = paiementMensuel * n - pretTotal;
-      const coutTotal      = pretTotal + interetsTotaux;
-
       // Frequency adjustment
       let paiementFinal = paiementMensuel;
       let labelTexte    = 'Versement mensuel';
@@ -326,14 +302,9 @@ const { defaultRate = 4.99 } = Astro.props;
       const coutMensuel  = paiementMensuel + taxes + chauffage + fraisCondo;
       const hasAvanced   = taxes > 0 || chauffage > 0 || condo > 0;
 
-      // Frais de clôture (1.5%)
-      const fraisClôture = prix * 0.015;
-
       // --- Update DOM ---
       document.getElementById('res-paiement')!.textContent  = formatMoney(paiementFinal);
       document.getElementById('res-pret')!.textContent      = formatMoney(pretTotal);
-      document.getElementById('res-interets')!.textContent  = formatMoney(interetsTotaux);
-      document.getElementById('res-cout-total')!.textContent= formatMoney(coutTotal);
       document.getElementById('label-freq')!.textContent    = labelTexte;
 
       // SCHL
@@ -359,15 +330,6 @@ const { defaultRate = 4.99 } = Astro.props;
         document.getElementById('res-cout-detail')!.textContent = parts.join(' · ');
       } else {
         cardCout.style.display = 'none';
-      }
-
-      // Frais de clôture
-      const cardClosing = document.getElementById('card-closing')!;
-      if (prix > 0) {
-        cardClosing.style.display = '';
-        document.getElementById('res-closing')!.textContent = formatMoney(fraisClôture);
-      } else {
-        cardClosing.style.display = 'none';
       }
 
       updateMisePct();
@@ -435,10 +397,7 @@ const { defaultRate = 4.99 } = Astro.props;
       const versement       = document.getElementById('res-paiement')?.textContent?.trim() || '-';
       const montantPret     = document.getElementById('res-pret')?.textContent?.trim() || '-';
       const primeSchl       = document.getElementById('res-schl')?.textContent?.trim() || '-';
-      const interetsTotaux  = document.getElementById('res-interets')?.textContent?.trim() || '-';
-      const coutTotalPret   = document.getElementById('res-cout-total')?.textContent?.trim() || '-';
       const coutMensuel     = document.getElementById('res-cout-mensuel')?.textContent?.trim() || '';
-      const fraisCloture    = document.getElementById('res-closing')?.textContent?.trim() || '';
       const amortissementUrl= lienAmortEl?.href || '';
 
       emailBtn.textContent = 'Envoi...';
@@ -454,10 +413,7 @@ const { defaultRate = 4.99 } = Astro.props;
         versement,
         montant_pret: montantPret,
         prime_schl: primeSchl,
-        interets_totaux: interetsTotaux,
-        cout_total_pret: coutTotalPret,
         cout_mensuel_total: coutMensuel,
-        frais_cloture: fraisCloture,
         amortissement_url: amortissementUrl,
       }).toString();
 

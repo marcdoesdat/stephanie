@@ -49,6 +49,8 @@ const { title, description, ogImage } = Astro.props;
     <main id="main-content">
       <slot />
     </main>
+
+    <a href="#contact" class="mobile-sticky-cta" aria-label="Prendre rendez-vous">Prendre rendez-vous</a>
   </body>
 </html>
 
@@ -86,5 +88,45 @@ const { title, description, ogImage } = Astro.props;
   :focus-visible {
     outline: 2px solid var(--clay, #c47a52);
     outline-offset: 4px;
+  }
+
+  .mobile-sticky-cta {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    body {
+      padding-bottom: calc(4.7rem + env(safe-area-inset-bottom));
+    }
+
+    .mobile-sticky-cta {
+      position: fixed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      left: 0.9rem;
+      right: 0.9rem;
+      max-width: 28rem;
+      margin: 0 auto;
+      bottom: calc(0.75rem + env(safe-area-inset-bottom));
+      z-index: 1000;
+      min-height: 2.95rem;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #fff;
+      background: linear-gradient(135deg, var(--clay), #b56f4c);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+    }
+  }
+
+  @media (max-width: 420px) {
+    .mobile-sticky-cta {
+      font-size: 0.92rem;
+      min-height: 2.85rem;
+      left: 0.7rem;
+      right: 0.7rem;
+    }
   }
 </style>

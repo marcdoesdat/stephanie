@@ -1,6 +1,10 @@
 ---
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../assets/stephanie.jpg';
 import { loadSiteConfig } from '../config';
 const config = loadSiteConfig();
+const telephoneHref = `tel:${config.telephone.replace(/[^\d+]/g, '')}`;
+const courrielHref = `mailto:${config.courriel}`;
 ---
 
 <section id="contact">
@@ -9,7 +13,7 @@ const config = loadSiteConfig();
       
       <div class="fade-up">
         <div class="section-tag">Contact</div>
-        <div class="section-title">Parlons de<br />votre <em>projet</em></div>
+        <h2 class="section-title">Parlons de<br />votre <em>projet</em></h2>
         <div class="contact-info">
           <p>
             Gratuit. Sans engagement. À votre heure — en personne, par téléphone ou en appel vidéo.
@@ -17,11 +21,11 @@ const config = loadSiteConfig();
           <div class="contact-details">
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true">📞</div>
-              <span><strong>{config.telephone}</strong></span>
+              <a class="contact-link" href={telephoneHref}><strong>{config.telephone}</strong></a>
             </div>
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true">✉️</div>
-              <span><strong>{config.courriel}</strong></span>
+              <a class="contact-link" href={courrielHref}><strong>{config.courriel}</strong></a>
             </div>
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true">📍</div>
@@ -31,6 +35,19 @@ const config = loadSiteConfig();
               <div class="contact-icon" aria-hidden="true">🏢</div>
               <span>{config.organisation}</span>
             </div>
+          </div>
+
+          <div class="contact-trust">
+            <Image
+              src={stephaniePhoto}
+              alt="Stephanie Weyman"
+              width={64}
+              height={64}
+              loading="lazy"
+              decoding="async"
+              class="contact-trust-photo"
+            />
+            <p>Je réponds moi-même à tous les appels.</p>
           </div>
         </div>
       </div>
