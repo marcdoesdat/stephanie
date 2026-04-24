@@ -104,7 +104,20 @@ const nomDeFamille = nomArr.join(' ');
   }
 
   /* --- STYLES SPÉCIFIQUES POUR LE MENU MOBILE --- */
-  
+
+  /* Compression progressive sur les petits laptops */
+  @media (max-width: 1280px) {
+    .nav-links { gap: 1.4rem; }
+  }
+
+  @media (max-width: 1150px) {
+    .nav-links { gap: 0.9rem; }
+    .nav-links a { font-size: 0.77rem; }
+    .nav-cta { padding: 0.5rem 1rem; }
+    .broker-identity { font-size: 1.05rem; }
+    .cabinet-name { font-size: 0.6rem; }
+  }
+
   /* On aligne tout à 1000px pour éviter la zone morte sur iPad */
   @media (max-width: 1000px) {
     .nav-links { display: none; }
