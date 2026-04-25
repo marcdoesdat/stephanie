@@ -13,17 +13,24 @@ body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);f
 }
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,250,246,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 4rem;display:flex;align-items:center;justify-content:space-between;height:68px;transition:box-shadow .3s}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,250,246,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 clamp(1rem,3vw,4rem);display:flex;align-items:center;justify-content:space-between;min-height:68px;transition:box-shadow .3s}
 nav.scrolled{box-shadow:0 4px 30px rgba(0,0,0,.06)}
 .nav-logo{font-family:"Lora",serif;font-size:1.15rem;font-weight:600;color:var(--ink);text-decoration:none}
 .nav-logo span{color:var(--clay)}
-.nav-links{display:flex;gap:2.5rem;list-style:none;align-items:center}
-.nav-links a{font-size:.82rem;font-weight:500;color:var(--muted);text-decoration:none;letter-spacing:.03em;transition:color .2s}
+.nav-links{display:flex;gap:clamp(.85rem,1.6vw,2.5rem);list-style:none;align-items:center;flex-wrap:nowrap;min-width:0}
+.nav-links li{flex:0 1 auto;min-width:0}
+.nav-links a{display:block;font-size:clamp(.74rem,.18vw + .7rem,.82rem);font-weight:500;color:var(--muted);text-decoration:none;letter-spacing:.03em;transition:color .2s;white-space:nowrap}
 .nav-links a:hover{color:var(--ink)}
-.nav-cta{background:var(--clay);color:white!important;padding:.55rem 1.4rem;border-radius:50px;transition:background .2s!important}
+.nav-cta{background:var(--clay);color:white!important;padding:.55rem clamp(.95rem,1.4vw,1.4rem);border-radius:50px;transition:background .2s!important;white-space:nowrap}
 .nav-cta:hover{background:var(--clay-dk)!important}
 .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
 .hamburger span{display:block;width:22px;height:2px;background:var(--ink);border-radius:2px;transition:.3s}
+
+@media(max-width:1280px){
+  .nav-links{gap:.85rem}
+  .nav-links a{font-size:.74rem;letter-spacing:.02em}
+  .nav-cta{padding:.5rem 1rem}
+}
 
 /* HERO */
 #hero{min-height:100vh;background:var(--sand);display:flex;align-items:center;padding:8rem 4rem 4rem;position:relative;overflow:hidden}
