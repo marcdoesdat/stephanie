@@ -1,4 +1,4 @@
----
+﻿---
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
@@ -74,7 +74,33 @@ const { defaultRate = 3.79 } = Astro.props;
           </div>
         </div>
 
-        <button class="sim-btn" id="sim-btn">Calculer ma capacité →</button>
+        <button class="sim-btn" id="sim-btn">Recevoir mes résultats par courriel →</button>
+
+        <!-- Capture courriel -->
+        <div class="sim-email-capture" id="sim-email-capture" style="display:none;">
+          <form name="simulator-summary" data-netlify="true" data-netlify-honeypot="bot-field" style="display:none;" aria-hidden="true">
+            <input type="hidden" name="form-name" value="simulator-summary" />
+            <input type="text" name="bot-field" tabindex="-1" />
+            <input type="text" name="nom" />
+            <input type="tel" name="telephone" />
+            <input type="email" name="email" />
+            <input type="text" name="prix_max" />
+            <input type="text" name="versement" />
+            <input type="text" name="montant_pret" />
+            <input type="text" name="prime_schl" />
+          </form>
+          <div class="sim-email-label">Recevoir ce résumé par courriel</div>
+          <div class="sim-email-note">Stéphanie vous enverra personnellement le résumé de votre capacité d'emprunt.</div>
+          <div class="sim-email-row">
+            <input type="text" id="sim-cap-name" placeholder="Votre nom complet" class="sim-email-input" />
+            <input type="tel" id="sim-cap-phone" placeholder="Votre téléphone" class="sim-email-input" />
+          </div>
+          <div class="sim-email-row">
+            <input type="email" id="sim-cap-email" placeholder="votre@courriel.com" class="sim-email-input" />
+            <button type="button" id="sim-cap-btn" class="sim-email-btn">Envoyer →</button>
+          </div>
+          <div id="sim-cap-msg" class="sim-email-msg" style="display:none;"></div>
+        </div>
       </div>
 
       <div class="sim-results fade-up" style="transition-delay:.2s" aria-live="polite">
@@ -367,14 +393,190 @@ const { defaultRate = 3.79 } = Astro.props;
     });
     document.getElementById('sim-amort')!.addEventListener('change', simuler);
 
-    document.getElementById('sim-btn')!.addEventListener('click', (e) => {
+    const simRevealBtn = document.getElementById('sim-btn') as HTMLButtonElement;
+    const simEmailSection = document.getElementById('sim-email-capture') as HTMLDivElement;
+
+    simRevealBtn.onclick = (e) => {
       e.preventDefault();
       simuler();
-      const btn = document.getElementById('sim-btn')!;
-      btn.style.transform = 'scale(0.98)';
-      setTimeout(() => btn.style.transform = 'none', 150);
+      simRevealBtn.style.transform = 'scale(0.98)';
+      setTimeout(() => {
+        simRevealBtn.style.transform = 'none';
+      }, 150);
+
+      const isVisible = window.getComputedStyle(simEmailSection).display !== 'none';
+      if (isVisible) {
+        simEmailSection.style.display = 'none';
+      } else {
+        simEmailSection.style.display = 'block';
+        simEmailSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
+
+    // --- Email capture (Simulator) ---
+    document.getElementById('sim-cap-btn')!.addEventListener('click', async () => {
+      const nomInput   = document.getElementById('sim-cap-name') as HTMLInputElement;
+      const phoneInput = document.getElementById('sim-cap-phone') as HTMLInputElement;
+      const emailInput = document.getElementById('sim-cap-email') as HTMLInputElement;
+      const msgEl      = document.getElementById('sim-cap-msg')!;
+      const sendBtn    = document.getElementById('sim-cap-btn') as HTMLButtonElement;
+
+      const nom       = nomInput.value.trim();
+      const telephone = phoneInput.value.trim();
+      const email     = emailInput.value.trim();
+
+      if (nom.length < 2) {
+        msgEl.textContent = 'Veuillez entrer votre nom complet.';
+        msgEl.style.display = '';
+        msgEl.style.color = '#c0392b';
+        return;
+      }
+      if (telephone.length < 7) {
+        msgEl.textContent = 'Veuillez entrer un numéro de téléphone valide.';
+        msgEl.style.display = '';
+        msgEl.style.color = '#c0392b';
+        return;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        msgEl.textContent = 'Veuillez entrer une adresse courriel valide.';
+        msgEl.style.display = '';
+        msgEl.style.color = '#c0392b';
+        return;
+      }
+
+      const prix_max    = document.getElementById('sim-max')?.textContent?.trim() || '-';
+      const versement   = document.getElementById('sim-pmt')?.textContent?.trim() || '-';
+      const montantPret = document.getElementById('sim-pret')?.textContent?.trim() || '-';
+
+      sendBtn.textContent = 'Envoi...';
+      sendBtn.disabled = true;
+      msgEl.style.display = 'none';
+
+      const payload = new URLSearchParams({
+        'form-name': 'simulator-summary',
+        nom,
+        telephone,
+        email,
+        prix_max,
+        versement,
+        montant_pret: montantPret,
+        prime_schl: '-',
+      }).toString();
+
+      try {
+        const response = await fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload,
+        });
+        if (!response.ok) throw new Error('Erreur serveur Netlify');
+        msgEl.textContent = 'Merci. Stéphanie vous enverra votre résumé sous peu.';
+        msgEl.style.display = '';
+        msgEl.style.color = '#3d5a4a';
+        nomInput.value = '';
+        phoneInput.value = '';
+        emailInput.value = '';
+      } catch {
+        msgEl.textContent = 'Impossible d\'envoyer le résumé pour le moment. Veuillez réessayer.';
+        msgEl.style.display = '';
+        msgEl.style.color = '#c0392b';
+      } finally {
+        sendBtn.textContent = 'Envoyer →';
+        sendBtn.disabled = false;
+      }
     });
 
     simuler();
   });
 </script>
+
+<style>
+  .sim-email-capture {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.35rem 1.4rem;
+    margin-top: 0.25rem;
+  }
+
+  .sim-email-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .sim-email-note {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 0.95rem;
+  }
+
+  .sim-email-row {
+    display: flex;
+    gap: 0.65rem;
+    align-items: stretch;
+    margin-bottom: 0.65rem;
+  }
+
+  .sim-email-input {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0.78rem 1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    transition: border-color 0.2s;
+  }
+
+  .sim-email-input:focus {
+    outline: none;
+    border-color: var(--clay);
+  }
+
+  .sim-email-input::placeholder {
+    color: var(--muted);
+    opacity: 0.6;
+  }
+
+  .sim-email-btn {
+    background: var(--clay);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    min-height: 44px;
+    padding: 0.78rem 1rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+
+  .sim-email-btn:hover {
+    background: var(--clay-dk);
+  }
+
+  .sim-email-msg {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 720px) {
+    .sim-email-row {
+      flex-direction: column;
+    }
+    .sim-email-btn {
+      width: 100%;
+    }
+  }
+</style>

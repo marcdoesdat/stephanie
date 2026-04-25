@@ -1,4 +1,4 @@
----
+﻿---
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
@@ -86,7 +86,22 @@ const { defaultRate = 4.99 } = Astro.props;
           </div>
         </div>
 
-        <button type="submit" class="calc-btn">Obtenir mon estimation →</button>
+        <button type="button" class="calc-btn" id="calc-reveal-btn">Recevoir mon estimation par courriel →</button>
+
+        <!-- Capture courriel -->
+        <div class="email-capture" id="email-capture-section" style="display:none;">
+          <div class="email-capture-label">Recevoir ce résumé par courriel</div>
+          <div class="email-capture-note">Stéphanie vous enverra personnellement le résumé. Merci d'indiquer vos coordonnées.</div>
+          <div class="email-capture-row">
+            <input type="text" id="calc-name" placeholder="Votre nom complet" class="email-capture-input" />
+            <input type="tel" id="calc-phone" placeholder="Votre téléphone" class="email-capture-input" />
+          </div>
+          <div class="email-capture-row">
+            <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" />
+            <button type="button" id="calc-email-btn" class="email-capture-btn">Envoyer →</button>
+          </div>
+          <div id="calc-email-msg" class="email-capture-msg" style="display:none;"></div>
+        </div>
       </form>
 
       <div class="calc-results fade-up" style="transition-delay:.2s">
@@ -124,34 +139,6 @@ const { defaultRate = 4.99 } = Astro.props;
         <a href="#contact" class="calc-cta-btn">
           Obtenir ma pré-approbation maintenant
         </a>
-
-        <!-- Capture courriel -->
-        <div class="email-capture" id="email-capture-section" style="display:none;">
-          <div class="email-capture-label">Recevoir ce résumé par courriel</div>
-          <div class="email-capture-note">Stéphanie vous enverra personnellement le résumé. Merci d'indiquer vos coordonnées.</div>
-          <form name="calculator-summary" data-netlify="true" data-netlify-honeypot="bot-field" style="display:none;" aria-hidden="true">
-            <input type="hidden" name="form-name" value="calculator-summary" />
-            <input type="text" name="bot-field" tabindex="-1" />
-            <input type="text" name="nom" />
-            <input type="tel" name="telephone" />
-            <input type="email" name="email" />
-            <input type="text" name="label_frequence" />
-            <input type="text" name="versement" />
-            <input type="text" name="montant_pret" />
-            <input type="text" name="prime_schl" />
-            <input type="text" name="cout_mensuel_total" />
-            <input type="text" name="amortissement_url" />
-          </form>
-          <div class="email-capture-row">
-            <input type="text" id="calc-name" placeholder="Votre nom complet" class="email-capture-input" />
-            <input type="tel" id="calc-phone" placeholder="Votre téléphone" class="email-capture-input" />
-          </div>
-          <div class="email-capture-row">
-            <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" />
-            <button type="button" id="calc-email-btn" class="email-capture-btn">Envoyer →</button>
-          </div>
-          <div id="calc-email-msg" class="email-capture-msg" style="display:none;"></div>
-        </div>
 
         <div class="calc-disclaimer">
           * Résultats indicatifs uniquement — non une pré-approbation.
@@ -334,9 +321,6 @@ const { defaultRate = 4.99 } = Astro.props;
 
       updateMisePct();
 
-      // Show email capture once we have results
-      emailSection.style.display = '';
-
       // Animate results
       const resultsDiv = document.querySelector('.calc-results');
       if (resultsDiv) {
@@ -446,8 +430,20 @@ const { defaultRate = 4.99 } = Astro.props;
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      doCalculation();
     });
+
+    const calcRevealBtn = document.getElementById('calc-reveal-btn') as HTMLButtonElement;
+
+    calcRevealBtn.onclick = () => {
+      doCalculation();
+      const isVisible = window.getComputedStyle(emailSection).display !== 'none';
+      if (isVisible) {
+        emailSection.style.display = 'none';
+      } else {
+        emailSection.style.display = 'block';
+        emailSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
 
     // Real-time recalculation while typing in numeric inputs
     document.querySelectorAll('#calculateur input, #calculateur select').forEach((el) => {
