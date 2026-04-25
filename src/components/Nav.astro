@@ -105,21 +105,7 @@ const nomDeFamille = nomArr.join(' ');
 
   /* --- STYLES SPÉCIFIQUES POUR LE MENU MOBILE --- */
 
-  /* Compression progressive sur les petits laptops */
   @media (max-width: 1280px) {
-    .nav-links { gap: 1.4rem; }
-  }
-
-  @media (max-width: 1150px) {
-    .nav-links { gap: 0.9rem; }
-    .nav-links a { font-size: 0.77rem; }
-    .nav-cta { padding: 0.5rem 1rem; }
-    .broker-identity { font-size: 1.05rem; }
-    .cabinet-name { font-size: 0.6rem; }
-  }
-
-  /* On aligne tout à 1000px pour éviter la zone morte sur iPad */
-  @media (max-width: 1000px) {
     .nav-links { display: none; }
     .hamburger { display: flex; }
   }
@@ -154,8 +140,7 @@ const nomDeFamille = nomArr.join(' ');
     transform: translateY(-7px) rotate(-45deg);
   }
 
-  /* Le menu déroulant s'active aussi à 1000px */
-  @media (max-width: 1000px) {
+  @media (max-width: 1280px) {
     .nav-links.open {
       display: flex !important;
       flex-direction: column;
@@ -212,9 +197,8 @@ const nomDeFamille = nomArr.join(' ');
       });
     });
 
-    // Ajusté à 1000px pour correspondre au CSS
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 1000 && menuOpen) {
+      if (window.innerWidth > 1280 && menuOpen) {
         toggleMenu();
       }
     });
