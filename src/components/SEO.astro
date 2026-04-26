@@ -8,13 +8,15 @@ interface Props {
   description?: string;
   canonicalURL?: string | URL;
   ogImage?: string;
+  noindex?: boolean;
 }
 
 const {
   title,
   description = config.meta_description,
   canonicalURL = new URL(Astro.url.pathname, config.site_url),
-  ogImage = "/images/og-image.jpg", 
+  ogImage = "/images/og-image.jpg",
+  noindex = false,
 } = Astro.props;
 
 const formattedTitle = title ? `${title} | ${config.nom}` : config.meta_title;
@@ -79,7 +81,7 @@ const schema = {
 <title>{formattedTitle}</title>
 <meta name="description" content={description} />
 <meta name="generator" content={Astro.generator} />
-<meta name="robots" content="index, follow" />
+<meta name="robots" content={noindex ? "noindex, nofollow, noarchive" : "index, follow"} />
 <meta name="theme-color" content="#2D5A3D" />
 <link rel="canonical" href={canonicalURL} />
 
@@ -98,4 +100,4 @@ const schema = {
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={resolvedOgImage} />
 
-<script type="application/ld+json" set:html={JSON.stringify(schema)} is:inline />
+{!noindex && <script type="application/ld+json" set:html={JSON.stringify(schema)} is:inline />}

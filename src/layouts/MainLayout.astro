@@ -9,9 +9,10 @@ interface Props {
   title: string;
   description: string;
   ogImage?: string;
+  noindex?: boolean;
 }
 
-const { title, description, ogImage } = Astro.props;
+const { title, description, ogImage, noindex } = Astro.props;
 ---
 
 <!doctype html>
@@ -21,7 +22,7 @@ const { title, description, ogImage } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     
-    <SEO title={title} description={description} ogImage={ogImage} />
+    <SEO title={title} description={description} ogImage={ogImage} noindex={noindex} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

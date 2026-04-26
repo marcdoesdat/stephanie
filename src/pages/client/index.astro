@@ -1,0 +1,268 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import { loadSiteConfig } from '../../config';
+import { fetchHypothecaRates } from '../../services/ratesService';
+
+const config = loadSiteConfig();
+const rates = await fetchHypothecaRates();
+const fixe5 = rates?.fixe_5ans ?? '—';
+const variable = rates?.variable ?? '—';
+---
+
+<MainLayout
+  title="Espace client — Outils avancés"
+  description="Zone privée réservée aux clients de Stéphanie Weyman, courtière hypothécaire."
+  noindex={true}
+>
+  <div class="client-zone">
+
+    <header class="cz-header">
+      <div class="cz-logo">SW</div>
+      <div>
+        <h1>Espace client</h1>
+        <p class="cz-sub">Stéphanie Weyman · Courtière hypothécaire</p>
+      </div>
+    </header>
+
+    <section class="cz-welcome">
+      <p>
+        Bienvenue dans votre espace privé. Ces outils ont été conçus pour vous aider à
+        explorer différents scénarios avant notre rencontre ou pour mieux comprendre vos options.
+      </p>
+      <div class="cz-rates">
+        <div class="cz-rate-chip">
+          <span class="cz-rate-label">Taux fixe 5 ans</span>
+          <span class="cz-rate-value">{fixe5} %</span>
+        </div>
+        <div class="cz-rate-chip">
+          <span class="cz-rate-label">Taux variable</span>
+          <span class="cz-rate-value">{variable} %</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cz-tools">
+      <h2>Outils disponibles</h2>
+      <div class="cz-grid">
+
+        <a href="/client/simulateur-avance" class="cz-card">
+          <div class="cz-card-icon">📊</div>
+          <div class="cz-card-body">
+            <h3>Capacité d'emprunt avancée</h3>
+            <p>
+              Simulez votre capacité d'emprunt maximale selon vos revenus, dettes et mise de fonds.
+              Inclut les ratios ABD/ATD, le stress test et la prime SCHL.
+            </p>
+          </div>
+          <span class="cz-card-arrow">→</span>
+        </a>
+
+        <a href="/client/calculateur-avance" class="cz-card">
+          <div class="cz-card-icon">🧮</div>
+          <div class="cz-card-body">
+            <h3>Calculateur de versements avancé</h3>
+            <p>
+              Calculez vos versements hypothécaires avec différentes fréquences, taux et amortissements.
+              Comparez plusieurs scénarios côte à côte.
+            </p>
+          </div>
+          <span class="cz-card-arrow">→</span>
+        </a>
+
+        <a href="/amortissement" class="cz-card">
+          <div class="cz-card-icon">📅</div>
+          <div class="cz-card-body">
+            <h3>Tableau d'amortissement</h3>
+            <p>
+              Visualisez le remboursement de votre prêt année par année : capital, intérêts et solde restant.
+            </p>
+          </div>
+          <span class="cz-card-arrow">→</span>
+        </a>
+
+      </div>
+    </section>
+
+    <footer class="cz-footer">
+      <p>
+        Une question ? Contactez Stéphanie directement :
+        <a href={`tel:${config.telephone}`}>{config.telephone}</a>
+        · <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
+      </p>
+      <p class="cz-disclaimer">
+        Les estimations produites par ces outils sont fournies à titre indicatif seulement et ne constituent pas
+        une offre de financement. Elles peuvent différer du montant approuvé par un prêteur.
+      </p>
+    </footer>
+
+  </div>
+</MainLayout>
+
+<style>
+  .client-zone {
+    min-height: 100vh;
+    background: #f7f5f0;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink, #1a1a1a);
+    padding: 0 0 4rem;
+  }
+
+  /* ─── Header ─── */
+  .cz-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem clamp(1.5rem, 5vw, 4rem);
+    background: var(--forest, #2d5a3d);
+    color: #fff;
+  }
+  .cz-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Lora', serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .cz-header h1 {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+  }
+  .cz-sub {
+    margin: .2rem 0 0;
+    font-size: .85rem;
+    opacity: .75;
+  }
+
+  /* ─── Welcome ─── */
+  .cz-welcome {
+    padding: 2.5rem clamp(1.5rem, 5vw, 4rem) 0;
+    max-width: 780px;
+  }
+  .cz-welcome p {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #444;
+    margin: 0 0 1.5rem;
+  }
+  .cz-rates {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .cz-rate-chip {
+    background: #fff;
+    border: 1px solid #e0ddd7;
+    border-radius: 10px;
+    padding: .6rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+  }
+  .cz-rate-label {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #888;
+  }
+  .cz-rate-value {
+    font-family: 'Lora', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--forest, #2d5a3d);
+  }
+
+  /* ─── Tools ─── */
+  .cz-tools {
+    padding: 2.5rem clamp(1.5rem, 5vw, 4rem) 0;
+  }
+  .cz-tools h2 {
+    font-family: 'Lora', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #888;
+    margin: 0 0 1.25rem;
+  }
+  .cz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+  .cz-card {
+    background: #fff;
+    border: 1px solid #e0ddd7;
+    border-radius: 14px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    transition: box-shadow .2s, border-color .2s, transform .15s;
+  }
+  .cz-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,.08);
+    border-color: var(--forest, #2d5a3d);
+    transform: translateY(-2px);
+  }
+  .cz-card-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+  }
+  .cz-card-body h3 {
+    font-family: 'Lora', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 .4rem;
+    color: var(--ink, #1a1a1a);
+  }
+  .cz-card-body p {
+    font-size: .88rem;
+    line-height: 1.6;
+    color: #666;
+    margin: 0;
+  }
+  .cz-card-arrow {
+    font-size: 1.1rem;
+    color: var(--forest, #2d5a3d);
+    align-self: flex-end;
+    margin-top: auto;
+  }
+
+  /* ─── Footer ─── */
+  .cz-footer {
+    padding: 2.5rem clamp(1.5rem, 5vw, 4rem) 0;
+    border-top: 1px solid #e0ddd7;
+    margin-top: 3rem;
+  }
+  .cz-footer p {
+    font-size: .88rem;
+    color: #666;
+    margin: 0 0 .75rem;
+  }
+  .cz-footer a {
+    color: var(--forest, #2d5a3d);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .cz-footer a:hover {
+    text-decoration: underline;
+  }
+  .cz-disclaimer {
+    font-size: .78rem !important;
+    color: #999 !important;
+    font-style: italic;
+  }
+</style>

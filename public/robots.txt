@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /client/
 
 Sitemap: https://stephanieweyman.ca/sitemap-index.xml

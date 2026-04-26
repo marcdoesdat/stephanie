@@ -1,0 +1,82 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Calculator from '../../components/Calculator.astro';
+import { fetchHypothecaRates } from '../../services/ratesService';
+
+const rates = await fetchHypothecaRates();
+const defaultRate = rates?.fixe_5ans ?? 4.99;
+---
+
+<MainLayout
+  title="Calculateur de versements — Espace client"
+  description="Calculateur hypothécaire avancé. Zone privée réservée aux clients de Stéphanie Weyman."
+  noindex={true}
+>
+  <div class="cz-tool-page">
+
+    <div class="cz-tool-header">
+      <a href="/client" class="cz-back">← Retour à l'espace client</a>
+      <span class="cz-tool-badge">Espace client</span>
+    </div>
+
+    <Calculator defaultRate={defaultRate} />
+
+    <div class="cz-tool-footer">
+      <a href="/client" class="cz-back-bottom">← Retour aux outils</a>
+    </div>
+
+  </div>
+</MainLayout>
+
+<style>
+  .cz-tool-page {
+    background: #f7f5f0;
+  }
+  .cz-tool-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem clamp(1.5rem, 5vw, 4rem);
+    background: #fff;
+    border-bottom: 1px solid #e0ddd7;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .cz-back {
+    color: var(--forest, #2d5a3d);
+    font-size: .88rem;
+    font-weight: 500;
+    text-decoration: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .cz-back:hover {
+    text-decoration: underline;
+  }
+  .cz-tool-badge {
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--forest, #2d5a3d);
+    background: rgba(45,90,61,.08);
+    padding: .25rem .65rem;
+    border-radius: 20px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .cz-tool-footer {
+    padding: 2rem clamp(1.5rem, 5vw, 4rem);
+  }
+  .cz-back-bottom {
+    color: var(--forest, #2d5a3d);
+    font-size: .88rem;
+    font-weight: 500;
+    text-decoration: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .cz-back-bottom:hover {
+    text-decoration: underline;
+  }
+</style>
