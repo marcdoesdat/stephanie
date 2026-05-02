@@ -92,11 +92,14 @@ const { defaultRate = 4.99 } = Astro.props;
           <div class="email-capture-label">Recevoir ce résumé par courriel</div>
           <div class="email-capture-note">Stéphanie vous enverra personnellement le résumé. Merci d'indiquer vos coordonnées.</div>
           <div class="email-capture-row">
-            <input type="text" id="calc-name" placeholder="Votre nom complet" class="email-capture-input" />
-            <input type="tel" id="calc-phone" placeholder="Votre téléphone" class="email-capture-input" />
+            <label for="calc-name" class="sr-only">Votre nom complet</label>
+            <input type="text" id="calc-name" placeholder="Votre nom complet" class="email-capture-input" autocomplete="name" />
+            <label for="calc-phone" class="sr-only">Votre téléphone</label>
+            <input type="tel" id="calc-phone" placeholder="Votre téléphone" class="email-capture-input" autocomplete="tel" />
           </div>
           <div class="email-capture-row">
-            <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" />
+            <label for="calc-email" class="sr-only">Votre email</label>
+            <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" autocomplete="email" />
             <button type="button" id="calc-email-btn" class="email-capture-btn">Envoyer →</button>
           </div>
           <div id="calc-email-msg" class="email-capture-msg" style="display:none;"></div>

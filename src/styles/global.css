@@ -12,6 +12,9 @@ body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);f
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important;scroll-behavior:auto!important}
 }
 
+/* Screen reader only */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
+
 /* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,250,246,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 clamp(1rem,3vw,4rem);display:flex;align-items:center;justify-content:space-between;min-height:68px;transition:box-shadow .3s}
 nav.scrolled{box-shadow:0 4px 30px rgba(0,0,0,.06)}

@@ -14,7 +14,7 @@ const { defaultRate = 3.79 } = Astro.props;
 
     <div class="fade-up">
       <div class="section-tag">Simulateur</div>
-      <h2 class="section-title">Combien puis-je<br /><em>emprunter ?</em></h2>
+      <h2 class="section-title">Combien puis-je <br /><em>emprunter ?</em></h2>
       <p class="section-sub">
         Entrez vos informations pour obtenir une estimation de votre capacité d'emprunt au Québec en quelques secondes.
       </p>
@@ -147,7 +147,9 @@ const { defaultRate = 3.79 } = Astro.props;
               <h3 class="sim-gate-title">Voir le détail complet</h3>
               <p class="sim-gate-sub">Recevez votre résumé personnalisé + le <strong>guide gratuit du premier acheteur</strong> — directement de Stéphanie.</p>
               <div class="sim-gate-fields">
+                <label for="sim-gate-prenom" class="sr-only">Votre prénom</label>
                 <input type="text" id="sim-gate-prenom" placeholder="Votre prénom" class="sim-gate-input" autocomplete="given-name" />
+                <label for="sim-gate-email" class="sr-only">Votre email</label>
                 <input type="email" id="sim-gate-email" placeholder="votre@courriel.com" class="sim-gate-input" autocomplete="email" />
               </div>
               <button type="button" id="sim-gate-btn" class="sim-gate-submit">Voir mes résultats complets &rarr;</button>
@@ -218,7 +220,7 @@ const { defaultRate = 3.79 } = Astro.props;
     /** Return a CSS color based on ABD or ATD ratio value vs thresholds */
     function ratioColor(value: number, greenMax: number, orangeMax: number): string {
       if (value <= greenMax)  return '#3d8a57'; // vert
-      if (value <= orangeMax) return '#b07a20'; // orange/ambre
+      if (value <= orangeMax) return '#8e5a1f'; // orange/ambre (assombri pour contraste WCAG AA)
       return '#c0392b';                          // rouge
     }
 
