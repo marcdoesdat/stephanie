@@ -39,37 +39,36 @@ const { defaultRate = 4.99 } = Astro.props;
           <small id="mise-pct" style="color:rgba(255,255,255,.5);font-size:.75rem;margin-top:.3rem;display:block;"></small>
         </div>
 
-        <div class="form-group">
-          <label for="taux">Taux d'intérêt (%)</label>
-          <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="25" />
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="width: 100%;">
-            <label for="amort">Amortissement</label>
-            <select id="amort">
-              <option value="25">25 ans</option>
-              <option value="30">30 ans (mise ≥ 20 %)</option>
-              <option value="20">20 ans</option>
-              <option value="15">15 ans</option>
-            </select>
-          </div>
-          <div class="form-group" style="width: 100%;">
-            <label for="freq">Fréquence</label>
-            <select id="freq">
-              <option value="12">Mensuel</option>
-              <option value="26">Aux deux semaines</option>
-              <option value="52">Hebdomadaire</option>
-            </select>
-          </div>
-        </div>
-
         <!-- Options avancées -->
         <div class="adv-options">
           <button type="button" class="adv-toggle-btn" id="adv-toggle-btn" aria-expanded="false" aria-controls="adv-panel">
             Options avancées <span class="adv-arrow" aria-hidden="true">▾</span>
           </button>
           <div class="adv-panel" id="adv-panel" hidden>
+            <div class="form-group">
+              <label for="taux">Taux d'intérêt (%)</label>
+              <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="25" />
+              <small style="color:rgba(255,255,255,.45);font-size:.72rem;margin-top:.3rem;display:block;">Modifiable — taux moyen actuel pré-rempli</small>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="width: 100%;">
+                <label for="amort">Amortissement</label>
+                <select id="amort">
+                  <option value="25">25 ans</option>
+                  <option value="30">30 ans (mise ≥ 20 %)</option>
+                  <option value="20">20 ans</option>
+                  <option value="15">15 ans</option>
+                </select>
+              </div>
+              <div class="form-group" style="width: 100%;">
+                <label for="freq">Fréquence</label>
+                <select id="freq">
+                  <option value="12">Mensuel</option>
+                  <option value="26">Aux deux semaines</option>
+                  <option value="52">Hebdomadaire</option>
+                </select>
+              </div>
+            </div>
             <div class="form-group">
               <label for="calc-taxes">Taxes municipales et scolaires ($/mois)</label>
               <input type="number" id="calc-taxes" value="250" inputmode="decimal" min="0" />

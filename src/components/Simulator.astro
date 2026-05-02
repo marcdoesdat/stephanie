@@ -74,33 +74,6 @@ const { defaultRate = 3.79 } = Astro.props;
           </div>
         </div>
 
-        <button class="sim-btn" id="sim-btn">Recevoir mes résultats par courriel →</button>
-
-        <!-- Capture courriel -->
-        <div class="sim-email-capture" id="sim-email-capture" style="display:none;">
-          <form name="simulator-summary" data-netlify="true" data-netlify-honeypot="bot-field" style="display:none;" aria-hidden="true">
-            <input type="hidden" name="form-name" value="simulator-summary" />
-            <input type="text" name="bot-field" tabindex="-1" />
-            <input type="text" name="nom" />
-            <input type="tel" name="telephone" />
-            <input type="email" name="email" />
-            <input type="text" name="prix_max" />
-            <input type="text" name="versement" />
-            <input type="text" name="montant_pret" />
-            <input type="text" name="prime_schl" />
-          </form>
-          <div class="sim-email-label">Recevoir ce résumé par courriel</div>
-          <div class="sim-email-note">Stéphanie vous enverra personnellement le résumé de votre capacité d'emprunt.</div>
-          <div class="sim-email-row">
-            <input type="text" id="sim-cap-name" placeholder="Votre nom complet" class="sim-email-input" />
-            <input type="tel" id="sim-cap-phone" placeholder="Votre téléphone" class="sim-email-input" />
-          </div>
-          <div class="sim-email-row">
-            <input type="email" id="sim-cap-email" placeholder="votre@courriel.com" class="sim-email-input" />
-            <button type="button" id="sim-cap-btn" class="sim-email-btn">Envoyer →</button>
-          </div>
-          <div id="sim-cap-msg" class="sim-email-msg" style="display:none;"></div>
-        </div>
       </div>
 
       <div class="sim-results fade-up" style="transition-delay:.2s" aria-live="polite">
@@ -113,47 +86,77 @@ const { defaultRate = 3.79 } = Astro.props;
           <div class="sr-sub" id="sim-sub">Entrez vos informations</div>
         </div>
 
-        <div class="sim-cards">
-          <div class="sim-card">
-            <div class="sc-label">Prêt hypothécaire</div>
-            <div class="sc-val" id="sim-pret">—</div>
-          </div>
-          <div class="sim-card">
-            <div class="sc-label">Paiement mensuel</div>
-            <div class="sc-val" id="sim-pmt">—</div>
-          </div>
-          <div class="sim-card">
-            <div class="sc-label">Ratio ABD</div>
-            <div class="sc-val" id="sim-abd">—</div>
-          </div>
-          <div class="sim-card">
-            <div class="sc-label">Ratio ATD</div>
-            <div class="sc-val" id="sim-atd">—</div>
-          </div>
-        </div>
+        <!-- Gate : détails verrouillés jusqu'à capture courriel -->
+        <div class="sim-gate locked" id="sim-gate">
 
-        <!-- Nouvelle carte : scenario alternatif a l'achat -->
-        <div class="sim-absolute-max" id="sim-absolute-card" style="display:none;">
-          <div class="sam-header">
-            <span class="sam-tag">SCÉNARIO ALTERNATIF À L'ACHAT</span>
-            <span class="sam-info" title="Capacité calculée uniquement sur vos revenus et dettes, sans tenir compte de votre mise de fonds actuelle.">ℹ</span>
+          <div class="sim-gate-content">
+            <div class="sim-cards">
+              <div class="sim-card">
+                <div class="sc-label">Prêt hypothécaire</div>
+                <div class="sc-val" id="sim-pret">—</div>
+              </div>
+              <div class="sim-card">
+                <div class="sc-label">Paiement mensuel</div>
+                <div class="sc-val" id="sim-pmt">—</div>
+              </div>
+              <div class="sim-card">
+                <div class="sc-label">Ratio ABD</div>
+                <div class="sc-val" id="sim-abd">—</div>
+              </div>
+              <div class="sim-card">
+                <div class="sc-label">Ratio ATD</div>
+                <div class="sc-val" id="sim-atd">—</div>
+              </div>
+            </div>
+
+            <!-- Nouvelle carte : scenario alternatif a l'achat -->
+            <div class="sim-absolute-max" id="sim-absolute-card" style="display:none;">
+              <div class="sam-header">
+                <span class="sam-tag">SCÉNARIO ALTERNATIF À L'ACHAT</span>
+                <span class="sam-info" title="Capacité calculée uniquement sur vos revenus et dettes, sans tenir compte de votre mise de fonds actuelle.">ℹ</span>
+              </div>
+              <div class="sam-label">Achat avec mise de fonds minimale</div>
+              <div class="sam-val" id="sim-abs-prix">—</div>
+              <div class="sam-sub" id="sim-abs-sub">Nécessite une mise de fonds minimale de</div>
+              <div class="sam-mise" id="sim-abs-mise">—</div>
+            </div>
+
+            <div class="sim-note">
+              <strong>Stress test :</strong> Capacité calculée au taux de qualification canadien (taux + 2 % ou 5,25 %, le plus élevé).<br/>
+              * Inclut taxes, chauffage et 50 % des frais de condo dans les ratios d'endettement.<br/>
+              * Prime SCHL ajoutée au prêt si la mise de fonds est inférieure à 20 %.
+            </div>
+
+            <a href="#contact" class="sim-cta-btn">
+              Obtenir ma pré-approbation maintenant
+            </a>
           </div>
-          <div class="sam-label">Achat avec mise de fonds minimale</div>
-          <div class="sam-val" id="sim-abs-prix">—</div>
-          <div class="sam-sub" id="sim-abs-sub">Nécessite une mise de fonds minimale de</div>
-          <div class="sam-mise" id="sim-abs-mise">—</div>
-        </div>
 
-        <div class="sim-note">
-          <strong>Stress test :</strong> Capacité calculée au taux de qualification canadien (taux + 2 % ou 5,25 %, le plus élevé).<br/>
-          * Inclut taxes, chauffage et 50 % des frais de condo dans les ratios d'endettement.<br/>
-          * Prime SCHL ajoutée au prêt si la mise de fonds est inférieure à 20 %.
-        </div>
+          <!-- Overlay de capture -->
+          <div class="sim-gate-overlay" id="sim-gate-overlay">
+            <form name="simulator-gate" data-netlify="true" data-netlify-honeypot="bot-field" style="display:none;" aria-hidden="true">
+              <input type="hidden" name="form-name" value="simulator-gate" />
+              <input type="text" name="bot-field" tabindex="-1" />
+              <input type="text" name="prenom" />
+              <input type="email" name="email" />
+              <input type="text" name="prix_max" />
+              <input type="text" name="versement" />
+            </form>
+            <div class="sim-gate-card">
+              <div class="sim-gate-lock">&#128274;</div>
+              <h3 class="sim-gate-title">Voir le détail complet</h3>
+              <p class="sim-gate-sub">Recevez votre résumé personnalisé + le <strong>guide gratuit du premier acheteur</strong> — directement de Stéphanie.</p>
+              <div class="sim-gate-fields">
+                <input type="text" id="sim-gate-prenom" placeholder="Votre prénom" class="sim-gate-input" autocomplete="given-name" />
+                <input type="email" id="sim-gate-email" placeholder="votre@courriel.com" class="sim-gate-input" autocomplete="email" />
+              </div>
+              <button type="button" id="sim-gate-btn" class="sim-gate-submit">Voir mes résultats complets &rarr;</button>
+              <div id="sim-gate-msg" class="sim-gate-msg" style="display:none;"></div>
+              <p class="sim-gate-privacy">Aucun spam. Vos informations restent confidentielles.</p>
+            </div>
+          </div>
 
-        <!-- CTA principal -->
-        <a href="#contact" class="sim-cta-btn">
-          Obtenir ma pré-approbation maintenant
-        </a>
+        </div>
       </div>
 
     </div>
@@ -393,97 +396,64 @@ const { defaultRate = 3.79 } = Astro.props;
     });
     document.getElementById('sim-amort')!.addEventListener('change', simuler);
 
-    const simRevealBtn = document.getElementById('sim-btn') as HTMLButtonElement;
-    const simEmailSection = document.getElementById('sim-email-capture') as HTMLDivElement;
+    // --- Gate logic ---
+    const simGate      = document.getElementById('sim-gate') as HTMLElement;
+    const simGatePrenom = document.getElementById('sim-gate-prenom') as HTMLInputElement;
+    const simGateEmail  = document.getElementById('sim-gate-email') as HTMLInputElement;
+    const simGateBtn    = document.getElementById('sim-gate-btn') as HTMLButtonElement;
+    const simGateMsg    = document.getElementById('sim-gate-msg')!;
 
-    simRevealBtn.onclick = (e) => {
-      e.preventDefault();
-      simuler();
-      simRevealBtn.style.transform = 'scale(0.98)';
-      setTimeout(() => {
-        simRevealBtn.style.transform = 'none';
-      }, 150);
+    function unlockGate() {
+      simGate.classList.remove('locked');
+      simGate.classList.add('unlocked');
+    }
 
-      const isVisible = window.getComputedStyle(simEmailSection).display !== 'none';
-      if (isVisible) {
-        simEmailSection.style.display = 'none';
-      } else {
-        simEmailSection.style.display = 'block';
-        simEmailSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    };
+    if (localStorage.getItem('sim_unlocked') === '1') {
+      unlockGate();
+    }
 
-    // --- Email capture (Simulator) ---
-    document.getElementById('sim-cap-btn')!.addEventListener('click', async () => {
-      const nomInput   = document.getElementById('sim-cap-name') as HTMLInputElement;
-      const phoneInput = document.getElementById('sim-cap-phone') as HTMLInputElement;
-      const emailInput = document.getElementById('sim-cap-email') as HTMLInputElement;
-      const msgEl      = document.getElementById('sim-cap-msg')!;
-      const sendBtn    = document.getElementById('sim-cap-btn') as HTMLButtonElement;
+    simGateBtn.addEventListener('click', async () => {
+      const prenom = simGatePrenom.value.trim();
+      const email  = simGateEmail.value.trim();
 
-      const nom       = nomInput.value.trim();
-      const telephone = phoneInput.value.trim();
-      const email     = emailInput.value.trim();
-
-      if (nom.length < 2) {
-        msgEl.textContent = 'Veuillez entrer votre nom complet.';
-        msgEl.style.display = '';
-        msgEl.style.color = '#c0392b';
-        return;
-      }
-      if (telephone.length < 7) {
-        msgEl.textContent = 'Veuillez entrer un numéro de téléphone valide.';
-        msgEl.style.display = '';
-        msgEl.style.color = '#c0392b';
+      if (prenom.length < 2) {
+        simGateMsg.textContent   = 'Veuillez entrer votre prénom.';
+        simGateMsg.style.display = '';
+        simGateMsg.style.color   = '#c0392b';
         return;
       }
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        msgEl.textContent = 'Veuillez entrer une adresse courriel valide.';
-        msgEl.style.display = '';
-        msgEl.style.color = '#c0392b';
+        simGateMsg.textContent   = 'Veuillez entrer une adresse courriel valide.';
+        simGateMsg.style.display = '';
+        simGateMsg.style.color   = '#c0392b';
         return;
       }
 
-      const prix_max    = document.getElementById('sim-max')?.textContent?.trim() || '-';
-      const versement   = document.getElementById('sim-pmt')?.textContent?.trim() || '-';
-      const montantPret = document.getElementById('sim-pret')?.textContent?.trim() || '-';
+      const prix_max  = document.getElementById('sim-max')?.textContent?.trim() || '-';
+      const versement = document.getElementById('sim-pmt')?.textContent?.trim() || '-';
 
-      sendBtn.textContent = 'Envoi...';
-      sendBtn.disabled = true;
-      msgEl.style.display = 'none';
-
-      const payload = new URLSearchParams({
-        'form-name': 'simulator-summary',
-        nom,
-        telephone,
-        email,
-        prix_max,
-        versement,
-        montant_pret: montantPret,
-        prime_schl: '-',
-      }).toString();
+      simGateBtn.textContent = 'Un instant...';
+      simGateBtn.disabled    = true;
+      simGateMsg.style.display = 'none';
 
       try {
-        const response = await fetch('/', {
+        await fetch('/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: payload,
+          body: new URLSearchParams({
+            'form-name': 'simulator-gate',
+            prenom,
+            email,
+            prix_max,
+            versement,
+          }).toString(),
         });
-        if (!response.ok) throw new Error('Erreur serveur Netlify');
-        msgEl.textContent = 'Merci. Stéphanie vous enverra votre résumé sous peu.';
-        msgEl.style.display = '';
-        msgEl.style.color = '#3d5a4a';
-        nomInput.value = '';
-        phoneInput.value = '';
-        emailInput.value = '';
       } catch {
-        msgEl.textContent = 'Impossible d\'envoyer le résumé pour le moment. Veuillez réessayer.';
-        msgEl.style.display = '';
-        msgEl.style.color = '#c0392b';
-      } finally {
-        sendBtn.textContent = 'Envoyer →';
-        sendBtn.disabled = false;
+        // Ne pas bloquer l'unlock si le réseau échoue
       }
+
+      localStorage.setItem('sim_unlocked', '1');
+      unlockGate();
     });
 
     simuler();
@@ -491,92 +461,143 @@ const { defaultRate = 3.79 } = Astro.props;
 </script>
 
 <style>
-  .sim-email-capture {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.35rem 1.4rem;
-    margin-top: 0.25rem;
+  /* Gate wrapper */
+  .sim-gate {
+    position: relative;
   }
 
-  .sim-email-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
+  .sim-gate.locked {
+    overflow: hidden;
+    padding-bottom: 1.5rem;
+  }
+
+  .sim-gate.locked .sim-gate-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    filter: blur(5px);
+    user-select: none;
+    pointer-events: none;
+    opacity: 0.65;
+    z-index: 1;
+  }
+
+  .sim-gate.unlocked .sim-gate-overlay {
+    display: none;
+  }
+
+  /* Overlay */
+  .sim-gate-overlay {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 0;
+    background: none;
+  }
+
+  /* Gate card */
+  .sim-gate-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
+    padding: 2rem 1.8rem 1.6rem;
+    width: 100%;
+    text-align: center;
+    margin-top: 1rem;
+  }
+
+  .sim-gate-lock {
+    font-size: 1.8rem;
+    margin-bottom: 0.6rem;
+    line-height: 1;
+  }
+
+  .sim-gate-title {
+    font-family: 'Lora', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
     margin-bottom: 0.5rem;
   }
 
-  .sim-email-note {
-    font-size: 0.75rem;
+  .sim-gate-sub {
+    font-size: 0.85rem;
     color: var(--muted);
-    line-height: 1.5;
-    margin-bottom: 0.95rem;
+    line-height: 1.65;
+    margin-bottom: 1.3rem;
   }
 
-  .sim-email-row {
+  .sim-gate-sub strong {
+    color: var(--ink);
+  }
+
+  .sim-gate-fields {
     display: flex;
-    gap: 0.65rem;
-    align-items: stretch;
-    margin-bottom: 0.65rem;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 0.85rem;
   }
 
-  .sim-email-input {
-    flex: 1;
-    min-width: 0;
-    min-height: 44px;
-    padding: 0.78rem 1rem;
+  .sim-gate-input {
+    width: 100%;
+    padding: 0.85rem 1.1rem;
     background: var(--sand);
     border: 1.5px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     color: var(--ink);
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
+    font-size: 0.95rem;
     transition: border-color 0.2s;
+    text-align: left;
   }
 
-  .sim-email-input:focus {
+  .sim-gate-input:focus {
     outline: none;
     border-color: var(--clay);
+    background: var(--white);
   }
 
-  .sim-email-input::placeholder {
+  .sim-gate-input::placeholder {
     color: var(--muted);
-    opacity: 0.6;
+    opacity: 0.65;
   }
 
-  .sim-email-btn {
+  .sim-gate-submit {
+    width: 100%;
+    padding: 1rem;
     background: var(--clay);
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     color: white;
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.82rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    min-height: 44px;
-    padding: 0.78rem 1rem;
     cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s;
+    letter-spacing: 0.01em;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 4px 18px rgba(196, 122, 82, 0.32);
   }
 
-  .sim-email-btn:hover {
+  .sim-gate-submit:hover {
     background: var(--clay-dk);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(196, 122, 82, 0.42);
   }
 
-  .sim-email-msg {
-    font-size: 0.75rem;
+  .sim-gate-msg {
+    font-size: 0.78rem;
     line-height: 1.5;
     margin-top: 0.5rem;
   }
 
-  @media (max-width: 720px) {
-    .sim-email-row {
-      flex-direction: column;
-    }
-    .sim-email-btn {
-      width: 100%;
-    }
+  .sim-gate-privacy {
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 0.8rem;
+    opacity: 0.75;
   }
 </style>

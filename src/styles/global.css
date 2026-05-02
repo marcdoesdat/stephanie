@@ -55,9 +55,9 @@ nav.scrolled{box-shadow:0 4px 30px rgba(0,0,0,.06)}
 @keyframes morphing{0%,100%{border-radius:40% 60% 55% 45%/45% 40% 60% 55%}33%{border-radius:55% 45% 40% 60%/60% 55% 45% 40%}66%{border-radius:45% 55% 60% 40%/55% 60% 40% 45%}}
 .floating-card{position:absolute;background:white;border:1px solid var(--border);border-radius:16px;padding:1rem 1.3rem;box-shadow:0 8px 30px rgba(0,0,0,.08);animation:float 4s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.card-tl{top:8%;left:-10%;animation-delay:0s}
+.card-tl{top:8%;left:-10%;animation-delay:0s;margin-right:12px}
+.card-tr{top:8%;right:-10%;animation-delay:1.2s;margin-left:12px}
 .card-br{bottom:12%;right:-8%;animation-delay:1.5s}
-.card-bl{bottom:12%;left:-10%;animation-delay:3s}
 .card-sm{font-size:.75rem;color:var(--muted)}
 .card-val{font-family:"Lora",serif;font-size:1.1rem;font-weight:600;color:var(--forest)}
 
@@ -93,7 +93,7 @@ section{padding:6rem 4rem}
 .service-card:hover .learn::after{transform:translateX(4px)}
 
 /* CALCULATEUR */
-#calculateur{background:var(--forest)}
+#calculateur{background:var(--forest);padding-bottom:3rem}
 #calculateur .section-tag{color:#a8c5b5;border-color:#a8c5b5}
 #calculateur .section-title{color:white}
 #calculateur .section-sub{color:rgba(255,255,255,.6)}
@@ -209,7 +209,7 @@ td:last-child{text-align:center}
 }
 
 /* SIMULATEUR */
-#simulateur{background:var(--warm)}
+#simulateur{background:var(--warm);padding-bottom:3rem}
 .sim-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:4rem;margin-top:4rem;align-items:start}
 .sim-form{background:var(--white);border-radius:24px;padding:2.5rem;border:1px solid var(--border)}
 .sim-group{margin-bottom:1.4rem}
@@ -237,7 +237,7 @@ td:last-child{text-align:center}
 .sim-adv-panel{padding:.8rem 0 0;display:flex;flex-direction:column;gap:0}
 
 /* Carte potentiel absolu */
-.sim-absolute-max{border-radius:20px;padding:1.8rem 2rem;border:2px solid var(--clay);background:linear-gradient(135deg,#fef6f2 0%,#fdf0e8 100%);position:relative;overflow:hidden}
+.sim-absolute-max{border-radius:20px;padding:1.8rem 2rem;border:2px solid var(--clay);background:linear-gradient(135deg,#fef6f2 0%,#fdf0e8 100%);position:relative;overflow:hidden;margin-top:1.5rem;box-shadow:0 8px 30px rgba(196,122,82,.12)}
 .sim-absolute-max::before{content:"";position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:rgba(196,122,82,.08);pointer-events:none}
 .sam-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem}
 .sam-tag{background:var(--clay);color:white;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .7rem;border-radius:20px}
