@@ -26,31 +26,22 @@ const { title, description, ogImage, noindex } = Astro.props;
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    
-    <link 
-      rel="preload" 
-      as="style" 
-      href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=DM+Sans:wght@400;500&display=swap" 
-    />
     <link
-      href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap"
     />
 
-    <script 
-      defer 
-      src="https://cloud.umami.is/script.js" 
+    <script
+      is:inline
+      defer
+      src="https://cloud.umami.is/script.js"
       data-website-id="9a2bb5e1-afd5-4d94-a89f-5584d5c44b12"
       data-domains={config.site_url.replace(/^https?:\/\//, '')}
     ></script>
   </head>
   <body>
-    <a href="#main-content" class="sr-only">Passer au contenu principal</a>
-    
-    <main id="main-content">
-      <slot />
-    </main>
-
+    <a href="#main-content" class="skip-link">Passer au contenu principal</a>
+    <slot />
     <a href="#contact" class="mobile-sticky-cta" aria-label="Prendre rendez-vous">Prendre rendez-vous</a>
   </body>
 </html>
@@ -83,6 +74,27 @@ const { title, description, ogImage, noindex } = Astro.props;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+  }
+
+  /* Lien d'évitement vers le contenu principal — visible au focus clavier */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0.5rem;
+    z-index: 10000;
+    padding: 0.6rem 1rem;
+    background: var(--ink, #1a1a1a);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: top .15s ease-in;
+  }
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    top: 0.5rem;
+    outline: 2px solid var(--clay, #c47a52);
+    outline-offset: 2px;
   }
 
   /* Focus visible pour l'accessibilité au clavier */

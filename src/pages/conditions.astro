@@ -5,20 +5,23 @@ import Footer from '../components/Footer.astro';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
-const currentYear = new Date().getFullYear();
+const lastUpdated = new Date('2026-05-01').toLocaleDateString('fr-CA', {
+  year: 'numeric',
+  month: 'long',
+});
 ---
 
-<Layout 
-  title="Conditions d'utilisation - Courtage hypothecaire Québec"
-  description={`Conditions d'utilisation du site de ${config.nom} : informations legales sur les outils de simulation et le courtage hypothécaire au Québec.`}
+<Layout
+  title="Conditions d'utilisation — Courtage hypothécaire Québec"
+  description={`Conditions d'utilisation du site de ${config.nom} : informations légales sur les outils de simulation et le courtage hypothécaire au Québec.`}
 >
   <Nav />
 
-  <main class="privacy-page">
+  <main id="main-content" class="privacy-page">
     <section class="container">
       <header class="privacy-header">
         <h1>Conditions d'utilisation</h1>
-        <p class="last-updated">Dernière mise à jour : Mars {currentYear}</p>
+        <p class="last-updated">Dernière mise à jour&nbsp;: {lastUpdated}</p>
       </header>
 
       <div class="privacy-content">

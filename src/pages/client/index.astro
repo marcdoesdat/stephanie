@@ -1,6 +1,6 @@
 ---
-export const prerender = true;
-
+export const prerender = false;
+// SSR — protégé par middleware si CLIENT_PASSWORD est défini
 import MainLayout from '../../layouts/MainLayout.astro';
 import { loadSiteConfig } from '../../config';
 import { fetchHypothecaRates } from '../../services/ratesService';
@@ -13,7 +13,7 @@ const variable = rates?.variable ?? '—';
 
 <MainLayout
   title="Espace client privé - Outils hypothécaires avancés"
-  description="Zone privee reservee aux clients de Stéphanie Weyman pour simuler differents scenarios hypothecaires."
+  description="Zone privée réservée aux clients de Stéphanie Weyman pour simuler différents scénarios hypothécaires."
   noindex={true}
 >
   <div class="client-zone">

@@ -1,6 +1,6 @@
 ---
-export const prerender = true;
-
+export const prerender = false;
+// SSR — protégé par middleware si CLIENT_PASSWORD est défini
 import MainLayout from '../../layouts/MainLayout.astro';
 import Calculator from '../../components/Calculator.astro';
 import { fetchHypothecaRates } from '../../services/ratesService';
@@ -10,8 +10,8 @@ const defaultRate = rates?.fixe_5ans ?? 4.99;
 ---
 
 <MainLayout
-  title="Calculateur de versements hypothécaires avancé - Espace client"
-  description="Outil prive pour comparer vos versements hypothécaires selon le taux, l'amortissement et la frequence de paiement."
+  title="Calculateur de versements hypothécaires avancé — Espace client"
+  description="Outil privé pour comparer vos versements hypothécaires selon le taux, l'amortissement et la fréquence de paiement."
   noindex={true}
 >
   <div class="cz-tool-page">

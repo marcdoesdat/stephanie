@@ -103,10 +103,15 @@ const courrielHref = `mailto:${config.courriel}`;
             
             <div class="form-error" id="form-error">Une erreur s'est produite. Veuillez réessayer.</div>
             
+            <label class="cform-consent" for="contact-consent">
+              <input type="checkbox" id="contact-consent" name="consent" required value="oui" />
+              <span>
+                J'accepte que {config.nom.split(' ')[0]} me recontacte au sujet de ma demande hypothécaire.
+                Vos renseignements ne sont partagés avec un prêteur qu'avec votre consentement explicite —
+                voir la <a href="/confidentialite">politique de confidentialité</a>.
+              </span>
+            </label>
             <button type="submit" class="contact-submit" id="contact-submit-btn">Envoyer ma demande →</button>
-            <div style="font-size:.68rem;color:var(--muted);margin-top:.8rem;text-align:center;">
-              🔒 Vos informations sont confidentielles et ne seront jamais partagées.
-            </div>
           </div>
         </form>
 
@@ -122,6 +127,26 @@ const courrielHref = `mailto:${config.courriel}`;
     </div>
   </div>
 </section>
+
+<style>
+  .cform-consent {
+    display: flex;
+    gap: .55rem;
+    align-items: flex-start;
+    margin: 1.1rem 0 .6rem;
+    font-size: .78rem;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .cform-consent input[type="checkbox"] {
+    margin-top: .15rem;
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--clay, #c47a52);
+  }
+  .cform-consent a { color: var(--clay, #c47a52); text-decoration: underline; }
+</style>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -146,7 +171,11 @@ const courrielHref = `mailto:${config.courriel}`;
 
       // 2. Préparation des données pour Netlify
       const formData = new FormData(form);
-      const data = new URLSearchParams(formData as any).toString();
+      const params = new URLSearchParams();
+      formData.forEach((value, key) => {
+        params.append(key, typeof value === 'string' ? value : value.name);
+      });
+      const data = params.toString();
 
       try {
         // 3. Envoi Ajax

@@ -9,11 +9,11 @@ const config = loadSiteConfig();
 
 <Layout 
   title="Tableau d'amortissement hypothécaire Québec"
-  description="Consultez votre tableau d'amortissement hypothécaire : capital, intérêtts et solde restant pour chaque versement au Québec."
+  description="Consultez votre tableau d'amortissement hypothécaire : capital, intérêts et solde restant pour chaque versement au Québec."
 >
   <Nav />
 
-  <main class="amort-page">
+  <main id="main-content" class="amort-page">
     <div class="amort-hero">
       <div class="amort-hero-inner">
         <a href="/#calculateur" class="back-link">← Retour au calculateur</a>
@@ -53,6 +53,8 @@ const config = loadSiteConfig();
 </Layout>
 
 <script>
+  import { calculateSCHL, calcPaiement, tauxPeriodique } from '../utils/mortgageCalc';
+
   document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const prix = parseFloat(params.get('prix') || '0');
@@ -75,18 +77,6 @@ const config = loadSiteConfig();
       document.getElementById('amort-params')!.textContent = 'La mise de fonds doit être inférieure au prix de la propriété. Retournez au calculateur.';
       return;
     }
-    // SCHL
-    function calculateSCHL(prix: number, mise: number): number {
-      const ratio = (mise / prix) * 100;
-      if (ratio >= 20) return 0;
-      if (ratio < 5) return 0;
-      const pret = prix - mise;
-      let tauxPrime: number;
-      if (ratio < 10) tauxPrime = 0.0400;
-      else if (ratio < 15) tauxPrime = 0.0310;
-      else tauxPrime = 0.0280;
-      return pret * tauxPrime;
-    }
 
     function formatMoney(amount: number): string {
       return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 2 }).format(amount);
@@ -95,44 +85,13 @@ const config = loadSiteConfig();
     const schl = calculateSCHL(prix, mise);
     const pretTotal = (prix - mise) + schl;
 
-    // Canadian mortgage: semi-annual compounding
-    const tauxMensuelCdn = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 12) - 1;
-    const totalMois = amort * 12;
+    const tauxPeriode = tauxPeriodique(taux, freq);
+    const totalPeriodes = amort * freq;
+    const paiementPeriode = calcPaiement(pretTotal, taux, amort, freq);
 
-    let paiementMensuel: number;
-    if (taux > 0) {
-      paiementMensuel = (pretTotal * tauxMensuelCdn) / (1 - Math.pow(1 + tauxMensuelCdn, -totalMois));
-    } else {
-      paiementMensuel = pretTotal / totalMois;
-    }
-
-    // Frequency adjustment
-    let periodsPerYear = freq;
-    let tauxPeriode: number;
-    let totalPeriodes: number;
-    let paiementPeriode: number;
-    let freqLabel: string;
-
-    if (freq === 26) {
-      // Bi-weekly: recalculate properly
-      tauxPeriode = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 26) - 1;
-      totalPeriodes = amort * 26;
-      freqLabel = 'aux deux semaines';
-    } else if (freq === 52) {
-      tauxPeriode = Math.pow(Math.pow(1 + (taux / 100) / 2, 2), 1 / 52) - 1;
-      totalPeriodes = amort * 52;
-      freqLabel = 'hebdomadaire';
-    } else {
-      tauxPeriode = tauxMensuelCdn;
-      totalPeriodes = totalMois;
-      freqLabel = 'mensuel';
-    }
-
-    if (taux > 0) {
-      paiementPeriode = (pretTotal * tauxPeriode) / (1 - Math.pow(1 + tauxPeriode, -totalPeriodes));
-    } else {
-      paiementPeriode = pretTotal / totalPeriodes;
-    }
+    const freqLabel = freq === 26 ? 'aux deux semaines'
+                    : freq === 52 ? 'hebdomadaire'
+                    : 'mensuel';
 
     // Display params
     const paramsEl = document.getElementById('amort-params')!;
@@ -205,13 +164,14 @@ const config = loadSiteConfig();
     align-items: center;
     gap: .4rem;
     font-size: .82rem;
-    color: rgba(255,255,255,.55);
+    color: rgba(255,255,255,.78);
     text-decoration: none;
     font-weight: 500;
     margin-bottom: 1.8rem;
     transition: color .2s;
   }
-  .back-link:hover { color: white; }
+  .back-link:hover,
+  .back-link:focus-visible { color: white; text-decoration: underline; }
   .amort-hero h1 {
     font-family: "Lora", serif;
     font-size: 2.4rem;

@@ -28,33 +28,43 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
 <MainLayout
   title="Courtière hypothécaire Repentigny | Pré-approbation Québec"
-  description="Obtenez une pré-approbation hypothécaire a Repentigny. Accompagnement pour achat, renouvellement, refinancement et travailleurs autonomes partout au Québec."
+  description="Obtenez une pré-approbation hypothécaire à Repentigny. Accompagnement pour achat, renouvellement, refinancement et travailleurs autonomes partout au Québec."
 >
   <MessengerBtn />
   <Nav />
-  <Hero baseRate={hypothecaVariable} />
-  <Simulator defaultRate={defaultRate} />
-  <Calculator defaultRate={defaultRate} />
-  <Services />
-  <TauxSection hypothecaRates={hypothecaRates} />
-  <About />
-  <Testimonials />
-  <Faq />
-  <Contact />
+  <main id="main-content">
+    <Hero baseRate={hypothecaVariable} />
+    <Simulator defaultRate={defaultRate} />
+    <Calculator defaultRate={defaultRate} />
+    <Services />
+    <TauxSection hypothecaRates={hypothecaRates} />
+    <About />
+    <Testimonials />
+    <Faq />
+    <Contact />
+  </main>
   <Footer />
 
   <script>
-    // Enable JS-based fade-up animations
     document.documentElement.classList.add('js-enabled');
 
-    // Fade-up animation observer
+    const fadeEls = document.querySelectorAll('.fade-up');
     const obs = new IntersectionObserver(
       (entries) =>
         entries.forEach((x) => {
-          if (x.isIntersecting) x.target.classList.add('visible');
+          if (x.isIntersecting) {
+            x.target.classList.add('visible');
+            obs.unobserve(x.target);
+          }
         }),
       { threshold: 0.12 }
     );
-    document.querySelectorAll('.fade-up').forEach((el) => obs.observe(el));
+    fadeEls.forEach((el) => obs.observe(el));
+
+    // Fallback: si l'observer ne déclenche pas (p. ex. éléments hors-fold avec layout figé),
+    // forcer la visibilité après 1 s.
+    window.setTimeout(() => {
+      fadeEls.forEach((el) => el.classList.add('visible'));
+    }, 1000);
   </script>
 </MainLayout>

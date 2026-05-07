@@ -15,7 +15,7 @@ const { defaultRate = 4.99 } = Astro.props;
       <div class="section-tag">Outil gratuit</div>
       <h2 class="section-title">Calculez vos <em>versements hypothécaires</em></h2>
       <p class="section-sub">
-        Utilisez notre simulateur pour estimer vos versements hypothécaires. Pour un calcul précis adapté à votre dossier, contactez {config.nom.split(' ')[0]}.
+        Estimez vos versements hypothécaires en quelques secondes. Pour un calcul précis adapté à votre dossier, contactez {config.nom.split(' ')[0]}.
       </p>
     </div>
 
@@ -31,12 +31,12 @@ const { defaultRate = 4.99 } = Astro.props;
           <label for="mise">Mise de fonds</label>
           <div class="mise-input-row">
             <input type="number" id="mise" placeholder="45000" value="45000" inputmode="decimal" min="0" />
-            <div class="mise-toggle-group">
-              <button type="button" id="mise-btn-dollar" class="mise-toggle-btn active" title="Montant en dollars">$</button>
-              <button type="button" id="mise-btn-pct" class="mise-toggle-btn" title="Pourcentage du prix">%</button>
+            <div class="mise-toggle-group" role="group" aria-label="Unité de la mise de fonds">
+              <button type="button" id="mise-btn-dollar" class="mise-toggle-btn active" aria-pressed="true" title="Montant en dollars">$</button>
+              <button type="button" id="mise-btn-pct" class="mise-toggle-btn" aria-pressed="false" title="Pourcentage du prix">%</button>
             </div>
           </div>
-          <small id="mise-pct" style="color:rgba(255,255,255,.5);font-size:.75rem;margin-top:.3rem;display:block;"></small>
+          <small id="mise-pct" style="color:rgba(255,255,255,.78);font-size:.75rem;margin-top:.3rem;display:block;"></small>
         </div>
 
         <!-- Options avancées -->
@@ -48,7 +48,7 @@ const { defaultRate = 4.99 } = Astro.props;
             <div class="form-group">
               <label for="taux">Taux d'intérêt (%)</label>
               <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="25" />
-              <small style="color:rgba(255,255,255,.45);font-size:.72rem;margin-top:.3rem;display:block;">Modifiable — taux moyen actuel pré-rempli</small>
+              <small style="color:rgba(255,255,255,.78);font-size:.72rem;margin-top:.3rem;display:block;">Modifiable — taux moyen actuel pré-rempli</small>
             </div>
             <div class="form-row">
               <div class="form-group" style="width: 100%;">
@@ -80,7 +80,7 @@ const { defaultRate = 4.99 } = Astro.props;
             <div class="form-group">
               <label for="calc-condo">Frais de copropriété / condo ($/mois)</label>
               <input type="number" id="calc-condo" value="0" inputmode="decimal" min="0" />
-              <small style="color:rgba(255,255,255,.4);font-size:.7rem;margin-top:.25rem;display:block;">50 % inclus dans le calcul du coût total mensuel</small>
+              <small style="color:rgba(255,255,255,.78);font-size:.7rem;margin-top:.25rem;display:block;">50 % inclus dans le calcul du coût total mensuel</small>
             </div>
           </div>
         </div>
@@ -102,6 +102,13 @@ const { defaultRate = 4.99 } = Astro.props;
             <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" autocomplete="email" />
             <button type="button" id="calc-email-btn" class="email-capture-btn">Envoyer →</button>
           </div>
+          <label class="email-capture-consent" for="calc-consent">
+            <input type="checkbox" id="calc-consent" />
+            <span>
+              J'accepte de recevoir ce résumé par courriel et d'être recontacté(e) par {config.nom.split(' ')[0]} —
+              voir la <a href="/confidentialite">politique de confidentialité</a>.
+            </span>
+          </label>
           <div id="calc-email-msg" class="email-capture-msg" style="display:none;"></div>
         </div>
       </form>
@@ -111,8 +118,10 @@ const { defaultRate = 4.99 } = Astro.props;
         <div class="result-card main">
           <div class="result-label" id="label-freq">Versement mensuel</div>
           <div class="result-value" id="res-paiement">0 $</div>
-          <div class="result-detail">Capital et intérêts seulement</div>
+          <div class="result-detail" id="res-detail-cap-int">Capital et intérêts — prime SCHL incluse (financée dans le prêt)</div>
+          <div class="result-detail result-detail--micro" id="res-detail-prime-schl">Dont ≈ 0 $/mois pour la prime SCHL</div>
         </div>
+
 
         <!-- Coût mensuel total (avec taxes, chauffage, condo) -->
         <div class="result-card small result-card--total" id="card-cout-mensuel" style="display:none;">
@@ -133,18 +142,19 @@ const { defaultRate = 4.99 } = Astro.props;
           </div>
         </div>
 
-        <a id="lien-amortissement" href="/amortissement" target="_blank" class="amort-link" style="display:none;">
+        <a id="lien-amortissement" href="/amortissement" target="_blank" rel="noopener" class="amort-link" style="display:none;">
           Voir le tableau d'amortissement complet →
         </a>
 
         <!-- CTA principal -->
         <a href="#contact" class="calc-cta-btn">
-          Obtenir ma pré-approbation maintenant
+          Prendre rendez-vous
         </a>
 
         <div class="calc-disclaimer">
-          * Résultats indicatifs uniquement — non une pré-approbation.
-          La prime SCHL est une estimation aux taux standards.<br/>
+          * Résultats indicatifs uniquement — ne constituent pas une pré-approbation.
+          La prime SCHL est une estimation aux taux standards. Les frais de notaire,
+          droits de mutation (taxe de bienvenue), inspection et évaluation ne sont pas inclus.<br />
           <a href="#contact" style="color: #a8c5b5; text-decoration: underline;">Analyse personnalisée avec {config.nom.split(' ')[0]}</a>.
         </div>
       </div>
@@ -153,7 +163,7 @@ const { defaultRate = 4.99 } = Astro.props;
 </section>
 
 <script>
-  import { calculateSCHL, formatMoney, tauxMensuel } from '../utils/mortgageCalc';
+  import { calculateSCHL, formatMoney, calcPaiement } from '../utils/mortgageCalc';
 
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('calc-form');
@@ -204,14 +214,18 @@ const { defaultRate = 4.99 } = Astro.props;
       miseEnPct = toPct;
       if (miseEnPct) {
         btnPct.classList.add('active');
+        btnPct.setAttribute('aria-pressed', 'true');
         btnDollar.classList.remove('active');
+        btnDollar.setAttribute('aria-pressed', 'false');
         if (prix > 0) miseEl.value = ((miseVal / prix) * 100).toFixed(1);
         miseEl.placeholder = '10';
         miseEl.max = '100';
         miseEl.step = '0.1';
       } else {
         btnDollar.classList.add('active');
+        btnDollar.setAttribute('aria-pressed', 'true');
         btnPct.classList.remove('active');
+        btnPct.setAttribute('aria-pressed', 'false');
         if (prix > 0) miseEl.value = Math.round(prix * (miseVal / 100)).toString();
         miseEl.placeholder = '45000';
         miseEl.removeAttribute('max');
@@ -264,27 +278,16 @@ const { defaultRate = 4.99 } = Astro.props;
       const pretTotal = (prix - mise) + schl;
       const schlRate  = schl > 0 ? ((schl / (prix - mise)) * 100).toFixed(2) : null;
 
-      // Canadian semi-annual compounding
-      const rMensuel = tauxMensuel(taux);
-      const n        = amort * 12;
+      // Periodic payment (same formula used in /amortissement)
+      const paiementMensuel = calcPaiement(pretTotal, taux, amort, 12);
+      const paiementFinal   = calcPaiement(pretTotal, taux, amort, freq);
 
-      let paiementMensuel: number;
-      if (taux > 0) {
-        paiementMensuel = (pretTotal * rMensuel) / (1 - Math.pow(1 + rMensuel, -n));
-      } else {
-        paiementMensuel = pretTotal / n;
-      }
+      // Part du versement mensuel attribuable à la prime SCHL (proportion du prêt total)
+      const primeSchlMensuel = schl > 0 ? paiementMensuel * (schl / pretTotal) : 0;
 
-      // Frequency adjustment
-      let paiementFinal = paiementMensuel;
-      let labelTexte    = 'Versement mensuel';
-      if (freq === 26) {
-        paiementFinal = (paiementMensuel * 12) / 26;
-        labelTexte    = 'Versement aux deux semaines';
-      } else if (freq === 52) {
-        paiementFinal = (paiementMensuel * 12) / 52;
-        labelTexte    = 'Versement hebdomadaire';
-      }
+      let labelTexte = 'Versement mensuel';
+      if (freq === 26) labelTexte = 'Versement aux deux semaines';
+      else if (freq === 52) labelTexte = 'Versement hebdomadaire';
 
       // Total monthly cost (always monthly, regardless of payment frequency)
       const fraisCondo   = condo * 0.5;
@@ -306,6 +309,18 @@ const { defaultRate = 4.99 } = Astro.props;
       } else {
         schlDetail.style.display = 'none';
       }
+
+      const primeSchlMicroEl = document.getElementById('res-detail-prime-schl');
+      if (primeSchlMicroEl) {
+        if (schl > 0) {
+          primeSchlMicroEl.textContent = `Dont ≈ ${formatMoney(primeSchlMensuel)}/mois pour la prime SCHL`;
+          primeSchlMicroEl.style.display = '';
+        } else {
+          primeSchlMicroEl.textContent = 'Dont ≈ 0 $/mois pour la prime SCHL';
+          primeSchlMicroEl.style.display = '';
+        }
+      }
+
 
       // Total mensuel
       const cardCout = document.getElementById('card-cout-mensuel')!;
@@ -379,6 +394,14 @@ const { defaultRate = 4.99 } = Astro.props;
         return;
       }
 
+      const consentEl = document.getElementById('calc-consent') as HTMLInputElement | null;
+      if (!consentEl?.checked) {
+        emailMsg.textContent   = 'Veuillez accepter la politique de confidentialité pour recevoir le résumé.';
+        emailMsg.style.display = '';
+        emailMsg.style.color   = '#c0392b';
+        return;
+      }
+
       const labelFrequence  = document.getElementById('label-freq')?.textContent?.trim() || 'Versement mensuel';
       const versement       = document.getElementById('res-paiement')?.textContent?.trim() || '-';
       const montantPret     = document.getElementById('res-pret')?.textContent?.trim() || '-';
@@ -401,6 +424,7 @@ const { defaultRate = 4.99 } = Astro.props;
         prime_schl: primeSchl,
         cout_mensuel_total: coutMensuel,
         amortissement_url: amortissementUrl,
+        consentement: 'oui',
       }).toString();
 
       try {

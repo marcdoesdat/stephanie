@@ -2,6 +2,11 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { decodeHypotheca } from '../utils/hypothecaDecoder';
 
+const DEBUG_RATES = process.env.DEBUG_RATES === '1' || process.env.NODE_ENV === 'development';
+const debug = (...args: unknown[]): void => {
+  if (DEBUG_RATES) console.log('[ratesService]', ...args);
+};
+
 // Netlify Blobs — imported lazily only when the Blob cache path is used
 let _getStorePromise: Promise<typeof import('@netlify/blobs').getStore | undefined> | undefined;
 
@@ -86,7 +91,7 @@ async function readBlobCache(): Promise<CacheReadResult | null> {
   if (!getStore) return null;
   try {
     const store = getStore(BLOB_STORE);
-    const raw = await store.get(BLOB_KEY);
+    const raw = await store.get(BLOB_KEY, { type: 'text' });
     if (!raw) return null;
 
     const cached: CachedRates = JSON.parse(raw);
@@ -115,7 +120,7 @@ async function writeBlobCache(rates: HypothecaRates): Promise<void> {
     const store = getStore(BLOB_STORE);
     const data: CachedRates = { timestamp: Date.now(), rates };
     await store.set(BLOB_KEY, JSON.stringify(data));
-    console.log('[ratesService] Rates cached to Netlify Blob');
+    debug('Rates cached to Netlify Blob');
   } catch (err) {
     console.warn('[ratesService] Failed to write blob cache:', err);
   }
@@ -154,7 +159,7 @@ async function writeFileCache(rates: HypothecaRates): Promise<void> {
     const tempFile = path.join(CACHE_DIR, `.rates-cache.tmp-${process.pid}-${Date.now()}`);
     await fs.writeFile(tempFile, JSON.stringify(data, null, 2), 'utf-8');
     await fs.rename(tempFile, CACHE_FILE);
-    console.log('[ratesService] Rates cached to file');
+    debug('Rates cached to file');
   } catch (err) {
     console.warn('[ratesService] Failed to write file cache:', err);
   }
@@ -171,11 +176,11 @@ async function readCache(): Promise<HypothecaRates | null> {
   if (!cached) return null;
 
   if (cached.ageMs > CACHE_TTL_MS) {
-    console.log('[ratesService] Cache expired, will refresh');
+    debug('Cache expired, will refresh');
     return null;
   }
 
-  console.log(`[ratesService] Using cached rates (age: ${Math.round(cached.ageMs / 60_000)} min)`);
+  debug(`Using cached rates (age: ${Math.round(cached.ageMs / 60_000)} min)`);
   return cached.rates;
 }
 
@@ -197,12 +202,12 @@ function extractAllRates(html: string): RateEntry[] {
   const rows: RateEntry[] = [];
   const seen = new Set<string>();
 
-  // ---- 1) Parse visible plaintext <tr> rows ----
-  const trRegex = /<tr>\s*<td>([^<]+)<\/td>\s*<td>([^<]+)<\/td>\s*<td>([^<]+)<\/td>\s*<\/tr>/g;
+  // ---- 1) Parse visible plaintext <tr> rows (tolerant to attributes/whitespace) ----
+  const trRegex = /<tr[^>]*>\s*<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>([^<]+)<\/td>\s*<\/tr>/gi;
   for (const m of html.matchAll(trRegex)) {
-    const terme = m[1].trim();
-    const hypothecaStr = m[2].trim();
-    const afficheStr = m[3].trim();
+    const terme = (m[1] ?? '').trim();
+    const hypothecaStr = (m[2] ?? '').trim();
+    const afficheStr = (m[3] ?? '').trim();
 
     const hypothecaVal = parseFloat(hypothecaStr.replace('%', ''));
     const afficheVal = parseFloat(afficheStr.replace('%', ''));
@@ -227,11 +232,13 @@ function extractAllRates(html: string): RateEntry[] {
   // ---- 2) Parse occ()-decoded rows as fallback ----
   if (rows.length === 0) {
     for (const match of html.matchAll(/occ\("([^"]+)"\)/g)) {
-      const decodedHtml = decodeHypotheca(match[1]);
+      const encoded = match[1];
+      if (!encoded) continue;
+      const decodedHtml = decodeHypotheca(encoded);
       const tdMatches = [...decodedHtml.matchAll(/<td[^>]*>(.*?)<\/td>/g)];
       if (tdMatches.length < 2) continue;
 
-      const terme = tdMatches[0][1].trim();
+      const terme = (tdMatches[0]?.[1] ?? '').trim();
       const hypothecaStr = tdMatches[1]?.[1] ?? '';
       const afficheStr = tdMatches[2]?.[1] ?? '';
 
@@ -260,9 +267,9 @@ function extractAllRates(html: string): RateEntry[] {
   if (rows.length === 0) {
     const mdRowRegex = /\|\s*([^|\n]+?)\s*\|\s*([0-9]+(?:[.,][0-9]+)?)%\s*\|\s*([0-9]+(?:[.,][0-9]+)?)%\s*\|/g;
     for (const m of html.matchAll(mdRowRegex)) {
-      const terme = m[1].trim();
-      const hypothecaVal = parseFloat(m[2].replace(',', '.'));
-      const afficheVal = parseFloat(m[3].replace(',', '.'));
+      const terme = (m[1] ?? '').trim();
+      const hypothecaVal = parseFloat((m[2] ?? '').replace(',', '.'));
+      const afficheVal = parseFloat((m[3] ?? '').replace(',', '.'));
 
       if (!isValidRate(hypothecaVal)) continue;
 
@@ -390,32 +397,30 @@ async function fetchRatesHtml(): Promise<string> {
     }
   }
 
-  // Last-resort: read-only proxy that often bypasses anti-bot rate limits.
-  const proxyUrls = [
-    'https://r.jina.ai/http://hypotheca.ca/taux-hypothecaires',
-    'https://r.jina.ai/http://www.hypotheca.ca/taux-hypothecaires',
-  ];
-  for (const url of proxyUrls) {
-    try {
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': headers['User-Agent'],
-          Accept: 'text/plain,text/markdown;q=0.9,*/*;q=0.8',
-          'Cache-Control': 'no-cache',
-        },
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status} for ${url}`);
+  // Optional last-resort proxy (disabled by default — fait fuir l'URL à un tiers).
+  // Activez via ENABLE_RATES_PROXY=1 si vous acceptez ce compromis.
+  if (process.env.ENABLE_RATES_PROXY === '1') {
+    const proxyUrls = [
+      'https://r.jina.ai/http://hypotheca.ca/taux-hypothecaires',
+      'https://r.jina.ai/http://www.hypotheca.ca/taux-hypothecaires',
+    ];
+    for (const url of proxyUrls) {
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'User-Agent': headers['User-Agent'],
+            Accept: 'text/plain,text/markdown;q=0.9,*/*;q=0.8',
+            'Cache-Control': 'no-cache',
+          },
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+        const text = await res.text();
+        if (!text || text.length < 200) throw new Error(`Unexpected proxy payload for ${url}`);
+        return text;
+      } catch (err) {
+        lastError = err;
       }
-
-      const text = await res.text();
-      if (!text || text.length < 200) {
-        throw new Error(`Unexpected proxy payload for ${url}`);
-      }
-      return text;
-    } catch (err) {
-      lastError = err;
     }
   }
 
@@ -446,7 +451,7 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
       console.warn('[ratesService] No rows parsed from HTML');
       // Return stale cache if available, otherwise null
       if (staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.rates.source === 'live') {
-        console.log(`[ratesService] Using stale cache (age: ${Math.round(staleCache.ageMs / 60_000)} min)`);
+        debug(`Using stale cache (age: ${Math.round(staleCache.ageMs / 60_000)} min)`);
         return staleCache.rates;
       }
       return null;
@@ -468,8 +473,8 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
       staleCache.ageMs <= CACHE_STALE_MAX_MS &&
       staleCache.rates.source === 'live'
     ) {
-      console.log(
-        `[ratesService] Using stale live cache as backup (age: ${Math.round(staleCache.ageMs / 60_000)} min)`,
+      debug(
+        `Using stale live cache as backup (age: ${Math.round(staleCache.ageMs / 60_000)} min)`,
       );
       return staleCache.rates;
     }

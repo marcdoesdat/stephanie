@@ -5,23 +5,23 @@ import Footer from '../components/Footer.astro';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
-const currentYear = new Date().getFullYear();
-
-// On extrait juste le prénom pour une touche plus personnelle dans le texte
-const prenom = config.nom.split(' ')[0];
+const lastUpdated = new Date('2026-05-01').toLocaleDateString('fr-CA', {
+  year: 'numeric',
+  month: 'long',
+});
 ---
 
-<Layout 
-  title="Politique de confidentialite - Courtage hypothecaire Québec"
-  description={`Politique de confidentialite de ${config.nom} : collecte, utilisation et protection des renseignements personnels selon la Loi 25 au Quebec.`}
+<Layout
+  title="Politique de confidentialité — Courtage hypothécaire Québec"
+  description={`Politique de confidentialité de ${config.nom} : collecte, utilisation et protection des renseignements personnels selon la Loi 25 au Québec.`}
 >
   <Nav />
 
-  <main class="privacy-page">
+  <main id="main-content" class="privacy-page">
     <section class="container">
       <header class="privacy-header">
         <h1>Politique de confidentialité</h1>
-        <p class="last-updated">Dernière mise à jour : Mars {currentYear}</p>
+        <p class="last-updated">Dernière mise à jour&nbsp;: {lastUpdated}</p>
       </header>
 
       <div class="privacy-content">
@@ -34,15 +34,20 @@ const prenom = config.nom.split(' ')[0];
 
         <hr />
 
-        <h2>1. Responsable de la protection des données</h2>
+        <h2>1. Responsable de la protection des renseignements personnels</h2>
         <p>
-          Pour toute question, accès ou demande de rectification de vos informations, la personne responsable est :
+          Conformément à l'article 3.1 de la Loi 25, la personne responsable de la protection des
+          renseignements personnels au sein de mon cabinet est&nbsp;:
         </p>
         <div class="contact-box">
-          <strong>{config.nom}</strong><br />
-          Courriel : <a href={`mailto:${config.courriel}`}>{config.courriel}</a><br />
-          Téléphone : {config.telephone}
+          <strong>{config.nom}</strong>, courtière hypothécaire — Responsable de la protection des renseignements personnels<br />
+          Courriel&nbsp;: <a href={`mailto:${config.courriel}`}>{config.courriel}</a><br />
+          Téléphone&nbsp;: {config.telephone}
         </div>
+        <p>
+          Toute demande d'accès, de rectification, de retrait de consentement, de portabilité ou de
+          plainte peut être adressée à cette personne.
+        </p>
 
         <h2>2. Renseignements collectés</h2>
         <p>
@@ -75,19 +80,60 @@ const prenom = config.nom.split(' ')[0];
           <li><strong>Sécurité :</strong> Toutes les communications entre votre navigateur et ce site sont chiffrées via un certificat SSL (protocole HTTPS).</li>
         </ul>
 
-        <h2>5. Vos droits</h2>
+        <h2>5. Durée de conservation</h2>
         <p>
-          Conformément à la Loi 25, vous disposez des droits suivants :
+          Vos renseignements sont conservés pour la durée strictement nécessaire aux finalités décrites&nbsp;:
         </p>
         <ul>
-          <li>Droit d'accès à vos renseignements personnels.</li>
-          <li>Droit de rectification si une information est incomplète ou inexacte.</li>
-          <li>Droit de retirer votre consentement à l'utilisation de vos données à tout moment.</li>
+          <li><strong>Demandes de simulation et de contact ne donnant pas lieu à un dossier&nbsp;:</strong> conservation maximale de 24 mois après le dernier échange, puis destruction sécurisée.</li>
+          <li><strong>Dossiers hypothécaires actifs ou conclus&nbsp;:</strong> conservation pendant 7 ans suivant la fin de la relation d'affaires, conformément aux exigences de l'Autorité des marchés financiers.</li>
+          <li><strong>Données analytiques anonymisées (Umami)&nbsp;:</strong> conservées de manière agrégée, sans permettre votre identification.</li>
         </ul>
+
+        <h2>6. Hébergement et transferts hors Québec</h2>
+        <p>
+          Le site est hébergé par <strong>Netlify, Inc.</strong> (États-Unis). Les renseignements
+          transmis via les formulaires peuvent donc transiter et être stockés temporairement sur des
+          serveurs situés à l'extérieur du Québec. Une évaluation des facteurs relatifs à la vie privée
+          a été réalisée afin de s'assurer que ces transferts offrent un niveau de protection adéquat.
+          Vous pouvez en obtenir copie auprès du responsable identifié à la section&nbsp;1.
+        </p>
+
+        <h2>7. Vos droits</h2>
+        <p>Conformément à la Loi 25, vous disposez des droits suivants&nbsp;:</p>
+        <ul>
+          <li><strong>Droit d'accès</strong> à vos renseignements personnels.</li>
+          <li><strong>Droit de rectification</strong> si une information est incomplète ou inexacte.</li>
+          <li><strong>Droit de retrait du consentement</strong> à tout moment, sans frais.</li>
+          <li><strong>Droit à la portabilité</strong> de vos renseignements en format technologique structuré et couramment utilisé.</li>
+          <li><strong>Droit à la cessation de la diffusion</strong> et à la désindexation lorsqu'applicable.</li>
+        </ul>
+        <p>
+          Une réponse vous sera fournie dans un délai maximal de 30&nbsp;jours suivant la réception
+          de votre demande.
+        </p>
+
+        <h2>8. Recours auprès de la Commission d'accès à l'information</h2>
+        <p>
+          Si la réponse obtenue ne vous satisfait pas, vous pouvez déposer une plainte auprès de la
+          <strong> Commission d'accès à l'information du Québec (CAI)</strong>&nbsp;:
+        </p>
+        <ul>
+          <li>Site Web&nbsp;: <a href="https://www.cai.gouv.qc.ca" target="_blank" rel="noopener noreferrer">www.cai.gouv.qc.ca</a></li>
+          <li>Téléphone&nbsp;: 1&nbsp;888&nbsp;528-7741</li>
+        </ul>
+
+        <h2>9. Incident de confidentialité</h2>
+        <p>
+          En cas d'incident impliquant un renseignement personnel pouvant présenter un risque sérieux
+          de préjudice, je vous en aviserai dans les meilleurs délais et la CAI sera également informée,
+          conformément à la Loi 25.
+        </p>
 
         <div class="legal-notice">
           <p>
-            <em>Note : En tant que courtière hypothécaire, je suis tenue par l'AMF de conserver certains dossiers de clients pendant une période minimale de 7 ans suivant la fin de notre relation d'affaires.</em>
+            <em>Cette politique peut être mise à jour pour refléter les évolutions de mes pratiques ou
+            de la réglementation. La date de mise à jour ci-dessus fait foi de la version en vigueur.</em>
           </p>
         </div>
       </div>

@@ -233,5 +233,13 @@ const nomDeFamille = nomArr.join(' ');
         toggleMenu();
       }
     });
+
+    // Fermer avec Escape, en redonnant le focus au bouton
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menuOpen) {
+        toggleMenu();
+        (btn as HTMLElement | null)?.focus();
+      }
+    });
   });
 </script>

@@ -4,7 +4,7 @@ import stephaniePhoto from '../assets/stephanie.jpg';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
-const { baseRate = 3.70 } = Astro.props; // J'ai mis 3.70 pour matcher ta capture
+const { baseRate = 3.70 } = Astro.props;
 function fmtRate(val: number | null | undefined): string {
   if (val == null) return '—';
   return val.toFixed(2).replace('.', ',') + ' %';
@@ -19,13 +19,13 @@ function fmtRate(val: number | null | undefined): string {
       <h1>Votre hypothèque,<br /><em>enfin expliquée</em><br />simplement.</h1>
       
       <p>
-        Je vous accompagne dans l'un des projets les plus importants de votre vie — sans jargon,
-        sans pression, avec des taux obtenus via un réseau de plus de 20 prêteurs.
+        Je vous accompagne dans l’un des projets les plus importants de votre vie — sans jargon,
+        sans pression, avec des taux obtenus via un réseau de plus de 20&nbsp;prêteurs.
       </p>
 
       <div class="hero-btns">
         <a href="#contact" class="btn-primary">Prendre rendez-vous</a>
-        <a href="#simulateur" class="btn-secondary">Calculateur</a>
+        <a href="#simulateur" class="btn-secondary">Voir mes outils</a>
       </div>
       
       <div class="hero-stats">
@@ -34,11 +34,11 @@ function fmtRate(val: number | null | undefined): string {
           <div class="stat-label">Prêteurs</div>
         </div>
         <div class="stat-item">
-          <div class="stat-num">100%</div>
+          <div class="stat-num">100&nbsp;%</div>
           <div class="stat-label">Gratuit</div>
         </div>
         <div class="stat-item">
-          <div class="stat-num">24h</div>
+          <div class="stat-num">24&nbsp;h</div>
           <div class="stat-label">Premier contact garanti</div>
         </div>
       </div>
@@ -70,7 +70,7 @@ function fmtRate(val: number | null | undefined): string {
 
         <div class="floating-card card-br">
           <div class="card-sm">Satisfaction</div>
-          <div class="card-val">⭐ 5 / 5</div>
+          <div class="card-val">⭐ 5&nbsp;/&nbsp;5</div>
         </div>
       </div>
     </div>

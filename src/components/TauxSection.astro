@@ -1,8 +1,5 @@
 ---
 import type { HypothecaRates } from '../services/ratesService';
-import { loadSiteConfig } from '../config';
-
-const config = loadSiteConfig();
 
 interface Props {
   hypothecaRates: HypothecaRates | null;
@@ -45,7 +42,7 @@ const displayRows = hypothecaRates?.rows?.length
           Taux obtenus via notre réseau de 20+ prêteurs.
           {hypothecaRates?.source === 'live' ? ' Mis à jour automatiquement.' : ' Taux indicatifs.'}
         </p>
-        <p id="tv-freshness" style="margin:.45rem 0 0;font-size:.78rem;color:var(--clay);font-weight:600;">Mise a jour en cours...</p>
+        <p id="tv-freshness" style="margin:.45rem 0 0;font-size:.78rem;color:var(--clay);font-weight:600;">Mise à jour en cours…</p>
       </div>
       
       <div aria-live="polite" style="background:var(--sand);border:1px solid var(--border);border-radius:16px;padding:1.2rem 1.8rem;font-size:.75rem;color:var(--muted);line-height:1.8;text-align:right;min-width: 200px;">
@@ -126,7 +123,7 @@ const displayRows = hypothecaRates?.rows?.length
 
       const render = () => {
         const mins = Math.max(0, Math.floor((Date.now() - updatedAt.getTime()) / 60000));
-        freshnessEl.textContent = `Taux mis a jour il y a ${mins} minute${mins > 1 ? 's' : ''}.`;
+        freshnessEl.textContent = `Taux mis à jour il y a ${mins} minute${mins > 1 ? 's' : ''}.`;
       };
 
       render();

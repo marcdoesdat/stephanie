@@ -1,11 +1,8 @@
 ---
-import { loadSiteConfig } from '../config';
-const config = loadSiteConfig();
-
 // Tes témoignages (Facile à modifier ici !)
 const reviews = [
   {
-    texte: "Très bon service avec Stéphanie! Je vous la recommande sans hésitations",
+    texte: "Très bon service avec Stéphanie ! Je vous la recommande sans hésitation.",
     auteur: "Romanica A.",
     detail: "Nouvel achat · Montréal",
     etoiles: 5
@@ -13,30 +10,16 @@ const reviews = [
   {
     texte: "Une vraie championne des chiffres. Je la recommande fortement.",
     auteur: "Steven W.",
-    detail: "Travailleur autonome · St-Jérome",
+    detail: "Travailleur autonome · Saint-Jérôme",
     etoiles: 5
   },
   {
-    texte: "Je suis client avec ma banque depuis l'âge de 7 ans et Stéphanie m'a trouvé un meilleur taux qu'eux. Incroyable. Merci!",
+    texte: "Je suis client avec ma banque depuis l’âge de 7 ans et Stéphanie m’a trouvé un meilleur taux qu’eux. Incroyable. Merci !",
     auteur: "Marc-André L.",
     detail: "Renouvellement · Repentigny",
     etoiles: 5
   }
 ];
-
-// Données structurées pour que Google affiche les petites étoiles dans les recherches
-const reviewSchema = {
-  "@context": "https://schema.org",
-  "@type": "FinancialService",
-  "name": config.nom,
-  "url": config.site_url,
-  // Modifie le "reviewCount" avec le vrai nombre d'avis Google de Stéphanie
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "5",
-    "reviewCount": "12" 
-  }
-};
 ---
 
 <section id="temoignages">
@@ -53,7 +36,7 @@ const reviewSchema = {
             {"★".repeat(review.etoiles)}
           </div>
           <blockquote>
-            "{review.texte}"
+            «&nbsp;{review.texte}&nbsp;»
           </blockquote>
           <div class="temoignage-author">
             <div class="author-avatar" aria-hidden="true">👤</div>
@@ -77,4 +60,3 @@ const reviewSchema = {
   </div>
 </section>
 
-<script type="application/ld+json" set:html={JSON.stringify(reviewSchema)} is:inline />

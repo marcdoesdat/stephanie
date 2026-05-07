@@ -10,10 +10,18 @@ const currentYear = new Date().getFullYear();
 const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 ---
 
-<footer>
+<footer role="contentinfo">
   <div class="footer-identity">
-    <span class="footer-name">{config.nom}</span> {config.titre} · {config.organisation} · {config.region}<br />
-    Hypotheca — Cabinet en courtage hypothécaire · AMF {config.amf} · {config.adresse}
+    <span class="footer-name">{config.nom}</span> · {config.titre} · {config.region}<br />
+    Certificat AMF n° <strong>{config.amf}</strong>
+    {config.amf_cabinet && (
+      <Fragment> · Cabinet&nbsp;: {config.organisation} (AMF n° {config.amf_cabinet})</Fragment>
+    )}
+    {!config.amf_cabinet && (
+      <Fragment> · Cabinet&nbsp;: {config.organisation}</Fragment>
+    )}
+    <br />
+    {config.adresse}
   </div>
 
   <div class="footer-copy">© {currentYear} {config.nom} · <a href={config.site_url} target="_blank" rel="noopener noreferrer">{displayUrl}</a> · Tous droits réservés</div>
@@ -72,13 +80,15 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
   }
 
   .footer-legal-links a {
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.75);
     text-decoration: none;
     transition: color 0.2s;
   }
 
-  .footer-legal-links a:hover {
-    color: rgba(255, 255, 255, 0.85);
+  .footer-legal-links a:hover,
+  .footer-legal-links a:focus-visible {
+    color: #fff;
+    text-decoration: underline;
   }
 
   .footer-sep {

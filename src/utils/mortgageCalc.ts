@@ -15,7 +15,32 @@ export function formatMoney(amount: number): string {
  * using Canadian standard semi-annual compounding.
  */
 export function tauxMensuel(tauxAnnuel: number): number {
-  return Math.pow(Math.pow(1 + tauxAnnuel / 100 / 2, 2), 1 / 12) - 1;
+  return tauxPeriodique(tauxAnnuel, 12);
+}
+
+/**
+ * Effective per-period rate from an annual nominal rate,
+ * using Canadian standard semi-annual compounding.
+ * @param freq Number of periods per year (12 = monthly, 26 = bi-weekly, 52 = weekly)
+ */
+export function tauxPeriodique(tauxAnnuel: number, freq: number): number {
+  return Math.pow(Math.pow(1 + tauxAnnuel / 100 / 2, 2), 1 / freq) - 1;
+}
+
+/**
+ * Standard (non-accelerated) periodic mortgage payment, Canadian rules.
+ * Used by Calculator and amortissement to keep both pages consistent.
+ */
+export function calcPaiement(
+  prêtTotal: number,
+  tauxAnnuel: number,
+  amortAns: number,
+  freq: number
+): number {
+  const r = tauxPeriodique(tauxAnnuel, freq);
+  const n = amortAns * freq;
+  if (r <= 0) return prêtTotal / n;
+  return (prêtTotal * r) / (1 - Math.pow(1 + r, -n));
 }
 
 /** PV (present value / loan amount) from a monthly payment */
@@ -64,13 +89,20 @@ export function miseMinimale(prix: number): number {
 
 /**
  * Maximum purchase price supported by a given down payment.
- * Inverse of miseMinimale.
+ * Returns the highest prix such that miseMinimale(prix) <= mise.
+ * Considers both insured (<$1M) and conventional (≥$1M) tiers and
+ * picks whichever produces the higher feasible price.
  */
 export function prixMaxParMise(mise: number): number {
-  if (mise <= 25_000) return mise / 0.05;
-  const prixSup = (mise - 25_000) / 0.1 + 500_000;
-  if (prixSup < 1_000_000) return prixSup;
-  return mise / 0.2;
+  if (mise <= 0) return 0;
+  // Tier 1: prix ≤ 500k requires mise ≥ 5%
+  if (mise < 25_000) return mise / 0.05;
+  // Tier 2: 500k < prix < 1M requires mise ≥ 25k + 10% of (prix − 500k)
+  const tier2 = Math.min((mise - 25_000) / 0.1 + 500_000, 999_999);
+  // Tier 3: prix ≥ 1M requires mise ≥ 20%
+  const tier3 = mise / 0.2;
+  if (tier3 >= 1_000_000) return Math.max(tier2, tier3);
+  return tier2;
 }
 
 /**
@@ -117,25 +149,23 @@ export function calcAbsoluteMax(
 
   // --- Insured scenario (< $1M, min down payment, SCHL applies) ---
   // Iterate to converge: prix = (pretMax / (1 + SCHL_rate)) + miseMinimale(prix)
-  let prixIns = pretMax + 25_000; // initial guess
-  let miseIns = 0;
+  // Initial guess capped just under $1M so high pretMax values don't short-circuit.
+  let prixIns = Math.min(pretMax / 0.95, 999_999);
+  let miseIns = miseMinimale(prixIns);
 
   for (let i = 0; i < 30; i++) {
-    miseIns = miseMinimale(prixIns);
-    if (prixIns >= 1_000_000) {
-      prixIns = 0; // insured not applicable above $1M
-      break;
-    }
     const ltv = (prixIns - miseIns) / prixIns;
     const schlRate = tauxPrimeSCHL(ltv);
     const baseLoan = pretMax / (1 + schlRate);
-    const nextPrix = baseLoan + miseIns;
+    let nextPrix = baseLoan + miseIns;
+    if (nextPrix >= 1_000_000) nextPrix = 999_999;
     if (Math.abs(nextPrix - prixIns) < 10) {
       prixIns = nextPrix;
       miseIns = miseMinimale(prixIns);
       break;
     }
     prixIns = nextPrix;
+    miseIns = miseMinimale(prixIns);
   }
 
   const insValid = prixIns > 0 && prixIns < 1_000_000;

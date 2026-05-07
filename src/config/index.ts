@@ -7,6 +7,7 @@ export interface SiteConfig {
   organisation: string;
   region: string;
   amf: string;
+  amf_cabinet?: string;
   telephone: string;
   courriel: string;
   site_url: string;

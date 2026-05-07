@@ -6,32 +6,32 @@ const prenom = config.nom.split(' ')[0];
 
 const faqs = [
   {
-    q: "Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ?",
-    a: "Non, mes services sont entièrement gratuits pour vous. Je suis rémunérée par le prêteur qui vous accorde le financement — pas par vous. Vous bénéficiez donc d'un accompagnement professionnel complet sans frais supplémentaires."
+    q: "Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ?",
+    a: "Non, mes services sont entièrement gratuits pour vous. Je suis rémunérée par le prêteur qui vous accorde le financement — pas par vous. Vous bénéficiez donc d’un accompagnement professionnel complet sans frais supplémentaires."
   },
   {
-    q: "Quelle est la différence entre un courtier et ma banque ?",
-    a: "Votre banque ne vous propose que ses propres produits. Moi, j'ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution."
+    q: "Quelle est la différence entre un courtier et ma banque ?",
+    a: "Votre banque ne vous propose que ses propres produits. Moi, j’ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution."
   },
   {
-    q: "J'ai été refusé par ma banque. Puis-je quand même obtenir une hypothèque ?",
-    a: "Absolument. Un refus bancaire ne signifie pas que vous ne pouvez pas acheter — cela signifie que cette banque ne peut pas vous aider. J'ai accès à des prêteurs alternatifs spécialisés dans les dossiers complexes : mauvais crédit, travailleur autonome, revenus atypiques, etc."
+    q: "J’ai été refusé par ma banque. Puis-je quand même obtenir une hypothèque ?",
+    a: "Absolument. Un refus bancaire ne signifie pas que vous ne pouvez pas acheter — cela signifie que cette banque ne peut pas vous aider. J’ai accès à des prêteurs alternatifs spécialisés dans les dossiers complexes : mauvais crédit, travailleur autonome, revenus atypiques, etc."
   },
   {
-    q: "De combien de mise de fonds ai-je besoin pour acheter au Québec ?",
-    a: "Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 999 999 $, c'est 5 % sur la première tranche et 10 % sur le reste. À partir de 1 000 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l'assurance SCHL."
+    q: "De combien de mise de fonds ai-je besoin pour acheter au Québec ?",
+    a: "Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 999 999 $, c’est 5 % sur la première tranche et 10 % sur le reste. À partir de 1 000 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l’assurance SCHL."
   },
   {
-    q: "Combien de temps prend le processus d'approbation ?",
-    a: "En général, une pré-approbation peut être obtenue en 24 à 48 heures. Pour une approbation finale, comptez quelques jours à deux semaines selon la complexité de votre dossier. Je m'occupe de tout le suivi avec le prêteur pour accélérer le processus."
+    q: "Combien de temps prend le processus d’approbation ?",
+    a: "En général, une pré-approbation peut être obtenue en 24 à 48 heures. Pour une approbation finale, comptez quelques jours à deux semaines selon la complexité de votre dossier. Je m’occupe de tout le suivi avec le prêteur pour accélérer le processus."
   },
   {
-    q: "C'est quoi la différence entre un taux fixe et un taux variable ?",
-    a: "Un taux fixe reste le même pendant toute la durée du terme — vos paiements ne changent jamais. Un taux variable fluctue selon le taux directeur de la Banque du Canada — vos paiements peuvent monter ou descendre. Le meilleur choix dépend de votre tolérance au risque et du contexte économique. On en discute ensemble."
+    q: "C’est quoi la différence entre un taux fixe et un taux variable ?",
+    a: "Un taux fixe reste le même pendant toute la durée du terme — vos versements ne changent jamais. Un taux variable fluctue selon le taux directeur de la Banque du Canada — vos versements peuvent monter ou descendre. Le meilleur choix dépend de votre tolérance au risque et du contexte économique. On en discute ensemble."
   },
   {
-    q: "Mon renouvellement approche. Que dois-je faire ?",
-    a: "N'acceptez surtout pas la première offre de votre prêteur sans comparer ! Contactez-moi idéalement 4 à 6 mois avant l'échéance — c'est le moment idéal pour magasiner un meilleur taux. Le transfert vers un autre prêteur est souvent gratuit, et je m'occupe de tout."
+    q: "Mon renouvellement approche. Que dois-je faire ?",
+    a: "N’acceptez surtout pas la première offre de votre prêteur sans comparer ! Contactez-moi idéalement 4 à 6 mois avant l’échéance — c’est le moment idéal pour magasiner un meilleur taux. Le transfert vers un autre prêteur est souvent gratuit, et je m’occupe de tout."
   },
 ];
 
@@ -64,16 +64,23 @@ const faqSchema = {
       {faqs.map((item, index) => (
         <div class="faq-item">
           <h3>
-            <button 
-              class="faq-q" 
-              aria-expanded="false" 
+            <button
+              id={`faq-question-${index}`}
+              class="faq-q"
+              aria-expanded="false"
               aria-controls={`faq-answer-${index}`}
             >
               <span>{item.q}</span>
               <span class="faq-icon" aria-hidden="true">+</span>
             </button>
           </h3>
-          <div class="faq-a" role="region" id={`faq-answer-${index}`}>
+          <div
+            class="faq-a"
+            role="region"
+            id={`faq-answer-${index}`}
+            aria-labelledby={`faq-question-${index}`}
+            aria-hidden="true"
+          >
             <div class="faq-a-inner">{item.a}</div>
           </div>
         </div>
@@ -111,18 +118,22 @@ const faqSchema = {
       btn.addEventListener('click', () => {
         const item = btn.closest('.faq-item');
         if (!item) return;
-        
+
         const isOpen = item.classList.contains('open');
-        
+
         document.querySelectorAll('.faq-item').forEach((i) => {
           i.classList.remove('open');
           const otherBtn = i.querySelector('.faq-q');
+          const otherAns = i.querySelector('.faq-a');
           if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+          if (otherAns) otherAns.setAttribute('aria-hidden', 'true');
         });
-        
+
         if (!isOpen) {
           item.classList.add('open');
           btn.setAttribute('aria-expanded', 'true');
+          const ans = item.querySelector('.faq-a');
+          if (ans) ans.setAttribute('aria-hidden', 'false');
         }
       });
     });
