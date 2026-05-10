@@ -1,0 +1,256 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.jpg';
+import { loadSiteConfig } from '../../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+---
+
+<MainLayout
+  title="Refinancement hypothécaire au Québec | Débloquez l'équité de votre maison"
+  description="Votre maison vaut probablement plus que vous pensez. Découvrez en 60 secondes combien d'équité vous pouvez débloquer pour consolider vos dettes, rénover ou acheter une 2e propriété — analyse gratuite avec une courtière hypothécaire au Québec."
+>
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ HERO ============ -->
+    <section class="sp-hero">
+      <div class="sp-inner">
+        <div class="sp-hero-grid">
+          <div class="sp-hero-text">
+            <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
+            <div class="sp-eyebrow">Refinancement · Québec 2026</div>
+
+            <h1 class="sp-h1">
+              Votre maison vaut une fortune.<br />Et si vous arrêtiez <em>de la regarder dormir</em> ?
+            </h1>
+
+            <h2 class="sp-h2">
+              Une simple réévaluation peut financer vos rénovations,
+              effacer le stress des dettes à 20 % d'intérêt, ou devenir la mise de fonds
+              de votre prochaine propriété — sans vendre une seule brique.
+            </h2>
+
+            <div class="sp-hero-ctas">
+              <a href="/?parcours=refinancement#contact" class="btn-cta sp-cta-primary" data-track="sp_refinancement_hero_cta">
+                <span>Évaluer mon équité gratuitement</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+              <a href="/#simulateur" class="btn-secondary sp-cta-secondary">Estimer mes économies</a>
+            </div>
+
+            <ul class="sp-hero-proof">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                100 % gratuit, sans engagement
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Analyse en 24 h ouvrables
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Pénalités calculées avant tout
+              </li>
+            </ul>
+          </div>
+
+          <aside class="sp-hero-trust" aria-label="Votre courtière">
+            <Image
+              src={stephaniePhoto}
+              alt={`${prenom} ${config.nom.split(' ').slice(1).join(' ')}, courtière hypothécaire`}
+              width={140}
+              height={140}
+              loading="eager"
+              decoding="async"
+              class="sp-trust-photo"
+            />
+            <div class="sp-trust-name">{prenom} Weyman</div>
+            <div class="sp-trust-role">Courtière hypothécaire · Hypotheca</div>
+            <p class="sp-trust-quote">
+              « Refinancer, c'est une décision de chiffres — pas d'émotion.
+              Mon job : vous montrer les vrais chiffres, avant de bouger quoi que ce soit. »
+            </p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EMPATHIE / OPPORTUNITÉ ============ -->
+    <section class="sp-empathy">
+      <div class="sp-inner">
+        <div class="sp-empathy-tag">L'opportunité</div>
+        <h2 class="sp-section-title">Vous payez 20 % d'intérêt sur vos cartes…<br /><em>pendant que votre maison prend de la valeur.</em></h2>
+        <p class="sp-empathy-text">
+          Au Québec, la valeur médiane des propriétés a bondi de plus de 40 % depuis 2020.
+          Vous avez peut-être 100 000 $, 200 000 $, parfois plus, en équité dormante dans vos murs —
+          un actif qui travaille pour la banque, pas pour vous.
+        </p>
+        <p class="sp-empathy-text">
+          Pendant ce temps, vous repoussez la cuisine, vous payez le minimum sur les cartes,
+          ou vous regardez passer le plex à vendre dans le quartier. <strong>Le problème n'est pas que vous n'avez pas l'argent.
+          C'est qu'il est verrouillé au mauvais endroit.</strong>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ ÉDUCATION EXPRESS — LES 3 LEVIERS ============ -->
+    <section class="sp-education">
+      <div class="sp-inner">
+        <div class="sp-section-tag">Les 3 leviers du refinancement</div>
+        <h2 class="sp-section-title">Trois façons concrètes de faire travailler <em>l'argent qui dort dans vos murs</em>.</h2>
+
+        <div class="sp-steps">
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">1</div>
+            <h3 class="sp-step-title">Consolidation de dettes : passer de 20 % à 5 %</h3>
+            <p class="sp-step-text">
+              30 000 $ de cartes et de marges à 19,99 %, c'est environ <strong>500 $ d'intérêts par mois</strong> — qui n'effacent rien.
+              Intégrés à votre hypothèque vers 5 %, c'est plutôt 125 $ d'intérêts. <strong>Près de 4 500 $ par année</strong> qui restent dans votre compte
+              au lieu de partir aux émetteurs de cartes. Et un seul paiement, allégé, à la place de cinq.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">2</div>
+            <h3 class="sp-step-title">Rénovations : investir dans le seul actif qui prend de la valeur</h3>
+            <p class="sp-step-text">
+              Une cuisine refaite, un sous-sol fini, une thermopompe : ces rénovations stratégiques
+              augmentent la valeur de revente de votre propriété — souvent davantage que ce qu'elles coûtent.
+              Vous financez à taux hypothécaire (étalé sur 25–30 ans) ce qui, autrement, finirait sur une marge à 9 % ou pire.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">3</div>
+            <h3 class="sp-step-title">Achat locatif ou chalet : votre équité comme mise de fonds</h3>
+            <p class="sp-step-text">
+              Au Québec en 2026, la mise de fonds minimale pour un immeuble à revenus ou un chalet
+              est de 20 %. Refinancer votre résidence principale peut générer cette mise de fonds <em>sans toucher à vos liquidités</em>.
+              C'est le levier le plus discret — et le plus puissant — pour bâtir un patrimoine immobilier.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AUTORITÉ — L'APPROCHE ============ -->
+    <section class="sp-approach">
+      <div class="sp-inner">
+        <div class="sp-approach-grid">
+          <div class="sp-approach-text">
+            <div class="sp-section-tag">L'approche {prenom}</div>
+            <h2 class="sp-section-title sp-section-title--light">Avant de signer quoi que ce soit, on calcule <em>si c'est vraiment payant</em>.</h2>
+            <p class="sp-approach-para">
+              Refinancer en plein milieu d'un terme déclenche une pénalité — parfois 3 mois d'intérêts,
+              parfois beaucoup plus selon la formule de votre prêteur. Mon premier travail&nbsp;:
+              calculer cette pénalité et la mettre dans la balance avec l'économie projetée.
+              Si les chiffres ne sont pas franchement à votre avantage, je vous le dis — et on attend le bon moment.
+            </p>
+            <p class="sp-approach-para">
+              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              quand votre dossier se finalise. Pas de frais cachés, pas de pression, pas de discours commercial.
+              Juste les chiffres, expliqués clairement.
+            </p>
+          </div>
+
+          <ul class="sp-approach-list" aria-label="Ce que vous obtenez">
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Calcul des pénalités d'avance</strong>
+                <span>On chiffre le coût réel avant toute décision.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Comparaison de 20+ prêteurs</strong>
+                <span>Banques, caisses, prêteurs alternatifs.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Service 100 % gratuit</strong>
+                <span>Aucun frais à vous, ni avant, ni après.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Réponse claire en 24 h</strong>
+                <span>Une analyse chiffrée, pas un argumentaire.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LEAD MAGNET / CTA FINAL ============ -->
+    <section class="sp-magnet">
+      <div class="sp-inner">
+        <div class="sp-magnet-card">
+          <div class="sp-magnet-eyebrow">Test d'équité — 60 secondes</div>
+          <h2 class="sp-magnet-title">
+            Testez le potentiel de votre maison <em>en 60 secondes</em>.<br />Découvrez combien vous pouvez débloquer.
+          </h2>
+          <p class="sp-magnet-sub">
+            Quatre questions simples — valeur estimée, solde hypothécaire actuel, prêteur, objectif —
+            et je vous reviens en 24 h avec votre <strong>équité disponible chiffrée</strong>,
+            le calcul de la pénalité éventuelle, et un scénario adapté à votre objectif.
+            <strong>Aucun engagement, aucun pointage de crédit.</strong>
+          </p>
+
+          <a href="/?parcours=refinancement#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_refinancement_magnet_cta">
+            <span>Découvrir mon équité disponible</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+
+          <ul class="sp-magnet-proof">
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              60 secondes
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Aucun pointage de crédit
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Réponse en 24 h
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('[data-track]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.track;
+      if (!name) return;
+      // @ts-ignore
+      if (typeof window.umami?.track === 'function') window.umami.track(name);
+      // @ts-ignore
+      if (typeof window.gtag === 'function') window.gtag('event', name);
+    });
+  });
+</script>

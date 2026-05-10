@@ -3,37 +3,50 @@ import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
 
-// Liste des services : Super facile à modifier et à réorganiser !
-const services = [
+// Liste des services. Si `href` est défini, la carte propose "En savoir plus" vers la sous-page dédiée ;
+// sinon, elle conserve l'action "Prendre rendez-vous" qui scrolle vers #contact.
+interface ServiceItem {
+  icon: string;
+  title: string;
+  description: string;
+  href?: string;
+}
+const services: ServiceItem[] = [
   {
     icon: "🏠",
     title: "Premier achat",
-    description: "Vous achetez votre première propriété ? Je vous guide à travers la mise de fonds, le test de résistance, et je négocie les meilleures conditions pour vous."
+    description: "Vous achetez votre première propriété ? Je vous guide à travers la mise de fonds, le test de résistance, et je négocie les meilleures conditions pour vous.",
+    href: "/services/premier-achat"
   },
   {
     icon: "🔄",
     title: "Renouvellement",
-    description: "Votre hypothèque arrive à terme ? C'est le meilleur moment de magasiner. Je compare les offres de 20+ prêteurs pour vous obtenir un meilleur taux que votre banque."
+    description: "Votre hypothèque arrive à terme ? C'est le meilleur moment de magasiner. Je compare les offres de 20+ prêteurs pour vous obtenir un meilleur taux que votre banque.",
+    href: "/services/renouvellement"
   },
   {
     icon: "💡",
     title: "Refinancement",
-    description: "Consolidation de dettes, rénovations, achat locatif — le refinancement peut libérer des liquidités importantes. Analysons ensemble si c'est la bonne décision."
+    description: "Consolidation de dettes, rénovations, achat locatif — le refinancement peut libérer des liquidités importantes. Analysons ensemble si c'est la bonne décision.",
+    href: "/services/refinancement"
   },
   {
     icon: "🔓",
     title: "Dossier refusé",
-    description: "Votre banque vous a dit non ? Un refus bancaire, ce n'est pas une fin. J'ai accès à des prêteurs alternatifs adaptés aux situations complexes."
+    description: "Votre banque vous a dit non ? Un refus bancaire, ce n'est pas une fin. J'ai accès à des prêteurs alternatifs adaptés aux situations complexes.",
+    href: "/services/dossier-refuse"
   },
   {
     icon: "💼",
     title: "Travailleur autonome",
-    description: "Revenus variables, contrats, incorporation — je sais comment présenter votre dossier pour maximiser vos chances."
+    description: "Revenus variables, contrats, incorporation — je sais comment présenter votre dossier pour maximiser vos chances.",
+    href: "/services/travailleur-autonome"
   },
   {
     icon: "🌍",
     title: "Nouveaux arrivants",
-    description: "Vous venez d'arriver au Canada ? Il existe des programmes spéciaux pour les résidents permanents et certains détenteurs de permis de travail."
+    description: "Vous venez d'arriver au Canada ? Il existe des programmes spéciaux pour les résidents permanents et certains détenteurs de permis de travail.",
+    href: "/services/nouveaux-arrivants"
   }
 ];
 ---
@@ -58,13 +71,23 @@ const services = [
           <h3>{service.title}</h3>
           <p>{service.description}</p>
           
-          <a 
-            href="#contact" 
-            class="learn" 
-            aria-label={`Prendre rendez-vous pour : ${service.title}`}
-          >
-            Prendre rendez-vous
-          </a>
+          {service.href ? (
+            <a
+              href={service.href}
+              class="learn"
+              aria-label={`En savoir plus sur ${service.title}`}
+            >
+              En savoir plus
+            </a>
+          ) : (
+            <a
+              href="#contact"
+              class="learn"
+              aria-label={`Prendre rendez-vous pour : ${service.title}`}
+            >
+              Prendre rendez-vous
+            </a>
+          )}
         </article>
       ))}
     </div>

@@ -37,6 +37,18 @@ const prenomCourtiere = config.nom.split(' ')[0];
               <div class="contact-icon" aria-hidden="true">🏢</div>
               <span>{config.organisation}</span>
             </div>
+            <div class="contact-item">
+              <div class="contact-icon" aria-hidden="true">📇</div>
+              <a
+                class="contact-link"
+                href="/stephanie-weyman.vcf"
+                download="stephanie-weyman.vcf"
+                type="text/vcard"
+                aria-label={`Télécharger la fiche contact de ${prenomCourtiere} (vCard)`}
+              >
+                <strong>Ajouter à mes contacts</strong>
+              </a>
+            </div>
           </div>
 
         </div>
@@ -65,7 +77,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
         <!-- Barre de progression -->
         <div class="quiz-progress" aria-hidden="true">
           <div class="quiz-progress-meta">
-            <span class="quiz-progress-label">Étape <span data-quiz-step-num>1</span> sur 5</span>
+            <span class="quiz-progress-label">Étape <span data-quiz-step-num>1</span> sur <span data-quiz-step-total>5</span></span>
             <button type="button" class="quiz-back" data-quiz-back hidden>← Retour</button>
           </div>
           <div class="quiz-progress-bar"><div class="quiz-progress-fill" data-quiz-fill></div></div>
@@ -92,6 +104,10 @@ const prenomCourtiere = config.nom.split(' ')[0];
           <input type="hidden" name="situation" data-quiz-field="situation" value="" />
           <!-- Compat avec l'ancienne notif Netlify : on conserve les noms historiques -->
           <input type="hidden" name="prefcontact" data-quiz-field="prefcontact" value="" />
+          <!-- Champs spécifiques au parcours Premier achat (qualification financière) -->
+          <input type="hidden" name="pa_timing" data-quiz-field="pa_timing" value="" />
+          <input type="hidden" name="pa_revenus" data-quiz-field="pa_revenus" value="" />
+          <input type="hidden" name="pa_mise" data-quiz-field="pa_mise" value="" />
 
           <!-- ============ ÉTAPE 1 : Choix du parcours ============ -->
           <div class="quiz-step" data-step="1">
@@ -283,7 +299,88 @@ const prenomCourtiere = config.nom.split(' ')[0];
             </div>
           </div>
 
-          <!-- ============ ÉTAPE 4 : Timing (universel) ============ -->
+          <!-- ============ PARCOURS PREMIER ACHAT — 4 étapes dédiées ============ -->
+          <!-- Activé quand l'utilisateur arrive depuis /services/premier-achat avec ?parcours=premier-achat.
+               Saute le quiz générique et lance ce flow de qualification financière. -->
+
+          <!-- pa1 : Timing -->
+          <div class="quiz-step" data-step="pa1" hidden>
+            <h3 class="quiz-q">Idéalement, quand aimeriez-vous avoir les clés de votre nouvelle propriété ?</h3>
+            <div class="quiz-options" data-quiz-group="pa_timing">
+              <button type="button" class="quiz-card" data-value="Dès que possible" data-next-step="pa2">
+                <span class="quiz-card-icon" aria-hidden="true">🔑</span>
+                <span class="quiz-card-text"><strong>Dès que possible</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="3 à 6 mois" data-next-step="pa2">
+                <span class="quiz-card-icon" aria-hidden="true">📅</span>
+                <span class="quiz-card-text"><strong>Dans 3 à 6 mois</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="6 à 12 mois" data-next-step="pa2">
+                <span class="quiz-card-icon" aria-hidden="true">🗓️</span>
+                <span class="quiz-card-text"><strong>Dans 6 à 12 mois</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Je m'informe" data-next-step="pa2">
+                <span class="quiz-card-icon" aria-hidden="true">💭</span>
+                <span class="quiz-card-text"><strong>Je m'informe pour plus tard</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- pa2 : Revenus -->
+          <div class="quiz-step" data-step="pa2" hidden>
+            <h3 class="quiz-q">Quel est le revenu annuel brut combiné des futurs acheteurs ?</h3>
+            <p class="quiz-q-explain">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <span>
+                <strong>Pourquoi cette question ?</strong>
+                Pour estimer une fourchette d'achat réaliste avant l'appel. Aucun pointage de crédit, aucun partage à un tiers.
+              </span>
+            </p>
+            <div class="quiz-options" data-quiz-group="pa_revenus">
+              <button type="button" class="quiz-card" data-value="< 70 000 $" data-next-step="pa3">
+                <span class="quiz-card-icon" aria-hidden="true">💵</span>
+                <span class="quiz-card-text"><strong>Moins de 70 000 $</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="70 000 à 100 000 $" data-next-step="pa3">
+                <span class="quiz-card-icon" aria-hidden="true">💵</span>
+                <span class="quiz-card-text"><strong>70 000 $ à 100 000 $</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="100 000 à 150 000 $" data-next-step="pa3">
+                <span class="quiz-card-icon" aria-hidden="true">💵</span>
+                <span class="quiz-card-text"><strong>100 000 $ à 150 000 $</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="> 150 000 $" data-next-step="pa3">
+                <span class="quiz-card-icon" aria-hidden="true">💵</span>
+                <span class="quiz-card-text"><strong>Plus de 150 000 $</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- pa3 : Mise de fonds -->
+          <div class="quiz-step" data-step="pa3" hidden>
+            <h3 class="quiz-q">Approximativement, combien avez-vous accumulé pour votre mise de fonds ?</h3>
+            <p class="quiz-q-sub">Incluant REER pour le RAP ou CELIAPP.</p>
+            <div class="quiz-options" data-quiz-group="pa_mise">
+              <button type="button" class="quiz-card" data-value="< 15 000 $" data-next-step="5">
+                <span class="quiz-card-icon" aria-hidden="true">🪙</span>
+                <span class="quiz-card-text"><strong>Moins de 15 000 $</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="15 000 à 30 000 $" data-next-step="5">
+                <span class="quiz-card-icon" aria-hidden="true">💰</span>
+                <span class="quiz-card-text"><strong>Entre 15 000 $ et 30 000 $</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="> 30 000 $" data-next-step="5">
+                <span class="quiz-card-icon" aria-hidden="true">💎</span>
+                <span class="quiz-card-text"><strong>Plus de 30 000 $</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Je ne sais pas encore" data-next-step="5">
+                <span class="quiz-card-icon" aria-hidden="true">🤔</span>
+                <span class="quiz-card-text"><strong>Je ne sais pas encore</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ============ ÉTAPE 4 : Timing (universel — autres parcours seulement) ============ -->
           <div class="quiz-step" data-step="4" hidden>
             <h3 class="quiz-q">Quand souhaitez-vous avancer ?</h3>
             <div class="quiz-options" data-quiz-group="delai">
@@ -441,33 +538,69 @@ const prenomCourtiere = config.nom.split(' ')[0];
     | 'Travailleur autonome / Dossier complexe'
     | 'Investissement / Autre';
 
+  // Step IDs : numbers (1..5) pour le quiz générique, strings (pa1, pa2, pa3) pour le parcours
+  // Premier achat dédié. L'étape 5 (contact) est partagée.
+  type StepId = number | string;
+
   interface QuizState {
     parcours: Parcours | '';
     q1: string;
     q2: string;
     delai: string;
     prefcontact: string;
+    // Champs spécifiques Premier achat
+    pa_timing: string;
+    pa_revenus: string;
+    pa_mise: string;
   }
 
-  const TOTAL_STEPS = 5;
-  const STORAGE_KEY = 'sw_quiz_state_v1';
+  const STORAGE_KEY = 'sw_quiz_state_v2';
   const STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
 
-  // Phrases de valeur dynamiques — clé = `${parcours}|${q1}|${q2}` (q2 optionnel)
+  // Définition des flows : ordre des étapes pour la progress bar et la navigation back.
+  const FLOW_GENERIC: StepId[] = [1, 2, 3, 4, 5];
+  const FLOW_PA: StepId[] = [1, 'pa1', 'pa2', 'pa3', 5];
+
+  function flowFor(parcours: Parcours | ''): StepId[] {
+    return parcours === 'Premier achat' ? FLOW_PA : FLOW_GENERIC;
+  }
+
+  // Phrases de valeur dynamiques. Pour Premier achat, on utilise les nouveaux champs (revenus + mise).
   function valuePhrase(state: QuizState, prenomCourtiere: string): string {
-    const { parcours, q1, q2 } = state;
+    const { parcours, q1, q2, pa_revenus, pa_mise, pa_timing } = state;
 
     if (parcours === 'Premier achat') {
+      const lowMise = pa_mise === '< 15 000 $' || pa_mise === 'Je ne sais pas encore';
+      const midMise = pa_mise === '15 000 à 30 000 $';
+      const highMise = pa_mise === '> 30 000 $';
+      const lowIncome = pa_revenus === '< 70 000 $';
+      const highIncome = pa_revenus === '> 150 000 $';
+      const exploring = pa_timing === 'Je m\'informe';
+      const urgent = pa_timing === 'Dès que possible';
+
+      if (urgent && highMise) {
+        return `Avec une mise sérieuse et un échéancier serré, on prépare votre pré-approbation rapidement pour que vous puissiez magasiner avec confiance dès cette semaine.`;
+      }
+      if (highMise && (highIncome || pa_revenus === '100 000 à 150 000 $')) {
+        return `Avec votre mise et vos revenus, on est dans une zone très intéressante. ${prenomCourtiere} structurera votre dossier pour viser le maximum réaliste — et négocier le taux qui va avec.`;
+      }
+      if (lowMise) {
+        return `Le CELIAPP combiné au RAP peut presque doubler votre vitesse d'accumulation. ${prenomCourtiere} vous montrera le scénario chiffré sur votre situation — et un plan concret pour atteindre votre objectif.`;
+      }
+      if (midMise) {
+        return `Votre mise actuelle ouvre déjà plusieurs scénarios. On regarde ensemble comment les leviers RAP + CELIAPP peuvent maximiser votre capacité d'achat sans toucher à votre coussin.`;
+      }
+      if (exploring) {
+        return `Parfait — le meilleur moment pour s'informer, c'est avant d'avoir besoin d'agir. ${prenomCourtiere} vous donnera un portrait clair pour planifier sereinement.`;
+      }
+      if (lowIncome) {
+        return `Plusieurs programmes existent pour maximiser votre accès à la propriété. ${prenomCourtiere} vous expliquera lesquels s'appliquent à votre situation, en toute simplicité.`;
+      }
+      // Q1/Q2 anciens (visiteurs venant du parcours générique)
       if (q1 === 'Mise de fonds prête' && q2 === 'RAP/CELIAPP connus') {
         return `Avec votre mise de fonds et l'optimisation de vos leviers (RAP + CELIAPP), on structure votre dossier pour maximiser votre capacité d'achat dès la pré-approbation. 5 minutes pour connaître vos vrais chiffres.`;
       }
-      if (q1 === 'Mise en accumulation' || q2 === 'RAP/CELIAPP à découvrir' || q2 === 'RAP/CELIAPP inconnus') {
-        return `Le CELIAPP combiné au RAP peut presque doubler votre vitesse d'accumulation. ${prenomCourtiere} vous montrera le scénario chiffré sur votre situation lors de l'appel.`;
-      }
-      if (q1 === 'Mise indéterminée') {
-        return `Parler à Stéphanie, c'est obtenir une stratégie claire en 5 minutes. Découvrez exactement quel montant vous pouvez viser et comment maximiser votre mise de fonds. Simple et sans engagement.`;
-      }
-      return `${prenomCourtiere} vous préparera une stratégie personnalisée pour votre premier achat.`;
+      return `Parler à ${prenomCourtiere}, c'est obtenir une stratégie claire en 5 minutes. Découvrez exactement quel montant vous pouvez viser et comment maximiser votre mise de fonds. Simple et sans engagement.`;
     }
 
     if (parcours === 'Renouvellement / Refinancement') {
@@ -536,10 +669,13 @@ const prenomCourtiere = config.nom.split(' ')[0];
       q2: '',
       delai: '',
       prefcontact: 'Téléphone',
+      pa_timing: '',
+      pa_revenus: '',
+      pa_mise: '',
     };
 
-    const history: number[] = [1];
-    let currentStep = 1;
+    const history: StepId[] = [1];
+    let currentStep: StepId = 1;
 
     // --- localStorage : reprise ---
     function persist() {
@@ -570,12 +706,13 @@ const prenomCourtiere = config.nom.split(' ')[0];
     }
 
     // --- Affichage d'une étape ---
-    function showStep(step: number) {
+    function showStep(step: StepId) {
       currentStep = step;
       const allSteps = root.querySelectorAll<HTMLElement>('.quiz-step');
       allSteps.forEach((el) => el.setAttribute('hidden', ''));
 
       let visible: HTMLElement | null = null;
+      // Étapes 2/3 du flow générique : tag par parcours
       if (step === 2 || step === 3) {
         visible = root.querySelector<HTMLElement>(`.quiz-step[data-step="${step}"][data-step-for="${state.parcours}"]`);
       } else {
@@ -583,17 +720,23 @@ const prenomCourtiere = config.nom.split(' ')[0];
       }
       if (visible) visible.removeAttribute('hidden');
 
-      // Progress bar
-      if (fillEl) fillEl.style.width = `${(step / TOTAL_STEPS) * 100}%`;
-      if (stepNumEl) stepNumEl.textContent = String(step);
+      // Progress bar : position = index du step courant dans le flow actif (1-based)
+      const flow = flowFor(state.parcours);
+      const idx = flow.indexOf(step);
+      const totalSteps = flow.length;
+      const positionInFlow = idx >= 0 ? idx + 1 : 1;
+      if (fillEl) fillEl.style.width = `${(positionInFlow / totalSteps) * 100}%`;
+      if (stepNumEl) stepNumEl.textContent = String(positionInFlow);
+      const totalEl = root.querySelector<HTMLElement>('[data-quiz-step-total]');
+      if (totalEl) totalEl.textContent = String(totalSteps);
 
-      // Bouton retour
+      // Bouton retour : visible dès qu'on n'est pas sur la 1re position du flow
       if (backBtn) {
-        if (step > 1) backBtn.removeAttribute('hidden');
+        if (positionInFlow > 1) backBtn.removeAttribute('hidden');
         else backBtn.setAttribute('hidden', '');
       }
 
-      // Phrase de valeur (étape 5)
+      // Phrase de valeur (étape 5 = contact final)
       if (step === 5 && valueEl) {
         valueEl.innerHTML = `
           <span class="quiz-value-eyebrow">Voici ce qui vous attend à l'appel</span>
@@ -604,11 +747,10 @@ const prenomCourtiere = config.nom.split(' ')[0];
       // Focus management : focus le premier choix ou le premier input
       const firstFocusable = visible?.querySelector<HTMLElement>('button, input, textarea');
       if (firstFocusable) {
-        // Petit délai pour laisser l'animation respirer
         window.setTimeout(() => firstFocusable.focus({ preventScroll: true }), 60);
       }
 
-      // Maintien du focus visuel : ramener doucement le formulaire dans la fenêtre si besoin
+      // Maintien du focus visuel : ramener le formulaire en haut sur mobile
       if (window.innerWidth < 900) {
         root.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -617,13 +759,20 @@ const prenomCourtiere = config.nom.split(' ')[0];
     }
 
     // --- Sélection d'une option ---
+    function parseStep(raw: string | undefined): StepId | null {
+      if (!raw) return null;
+      const asNum = parseInt(raw, 10);
+      if (!isNaN(asNum) && String(asNum) === raw) return asNum;
+      return raw; // ex. "pa1", "pa2", "pa3"
+    }
+
     root.querySelectorAll<HTMLButtonElement>('.quiz-card').forEach((btn) => {
       btn.addEventListener('click', () => {
         const card = btn;
         const parent = card.closest<HTMLElement>('.quiz-options');
         const group = parent?.dataset.quizGroup as keyof QuizState | undefined;
         const value = card.dataset.value || '';
-        const next = parseInt(card.dataset.nextStep || '0', 10);
+        const next = parseStep(card.dataset.nextStep);
 
         if (group) {
           (state as unknown as Record<string, string>)[group] = value;
@@ -639,7 +788,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const delay = reduceMotion ? 0 : 220;
         window.setTimeout(() => {
-          if (next && next !== currentStep) {
+          if (next !== null && next !== currentStep) {
             history.push(next);
             showStep(next);
           }
@@ -751,8 +900,45 @@ const prenomCourtiere = config.nom.split(' ')[0];
       }
     });
 
-    // --- Restauration éventuelle de session ---
-    if (restore() && state.parcours) {
+    // --- Pré-sélection via paramètre URL (?parcours=premier-achat etc.) ---
+    // Permet à une sous-page service d'envoyer le visiteur directement à l'étape 2.
+    const URL_PARCOURS_MAP: Record<string, Parcours> = {
+      'premier-achat': 'Premier achat',
+      'renouvellement': 'Renouvellement / Refinancement',
+      'refinancement': 'Renouvellement / Refinancement',
+      'travailleur-autonome': 'Travailleur autonome / Dossier complexe',
+      'dossier-complexe': 'Travailleur autonome / Dossier complexe',
+      'dossier-refuse': 'Travailleur autonome / Dossier complexe',
+      'nouveaux-arrivants': 'Travailleur autonome / Dossier complexe',
+      'investissement': 'Investissement / Autre',
+    };
+
+    function readUrlParcours(): Parcours | null {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const raw = (params.get('parcours') || '').toLowerCase().trim();
+        return URL_PARCOURS_MAP[raw] ?? null;
+      } catch {
+        return null;
+      }
+    }
+
+    const urlParcours = readUrlParcours();
+
+    if (urlParcours) {
+      // Le param URL prime : on initialise un parcours frais.
+      // - Premier achat : on lance le flow dédié à pa1 (timing → revenus → mise → contact).
+      // - Autres parcours : on saute à l'étape 2 du flow générique (q1 du parcours).
+      clearPersist();
+      state.parcours = urlParcours;
+      if (fields.parcours) fields.parcours.value = urlParcours;
+      if (fields.situation) fields.situation.value = urlParcours;
+      const firstStep: StepId = urlParcours === 'Premier achat' ? 'pa1' : 2;
+      history.length = 0;
+      history.push(1, firstStep);
+      updateTelRequirement(state.prefcontact);
+      showStep(firstStep);
+    } else if (restore() && state.parcours) {
       // Recâbler les valeurs hidden
       if (fields.parcours) fields.parcours.value = state.parcours;
       if (fields.situation) fields.situation.value = state.parcours;

@@ -1,0 +1,258 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.jpg';
+import { loadSiteConfig } from '../../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+---
+
+<MainLayout
+  title="Renouvellement hypothécaire au Québec | Comparez avant de signer"
+  description="Votre hypothèque arrive à échéance en 2026 ? Avant de signer le renouvellement de votre banque, comparez 20+ prêteurs en 24 h. Service gratuit, sans engagement, avec une courtière hypothécaire au Québec."
+>
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ HERO ============ -->
+    <section class="sp-hero">
+      <div class="sp-inner">
+        <div class="sp-hero-grid">
+          <div class="sp-hero-text">
+            <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
+            <div class="sp-eyebrow">Renouvellement · Québec 2026</div>
+
+            <h1 class="sp-h1">
+              Ne signez <em>jamais</em> le premier renouvellement<br />que votre banque vous envoie.
+            </h1>
+
+            <h2 class="sp-h2">
+              90 % des Québécois acceptent l'offre de leur banque par habitude.
+              Et c'est presque toujours la moins avantageuse. En 24 h, je compare 20+ prêteurs —
+              et je vous montre exactement combien votre fidélité vous coûte.
+            </h2>
+
+            <div class="sp-hero-ctas">
+              <a href="/?parcours=renouvellement#contact" class="btn-cta sp-cta-primary" data-track="sp_renouvellement_hero_cta">
+                <span>Comparer mon renouvellement gratuitement</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+              <a href="/#simulateur" class="btn-secondary sp-cta-secondary">Estimer mon nouveau paiement</a>
+            </div>
+
+            <ul class="sp-hero-proof">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                100 % gratuit, sans engagement
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Comparaison sous 24 h ouvrables
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Aucun frais — payée par les prêteurs
+              </li>
+            </ul>
+          </div>
+
+          <aside class="sp-hero-trust" aria-label="Votre courtière">
+            <Image
+              src={stephaniePhoto}
+              alt={`${prenom} ${config.nom.split(' ').slice(1).join(' ')}, courtière hypothécaire`}
+              width={140}
+              height={140}
+              loading="eager"
+              decoding="async"
+              class="sp-trust-photo"
+            />
+            <div class="sp-trust-name">{prenom} Weyman</div>
+            <div class="sp-trust-role">Courtière hypothécaire · Hypotheca</div>
+            <p class="sp-trust-quote">
+              « Votre banque a un seul taux à vous offrir : le sien.
+              Moi, j'en ai 20 — et je joue dans votre équipe. »
+            </p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EMPATHIE ============ -->
+    <section class="sp-empathy">
+      <div class="sp-inner">
+        <div class="sp-empathy-tag">On va se le dire</div>
+        <h2 class="sp-section-title">Le « choc de paiement » de 2026, <em>ça vous parle ?</em></h2>
+        <p class="sp-empathy-text">
+          Vous avez signé en 2021-2022 à un taux historique. Vous savez que le renouvellement va faire grincer des dents —
+          mais de combien ? Vous vous demandez si la lettre que votre banque vient d'envoyer
+          est <strong>vraiment</strong> la meilleure offre, ou juste la plus pratique pour eux.
+        </p>
+        <p class="sp-empathy-text">
+          Et puis il y a la peur silencieuse&nbsp;: changer de prêteur, est-ce que c'est compliqué,
+          coûteux, risqué&nbsp;? La réponse courte&nbsp;: non. Le travail se fait en arrière-scène.
+          Vous, vous signez une fois — et vous économisez parfois pendant 5 ans.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ ÉDUCATION EXPRESS ============ -->
+    <section class="sp-education">
+      <div class="sp-inner">
+        <div class="sp-section-tag">Les 3 étapes d'un renouvellement intelligent</div>
+        <h2 class="sp-section-title">Avant de signer, on regarde ensemble <em>3 choses précises</em>.</h2>
+
+        <div class="sp-steps">
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">1</div>
+            <h3 class="sp-step-title">Magasiner 4 à 6 mois avant l'échéance — pas la veille</h3>
+            <p class="sp-step-text">
+              La plupart des prêteurs garantissent un taux jusqu'à 120 jours avant le renouvellement.
+              Ça veut dire qu'on peut bloquer un meilleur taux <em>aujourd'hui</em>, et continuer à surveiller le marché
+              jusqu'à la date de renouvellement. Si les taux baissent, on rebloque. S'ils montent, vous êtes protégé·e.
+              Attendre la lettre de votre banque, c'est négocier sans aucun levier.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">2</div>
+            <h3 class="sp-step-title">Calculer le vrai coût d'un changement de prêteur</h3>
+            <p class="sp-step-text">
+              Au renouvellement (à échéance), il n'y a <strong>aucune pénalité</strong> pour changer de prêteur —
+              c'est le seul moment où vous êtes 100 % libre. Restent les frais de transfert (parfois payés par le nouveau prêteur)
+              et l'évaluation. Sur un solde de 300 000 $, 0,40 % d'écart de taux sur 5 ans, c'est environ
+              <strong>4 000 $ de plus dans vos poches</strong> — bien au-delà de tout frais administratif.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">3</div>
+            <h3 class="sp-step-title">Repenser la structure, pas juste le taux</h3>
+            <p class="sp-step-text">
+              Un renouvellement, c'est aussi le moment d'ajuster votre amortissement, de passer en variable ou en fixe selon votre tolérance,
+              ou d'intégrer une marge de crédit hypothécaire pour des projets à venir (rénos, études, locatif).
+              Votre banque vous proposera de simplement <em>renouveler</em>. Une courtière, elle, vous propose la <em>meilleure structure pour les 5 prochaines années</em>.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AUTORITÉ — L'APPROCHE ============ -->
+    <section class="sp-approach">
+      <div class="sp-inner">
+        <div class="sp-approach-grid">
+          <div class="sp-approach-text">
+            <div class="sp-section-tag">L'approche {prenom}</div>
+            <h2 class="sp-section-title sp-section-title--light">20+ prêteurs en concurrence pour <em>votre</em> renouvellement.</h2>
+            <p class="sp-approach-para">
+              Je récupère votre lettre de renouvellement, je l'analyse, et je vous reviens avec
+              les meilleures offres comparables du marché — banques, caisses, prêteurs alternatifs.
+              Si l'offre de votre banque actuelle est la meilleure (ça arrive), je vous le dis franchement.
+              Sinon, on passe à l'action.
+            </p>
+            <p class="sp-approach-para">
+              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              quand votre dossier se finalise. Aucun frais caché, aucun engagement à m'appeler.
+              Une comparaison rapide vous coûte zéro — et peut vous faire économiser des milliers.
+            </p>
+          </div>
+
+          <ul class="sp-approach-list" aria-label="Ce que vous obtenez">
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Comparaison de 20+ prêteurs</strong>
+                <span>Banques, caisses, prêteurs alternatifs.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Service 100 % gratuit</strong>
+                <span>Aucun frais à vous, ni avant, ni après.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Transfert clé en main</strong>
+                <span>Je m'occupe des formulaires, du notaire, de tout.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Réponse claire en 24 h</strong>
+                <span>Une comparaison chiffrée, pas du jargon.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LEAD MAGNET / CTA FINAL ============ -->
+    <section class="sp-magnet">
+      <div class="sp-inner">
+        <div class="sp-magnet-card">
+          <div class="sp-magnet-eyebrow">Comparaison gratuite — 60 secondes</div>
+          <h2 class="sp-magnet-title">
+            Combien votre banque vous coûte-t-elle <em>vraiment</em> ?<br />Découvrez-le avant de signer.
+          </h2>
+          <p class="sp-magnet-sub">
+            Envoyez-moi votre lettre de renouvellement (ou répondez à 4 questions simples).
+            Je vous reviens en 24 h avec un <strong>tableau comparatif clair</strong>&nbsp;:
+            l'offre de votre banque vs les meilleures offres du marché, avec l'économie totale chiffrée sur 5 ans.
+            <strong>Aucun engagement, aucun pointage de crédit.</strong>
+          </p>
+
+          <a href="/?parcours=renouvellement#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_renouvellement_magnet_cta">
+            <span>Voir combien je peux économiser</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+
+          <ul class="sp-magnet-proof">
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              60 secondes
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Aucun pointage de crédit
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Réponse en 24 h
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('[data-track]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.track;
+      if (!name) return;
+      // @ts-ignore
+      if (typeof window.umami?.track === 'function') window.umami.track(name);
+      // @ts-ignore
+      if (typeof window.gtag === 'function') window.gtag('event', name);
+    });
+  });
+</script>

@@ -1,0 +1,258 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.jpg';
+import { loadSiteConfig } from '../../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+
+// Cache CDN — page éditoriale, change rarement
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+---
+
+<MainLayout
+  title="Premier achat hypothécaire au Québec | Guide & accompagnement gratuit"
+  description="Devenir propriétaire pour la première fois au Québec en 2026 — sans stress et sans jargon. Mise de fonds, test de résistance, programmes RAP/CELIAPP : un accompagnement gratuit avec une courtière hypothécaire."
+>
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ HERO ============ -->
+    <section class="sp-hero">
+      <div class="sp-inner">
+        <div class="sp-hero-grid">
+          <div class="sp-hero-text">
+            <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
+            <div class="sp-eyebrow">Premier achat · Québec 2026</div>
+
+            <h1 class="sp-h1">
+              Votre première maison, sans <em>les nuits blanches</em>.
+            </h1>
+
+            <h2 class="sp-h2">
+              Un accompagnement humain, gratuit, et l'accès à 20+ prêteurs — pour transformer
+              « est-ce qu'on est capables ? » en « voici exactement ce qu'on peut viser ».
+            </h2>
+
+            <div class="sp-hero-ctas">
+              <a href="/#contact?parcours=premier-achat" class="btn-cta sp-cta-primary" data-track="sp_premier_achat_hero_cta">
+                <span>Obtenir mon évaluation gratuite</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+              <a href="/#simulateur" class="btn-secondary sp-cta-secondary">Voir ma capacité d'achat</a>
+            </div>
+
+            <ul class="sp-hero-proof">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                100 % gratuit, sans engagement
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Réponse sous 24 h ouvrables
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Aucun frais — payée par les prêteurs
+              </li>
+            </ul>
+          </div>
+
+          <aside class="sp-hero-trust" aria-label="Votre courtière">
+            <Image
+              src={stephaniePhoto}
+              alt={`${prenom} ${config.nom.split(' ').slice(1).join(' ')}, courtière hypothécaire`}
+              width={140}
+              height={140}
+              loading="eager"
+              decoding="async"
+              class="sp-trust-photo"
+            />
+            <div class="sp-trust-name">{prenom} Weyman</div>
+            <div class="sp-trust-role">Courtière hypothécaire · Hypotheca</div>
+            <p class="sp-trust-quote">
+              « Mon rôle, c'est de rendre simple ce que les banques rendent compliqué.
+              Vous posez les questions — j'apporte les réponses claires. »
+            </p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EMPATHIE ============ -->
+    <section class="sp-empathy">
+      <div class="sp-inner">
+        <div class="sp-empathy-tag">On va se le dire</div>
+        <h2 class="sp-section-title">Acheter une première maison, ça fait peur. <em>Et c'est normal.</em></h2>
+        <p class="sp-empathy-text">
+          Vous vous demandez si vos revenus passeront le test de résistance fédéral.
+          Vous n'êtes pas certain·e de la mise de fonds qu'il vous faut vraiment — 5 %&nbsp;? 10 %&nbsp;? 20 %&nbsp;?
+          Et au fond, il y a cette question qui revient&nbsp;: <strong>est-ce que ma banque va dire oui&nbsp;?</strong>
+        </p>
+        <p class="sp-empathy-text">
+          La bonne nouvelle, c'est qu'aucune de ces questions ne vous oblige à parler à une banque
+          en premier. Avec une courtière, vous savez d'avance où vous vous situez —
+          <em>avant</em> de visiter une seule maison.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ ÉDUCATION EXPRESS ============ -->
+    <section class="sp-education">
+      <div class="sp-inner">
+        <div class="sp-section-tag">Les 3 étapes qui changent tout</div>
+        <h2 class="sp-section-title">Ce qu'on regarde ensemble lors d'un <em>premier appel</em>.</h2>
+
+        <div class="sp-steps">
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">1</div>
+            <h3 class="sp-step-title">La pré-approbation : votre carte d'identité d'acheteur</h3>
+            <p class="sp-step-text">
+              Avant de magasiner une maison, on magasine votre dossier. La pré-approbation,
+              c'est l'engagement écrit d'un prêteur sur un montant et un taux gelé jusqu'à 120 jours.
+              Vous visitez avec confiance, vous négociez d'égal à égal, et vous évitez de tomber en amour
+              avec une propriété hors de portée.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">2</div>
+            <h3 class="sp-step-title">La vraie mise de fonds (et comment la SCHL change la donne)</h3>
+            <p class="sp-step-text">
+              Au Québec, la mise de fonds minimale est de 5 % sur la première tranche de 500 000 $,
+              puis 10 % entre 500 000 $ et 1,5 M$ — un seuil rehaussé en décembre 2024.
+              Sous 20 % de mise, la prime SCHL s'ajoute au prêt (vous l'étalez, pas besoin de la payer comptant).
+              Avec le RAP (jusqu'à 60 000 $) et le CELIAPP cumulés, on optimise votre mise sans toucher à votre coussin de sécurité.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">3</div>
+            <h3 class="sp-step-title">Le pouvoir de comparer 20+ prêteurs en parallèle</h3>
+            <p class="sp-step-text">
+              Une banque vous offre <em>ses</em> taux. Une courtière compare ceux de 20+ prêteurs
+              en même temps — incluant des institutions non accessibles au public. Sur un prêt de 400 000 $,
+              0,30 % d'écart sur 5 ans, c'est plus de 4 000 $ qui restent dans votre poche.
+              Pas de magie : juste de la concurrence, mise au service de votre dossier.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AUTORITÉ — L'APPROCHE ============ -->
+    <section class="sp-approach">
+      <div class="sp-inner">
+        <div class="sp-approach-grid">
+          <div class="sp-approach-text">
+            <div class="sp-section-tag">L'approche {prenom}</div>
+            <h2 class="sp-section-title sp-section-title--light">Une seule courtière, un seul dossier, <em>20+ prêteurs en concurrence pour vous.</em></h2>
+            <p class="sp-approach-para">
+              Je gère votre demande de A à Z&nbsp;: analyse de votre dossier, structuration des leviers RAP/CELIAPP,
+              négociation directe avec les prêteurs, et accompagnement jusqu'à la signature chez le notaire.
+              Vous me parlez à moi — pas à un centre d'appels qui change à chaque tentative.
+            </p>
+            <p class="sp-approach-para">
+              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              quand votre dossier se finalise. Aucun frais caché, aucun engagement. Si je ne peux pas vous aider,
+              je vous le dis franchement — et je vous oriente.
+            </p>
+          </div>
+
+          <ul class="sp-approach-list" aria-label="Ce que vous obtenez">
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Accès à 20+ prêteurs</strong>
+                <span>Banques, caisses, prêteurs alternatifs et privés.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Service 100 % gratuit</strong>
+                <span>Aucun frais facturé à vous, ni avant, ni après.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Accompagnement de A à Z</strong>
+                <span>De la pré-approbation à la signature notariale.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Réponse claire en 24 h</strong>
+                <span>Pas d'attente interminable, pas de jargon.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LEAD MAGNET / CTA FINAL ============ -->
+    <section class="sp-magnet">
+      <div class="sp-inner">
+        <div class="sp-magnet-card">
+          <div class="sp-magnet-eyebrow">Évaluation gratuite — 60 secondes</div>
+          <h2 class="sp-magnet-title">
+            Découvrez votre <em>vrai</em> potentiel d'achat<br />— avant même de parler à une banque.
+          </h2>
+          <p class="sp-magnet-sub">
+            Répondez à 4 questions simples. Je vous prépare un portrait personnalisé&nbsp;:
+            montant réaliste, mise de fonds optimale, leviers RAP/CELIAPP applicables, et un appel
+            de 15 minutes pour valider la stratégie. <strong>Aucun engagement, aucun pointage de crédit.</strong>
+          </p>
+
+          <a href="/#contact?parcours=premier-achat" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_premier_achat_magnet_cta">
+            <span>Démarrer mon évaluation gratuite</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+
+          <ul class="sp-magnet-proof">
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              60 secondes
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Aucun pointage de crédit
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Réponse en 24 h
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<script>
+  // Tracking simple via dataset, compatible Umami / GA4
+  document.querySelectorAll<HTMLAnchorElement>('[data-track]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.track;
+      if (!name) return;
+      // @ts-ignore
+      if (typeof window.umami?.track === 'function') window.umami.track(name);
+      // @ts-ignore
+      if (typeof window.gtag === 'function') window.gtag('event', name);
+    });
+  });
+</script>

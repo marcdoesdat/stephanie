@@ -1,0 +1,260 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.jpg';
+import { loadSiteConfig } from '../../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+---
+
+<MainLayout
+  title="Refus de prêt hypothécaire ? Plan B en 24 h | Stéphanie Weyman"
+  description="Votre banque vous a dit non ? Votre promesse d'achat n'est pas perdue. Accès à 20+ prêteurs alternatifs réglementés au Québec — diagnostic gratuit en 60 secondes, plan d'action en 24 h."
+>
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ HERO ============ -->
+    <section class="sp-hero">
+      <div class="sp-inner">
+        <div class="sp-hero-grid">
+          <div class="sp-hero-text">
+            <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
+            <div class="sp-eyebrow">Dossier refusé · Plan B Québec 2026</div>
+
+            <h1 class="sp-h1">
+              Votre banque a dit non ?<br />Votre projet <em>n'est pas mort.</em>
+            </h1>
+
+            <h2 class="sp-h2">
+              Un refus bancaire, ce n'est pas un verdict — c'est une question de critères trop rigides.
+              J'ai accès aux solutions que votre banquier n'a pas.
+              On peut sauver votre promesse d'achat.
+            </h2>
+
+            <div class="sp-hero-ctas">
+              <a href="/?parcours=dossier-refuse#contact" class="btn-cta sp-cta-primary" data-track="sp_dossier_refuse_hero_cta">
+                <span>Analyser mon refus gratuitement</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+              <a href="#approche" class="btn-secondary sp-cta-secondary">Comment ça marche</a>
+            </div>
+
+            <ul class="sp-hero-proof">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Aucun jugement, zéro frais
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Plan d'action en 24 h
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Prêteurs spécialisés réglementés
+              </li>
+            </ul>
+          </div>
+
+          <aside class="sp-hero-trust" aria-label="Votre courtière">
+            <Image
+              src={stephaniePhoto}
+              alt={`${prenom} ${config.nom.split(' ').slice(1).join(' ')}, courtière hypothécaire`}
+              width={140}
+              height={140}
+              loading="eager"
+              decoding="async"
+              class="sp-trust-photo"
+            />
+            <div class="sp-trust-name">{prenom} Weyman</div>
+            <div class="sp-trust-role">Courtière hypothécaire · Hypotheca</div>
+            <p class="sp-trust-quote">
+              « Une banque dit non à votre dossier, pas à vous.
+              Mon job, c'est de trouver le prêteur qui dit oui — vite. »
+            </p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EMPATHIE / DÉDRAMATISATION ============ -->
+    <section class="sp-empathy">
+      <div class="sp-inner">
+        <div class="sp-empathy-tag">On va se le dire</div>
+        <h2 class="sp-section-title">Un refus, ce n'est pas votre faute.<br /><em>C'est un algorithme qui a coché une mauvaise case.</em></h2>
+        <p class="sp-empathy-text">
+          Les grandes banques utilisent un test de résistance fédéral et des modèles
+          informatiques très rigides. Un travailleur autonome avec d'excellents revenus,
+          un nouveau résident avec un dossier de crédit jeune, ou simplement quelqu'un avec un retard de paiement
+          d'il y a 3 ans — tout ça peut suffire à déclencher un « non » automatique.
+        </p>
+        <p class="sp-empathy-text">
+          De très bons dossiers se font refuser <strong>tous les jours</strong> au Québec.
+          Pas parce qu'ils sont mauvais — parce que la banque, elle, ne sait pas regarder au-delà du score.
+          Vous n'êtes pas un cas désespéré. Vous êtes simplement <strong>au mauvais guichet</strong>.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ ÉDUCATION EXPRESS — LE PLAN B ============ -->
+    <section class="sp-education" id="approche">
+      <div class="sp-inner">
+        <div class="sp-section-tag">Le Plan B en 3 étapes</div>
+        <h2 class="sp-section-title">Comment on sauve votre dossier — <em>même avec une promesse d'achat en jeu</em>.</h2>
+
+        <div class="sp-steps">
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">1</div>
+            <h3 class="sp-step-title">Les prêteurs alternatifs (« Prêteurs B »)</h3>
+            <p class="sp-step-text">
+              Ce sont des institutions <strong>réglementées</strong> qui prêtent là où les grandes banques disent non.
+              Au lieu de tout faire passer par un algorithme, ils analysent le <em>gros bon sens</em> de votre dossier&nbsp;:
+              votre revenu réel, la solidité de la propriété, votre capacité de paiement actuelle.
+              J'y ai accès — vous ne pouvez pas y aller seul·e.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">2</div>
+            <h3 class="sp-step-title">La stratégie du tremplin</h3>
+            <p class="sp-step-text">
+              Un prêt alternatif n'est presque jamais permanent. C'est un <strong>tremplin de 1 à 2 ans</strong>&nbsp;:
+              vous achetez la propriété, vous bâtissez ou rebâtissez votre profil de crédit,
+              et au prochain renouvellement on vous transfère vers une banque traditionnelle au taux régulier.
+              Vous êtes propriétaire pendant que vous redressez votre dossier — pas après.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">3</div>
+            <h3 class="sp-step-title">La rapidité — parce que votre offre a une date</h3>
+            <p class="sp-step-text">
+              Si vous avez une promesse d'achat avec condition de financement, on a quelques jours,
+              pas quelques semaines. Je peux soumettre votre dossier à plusieurs prêteurs spécialisés
+              <strong>en 24 à 48 h</strong>, négocier en parallèle, et revenir avec une offre ferme avant l'échéance.
+              C'est le moment où la rapidité d'un courtier devient déterminante.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AUTORITÉ — L'APPROCHE ============ -->
+    <section class="sp-approach">
+      <div class="sp-inner">
+        <div class="sp-approach-grid">
+          <div class="sp-approach-text">
+            <div class="sp-section-tag">L'approche {prenom}</div>
+            <h2 class="sp-section-title sp-section-title--light">Je suis votre <em>fixer</em>. Zéro jugement, juste des solutions.</h2>
+            <p class="sp-approach-para">
+              Je commence par une seule question&nbsp;: <strong>pourquoi exactement votre banque a-t-elle refusé&nbsp;?</strong>
+              Score de crédit, ratio d'endettement, type de revenu, propriété atypique&nbsp;? La vraie cause d'un refus
+              est rarement celle qu'on vous a annoncée au comptoir. Une fois identifiée, on présente votre dossier
+              sous son meilleur jour aux prêteurs qui prêtent <em>justement</em> dans ces situations.
+            </p>
+            <p class="sp-approach-para">
+              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              quand votre dossier se finalise. Pas de frais d'avance, pas de jugement,
+              et si je ne peux pas vous aider, je vous le dis honnêtement — et je vous oriente.
+            </p>
+          </div>
+
+          <ul class="sp-approach-list" aria-label="Ce que vous obtenez">
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Diagnostic du vrai motif de refus</strong>
+                <span>Au-delà de la lettre standard de la banque.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Accès aux prêteurs B et privés</strong>
+                <span>Réglementés, spécialisés dans les dossiers refusés.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Plan tremplin sur 1–2 ans</strong>
+                <span>Pour revenir vers une banque traditionnelle ensuite.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Réponse sous 24 à 48 h</strong>
+                <span>Compatible avec une promesse d'achat conditionnelle.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LEAD MAGNET / CTA FINAL ============ -->
+    <section class="sp-magnet">
+      <div class="sp-inner">
+        <div class="sp-magnet-card">
+          <div class="sp-magnet-eyebrow">Diagnostic 2e Chance — 60 secondes</div>
+          <h2 class="sp-magnet-title">
+            Diagnostic 2<sup>e</sup> Chance <em>en 60 secondes</em>.<br />Sauvons votre dossier ensemble.
+          </h2>
+          <p class="sp-magnet-sub">
+            Quelques questions simples — motif du refus, type de propriété, échéance de votre promesse d'achat.
+            Je vous reviens en <strong>24 h</strong> avec un plan d'action&nbsp;:
+            les prêteurs à qui je vais soumettre, les conditions probables, et le chemin pour retourner
+            vers une banque traditionnelle ensuite. <strong>Aucun jugement, aucun pointage de crédit, aucun frais.</strong>
+          </p>
+
+          <a href="/?parcours=dossier-refuse#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_dossier_refuse_magnet_cta">
+            <span>Analyser mon refus gratuitement</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+
+          <ul class="sp-magnet-proof">
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              60 secondes
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Aucun pointage de crédit
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Réponse en 24 h
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('[data-track]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.track;
+      if (!name) return;
+      // @ts-ignore
+      if (typeof window.umami?.track === 'function') window.umami.track(name);
+      // @ts-ignore
+      if (typeof window.gtag === 'function') window.gtag('event', name);
+    });
+  });
+</script>

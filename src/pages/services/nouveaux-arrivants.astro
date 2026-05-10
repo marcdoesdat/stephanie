@@ -1,0 +1,264 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.jpg';
+import { loadSiteConfig } from '../../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+---
+
+<MainLayout
+  title="Hypothèque pour nouveaux arrivants au Québec | Stéphanie Weyman"
+  description="Vous venez d'arriver au Canada ? Devenir propriétaire est possible — même sans crédit canadien, même sans 20 % de mise de fonds. Programmes spécialisés pour résidents permanents et détenteurs de permis de travail. Évaluation gratuite en 24 h, multilingue."
+>
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ HERO ============ -->
+    <section class="sp-hero">
+      <div class="sp-inner">
+        <div class="sp-hero-grid">
+          <div class="sp-hero-text">
+            <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
+            <div class="sp-eyebrow">Nouveaux arrivants · Québec 2026</div>
+
+            <h1 class="sp-h1">
+              Bienvenue au Québec.<br />Et bientôt, <em>chez vous.</em>
+            </h1>
+
+            <h2 class="sp-h2">
+              Vous n'avez pas besoin d'attendre 5 ans avant d'être propriétaire.
+              Des programmes hypothécaires existent pour les nouveaux arrivants —
+              résidents permanents, permis de travail, étudiants étrangers.
+              Encore faut-il savoir auxquels vous avez droit.
+            </h2>
+
+            <div class="sp-hero-ctas">
+              <a href="/?parcours=nouveaux-arrivants#contact" class="btn-cta sp-cta-primary" data-track="sp_na_hero_cta">
+                <span>Vérifier mon admissibilité gratuitement</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+              <a href="#approche" class="btn-secondary sp-cta-secondary">Voir les programmes</a>
+            </div>
+
+            <ul class="sp-hero-proof">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                100 % gratuit, sans engagement
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Programmes dès 5 % de mise de fonds
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Sans historique de crédit canadien
+              </li>
+            </ul>
+          </div>
+
+          <aside class="sp-hero-trust" aria-label="Votre courtière">
+            <Image
+              src={stephaniePhoto}
+              alt={`${prenom} ${config.nom.split(' ').slice(1).join(' ')}, courtière hypothécaire`}
+              width={140}
+              height={140}
+              loading="eager"
+              decoding="async"
+              class="sp-trust-photo"
+            />
+            <div class="sp-trust-name">{prenom} Weyman</div>
+            <div class="sp-trust-role">Courtière hypothécaire · Hypotheca</div>
+            <p class="sp-trust-quote">
+              « Vous avez traversé un océan pour bâtir une vie ici.
+              Trouver le bon prêteur, c'est la partie facile — laissez-moi m'en occuper. »
+            </p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EMPATHIE ============ -->
+    <section class="sp-empathy">
+      <div class="sp-inner">
+        <div class="sp-empathy-tag">On va se le dire</div>
+        <h2 class="sp-section-title">Pas d'historique de crédit ici ?<br /><em>Ça ne veut pas dire pas d'options.</em></h2>
+        <p class="sp-empathy-text">
+          Vous avez peut-être un excellent crédit dans votre pays d'origine, un emploi stable au Canada,
+          et une mise de fonds bien réelle. Mais quand vous franchissez la porte d'une banque ici,
+          on vous demande un score Equifax que vous n'avez pas encore eu le temps de bâtir.
+          Frustrant. Et surtout&nbsp;: <strong>évitable</strong>.
+        </p>
+        <p class="sp-empathy-text">
+          Plusieurs prêteurs canadiens ont des programmes pensés <em>spécifiquement</em> pour les nouveaux arrivants.
+          Ils acceptent les rapports de crédit étrangers, valorisent les économies prouvées,
+          et reconnaissent les revenus d'emploi récents. Le défi n'est pas de trouver une solution —
+          c'est de savoir où elle se cache.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ ÉDUCATION EXPRESS ============ -->
+    <section class="sp-education" id="approche">
+      <div class="sp-inner">
+        <div class="sp-section-tag">Les 3 leviers pour acheter sans 5 ans d'historique</div>
+        <h2 class="sp-section-title">Ce qui rend votre dossier <em>finançable dès maintenant</em>.</h2>
+
+        <div class="sp-steps">
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">1</div>
+            <h3 class="sp-step-title">Les programmes « Nouveaux arrivants » des grandes banques</h3>
+            <p class="sp-step-text">
+              Plusieurs prêteurs offrent des programmes officiels pour les <strong>résidents permanents arrivés depuis moins de 5 ans</strong>,
+              et certains acceptent même les <strong>détenteurs de permis de travail valide</strong>.
+              Ces programmes permettent un achat avec aussi peu que <strong>5 % de mise de fonds</strong>,
+              acceptent un rapport de crédit international (Nova Credit, Equifax international), et reconnaissent
+              vos revenus d'emploi dès la lettre d'embauche.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">2</div>
+            <h3 class="sp-step-title">Bâtir un crédit canadien <em>en parallèle</em> de votre achat</h3>
+            <p class="sp-step-text">
+              Pas besoin d'attendre. Une carte de crédit sécurisée, un compte bancaire actif depuis quelques mois,
+              et le paiement à temps de quelques factures (téléphone, électricité, loyer) suffisent souvent
+              à bâtir un dossier finançable en <strong>6 à 12 mois</strong>. Je vous indique exactement
+              quoi mettre en place — beaucoup de mes clients deviennent propriétaires moins d'un an après leur arrivée.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">3</div>
+            <h3 class="sp-step-title">Documenter votre épargne et vos revenus étrangers</h3>
+            <p class="sp-step-text">
+              Une mise de fonds venue de l'étranger doit être <strong>traçable sur 90 jours</strong>&nbsp;:
+              relevés bancaires de votre pays, preuve de transfert, source des fonds. Idem pour un revenu
+              de contrat international. Bien documenté dès le départ, ça passe sans friction —
+              mal documenté, ça bloque tout. Mon rôle&nbsp;: vous donner la liste exacte avant qu'on commence.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AUTORITÉ ============ -->
+    <section class="sp-approach">
+      <div class="sp-inner">
+        <div class="sp-approach-grid">
+          <div class="sp-approach-text">
+            <div class="sp-section-tag">L'approche {prenom}</div>
+            <h2 class="sp-section-title sp-section-title--light">Je connais les programmes <em>auxquels les banques ne pensent pas à vous parler</em>.</h2>
+            <p class="sp-approach-para">
+              Quand vous vous présentez seul·e à une succursale, on vous oriente souvent vers le produit standard —
+              celui qui exige 5 ans de présence et un score Equifax de 680. Avec une courtière, on évalue
+              votre statut (résident permanent, permis de travail, type de visa), votre source de revenus,
+              et on choisit le prêteur qui a un programme conçu pour <em>votre</em> situation. Ça change tout.
+            </p>
+            <p class="sp-approach-para">
+              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              quand votre dossier se finalise. Pas de frais cachés. Et si votre dossier n'est pas prêt aujourd'hui,
+              je vous donne le plan exact pour qu'il le soit dans 6 mois.
+            </p>
+          </div>
+
+          <ul class="sp-approach-list" aria-label="Ce que vous obtenez">
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Programmes spécialisés newcomers</strong>
+                <span>Résidents permanents et permis de travail.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Crédit international accepté</strong>
+                <span>Nova Credit, rapports Equifax internationaux.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Plan d'action personnalisé</strong>
+                <span>Achat maintenant, ou plan sur 6–12 mois.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Réponse claire en 24 h</strong>
+                <span>Liste de documents adaptée à votre situation.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LEAD MAGNET / CTA FINAL ============ -->
+    <section class="sp-magnet">
+      <div class="sp-inner">
+        <div class="sp-magnet-card">
+          <div class="sp-magnet-eyebrow">Évaluation Newcomer — 60 secondes</div>
+          <h2 class="sp-magnet-title">
+            Découvrez si vous pouvez acheter <em>cette année</em>.<br />Vérification d'admissibilité en 60 secondes.
+          </h2>
+          <p class="sp-magnet-sub">
+            Quelques questions simples — statut au Canada (résident permanent, permis de travail),
+            durée de présence, situation d'emploi, mise de fonds disponible.
+            Je vous reviens en <strong>24 h</strong> avec les programmes auxquels vous êtes admissible,
+            la liste des documents à préparer, et un plan d'action clair.
+            <strong>Aucun engagement, aucun pointage de crédit.</strong>
+          </p>
+
+          <a href="/?parcours=nouveaux-arrivants#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_na_magnet_cta">
+            <span>Vérifier mon admissibilité gratuitement</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+
+          <ul class="sp-magnet-proof">
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              60 secondes
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Aucun pointage de crédit
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Réponse en 24 h
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('[data-track]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.track;
+      if (!name) return;
+      // @ts-ignore
+      if (typeof window.umami?.track === 'function') window.umami.track(name);
+      // @ts-ignore
+      if (typeof window.gtag === 'function') window.gtag('event', name);
+    });
+  });
+</script>

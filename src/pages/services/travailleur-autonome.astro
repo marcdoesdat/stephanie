@@ -1,0 +1,261 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.jpg';
+import { loadSiteConfig } from '../../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+---
+
+<MainLayout
+  title="Hypothèque pour travailleur autonome au Québec | Stéphanie Weyman"
+  description="Travailleur autonome, incorporé ou à commissions ? Vos revenus sont solides — ils ne rentrent juste pas dans la case standard des banques. Je sais comment présenter votre dossier pour obtenir le oui qu'il mérite. Évaluation gratuite en 24 h."
+>
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ HERO ============ -->
+    <section class="sp-hero">
+      <div class="sp-inner">
+        <div class="sp-hero-grid">
+          <div class="sp-hero-text">
+            <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
+            <div class="sp-eyebrow">Travailleur autonome · Québec 2026</div>
+
+            <h1 class="sp-h1">
+              Vous gagnez bien votre vie.<br />Faites en sorte que <em>votre banque le voie aussi.</em>
+            </h1>
+
+            <h2 class="sp-h2">
+              Travailleur autonome, incorporé, à commissions ou à contrats —
+              vos revenus sont solides. Ils ne rentrent juste pas dans la case standard des banques.
+              Mon job&nbsp;: présenter votre dossier de la bonne façon, au bon prêteur.
+            </h2>
+
+            <div class="sp-hero-ctas">
+              <a href="/?parcours=travailleur-autonome#contact" class="btn-cta sp-cta-primary" data-track="sp_ta_hero_cta">
+                <span>Évaluer mon dossier gratuitement</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+              <a href="#approche" class="btn-secondary sp-cta-secondary">Voir comment je travaille</a>
+            </div>
+
+            <ul class="sp-hero-proof">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                100 % gratuit, sans engagement
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                20+ prêteurs comparés
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Spécialisée travailleurs autonomes
+              </li>
+            </ul>
+          </div>
+
+          <aside class="sp-hero-trust" aria-label="Votre courtière">
+            <Image
+              src={stephaniePhoto}
+              alt={`${prenom} ${config.nom.split(' ').slice(1).join(' ')}, courtière hypothécaire`}
+              width={140}
+              height={140}
+              loading="eager"
+              decoding="async"
+              class="sp-trust-photo"
+            />
+            <div class="sp-trust-name">{prenom} Weyman</div>
+            <div class="sp-trust-role">Courtière hypothécaire · Hypotheca</div>
+            <p class="sp-trust-quote">
+              « Vos revenus nets, c'est la version banque de votre histoire.
+              Mon rôle, c'est d'écrire la version complète. »
+            </p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EMPATHIE ============ -->
+    <section class="sp-empathy">
+      <div class="sp-inner">
+        <div class="sp-empathy-tag">On va se le dire</div>
+        <h2 class="sp-section-title">Vous êtes pénalisé·e <em>pour avoir bien optimisé vos impôts</em>.</h2>
+        <p class="sp-empathy-text">
+          Vous facturez 150 000 $ par année, mais vos avis de cotisation montrent 65 000 $ après dépenses.
+          Votre comptable a fait son travail — sauf que la banque, elle, ne regarde que la dernière ligne.
+          Résultat&nbsp;: une capacité d'achat ridiculement basse, ou pire, un refus net.
+        </p>
+        <p class="sp-empathy-text">
+          Et c'est encore plus fragile si vous êtes incorporé, à commissions, à pourboires,
+          ou si vous venez de finir votre première année à votre compte.
+          <strong>Le problème n'est pas votre revenu. C'est la façon dont il est lu.</strong>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ ÉDUCATION EXPRESS ============ -->
+    <section class="sp-education" id="approche">
+      <div class="sp-inner">
+        <div class="sp-section-tag">Les 3 leviers spécifiques aux travailleurs autonomes</div>
+        <h2 class="sp-section-title">Ce qu'on regarde ensemble pour <em>faire parler vos vrais revenus</em>.</h2>
+
+        <div class="sp-steps">
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">1</div>
+            <h3 class="sp-step-title">Le bon prêteur, pas n'importe lequel</h3>
+            <p class="sp-step-text">
+              Chaque prêteur calcule vos revenus différemment. Certaines banques exigent
+              <strong>2 ans d'avis de cotisation</strong> et plafonnent à la moyenne. D'autres acceptent
+              un seul avis. D'autres encore offrent des programmes <em>« stated income »</em> qui valorisent vos
+              dépôts bancaires plutôt que vos déclarations fiscales. Mon travail&nbsp;: identifier le prêteur
+              dont la formule de calcul vous rend justice — pas vous envoyer au premier guichet venu.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">2</div>
+            <h3 class="sp-step-title">Optimiser le ratio brut + dépenses ajoutées</h3>
+            <p class="sp-step-text">
+              Plusieurs dépenses déductibles (amortissement, kilométrage, bureau à domicile, intérêts d'affaires)
+              peuvent être <strong>réajoutées au revenu admissible</strong> pour le calcul hypothécaire — si on présente
+              les bons documents. Sur un revenu net déclaré de 65 000 $, on peut souvent justifier
+              80 000 $ ou plus en revenu admissible. La différence&nbsp;: 60 000 $ à 100 000 $ de plus en capacité d'achat.
+            </p>
+          </article>
+
+          <article class="sp-step">
+            <div class="sp-step-num" aria-hidden="true">3</div>
+            <h3 class="sp-step-title">Si incorporé : combiner salaire + dividendes + bénéfices retenus</h3>
+            <p class="sp-step-text">
+              Vous vous versez un petit salaire pour minimiser les charges sociales et laissez le reste dans la compagnie&nbsp;?
+              Bien joué fiscalement — mais lu seul, ça donne un dossier maigre. Avec les bons états financiers
+              de votre société (bilan, résultats, flux de trésorerie), je peux faire reconnaître vos
+              <strong>dividendes ET les bénéfices retenus</strong> par les prêteurs qui acceptent cette structure.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AUTORITÉ ============ -->
+    <section class="sp-approach">
+      <div class="sp-inner">
+        <div class="sp-approach-grid">
+          <div class="sp-approach-text">
+            <div class="sp-section-tag">L'approche {prenom}</div>
+            <h2 class="sp-section-title sp-section-title--light">Je parle <em>autonome</em>. Je parle <em>incorporé</em>. Et je parle banque.</h2>
+            <p class="sp-approach-para">
+              Avant de soumettre quoi que ce soit, je prends le temps de comprendre comment vous structurez vos revenus
+              et je bâtis un dossier qui les met en valeur&nbsp;: avis de cotisation, états financiers,
+              T1 Generals, contrats récurrents, dépôts bancaires des 12 derniers mois.
+              Présenté correctement, votre dossier devient <strong>impossible à refuser pour la mauvaise raison</strong>.
+            </p>
+            <p class="sp-approach-para">
+              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              quand votre dossier se finalise. Pas de frais cachés. Pas de discours commercial.
+              Si votre dossier n'est pas prêt cette année, je vous le dis — et je vous donne le plan pour qu'il le soit l'an prochain.
+            </p>
+          </div>
+
+          <ul class="sp-approach-list" aria-label="Ce que vous obtenez">
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Lecture experte des états financiers</strong>
+                <span>Avis de cotisation, T1, T2, dépôts.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Accès aux 20+ prêteurs</strong>
+                <span>Incluant ceux qui acceptent le « stated income ».</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Stratégie incorporée</strong>
+                <span>Salaire + dividendes + bénéfices retenus.</span>
+              </div>
+            </li>
+            <li>
+              <span class="sp-check" aria-hidden="true">✓</span>
+              <div>
+                <strong>Réponse claire en 24 h</strong>
+                <span>Avec une fourchette d'achat réaliste.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LEAD MAGNET / CTA FINAL ============ -->
+    <section class="sp-magnet">
+      <div class="sp-inner">
+        <div class="sp-magnet-card">
+          <div class="sp-magnet-eyebrow">Évaluation autonome — 60 secondes</div>
+          <h2 class="sp-magnet-title">
+            Découvrez votre <em>vraie</em> capacité d'achat<br />— celle que les banques refusent de voir.
+          </h2>
+          <p class="sp-magnet-sub">
+            Quelques questions simples — type de revenus (autonome, incorporé, commissions),
+            ancienneté à votre compte, fourchette de revenus bruts, projet visé.
+            Je vous reviens en <strong>24 h</strong> avec une fourchette d'achat réaliste,
+            la liste des documents à préparer, et les prêteurs qui valoriseront votre dossier.
+            <strong>Aucun engagement, aucun pointage de crédit.</strong>
+          </p>
+
+          <a href="/?parcours=travailleur-autonome#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_ta_magnet_cta">
+            <span>Évaluer mon dossier gratuitement</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+
+          <ul class="sp-magnet-proof">
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              60 secondes
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Aucun pointage de crédit
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Réponse en 24 h
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('[data-track]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.track;
+      if (!name) return;
+      // @ts-ignore
+      if (typeof window.umami?.track === 'function') window.umami.track(name);
+      // @ts-ignore
+      if (typeof window.gtag === 'function') window.gtag('event', name);
+    });
+  });
+</script>
