@@ -706,7 +706,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
     }
 
     // --- Affichage d'une étape ---
-    function showStep(step: StepId) {
+    function showStep(step: StepId, scrollOnMobile = true) {
       currentStep = step;
       const allSteps = root.querySelectorAll<HTMLElement>('.quiz-step');
       allSteps.forEach((el) => el.setAttribute('hidden', ''));
@@ -751,7 +751,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
       }
 
       // Maintien du focus visuel : ramener le formulaire en haut sur mobile
-      if (window.innerWidth < 900) {
+      if (window.innerWidth < 900 && scrollOnMobile) {
         root.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
@@ -937,7 +937,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
       history.length = 0;
       history.push(1, firstStep);
       updateTelRequirement(state.prefcontact);
-      showStep(firstStep);
+      showStep(firstStep, false);
     } else if (restore() && state.parcours) {
       // Recâbler les valeurs hidden
       if (fields.parcours) fields.parcours.value = state.parcours;
@@ -953,9 +953,9 @@ const prenomCourtiere = config.nom.split(' ')[0];
         b.setAttribute('aria-pressed', String(isActive));
       });
       updateTelRequirement(state.prefcontact);
-      showStep(currentStep);
+      showStep(currentStep, false);
     } else {
-      showStep(1);
+      showStep(1, false);
     }
   });
 </script>
