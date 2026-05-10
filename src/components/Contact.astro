@@ -5,12 +5,14 @@ import { loadSiteConfig } from '../config';
 const config = loadSiteConfig();
 const telephoneHref = `tel:${config.telephone.replace(/[^\d+]/g, '')}`;
 const courrielHref = `mailto:${config.courriel}`;
+const prenomCourtiere = config.nom.split(' ')[0];
 ---
 
 <section id="contact">
   <div class="section-inner">
     <div class="contact-grid">
-      
+
+      <!-- ======== COLONNE GAUCHE : Présentation & confiance ======== -->
       <div class="fade-up">
         <div class="section-tag">Contact</div>
         <h2 class="section-title">Parlons de <br />votre <em>projet</em></h2>
@@ -37,92 +39,376 @@ const courrielHref = `mailto:${config.courriel}`;
             </div>
           </div>
 
-          <div class="contact-trust">
-            <Image
-              src={stephaniePhoto}
-              alt="Stephanie Weyman"
-              width={64}
-              height={64}
-              loading="lazy"
-              decoding="async"
-              class="contact-trust-photo"
-            />
-            <p>Je réponds moi-même à tous les appels.</p>
-          </div>
         </div>
       </div>
 
-      <div class="contact-form fade-up" style="transition-delay:.15s">
-        <form id="netlify-contact-form" name="contact" method="POST" data-netlify="true" data-netlify-honeypot="bot-field">
-          
+      <!-- ======== COLONNE DROITE : Questionnaire interactif ======== -->
+      <div class="contact-form quiz fade-up" style="transition-delay:.15s">
+
+        <!-- Bandeau humain (toujours visible — c'est l'argument de vente n°1) -->
+        <div class="quiz-trust">
+          <Image
+            src={stephaniePhoto}
+            alt={`${prenomCourtiere} Weyman`}
+            width={48}
+            height={48}
+            loading="lazy"
+            decoding="async"
+            class="quiz-trust-photo"
+          />
+          <div class="quiz-trust-text">
+            <strong>{prenomCourtiere} répond elle-même.</strong>
+            <span>Réponse sous 24 h ouvrables.</span>
+          </div>
+        </div>
+
+        <!-- Barre de progression -->
+        <div class="quiz-progress" aria-hidden="true">
+          <div class="quiz-progress-meta">
+            <span class="quiz-progress-label">Étape <span data-quiz-step-num>1</span> sur 5</span>
+            <button type="button" class="quiz-back" data-quiz-back hidden>← Retour</button>
+          </div>
+          <div class="quiz-progress-bar"><div class="quiz-progress-fill" data-quiz-fill></div></div>
+        </div>
+
+        <form
+          id="netlify-contact-form"
+          name="contact"
+          method="POST"
+          data-netlify="true"
+          data-netlify-honeypot="bot-field"
+          novalidate
+        >
           <input type="hidden" name="form-name" value="contact" />
           <div style="display:none;" aria-hidden="true">
             <label>Ne pas remplir : <input name="bot-field" tabindex="-1" /></label>
           </div>
 
-          <div id="form-content">
-            <div class="form-row">
-              <div>
-                <label class="cform-label" for="contact-prenom">Prénom</label>
-                <input type="text" id="contact-prenom" name="prenom" placeholder="Marie" required autocomplete="given-name" />
+          <!-- Champs cachés alimentés par le quiz -->
+          <input type="hidden" name="parcours" data-quiz-field="parcours" value="" />
+          <input type="hidden" name="q1" data-quiz-field="q1" value="" />
+          <input type="hidden" name="q2" data-quiz-field="q2" value="" />
+          <input type="hidden" name="delai" data-quiz-field="delai" value="" />
+          <input type="hidden" name="situation" data-quiz-field="situation" value="" />
+          <!-- Compat avec l'ancienne notif Netlify : on conserve les noms historiques -->
+          <input type="hidden" name="prefcontact" data-quiz-field="prefcontact" value="" />
+
+          <!-- ============ ÉTAPE 1 : Choix du parcours ============ -->
+          <div class="quiz-step" data-step="1">
+            <h3 class="quiz-q">Quel est votre projet aujourd'hui ?</h3>
+            <p class="quiz-q-sub">Un seul choix — vous pourrez préciser à l'étape suivante.</p>
+            <div class="quiz-options" data-quiz-group="parcours">
+              <button type="button" class="quiz-card" data-value="Premier achat" data-next-step="2">
+                <span class="quiz-card-icon" aria-hidden="true">🏡</span>
+                <span class="quiz-card-text">
+                  <strong>Premier achat</strong>
+                  <span>Acheter ou se faire pré-approuver</span>
+                </span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Renouvellement / Refinancement" data-next-step="2">
+                <span class="quiz-card-icon" aria-hidden="true">🔄</span>
+                <span class="quiz-card-text">
+                  <strong>Renouvellement / Refinancement</strong>
+                  <span>Mon terme arrive à échéance ou je veux libérer de l'équité</span>
+                </span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Travailleur autonome / Dossier complexe" data-next-step="2">
+                <span class="quiz-card-icon" aria-hidden="true">🧾</span>
+                <span class="quiz-card-text">
+                  <strong>Travailleur autonome ou dossier complexe</strong>
+                  <span>Revenus non-traditionnels, refus d'une banque, situation atypique</span>
+                </span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Investissement / Autre" data-next-step="2">
+                <span class="quiz-card-icon" aria-hidden="true">🏘️</span>
+                <span class="quiz-card-text">
+                  <strong>Investissement ou autre</strong>
+                  <span>Immeuble à revenus, chalet, ou autre projet</span>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ============ ÉTAPE 2 : Q1 (dépend du parcours) ============ -->
+          <div class="quiz-step" data-step="2" data-step-for="Premier achat" hidden>
+            <h3 class="quiz-q">Où en êtes-vous avec votre mise de fonds ?</h3>
+            <div class="quiz-options" data-quiz-group="q1">
+              <button type="button" class="quiz-card" data-value="Mise de fonds prête" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">✅</span>
+                <span class="quiz-card-text"><strong>Elle est prête, en compte</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Mise en accumulation" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">📈</span>
+                <span class="quiz-card-text"><strong>En cours d'accumulation</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Mise indéterminée" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">🤔</span>
+                <span class="quiz-card-text"><strong>Je ne sais pas combien il me faut</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="quiz-step" data-step="2" data-step-for="Renouvellement / Refinancement" hidden>
+            <h3 class="quiz-q">Votre terme actuel se termine quand ?</h3>
+            <div class="quiz-options" data-quiz-group="q1">
+              <button type="button" class="quiz-card" data-value="Terme < 6 mois" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">🔴</span>
+                <span class="quiz-card-text"><strong>Dans les 6 prochains mois</strong><span>(ou déjà échu)</span></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Terme 6–12 mois" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">🟡</span>
+                <span class="quiz-card-text"><strong>Dans 6 à 12 mois</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Terme > 12 mois" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">🟢</span>
+                <span class="quiz-card-text"><strong>Dans plus de 12 mois</strong><span>j'anticipe</span></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="quiz-step" data-step="2" data-step-for="Travailleur autonome / Dossier complexe" hidden>
+            <h3 class="quiz-q">Quelle est votre situation ?</h3>
+            <div class="quiz-options" data-quiz-group="q1">
+              <button type="button" class="quiz-card" data-value="Travailleur autonome / incorporé" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">🛠️</span>
+                <span class="quiz-card-text"><strong>Travailleur autonome ou incorporé</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Refus de banque" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">❌</span>
+                <span class="quiz-card-text"><strong>Dossier déjà refusé par une banque</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Revenus variables" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">📊</span>
+                <span class="quiz-card-text"><strong>Revenus variables</strong><span>commissions, pourboires, etc.</span></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Co-emprunteurs / atypique" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">🤝</span>
+                <span class="quiz-card-text"><strong>Plusieurs co-emprunteurs ou situation atypique</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="quiz-step" data-step="2" data-step-for="Investissement / Autre" hidden>
+            <h3 class="quiz-q">De quel type de projet s'agit-il ?</h3>
+            <div class="quiz-options" data-quiz-group="q1">
+              <button type="button" class="quiz-card" data-value="Plex / immeuble à revenus" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">🏢</span>
+                <span class="quiz-card-text"><strong>Immeuble à revenus (plex)</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Résidence secondaire" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">🏖️</span>
+                <span class="quiz-card-text"><strong>Résidence secondaire / chalet</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Transfert de prêteur" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">🔁</span>
+                <span class="quiz-card-text"><strong>Transfert / changement de prêteur</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Autre" data-next-step="3">
+                <span class="quiz-card-icon" aria-hidden="true">✏️</span>
+                <span class="quiz-card-text"><strong>Autre — je précise par message</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ============ ÉTAPE 3 : Q2 (dépend du parcours) ============ -->
+          <div class="quiz-step" data-step="3" data-step-for="Premier achat" hidden>
+            <h3 class="quiz-q">Connaissez-vous les programmes pour acheteurs d'une première propriété ?</h3>
+            <div class="quiz-options" data-quiz-group="q2">
+              <button type="button" class="quiz-card" data-value="RAP/CELIAPP connus" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">✅</span>
+                <span class="quiz-card-text"><strong>Oui</strong><span>RAP, CELIAPP ou les deux</span></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="RAP/CELIAPP à découvrir" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">👀</span>
+                <span class="quiz-card-text"><strong>J'en ai entendu parler</strong><span>j'aimerais comprendre</span></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="RAP/CELIAPP inconnus" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">❌</span>
+                <span class="quiz-card-text"><strong>Non, jamais entendu</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="quiz-step" data-step="3" data-step-for="Renouvellement / Refinancement" hidden>
+            <h3 class="quiz-q">Votre objectif principal ?</h3>
+            <div class="quiz-options" data-quiz-group="q2">
+              <button type="button" class="quiz-card" data-value="Réduire mensualités" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">💰</span>
+                <span class="quiz-card-text"><strong>Réduire mes versements mensuels</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Libérer équité" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">🏗️</span>
+                <span class="quiz-card-text"><strong>Libérer de l'équité</strong><span>rénos, projet, consolidation</span></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Meilleur taux" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">📉</span>
+                <span class="quiz-card-text"><strong>Simplement obtenir le meilleur taux</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="quiz-step" data-step="3" data-step-for="Travailleur autonome / Dossier complexe" hidden>
+            <h3 class="quiz-q">Vos documents fiscaux sont-ils à jour ?</h3>
+            <div class="quiz-options" data-quiz-group="q2">
+              <button type="button" class="quiz-card" data-value="Avis de cotisation à jour" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">✅</span>
+                <span class="quiz-card-text"><strong>Oui</strong><span>avis de cotisation des 2 dernières années en main</span></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Documents en cours" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">📝</span>
+                <span class="quiz-card-text"><strong>En cours / à compléter</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="À clarifier" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">🤔</span>
+                <span class="quiz-card-text"><strong>Pas certain — j'aimerais en parler</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="quiz-step" data-step="3" data-step-for="Investissement / Autre" hidden>
+            <h3 class="quiz-q">Êtes-vous déjà propriétaire ?</h3>
+            <div class="quiz-options" data-quiz-group="q2">
+              <button type="button" class="quiz-card" data-value="Déjà propriétaire" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">✅</span>
+                <span class="quiz-card-text"><strong>Oui, d'une ou plusieurs propriétés</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Non propriétaire" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">❌</span>
+                <span class="quiz-card-text"><strong>Non, ce serait ma première</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="Vente + achat" data-next-step="4">
+                <span class="quiz-card-icon" aria-hidden="true">🔄</span>
+                <span class="quiz-card-text"><strong>J'en vends une, j'en achète une autre</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ============ ÉTAPE 4 : Timing (universel) ============ -->
+          <div class="quiz-step" data-step="4" hidden>
+            <h3 class="quiz-q">Quand souhaitez-vous avancer ?</h3>
+            <div class="quiz-options" data-quiz-group="delai">
+              <button type="button" class="quiz-card" data-value="URGENT" data-next-step="5">
+                <span class="quiz-card-icon" aria-hidden="true">🔴</span>
+                <span class="quiz-card-text"><strong>Urgent</strong><span>j'ai une offre d'achat ou une échéance imminente</span></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="30 jours ou moins" data-next-step="5">
+                <span class="quiz-card-icon" aria-hidden="true">🟠</span>
+                <span class="quiz-card-text"><strong>Dans les 30 prochains jours</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="6 mois ou moins" data-next-step="5">
+                <span class="quiz-card-icon" aria-hidden="true">🟡</span>
+                <span class="quiz-card-text"><strong>Dans les 6 prochains mois</strong></span>
+              </button>
+              <button type="button" class="quiz-card" data-value="6 mois ou plus" data-next-step="5">
+                <span class="quiz-card-icon" aria-hidden="true">🟢</span>
+                <span class="quiz-card-text"><strong>J'explore, sans pression</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ============ ÉTAPE 5 : Mini-formulaire contact ============ -->
+          <div class="quiz-step quiz-step--final" data-step="5" hidden>
+            <div class="quiz-value" data-quiz-value>
+              <!-- Phrase de valeur dynamique injectée par JS -->
+            </div>
+
+            <h3 class="quiz-q quiz-q--final">Comment préférez-vous que {prenomCourtiere} vous contacte ?</h3>
+
+            <div class="quiz-fields">
+              <div class="quiz-row">
+                <div class="quiz-field">
+                  <label class="cform-label" for="contact-prenom">Prénom</label>
+                  <input type="text" id="contact-prenom" name="prenom" placeholder="Marie" required autocomplete="given-name" />
+                </div>
+                <div class="quiz-field">
+                  <label class="cform-label" for="contact-nom">Nom</label>
+                  <input type="text" id="contact-nom" name="nom" placeholder="Tremblay" required autocomplete="family-name" />
+                </div>
               </div>
-              <div>
-                <label class="cform-label" for="contact-nom">Nom</label>
-                <input type="text" id="contact-nom" name="nom" placeholder="Tremblay" required autocomplete="family-name" />
+
+              <div class="quiz-field">
+                <label class="cform-label" for="contact-email">Courriel</label>
+                <input type="email" id="contact-email" name="email" placeholder="marie@exemple.com" required autocomplete="email" />
+              </div>
+
+              <div class="quiz-field">
+                <label class="cform-label" for="contact-tel">
+                  Téléphone
+                  <span class="cform-optional" data-tel-optional>(facultatif)</span>
+                  <span class="cform-required" data-tel-required hidden>(requis)</span>
+                </label>
+                <input type="tel" id="contact-tel" name="telephone" placeholder="514 000-0000" autocomplete="tel" />
+              </div>
+
+              <div class="quiz-field">
+                <span class="cform-label">Préférence de contact</span>
+                <div class="quiz-pref-group" role="group" aria-label="Préférence de contact">
+                  <button type="button" class="quiz-pref active" data-pref="Téléphone" aria-pressed="true">
+                    <span aria-hidden="true">☎️</span> Téléphone
+                  </button>
+                  <button type="button" class="quiz-pref" data-pref="Courriel" aria-pressed="false">
+                    <span aria-hidden="true">✉️</span> Courriel
+                  </button>
+                  <button type="button" class="quiz-pref" data-pref="Messenger" aria-pressed="false">
+                    <span aria-hidden="true">💬</span> Messenger
+                  </button>
+                </div>
+              </div>
+
+              <div class="quiz-field">
+                <label class="cform-label" for="contact-message">
+                  Quelque chose à ajouter ? <span class="cform-optional">(facultatif)</span>
+                </label>
+                <textarea id="contact-message" name="message" placeholder="Une précision, une question, un détail utile…"></textarea>
               </div>
             </div>
-            
-            <label class="cform-label" for="contact-email">Courriel</label>
-            <input type="email" id="contact-email" name="email" placeholder="marie@exemple.com" required autocomplete="email" />
-            
-            <label class="cform-label" for="contact-tel">Téléphone</label>
-            <input type="tel" id="contact-tel" name="telephone" placeholder="514 000-0000" autocomplete="tel" />
-            
-            <label class="cform-label" for="contact-situation">Votre situation</label>
-            <select id="contact-situation" name="situation" required>
-              <option value="">Sélectionnez...</option>
-              <option value="Premier achat">Premier achat</option>
-              <option value="Renouvellement">Renouvellement</option>
-              <option value="Refinancement">Refinancement</option>
-              <option value="Dossier refusé">Dossier refusé par ma banque</option>
-              <option value="Travailleur autonome">Travailleur autonome</option>
-              <option value="Autre">Autre</option>
-            </select>
-            
-            <label class="cform-label" for="contact-delai">Quand souhaitez-vous réaliser votre projet ? <span class="cform-optional">(optionnel)</span></label>
-            <select id="contact-delai" name="delai">
-              <option value="">Sélectionnez...</option>
-              <option value="URGENT">🔴 URGENT</option>
-              <option value="30 jours ou moins">Dans un délai de 30 jours ou moins</option>
-              <option value="6 mois ou moins">Dans un délai de 6 mois ou moins</option>
-              <option value="6 mois ou plus">Dans un délai de 6 mois ou plus</option>
-            </select>
 
-            <label class="cform-label" for="contact-message">Message <span class="cform-optional">(optionnel)</span></label>
-            <textarea id="contact-message" name="message" placeholder="Décrivez brièvement votre situation..."></textarea>
-            
             <div class="form-error" id="form-error">Une erreur s'est produite. Veuillez réessayer.</div>
-            
+
             <label class="cform-consent" for="contact-consent">
               <input type="checkbox" id="contact-consent" name="consent" required value="oui" />
               <span>
-                J'accepte que {config.nom.split(' ')[0]} me recontacte au sujet de ma demande hypothécaire.
+                J'accepte que {prenomCourtiere} me recontacte au sujet de ma demande hypothécaire.
                 Vos renseignements ne sont partagés avec un prêteur qu'avec votre consentement explicite —
                 voir la <a href="/confidentialite">politique de confidentialité</a>.
               </span>
             </label>
-            <button type="submit" class="contact-submit" id="contact-submit-btn">Envoyer ma demande →</button>
+
+            <button type="submit" class="btn-cta btn-cta--block" id="contact-submit-btn">
+              <span>Recevoir mon analyse personnalisée</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+
+            <p class="quiz-final-note">
+              Gratuit · Sans engagement · Réponse sous 24 h ouvrables
+            </p>
           </div>
         </form>
 
+        <!-- Échappatoire pour les utilisateurs qui n'aiment pas les questionnaires -->
+        <div class="quiz-escape">
+          <button type="button" class="quiz-escape-link" data-quiz-escape>
+            Préférez écrire un message libre ?
+          </button>
+        </div>
+
         <div class="form-success" id="form-success">
           <span class="check" aria-hidden="true">✅</span>
-          <strong>Merci, votre message a bien été envoyé !</strong><br />
-          {config.nom.split(' ')[0]} vous recontacte dans les 24 heures ouvrables.<br /><br />
+          <strong>Merci, votre demande est envoyée !</strong><br />
+          {prenomCourtiere} vous recontacte dans les 24 heures ouvrables.<br /><br />
           <a href={config.messenger_url} target="_blank" rel="noopener noreferrer" style="color:var(--forest);font-weight:600;">
             💬 Ou écrire sur Messenger maintenant →
           </a>
         </div>
+
+        <noscript>
+          <div class="quiz-noscript">
+            <p><strong>Le questionnaire interactif nécessite JavaScript.</strong> Vous pouvez nous joindre directement :</p>
+            <p>
+              <a href={telephoneHref}>{config.telephone}</a> · <a href={courrielHref}>{config.courriel}</a>
+            </p>
+          </div>
+        </noscript>
       </div>
     </div>
   </div>
@@ -149,54 +435,341 @@ const courrielHref = `mailto:${config.courriel}`;
 </style>
 
 <script>
+  type Parcours =
+    | 'Premier achat'
+    | 'Renouvellement / Refinancement'
+    | 'Travailleur autonome / Dossier complexe'
+    | 'Investissement / Autre';
+
+  interface QuizState {
+    parcours: Parcours | '';
+    q1: string;
+    q2: string;
+    delai: string;
+    prefcontact: string;
+  }
+
+  const TOTAL_STEPS = 5;
+  const STORAGE_KEY = 'sw_quiz_state_v1';
+  const STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
+
+  // Phrases de valeur dynamiques — clé = `${parcours}|${q1}|${q2}` (q2 optionnel)
+  function valuePhrase(state: QuizState, prenomCourtiere: string): string {
+    const { parcours, q1, q2 } = state;
+
+    if (parcours === 'Premier achat') {
+      if (q1 === 'Mise de fonds prête' && q2 === 'RAP/CELIAPP connus') {
+        return `Avec votre mise de fonds et l'optimisation de vos leviers (RAP + CELIAPP), on structure votre dossier pour maximiser votre capacité d'achat dès la pré-approbation. 5 minutes pour connaître vos vrais chiffres.`;
+      }
+      if (q1 === 'Mise en accumulation' || q2 === 'RAP/CELIAPP à découvrir' || q2 === 'RAP/CELIAPP inconnus') {
+        return `Le CELIAPP combiné au RAP peut presque doubler votre vitesse d'accumulation. ${prenomCourtiere} vous montrera le scénario chiffré sur votre situation lors de l'appel.`;
+      }
+      if (q1 === 'Mise indéterminée') {
+        return `Parler à Stéphanie, c'est obtenir une stratégie claire en 5 minutes. Découvrez exactement quel montant vous pouvez viser et comment maximiser votre mise de fonds. Simple et sans engagement.`;
+      }
+      return `${prenomCourtiere} vous préparera une stratégie personnalisée pour votre premier achat.`;
+    }
+
+    if (parcours === 'Renouvellement / Refinancement') {
+      if (q1 === 'Terme < 6 mois') {
+        return `On a encore le temps de magasiner avant que votre banque ne vous envoie son offre de renouvellement — c'est précisément là que se capturent les meilleures économies.`;
+      }
+      if (q2 === 'Libérer équité') {
+        return `Une simulation comparative refinancement vs. marge hypothécaire vous sera préparée avant l'appel — vous saurez quelle option coûte le moins cher sur 5 ans.`;
+      }
+      if (q1 === 'Terme > 12 mois') {
+        return `Parfait, on a tout le temps. ${prenomCourtiere} vous donnera la stratégie de timing pour ne pas manquer la fenêtre de taux.`;
+      }
+      return `${prenomCourtiere} préparera une comparaison avec les taux du jour avant votre appel.`;
+    }
+
+    if (parcours === 'Travailleur autonome / Dossier complexe') {
+      if (q1 === 'Refus de banque') {
+        return `Un refus de banque ne veut pas dire un refus du marché. ${prenomCourtiere} a accès à 20+ prêteurs, incluant des prêteurs alternatifs spécialisés dans votre profil.`;
+      }
+      if (q1 === 'Travailleur autonome / incorporé' && q2 === 'Avis de cotisation à jour') {
+        return `C'est exactement le type de dossier où ${prenomCourtiere} fait la différence : elle saura quel prêteur valorise vos revenus nets vs. brut, et négocier en conséquence.`;
+      }
+      if (q2 === 'À clarifier' || q2 === 'Documents en cours') {
+        return `Pas de souci — on commencera par un appel pour cartographier ce qu'il vous faut. Aucune pré-condition pour parler.`;
+      }
+      return `${prenomCourtiere} se spécialise dans les dossiers que les banques refusent — vous êtes au bon endroit.`;
+    }
+
+    if (parcours === 'Investissement / Autre') {
+      if (q1 === 'Plex / immeuble à revenus') {
+        return `Le calcul des revenus locatifs admissibles varie énormément d'un prêteur à l'autre — ${prenomCourtiere} identifiera ceux qui maximisent votre capacité d'emprunt.`;
+      }
+      return `Décrivez votre projet en quelques mots à l'étape suivante — ${prenomCourtiere} vous reviendra avec une approche sur mesure.`;
+    }
+
+    return `${prenomCourtiere} vous prépare une réponse personnalisée.`;
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('netlify-contact-form') as HTMLFormElement;
+    const rootEl = document.querySelector('.contact-form.quiz') as HTMLElement | null;
+    if (!rootEl) return;
+    const root: HTMLElement = rootEl;
+
+    const PRENOM_COURTIERE = (root.querySelector('.quiz-trust-text strong')?.textContent || 'Stéphanie').replace(/ répond elle-même\.?/i, '').trim() || 'Stéphanie';
+
+    const form = root.querySelector<HTMLFormElement>('#netlify-contact-form');
     if (!form) return;
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault(); 
+    const fillEl = root.querySelector<HTMLElement>('[data-quiz-fill]');
+    const stepNumEl = root.querySelector<HTMLElement>('[data-quiz-step-num]');
+    const backBtn = root.querySelector<HTMLButtonElement>('[data-quiz-back]');
+    const valueEl = root.querySelector<HTMLElement>('[data-quiz-value]');
+    const escapeBtn = root.querySelector<HTMLButtonElement>('[data-quiz-escape]');
+    const successEl = document.getElementById('form-success');
+    const errEl = document.getElementById('form-error');
 
-      // 1. Validation HTML5 Native
-      if (!form.checkValidity()) {
-        form.reportValidity(); // Affiche les bulles d'erreur natives du navigateur
-        return;
+    const fields: Record<string, HTMLInputElement> = {};
+    root.querySelectorAll<HTMLInputElement>('[data-quiz-field]').forEach((input) => {
+      const key = input.dataset.quizField;
+      if (key) fields[key] = input;
+    });
+
+    const state: QuizState = {
+      parcours: '',
+      q1: '',
+      q2: '',
+      delai: '',
+      prefcontact: 'Téléphone',
+    };
+
+    const history: number[] = [1];
+    let currentStep = 1;
+
+    // --- localStorage : reprise ---
+    function persist() {
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ts: Date.now(), state, currentStep, history }));
+      } catch {}
+    }
+    function restore(): boolean {
+      try {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (!data || typeof data.ts !== 'number' || Date.now() - data.ts > STORAGE_TTL_MS) {
+          sessionStorage.removeItem(STORAGE_KEY);
+          return false;
+        }
+        Object.assign(state, data.state);
+        history.length = 0;
+        history.push(...(data.history || [1]));
+        currentStep = data.currentStep || 1;
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    function clearPersist() {
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
+    }
+
+    // --- Affichage d'une étape ---
+    function showStep(step: number) {
+      currentStep = step;
+      const allSteps = root.querySelectorAll<HTMLElement>('.quiz-step');
+      allSteps.forEach((el) => el.setAttribute('hidden', ''));
+
+      let visible: HTMLElement | null = null;
+      if (step === 2 || step === 3) {
+        visible = root.querySelector<HTMLElement>(`.quiz-step[data-step="${step}"][data-step-for="${state.parcours}"]`);
+      } else {
+        visible = root.querySelector<HTMLElement>(`.quiz-step[data-step="${step}"]:not([data-step-for])`);
+      }
+      if (visible) visible.removeAttribute('hidden');
+
+      // Progress bar
+      if (fillEl) fillEl.style.width = `${(step / TOTAL_STEPS) * 100}%`;
+      if (stepNumEl) stepNumEl.textContent = String(step);
+
+      // Bouton retour
+      if (backBtn) {
+        if (step > 1) backBtn.removeAttribute('hidden');
+        else backBtn.setAttribute('hidden', '');
       }
 
-      const btn = document.getElementById('contact-submit-btn') as HTMLButtonElement;
-      const errEl = document.getElementById('form-error') as HTMLElement;
+      // Phrase de valeur (étape 5)
+      if (step === 5 && valueEl) {
+        valueEl.innerHTML = `
+          <span class="quiz-value-eyebrow">Voici ce qui vous attend à l'appel</span>
+          <p>${valuePhrase(state, PRENOM_COURTIERE)}</p>
+        `;
+      }
 
-      errEl.style.display = 'none';
+      // Focus management : focus le premier choix ou le premier input
+      const firstFocusable = visible?.querySelector<HTMLElement>('button, input, textarea');
+      if (firstFocusable) {
+        // Petit délai pour laisser l'animation respirer
+        window.setTimeout(() => firstFocusable.focus({ preventScroll: true }), 60);
+      }
+
+      // Maintien du focus visuel : ramener doucement le formulaire dans la fenêtre si besoin
+      if (window.innerWidth < 900) {
+        root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      persist();
+    }
+
+    // --- Sélection d'une option ---
+    root.querySelectorAll<HTMLButtonElement>('.quiz-card').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const card = btn;
+        const parent = card.closest<HTMLElement>('.quiz-options');
+        const group = parent?.dataset.quizGroup as keyof QuizState | undefined;
+        const value = card.dataset.value || '';
+        const next = parseInt(card.dataset.nextStep || '0', 10);
+
+        if (group) {
+          (state as unknown as Record<string, string>)[group] = value;
+          if (fields[group]) fields[group].value = value;
+          // Compat champ "situation"
+          if (group === 'parcours' && fields.situation) fields.situation.value = value;
+        }
+
+        // Confirmation visuelle (flash) puis avance
+        parent?.querySelectorAll<HTMLButtonElement>('.quiz-card').forEach((c) => c.classList.remove('selected'));
+        card.classList.add('selected');
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const delay = reduceMotion ? 0 : 220;
+        window.setTimeout(() => {
+          if (next && next !== currentStep) {
+            history.push(next);
+            showStep(next);
+          }
+        }, delay);
+      });
+    });
+
+    // --- Préférence de contact (étape 5) ---
+    const telInput = root.querySelector<HTMLInputElement>('#contact-tel');
+    const telOptionalLabel = root.querySelector<HTMLElement>('[data-tel-optional]');
+    const telRequiredLabel = root.querySelector<HTMLElement>('[data-tel-required]');
+
+    function updateTelRequirement(pref: string) {
+      // Téléphone et Messenger nécessitent un numéro joignable.
+      const mustHaveTel = pref === 'Téléphone' || pref === 'Messenger';
+      if (telInput) {
+        if (mustHaveTel) {
+          telInput.setAttribute('required', '');
+          telInput.setAttribute('aria-required', 'true');
+        } else {
+          telInput.removeAttribute('required');
+          telInput.removeAttribute('aria-required');
+        }
+      }
+      if (telOptionalLabel) {
+        if (mustHaveTel) telOptionalLabel.setAttribute('hidden', '');
+        else telOptionalLabel.removeAttribute('hidden');
+      }
+      if (telRequiredLabel) {
+        if (mustHaveTel) telRequiredLabel.removeAttribute('hidden');
+        else telRequiredLabel.setAttribute('hidden', '');
+      }
+    }
+
+    root.querySelectorAll<HTMLButtonElement>('.quiz-pref').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        root.querySelectorAll<HTMLButtonElement>('.quiz-pref').forEach((b) => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        state.prefcontact = btn.dataset.pref || 'Téléphone';
+        if (fields.prefcontact) fields.prefcontact.value = state.prefcontact;
+        updateTelRequirement(state.prefcontact);
+        persist();
+      });
+    });
+    if (fields.prefcontact) fields.prefcontact.value = state.prefcontact;
+    updateTelRequirement(state.prefcontact);
+
+    // --- Retour ---
+    backBtn?.addEventListener('click', () => {
+      if (history.length <= 1) return;
+      history.pop();
+      const prev = history[history.length - 1] ?? 1;
+      showStep(prev);
+    });
+
+    // --- Échappatoire : aller direct à l'étape 5 ---
+    escapeBtn?.addEventListener('click', () => {
+      if (!state.parcours) {
+        state.parcours = 'Investissement / Autre';
+        if (fields.parcours) fields.parcours.value = state.parcours;
+        if (fields.situation) fields.situation.value = state.parcours;
+      }
+      history.push(5);
+      showStep(5);
+    });
+
+    // --- Submit ---
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      const btn = document.getElementById('contact-submit-btn') as HTMLButtonElement;
+      if (errEl) errEl.style.display = 'none';
+      const originalHtml = btn.innerHTML;
       btn.textContent = 'Envoi en cours...';
       btn.disabled = true;
 
-      // 2. Préparation des données pour Netlify
       const formData = new FormData(form);
       const params = new URLSearchParams();
       formData.forEach((value, key) => {
         params.append(key, typeof value === 'string' ? value : value.name);
       });
-      const data = params.toString();
 
       try {
-        // 3. Envoi Ajax
         const response = await fetch('/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: data
+          body: params.toString(),
         });
-
-        if (response.ok) {
-          document.getElementById('form-content')!.style.display = 'none';
-          document.getElementById('form-success')!.style.display = 'block';
-        } else {
-          throw new Error('Erreur serveur Netlify');
+        if (!response.ok) throw new Error('Erreur serveur Netlify');
+        clearPersist();
+        form.style.display = 'none';
+        const escapeWrap = root.querySelector<HTMLElement>('.quiz-escape');
+        if (escapeWrap) escapeWrap.style.display = 'none';
+        if (successEl) successEl.style.display = 'block';
+      } catch {
+        if (errEl) {
+          errEl.textContent = "Une erreur de connexion est survenue. Veuillez vérifier votre réseau et réessayer.";
+          errEl.style.display = 'block';
         }
-      } catch (error) {
-        errEl.textContent = "Une erreur de connexion est survenue. Veuillez vérifier votre réseau et réessayer.";
-        errEl.style.display = 'block';
-        btn.textContent = 'Envoyer ma demande →';
+        btn.innerHTML = originalHtml;
         btn.disabled = false;
       }
     });
+
+    // --- Restauration éventuelle de session ---
+    if (restore() && state.parcours) {
+      // Recâbler les valeurs hidden
+      if (fields.parcours) fields.parcours.value = state.parcours;
+      if (fields.situation) fields.situation.value = state.parcours;
+      if (fields.q1) fields.q1.value = state.q1;
+      if (fields.q2) fields.q2.value = state.q2;
+      if (fields.delai) fields.delai.value = state.delai;
+      if (fields.prefcontact) fields.prefcontact.value = state.prefcontact;
+      // Synchroniser le bouton actif de préférence et le required du téléphone
+      root.querySelectorAll<HTMLButtonElement>('.quiz-pref').forEach((b) => {
+        const isActive = b.dataset.pref === state.prefcontact;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-pressed', String(isActive));
+      });
+      updateTelRequirement(state.prefcontact);
+      showStep(currentStep);
+    } else {
+      showStep(1);
+    }
   });
 </script>

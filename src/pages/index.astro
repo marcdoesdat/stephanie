@@ -7,6 +7,7 @@ import Hero from '../components/Hero.astro';
 import About from '../components/About.astro';
 import Services from '../components/Services.astro';
 import Simulator from '../components/Simulator.astro';
+import Comparateur from '../components/Comparateur.astro';
 import TauxSection from '../components/TauxSection.astro';
 import Calculator from '../components/Calculator.astro';
 import Faq from '../components/Faq.astro';
@@ -36,6 +37,11 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <Hero baseRate={hypothecaVariable} />
     <Simulator defaultRate={defaultRate} />
     <Calculator defaultRate={defaultRate} />
+    <Comparateur
+      defaultRate={defaultRate}
+      afficheRate={hypothecaRates?.affiche_fixe_5ans}
+      fetchedAt={hypothecaRates?.fetchedAt}
+    />
     <Services />
     <TauxSection hypothecaRates={hypothecaRates} />
     <About />

@@ -22,6 +22,7 @@ const nomDeFamille = nomArr.join(' ');
     <ul class="nav-links" id="nav-menu">
       <li><a href="/#simulateur">Capacité d'emprunt</a></li>
       <li><a href="/#calculateur">Calculer un versement</a></li>
+      <li><a href="/#comparateur">Comparer les taux</a></li>
       <li><a href="/#services">Services</a></li>
       <li><a href="/#taux-section">Taux</a></li>
       <li><a href="/#apropos">À propos</a></li>
@@ -171,6 +172,7 @@ const nomDeFamille = nomArr.join(' ');
     .nav-links.open {
       display: flex !important;
       flex-direction: column;
+      align-items: center;
       position: absolute;
       top: 100%;
       left: 0;
@@ -184,8 +186,18 @@ const nomDeFamille = nomArr.join(' ');
       animation: slideDown 0.3s ease forwards;
     }
 
+    .nav-links.open li {
+      width: 100%;
+      text-align: center;
+    }
+
     .nav-links.open a {
       white-space: normal;
+    }
+
+    .nav-links.open .nav-cta {
+      display: inline-block;
+      padding: 0.75rem 1.6rem;
     }
     
     @keyframes slideDown {

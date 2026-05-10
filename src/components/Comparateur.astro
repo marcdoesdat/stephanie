@@ -1,0 +1,488 @@
+---
+interface Props {
+  defaultRate?: number;
+  afficheRate?: number | null;
+  fetchedAt?: string | null;
+}
+const { defaultRate = 4.99, afficheRate = null, fetchedAt = null } = Astro.props;
+const displayedAfficheRate = afficheRate ?? defaultRate + 1.1;
+
+import { calcPaiement, formatMoney } from '../utils/mortgageCalc';
+
+const initialMontant = 500000;
+const initialAmort = 25;
+const initialTermeAns = 5;
+const initialPeriodes = 12; // mensuel
+const initialPmtBase = calcPaiement(initialMontant, displayedAfficheRate, initialAmort, initialPeriodes);
+const initialPmtNego = calcPaiement(initialMontant, defaultRate, initialAmort, initialPeriodes);
+const periodesTerme = initialTermeAns * initialPeriodes;
+const initialTotalBase = Math.round(initialPmtBase * periodesTerme);
+const initialTotalNego = Math.round(initialPmtNego * periodesTerme);
+const initialMonthlySavings = Math.max(0, Math.round(initialPmtBase - initialPmtNego));
+const initialTotalSavings = Math.max(0, Math.round((initialPmtBase - initialPmtNego) * periodesTerme));
+
+function formatRate(value: number): string {
+  return value.toFixed(2).replace('.', ',') + ' %';
+}
+
+function formatDateFR(iso: string | null | undefined): string {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    return new Intl.DateTimeFormat('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+  } catch {
+    return '';
+  }
+}
+
+const fetchedDateLabel = formatDateFR(fetchedAt);
+---
+
+<section id="comparateur">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-tag">Banque vs courtier</div>
+      <h2 class="section-title">La vraie différence, en chiffres.</h2>
+      <p class="section-sub">
+        Les banques affichent des taux standards. Mon rôle est d'utiliser mon accès privilégié à plus de 20 prêteurs — incluant des institutions non accessibles au public — pour négocier un taux préférentiel que vous n'obtiendriez pas seul en succursale.
+      </p>
+    </div>
+
+    <div
+      class="comp-wrapper fade-up"
+      data-bank-rate={displayedAfficheRate}
+      data-neg-rate={defaultRate}
+      data-init-amort={initialAmort}
+      data-init-terme={initialTermeAns}
+      data-init-freq={initialPeriodes}
+    >
+      <!-- ============ COLONNE GAUCHE : RÉGLAGES ============ -->
+      <div class="comp-controls">
+        <div class="comp-input-card">
+
+          <!-- Montant : champ unique cliquable + slider -->
+          <div class="comp-field">
+            <label class="comp-input-label" for="comp-montant-display">Montant financé</label>
+            <button
+              type="button"
+              class="comp-amount-display"
+              id="comp-montant-display"
+              aria-label="Modifier le montant"
+            >
+              <span id="comp-montant-value">500 000 $</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <input
+              type="number"
+              id="comp-montant-input"
+              class="comp-amount-input"
+              min="100000"
+              max="1500000"
+              step="1000"
+              value="500000"
+              hidden
+              aria-label="Montant financé en dollars"
+            />
+            <input
+              id="comp-montant-range"
+              type="range"
+              min="100000"
+              max="1500000"
+              step="1000"
+              value="500000"
+              class="comp-range"
+              aria-label="Ajuster le montant financé"
+            />
+            <div class="comp-range-bounds" aria-hidden="true">
+              <span>100 k$</span>
+              <span>1,5 M$</span>
+            </div>
+          </div>
+
+          <!-- Taux éditables -->
+          <div class="comp-rates-grid">
+            <div class="comp-field comp-field--rate">
+              <label class="comp-input-label" for="comp-rate-bank-input">Taux succursale</label>
+              <div class="comp-rate-input-wrap">
+                <input
+                  type="number"
+                  id="comp-rate-bank-input"
+                  class="comp-rate-input"
+                  min="0"
+                  max="20"
+                  step="0.01"
+                  value={displayedAfficheRate.toFixed(2)}
+                  aria-label="Taux affiché en succursale"
+                />
+                <span class="comp-rate-suffix" aria-hidden="true">%</span>
+              </div>
+            </div>
+            <div class="comp-field comp-field--rate">
+              <label class="comp-input-label" for="comp-rate-nego-input">
+                Taux Stéphanie
+                <span class="comp-rate-badge" title="Taux courtier négocié">négocié</span>
+              </label>
+              <div class="comp-rate-input-wrap comp-rate-input-wrap--hero">
+                <input
+                  type="number"
+                  id="comp-rate-nego-input"
+                  class="comp-rate-input"
+                  min="0"
+                  max="20"
+                  step="0.01"
+                  value={defaultRate.toFixed(2)}
+                  aria-label="Taux négocié par Stéphanie"
+                />
+                <span class="comp-rate-suffix" aria-hidden="true">%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Terme -->
+          <div class="comp-field">
+            <div class="comp-input-label-row">
+              <span class="comp-input-label">Terme</span>
+              <button
+                type="button"
+                class="comp-tooltip-trigger"
+                aria-label="Qu'est-ce qu'un terme ?"
+                data-tooltip="terme"
+              >?</button>
+            </div>
+            <div class="comp-toggle-group" role="group" aria-label="Sélectionnez le terme">
+              <button type="button" class="comp-pill" data-terme="1" aria-pressed="false">1 an</button>
+              <button type="button" class="comp-pill" data-terme="3" aria-pressed="false">3 ans</button>
+              <button type="button" class="comp-pill active" data-terme="5" aria-pressed="true">5 ans</button>
+            </div>
+            <div class="comp-tooltip-panel" data-tooltip-panel="terme" hidden>
+              <strong>Terme</strong> : durée pendant laquelle votre taux est garanti (le plus courant : 5 ans). À la fin, vous renégociez ou changez de prêteur.
+            </div>
+          </div>
+
+          <!-- Amortissement -->
+          <div class="comp-field">
+            <div class="comp-input-label-row">
+              <span class="comp-input-label">Amortissement</span>
+              <button
+                type="button"
+                class="comp-tooltip-trigger"
+                aria-label="Qu'est-ce que l'amortissement ?"
+                data-tooltip="amort"
+              >?</button>
+            </div>
+            <div class="comp-toggle-group" role="group" aria-label="Sélectionnez l'amortissement">
+              <button type="button" class="comp-pill" data-amort="20" aria-pressed="false">20 ans</button>
+              <button type="button" class="comp-pill active" data-amort="25" aria-pressed="true">25 ans</button>
+              <button type="button" class="comp-pill" data-amort="30" aria-pressed="false">30 ans</button>
+            </div>
+            <div class="comp-tooltip-panel" data-tooltip-panel="amort" hidden>
+              <strong>Amortissement</strong> : durée totale pour rembourser le prêt complet (souvent 25 ans). Plus c'est long, plus le versement est bas — mais plus vous payez d'intérêts au final.
+            </div>
+          </div>
+
+          <!-- Fréquence -->
+          <div class="comp-field">
+            <span class="comp-input-label">Fréquence</span>
+            <div class="comp-toggle-group" role="group" aria-label="Sélectionnez la fréquence">
+              <button type="button" class="comp-pill active" data-freq="mensuel" aria-pressed="true">Mensuel</button>
+              <button type="button" class="comp-pill" data-freq="bi-acc" aria-pressed="false">2 sem. <span class="comp-pill-sub">accéléré</span></button>
+              <button type="button" class="comp-pill" data-freq="hebdo-acc" aria-pressed="false">Hebdo. <span class="comp-pill-sub">accéléré</span></button>
+            </div>
+          </div>
+
+          <!-- Source des taux -->
+          <div class="comp-source">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            <span>
+              Taux <strong>Hypotheca</strong>{fetchedDateLabel ? <> · mis à jour le <strong>{fetchedDateLabel}</strong></> : null}. Les versements sont des estimations.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ COLONNE DROITE : RÉSULTATS ============ -->
+      <div class="comp-results" aria-live="polite">
+
+        <!-- Hero : économies dominantes -->
+        <div class="comp-savings-hero">
+          <div class="comp-savings-eyebrow">
+            Vous économisez sur le terme de <span id="comp-terme-label">5 ans</span>
+          </div>
+          <div class="comp-savings-amount" id="comp-savings">{formatMoney(initialTotalSavings)}</div>
+          <div class="comp-savings-sub">
+            soit <strong id="comp-savings-monthly">{formatMoney(initialMonthlySavings)}</strong> <span id="comp-savings-monthly-unit">par mois</span> de plus dans votre poche.
+          </div>
+          <a href="#contact" class="comp-cta" data-track="comparateur_cta_click">
+            <span>Voir mon vrai taux en 24 h</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+          <div class="comp-cta-proof">
+            <span class="comp-proof-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              20+ prêteurs comparés
+            </span>
+            <span class="comp-proof-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Sans engagement · Gratuit
+            </span>
+          </div>
+        </div>
+
+        <!-- Détails comparatifs : 2 cartes secondaires -->
+        <div class="comp-detail-grid">
+          <div class="comp-mini comp-mini--base">
+            <div class="comp-mini-tag">Succursale</div>
+            <div class="comp-mini-rate" id="comp-rate-base-display">{formatRate(displayedAfficheRate)}</div>
+            <dl class="comp-mini-list">
+              <div>
+                <dt>Versement</dt>
+                <dd id="comp-pmt-base">{formatMoney(Math.round(initialPmtBase))}<span class="comp-mini-unit" id="comp-pmt-base-unit"> /mois</span></dd>
+              </div>
+              <div>
+                <dt>Total sur le terme</dt>
+                <dd id="comp-total-base">{formatMoney(initialTotalBase)}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="comp-mini comp-mini--nego">
+            <div class="comp-mini-tag">Avec Stéphanie</div>
+            <div class="comp-mini-rate" id="comp-rate-nego-display">{formatRate(defaultRate)}</div>
+            <dl class="comp-mini-list">
+              <div>
+                <dt>Versement</dt>
+                <dd id="comp-pmt-nego">{formatMoney(Math.round(initialPmtNego))}<span class="comp-mini-unit" id="comp-pmt-nego-unit"> /mois</span></dd>
+              </div>
+              <div>
+                <dt>Total sur le terme</dt>
+                <dd id="comp-total-nego">{formatMoney(initialTotalNego)}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { calcPaiement, formatMoney } from '../utils/mortgageCalc';
+
+  type Freq = 'mensuel' | 'bi-acc' | 'hebdo-acc';
+
+  function freqLabel(freq: Freq): { unit: string; periodsPerYear: number } {
+    if (freq === 'bi-acc') return { unit: '/2 sem.', periodsPerYear: 26 };
+    if (freq === 'hebdo-acc') return { unit: '/sem.', periodsPerYear: 52 };
+    return { unit: '/mois', periodsPerYear: 12 };
+  }
+
+  // Accelerated payments : monthly payment converted to bi-weekly (/2) or weekly (/4).
+  // This is the standard Canadian "accéléré" definition — pays off the loan ~3 yrs sooner.
+  function periodicPayment(amount: number, rate: number, amort: number, freq: Freq): number {
+    const monthly = calcPaiement(amount, rate, amort, 12);
+    if (freq === 'bi-acc') return monthly / 2;
+    if (freq === 'hebdo-acc') return monthly / 4;
+    return monthly;
+  }
+
+  function formatRate(value: number): string {
+    return value.toFixed(2).replace('.', ',') + ' %';
+  }
+
+  function formatMontantFR(v: number): string {
+    return new Intl.NumberFormat('fr-CA', { maximumFractionDigits: 0 }).format(v) + ' $';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const root = document.querySelector('.comp-wrapper') as HTMLElement | null;
+    if (!root) return;
+
+    const range = root.querySelector('#comp-montant-range') as HTMLInputElement;
+    const numberInput = root.querySelector('#comp-montant-input') as HTMLInputElement;
+    const display = root.querySelector('#comp-montant-display') as HTMLButtonElement;
+    const displayValue = root.querySelector('#comp-montant-value') as HTMLElement;
+
+    const rateBankInput = root.querySelector('#comp-rate-bank-input') as HTMLInputElement;
+    const rateNegoInput = root.querySelector('#comp-rate-nego-input') as HTMLInputElement;
+
+    const termePills = Array.from(root.querySelectorAll('[data-terme]')) as HTMLButtonElement[];
+    const amortPills = Array.from(root.querySelectorAll('[data-amort]')) as HTMLButtonElement[];
+    const freqPills = Array.from(root.querySelectorAll('[data-freq]')) as HTMLButtonElement[];
+
+    const rateBaseDisplay = root.querySelector('#comp-rate-base-display');
+    const rateNegoDisplay = root.querySelector('#comp-rate-nego-display');
+    const pmtBaseEl = root.querySelector('#comp-pmt-base');
+    const pmtNegoEl = root.querySelector('#comp-pmt-nego');
+    const totalBaseEl = root.querySelector('#comp-total-base');
+    const totalNegoEl = root.querySelector('#comp-total-nego');
+    const savingsEl = root.querySelector('#comp-savings');
+    const savingsMonthly = root.querySelector('#comp-savings-monthly');
+    const savingsMonthlyUnit = root.querySelector('#comp-savings-monthly-unit');
+    const termeLabel = root.querySelector('#comp-terme-label');
+    const heroEl = root.querySelector('.comp-savings-hero') as HTMLElement | null;
+
+    let amount = parseInt(numberInput.value, 10) || 500000;
+    let bankRate = parseFloat(rateBankInput.value) || parseFloat(root.dataset.bankRate ?? '5.99');
+    let brokerRate = parseFloat(rateNegoInput.value) || parseFloat(root.dataset.negRate ?? '4.99');
+    let amortAns = parseInt(amortPills.find(b => b.classList.contains('active'))?.dataset.amort ?? '25', 10);
+    let termeAns = parseInt(termePills.find(b => b.classList.contains('active'))?.dataset.terme ?? '5', 10);
+    let freq = (freqPills.find(b => b.classList.contains('active'))?.dataset.freq ?? 'mensuel') as Freq;
+
+    function recompute() {
+      const { unit, periodsPerYear } = freqLabel(freq);
+      const periodsInTerm = termeAns * periodsPerYear;
+
+      const pmtBase = periodicPayment(amount, bankRate, amortAns, freq);
+      const pmtNego = periodicPayment(amount, brokerRate, amortAns, freq);
+      const totalBase = Math.round(pmtBase * periodsInTerm);
+      const totalNego = Math.round(pmtNego * periodsInTerm);
+
+      // Savings : per-month equivalent regardless of payment frequency, for clarity.
+      const monthlyBase = calcPaiement(amount, bankRate, amortAns, 12);
+      const monthlyNego = calcPaiement(amount, brokerRate, amortAns, 12);
+      const monthlySavings = Math.max(0, Math.round(monthlyBase - monthlyNego));
+      const totalSavings = Math.max(0, totalBase - totalNego);
+
+      if (rateBaseDisplay) rateBaseDisplay.textContent = formatRate(bankRate);
+      if (rateNegoDisplay) rateNegoDisplay.textContent = formatRate(brokerRate);
+      if (pmtBaseEl) pmtBaseEl.innerHTML = `${formatMoney(Math.round(pmtBase))}<span class="comp-mini-unit"> ${unit}</span>`;
+      if (pmtNegoEl) pmtNegoEl.innerHTML = `${formatMoney(Math.round(pmtNego))}<span class="comp-mini-unit"> ${unit}</span>`;
+      if (totalBaseEl) totalBaseEl.textContent = formatMoney(totalBase);
+      if (totalNegoEl) totalNegoEl.textContent = formatMoney(totalNego);
+      if (savingsEl) savingsEl.textContent = formatMoney(totalSavings);
+      if (savingsMonthly) savingsMonthly.textContent = formatMoney(monthlySavings);
+      if (savingsMonthlyUnit) savingsMonthlyUnit.textContent = 'par mois';
+      if (termeLabel) termeLabel.textContent = `${termeAns} an${termeAns > 1 ? 's' : ''}`;
+
+      if (heroEl) heroEl.classList.toggle('is-zero', totalSavings <= 0);
+    }
+
+    function setAmount(v: number) {
+      v = Math.max(100000, Math.min(1500000, Math.round(v / 1000) * 1000));
+      amount = v;
+      range.value = String(v);
+      numberInput.value = String(v);
+      if (displayValue) displayValue.textContent = formatMontantFR(v);
+      recompute();
+    }
+
+    // --- Toggle: clic sur le display affiche l'input number, blur revient au display ---
+    display.addEventListener('click', () => {
+      display.hidden = true;
+      numberInput.hidden = false;
+      numberInput.focus();
+      numberInput.select();
+    });
+
+    numberInput.addEventListener('input', () => {
+      const v = parseInt(numberInput.value, 10);
+      if (!isNaN(v)) {
+        // Live update without clamping (clamp on blur)
+        amount = Math.max(100000, Math.min(1500000, v));
+        range.value = String(amount);
+        recompute();
+      }
+    });
+
+    numberInput.addEventListener('blur', () => {
+      const v = parseInt(numberInput.value, 10);
+      setAmount(isNaN(v) ? 500000 : v);
+      numberInput.hidden = true;
+      display.hidden = false;
+    });
+
+    numberInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        numberInput.blur();
+      }
+    });
+
+    range.addEventListener('input', () => setAmount(parseInt(range.value, 10)));
+
+    // --- Taux ---
+    [rateBankInput, rateNegoInput].forEach((input) => {
+      input.addEventListener('input', () => {
+        const v = parseFloat(input.value);
+        if (!isNaN(v) && v >= 0 && v <= 20) {
+          if (input === rateBankInput) bankRate = v;
+          else brokerRate = v;
+          recompute();
+        }
+      });
+      input.addEventListener('blur', () => {
+        let v = parseFloat(input.value);
+        if (isNaN(v)) v = input === rateBankInput ? bankRate : brokerRate;
+        v = Math.max(0, Math.min(20, v));
+        input.value = v.toFixed(2);
+        if (input === rateBankInput) bankRate = v;
+        else brokerRate = v;
+        recompute();
+      });
+    });
+
+    // --- Pills generiques ---
+    function bindPillGroup(pills: HTMLButtonElement[], onChange: (btn: HTMLButtonElement) => void) {
+      pills.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          pills.forEach((b) => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+          });
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+          onChange(btn);
+          recompute();
+        });
+      });
+    }
+
+    bindPillGroup(termePills, (btn) => {
+      termeAns = parseInt(btn.dataset.terme ?? '5', 10);
+    });
+    bindPillGroup(amortPills, (btn) => {
+      amortAns = parseInt(btn.dataset.amort ?? '25', 10);
+    });
+    bindPillGroup(freqPills, (btn) => {
+      freq = (btn.dataset.freq ?? 'mensuel') as Freq;
+    });
+
+    // --- Tooltips (terme / amort) ---
+    const tooltipTriggers = Array.from(root.querySelectorAll('[data-tooltip]')) as HTMLButtonElement[];
+    tooltipTriggers.forEach((trigger) => {
+      const key = trigger.dataset.tooltip;
+      const panel = root.querySelector(`[data-tooltip-panel="${key}"]`) as HTMLElement | null;
+      if (!panel) return;
+      const toggle = (open?: boolean) => {
+        const isOpen = open ?? panel.hasAttribute('hidden');
+        if (isOpen) {
+          panel.removeAttribute('hidden');
+          trigger.setAttribute('aria-expanded', 'true');
+        } else {
+          panel.setAttribute('hidden', '');
+          trigger.setAttribute('aria-expanded', 'false');
+        }
+      };
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggle();
+      });
+      trigger.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') toggle(false);
+      });
+      // Close on outside click
+      document.addEventListener('click', (e) => {
+        if (!panel.contains(e.target as Node) && e.target !== trigger) toggle(false);
+      });
+    });
+
+    // --- CTA tracking ---
+    root.querySelector('.comp-cta[data-track]')?.addEventListener('click', () => {
+      // @ts-ignore — gtag may or may not be on window
+      if (typeof window.gtag === 'function') window.gtag('event', 'comparateur_cta_click');
+    });
+
+    recompute();
+  });
+</script>

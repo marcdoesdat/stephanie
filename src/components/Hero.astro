@@ -24,7 +24,10 @@ function fmtRate(val: number | null | undefined): string {
       </p>
 
       <div class="hero-btns">
-        <a href="#contact" class="btn-primary">Prendre rendez-vous</a>
+        <a href="#contact" class="btn-cta">
+          <span>Prendre rendez-vous</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
         <a href="#simulateur" class="btn-secondary">Voir mes outils</a>
       </div>
       
@@ -85,7 +88,7 @@ function fmtRate(val: number | null | undefined): string {
     max-width: 430px;
   }
 
-  .hero-btns .btn-primary,
+  .hero-btns .btn-cta,
   .hero-btns .btn-secondary {
     display: flex;
     align-items: center;
@@ -96,7 +99,9 @@ function fmtRate(val: number | null | undefined): string {
     min-width: 0;
     white-space: nowrap;
     line-height: 1.15;
+    font-size: 0.92rem;
   }
+  .hero-btns .btn-cta { gap: 0.45rem; }
 
   .hero-badge::before {
     display: none !important;
@@ -224,10 +229,10 @@ function fmtRate(val: number | null | undefined): string {
       gap: 0.65rem;
     }
 
-    .hero-btns .btn-primary,
+    .hero-btns .btn-cta,
     .hero-btns .btn-secondary {
       min-height: 50px;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
     }
 
     .hero-right {

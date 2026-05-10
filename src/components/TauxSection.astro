@@ -133,19 +133,21 @@ const displayRows = hypothecaRates?.rows?.length
 
     async function fetchTauxBdC() {
       try {
-        const res = await fetch('https://www.bankofcanada.ca/valet/observations/V39079/json?recent=1');
-        if (!res.ok) throw new Error("Erreur réseau");
-        
+        const res = await fetch('/api/bdc-rate', { headers: { Accept: 'application/json' } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const data = await res.json();
-        const ob = data.observations[0];
-        const directeur = parseFloat(ob.V39079.v);
-        // Le taux préférentiel des banques est généralement le taux directeur + 2.20%
-        const preferentiel = +(directeur + 2.20).toFixed(2); 
-        
-        const dateStr = new Date(ob.d + 'T12:00:00').toLocaleDateString('fr-CA', {
+        const directeur = Number(data?.directeur);
+        const preferentiel = Number(data?.preferentiel);
+        const obsDate = String(data?.date ?? '');
+        const fetchedAt = data?.fetchedAt ? new Date(data.fetchedAt) : new Date();
+
+        if (!Number.isFinite(directeur) || !obsDate) throw new Error('Bad payload');
+
+        const dateStr = new Date(obsDate + 'T12:00:00').toLocaleDateString('fr-CA', {
           year: 'numeric', month: 'long', day: 'numeric'
         });
-        
+
         const f = (n: number) => n.toFixed(2).replace('.', ',') + ' %';
 
         const tvDirecteur = document.getElementById('tv-directeur');
@@ -160,12 +162,12 @@ const displayRows = hypothecaRates?.rows?.length
         const tvDateInline = document.getElementById('tv-date-inline');
         if (tvDateInline) tvDateInline.textContent = dateStr;
 
-        startFreshnessClock(new Date());
-        
-      } catch (error) {
+        startFreshnessClock(fetchedAt);
+
+      } catch (_error) {
         const tvDirecteur = document.getElementById('tv-directeur');
         if (tvDirecteur) tvDirecteur.textContent = "—";
-        
+
         const tvDate = document.getElementById('tv-date');
         if (tvDate) tvDate.textContent = 'Données temporairement indisponibles';
 
