@@ -3,49 +3,57 @@ import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
 
-// Liste des services. Si `href` est défini, la carte propose "En savoir plus" vers la sous-page dédiée ;
-// sinon, elle conserve l'action "Prendre rendez-vous" qui scrolle vers #contact.
+// Liste des services. Chaque carte est entièrement cliquable et pointe vers sa sous-page dédiée.
+// Sans `href`, on retombe sur l'ancre #contact (parcours de prise de rendez-vous).
 interface ServiceItem {
   icon: string;
   title: string;
   description: string;
+  cta: string;
   href?: string;
 }
+
 const services: ServiceItem[] = [
   {
     icon: "🏠",
     title: "Premier achat",
     description: "Vous achetez votre première propriété ? Je vous guide à travers la mise de fonds, le test de résistance, et je négocie les meilleures conditions pour vous.",
+    cta: "Calculer ma capacité",
     href: "/services/premier-achat"
   },
   {
     icon: "🔄",
     title: "Renouvellement",
     description: "Votre hypothèque arrive à terme ? C'est le meilleur moment de magasiner. Je compare les offres de 20+ prêteurs pour vous obtenir un meilleur taux que votre banque.",
+    cta: "Comparer les taux",
     href: "/services/renouvellement"
   },
   {
     icon: "💡",
     title: "Refinancement",
     description: "Consolidation de dettes, rénovations, achat locatif — le refinancement peut libérer des liquidités importantes. Analysons ensemble si c'est la bonne décision.",
+    cta: "Découvrir mes options",
     href: "/services/refinancement"
   },
   {
     icon: "🔓",
     title: "Dossier refusé",
     description: "Votre banque vous a dit non ? Un refus bancaire, ce n'est pas une fin. J'ai accès à des prêteurs alternatifs adaptés aux situations complexes.",
+    cta: "Trouver une solution",
     href: "/services/dossier-refuse"
   },
   {
     icon: "💼",
     title: "Travailleur autonome",
     description: "Revenus variables, contrats, incorporation — je sais comment présenter votre dossier pour maximiser vos chances.",
+    cta: "Maximiser mon dossier",
     href: "/services/travailleur-autonome"
   },
   {
     icon: "🌍",
     title: "Nouveaux arrivants",
     description: "Vous venez d'arriver au Canada ? Il existe des programmes spéciaux pour les résidents permanents et certains détenteurs de permis de travail.",
+    cta: "Voir les programmes",
     href: "/services/nouveaux-arrivants"
   }
 ];
@@ -53,7 +61,7 @@ const services: ServiceItem[] = [
 
 <section id="services">
   <div class="section-inner">
-    
+
     <div class="fade-up">
       <div class="section-tag">Services</div>
       <h2 class="section-title">Ce que je peux<br />faire pour <em>vous</em></h2>
@@ -61,47 +69,71 @@ const services: ServiceItem[] = [
         Du premier achat au renouvellement, du refinancement au dossier complexe — je vous accompagne à chaque étape, partout au {config.region.split(' ')[2] || 'Québec'}.
       </p>
     </div>
-    
+
     <div class="services-grid">
       {services.map((service, index) => (
-        // Le délai d'animation se calcule tout seul (0s, 0.1s, 0.2s, puis recommence)
-        <article class="service-card fade-up" style={`transition-delay: ${(index % 3) * 0.1}s`}>
+        <a
+          href={service.href ?? '#contact'}
+          class="service-card fade-up"
+          style={`transition-delay: ${(index % 3) * 0.1}s`}
+          aria-label={`${service.cta} — ${service.title}`}
+        >
           <div class="service-icon" aria-hidden="true">{service.icon}</div>
-          
+
           <h3>{service.title}</h3>
           <p>{service.description}</p>
-          
-          {service.href ? (
-            <a
-              href={service.href}
-              class="learn"
-              aria-label={`En savoir plus sur ${service.title}`}
-            >
-              En savoir plus
-            </a>
-          ) : (
-            <a
-              href="#contact"
-              class="learn"
-              aria-label={`Prendre rendez-vous pour : ${service.title}`}
-            >
-              Prendre rendez-vous
-            </a>
-          )}
-        </article>
+
+          <span class="learn">
+            {service.cta}
+          </span>
+        </a>
       ))}
     </div>
-    
+
   </div>
 </section>
 
 <style>
-  /* On s'assure que le H3 hérite du look que tu avais donné au H4 dans global.css */
-  .service-card h3 {
+  /* La carte est désormais un <a>. On neutralise les styles de lien hérités
+     pour conserver exactement le look d'origine de .service-card (global.css). */
+  .services-grid .service-card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  .services-grid .service-card,
+  .services-grid .service-card:hover,
+  .services-grid .service-card:focus,
+  .services-grid .service-card:visited {
+    text-decoration: none;
+    color: inherit;
+  }
+  .services-grid .service-card * {
+    text-decoration: none;
+  }
+
+  /* H3 — préserve le look Lora (anciennement appliqué via .service-card h4 dans global.css) */
+  .services-grid .service-card h3 {
     font-family: "Lora", serif;
     font-size: 1.2rem;
     margin-bottom: 0.8rem;
     font-weight: 600;
     color: var(--ink);
+  }
+
+  /* Le CTA pousse au bas de la carte pour aligner toutes les flèches sur la même ligne,
+     même si les descriptions ont des longueurs différentes. */
+  .services-grid .service-card .learn {
+    margin-top: auto;
+    padding-top: 1.2rem;
+    color: var(--clay);
+  }
+
+  /* Focus clavier visible — accessibilité */
+  .services-grid .service-card:focus-visible {
+    outline: 3px solid var(--clay);
+    outline-offset: 4px;
   }
 </style>
