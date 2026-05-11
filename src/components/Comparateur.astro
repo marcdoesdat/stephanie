@@ -5,7 +5,7 @@ interface Props {
   fetchedAt?: string | null;
 }
 const { defaultRate = 4.99, afficheRate = null, fetchedAt = null } = Astro.props;
-const displayedAfficheRate = afficheRate ?? defaultRate + 1.1;
+const displayedAfficheRate = defaultRate + 1;
 
 import { calcPaiement, formatMoney } from '../utils/mortgageCalc';
 
