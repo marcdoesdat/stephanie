@@ -1,0 +1,188 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import Simulator from '../components/Simulator.astro';
+import Calculator from '../components/Calculator.astro';
+import Comparateur from '../components/Comparateur.astro';
+import { fetchHypothecaRates } from '../services/ratesService';
+
+const hypothecaRates = await fetchHypothecaRates();
+const defaultRate = hypothecaRates?.fixe_5ans ?? 4.99;
+
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+
+const tabs = [
+  { id: 'simulateur', label: 'Simulateur d’emprunt', sub: 'Capacité' },
+  { id: 'calculateur', label: 'Calculateur de paiement', sub: 'Versements' },
+  { id: 'comparateur', label: 'Comparateur de taux', sub: 'Économies' },
+];
+---
+
+<MainLayout
+  fullTitle="Calculateur hypothécaire Québec – Capacité d'emprunt, versements et comparateur de taux | Stéphanie Weyman"
+  description="Outils hypothécaires gratuits au Québec : simulateur de capacité d'emprunt, calculateur de versements hypothécaires et comparateur banque vs courtier. Taux Hypotheca en temps réel, sans inscription."
+>
+  <Nav />
+  <main id="main-content">
+    <section id="outils-intro">
+      <div class="section-inner outils-intro-inner">
+        <div class="section-tag">Outils gratuits</div>
+        <h1 class="section-title">Calculateurs hypothécaires <em>gratuits</em> au Québec</h1>
+        <p class="section-sub">
+          Estimez votre capacité d’emprunt, calculez un versement et comparez les taux affichés
+          en banque avec ceux qu’un courtier peut négocier — le tout dans un même endroit.
+        </p>
+      </div>
+    </section>
+
+    <section id="outils-tabs-section">
+      <div class="section-inner">
+        <div
+          class="outils-tablist"
+          role="tablist"
+          aria-label="Outils hypothécaires"
+        >
+          {tabs.map((tab, i) => (
+            <button
+              type="button"
+              role="tab"
+              id={`tab-${tab.id}`}
+              class="comp-pill outils-tab"
+              aria-controls={`panel-${tab.id}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+              data-tab={tab.id}
+            >
+              <span class="outils-tab-label">{tab.label}</span>
+              <span class="comp-pill-sub">{tab.sub}</span>
+            </button>
+          ))}
+        </div>
+
+        <div
+          class="outils-panel"
+          id="panel-simulateur"
+          role="tabpanel"
+          aria-labelledby="tab-simulateur"
+          data-panel="simulateur"
+        >
+          <Simulator defaultRate={defaultRate} />
+        </div>
+
+        <div
+          class="outils-panel"
+          id="panel-calculateur"
+          role="tabpanel"
+          aria-labelledby="tab-calculateur"
+          data-panel="calculateur"
+          hidden
+        >
+          <Calculator defaultRate={defaultRate} />
+        </div>
+
+        <div
+          class="outils-panel"
+          id="panel-comparateur"
+          role="tabpanel"
+          aria-labelledby="tab-comparateur"
+          data-panel="comparateur"
+          hidden
+        >
+          <Comparateur
+            defaultRate={defaultRate}
+            afficheRate={hypothecaRates?.affiche_fixe_5ans}
+            fetchedAt={hypothecaRates?.fetchedAt}
+          />
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+
+  <script>
+    document.documentElement.classList.add('js-enabled');
+
+    const tablist = document.querySelector<HTMLElement>('.outils-tablist');
+    const tabs = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.outils-tab')
+    );
+    const panels = Array.from(
+      document.querySelectorAll<HTMLElement>('.outils-panel')
+    );
+
+    function activate(tabId: string, focus = false) {
+      const targetTab = tabs.find((t) => t.dataset.tab === tabId);
+      if (!targetTab) return;
+
+      tabs.forEach((tab) => {
+        const active = tab === targetTab;
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        tab.setAttribute('tabindex', active ? '0' : '-1');
+        tab.classList.toggle('active', active);
+      });
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.panel !== tabId;
+      });
+
+      if (focus) targetTab.focus();
+
+      const newHash = `#${tabId}`;
+      if (window.location.hash !== newHash) {
+        history.replaceState(null, '', `${window.location.pathname}${newHash}`);
+      }
+    }
+
+    function tabIdFromHash(): string | null {
+      const hash = window.location.hash.replace('#', '');
+      if (!hash) return null;
+      return tabs.some((t) => t.dataset.tab === hash) ? hash : null;
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const id = tab.dataset.tab;
+        if (id) activate(id);
+      });
+    });
+
+    tablist?.addEventListener('keydown', (e) => {
+      const key = (e as KeyboardEvent).key;
+      if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') return;
+      e.preventDefault();
+      const current = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
+      let next = current;
+      if (key === 'ArrowRight') next = (current + 1) % tabs.length;
+      else if (key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+      else if (key === 'Home') next = 0;
+      else if (key === 'End') next = tabs.length - 1;
+      const id = tabs[next]?.dataset.tab;
+      if (id) activate(id, true);
+    });
+
+    window.addEventListener('hashchange', () => {
+      const id = tabIdFromHash();
+      if (id) activate(id);
+    });
+
+    const initial = tabIdFromHash();
+    if (initial) activate(initial);
+
+    // Fade-up fallback (même logique que la page d’accueil)
+    const fadeEls = document.querySelectorAll('.fade-up');
+    const obs = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((x) => {
+          if (x.isIntersecting) {
+            x.target.classList.add('visible');
+            obs.unobserve(x.target);
+          }
+        }),
+      { threshold: 0.12 }
+    );
+    fadeEls.forEach((el) => obs.observe(el));
+    window.setTimeout(() => {
+      fadeEls.forEach((el) => el.classList.add('visible'));
+    }, 1000);
+  </script>
+</MainLayout>

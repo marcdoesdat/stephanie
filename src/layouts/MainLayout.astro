@@ -6,13 +6,14 @@ import '../styles/global.css';
 const config = loadSiteConfig();
 
 interface Props {
-  title: string;
+  title?: string;
+  fullTitle?: string;
   description: string;
   ogImage?: string;
   noindex?: boolean;
 }
 
-const { title, description, ogImage, noindex } = Astro.props;
+const { title, fullTitle, description, ogImage, noindex } = Astro.props;
 ---
 
 <!doctype html>
@@ -21,8 +22,9 @@ const { title, description, ogImage, noindex } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    
-    <SEO title={title} description={description} ogImage={ogImage} noindex={noindex} />
+
+    <SEO title={title} fullTitle={fullTitle} description={description} ogImage={ogImage} noindex={noindex} />
+    <slot name="head" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

@@ -134,7 +134,7 @@ const { defaultRate = 3.79 } = Astro.props;
             <div class="sim-gate-card">
               <div class="sim-gate-lock">&#128274;</div>
               <h3 class="sim-gate-title">Voir le détail complet</h3>
-              <p class="sim-gate-sub">Recevez votre résumé personnalisé + le <strong>guide gratuit du premier acheteur</strong> — directement de Stéphanie.</p>
+              <p class="sim-gate-sub">Affichez maintenant mes résultats</p>
               <div class="sim-gate-fields">
                 <label for="sim-gate-prenom" class="sr-only">Votre prénom</label>
                 <input type="text" id="sim-gate-prenom" placeholder="Votre prénom" class="sim-gate-input" autocomplete="given-name" />
@@ -146,6 +146,12 @@ const { defaultRate = 3.79 } = Astro.props;
                 <span>
                   J'accepte que Stéphanie me recontacte au sujet de cette simulation. Aucun partage avec un tiers
                   sans mon consentement — voir la <a href="/confidentialite">politique de confidentialité</a>.
+                </span>
+              </label>
+              <label class="sim-gate-consent" for="sim-gate-guide">
+                <input type="checkbox" id="sim-gate-guide" />
+                <span>
+                  Recevoir le <strong>guide gratuit du premier acheteur</strong> — directement de Stéphanie.
                 </span>
               </label>
               <button type="button" id="sim-gate-btn" class="sim-gate-submit">Voir mes résultats complets &rarr;</button>
@@ -449,6 +455,7 @@ const { defaultRate = 3.79 } = Astro.props;
             prix_max,
             versement,
             consentement: 'oui',
+            guide: (document.getElementById('sim-gate-guide') as HTMLInputElement)?.checked ? 'oui' : 'non',
           }).toString(),
         });
       } catch {

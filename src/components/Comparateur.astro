@@ -5,7 +5,7 @@ interface Props {
   fetchedAt?: string | null;
 }
 const { defaultRate = 4.99, afficheRate = null, fetchedAt = null } = Astro.props;
-const displayedAfficheRate = defaultRate + 1;
+const displayedAfficheRate = afficheRate ?? defaultRate + 1;
 
 import { calcPaiement, formatMoney } from '../utils/mortgageCalc';
 
@@ -223,7 +223,11 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
             </span>
             <span class="comp-proof-item">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              Sans engagement · Gratuit
+              Sans engagement
+            </span>
+            <span class="comp-proof-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Gratuit
             </span>
           </div>
         </div>

@@ -1,4 +1,6 @@
 ---
+export const prerender = true;
+
 import Layout from '../layouts/MainLayout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
@@ -16,7 +18,7 @@ const config = loadSiteConfig();
   <main id="main-content" class="amort-page">
     <div class="amort-hero">
       <div class="amort-hero-inner">
-        <a href="/#calculateur" class="back-link">← Retour au calculateur</a>
+        <a href="/outils#calculateur" class="back-link">← Retour au calculateur</a>
         <h1>Tableau d'<em>amortissement</em> complet</h1>
         <p class="amort-params" id="amort-params"></p>
       </div>

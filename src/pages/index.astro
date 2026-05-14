@@ -1,15 +1,10 @@
 ---
-export const prerender = true;
-
 import MainLayout from '../layouts/MainLayout.astro';
 import Nav from '../components/Nav.astro';
 import Hero from '../components/Hero.astro';
 import About from '../components/About.astro';
 import Services from '../components/Services.astro';
-import Simulator from '../components/Simulator.astro';
-import Comparateur from '../components/Comparateur.astro';
 import TauxSection from '../components/TauxSection.astro';
-import Calculator from '../components/Calculator.astro';
 import Faq from '../components/Faq.astro';
 import Testimonials from '../components/Testimonials.astro';
 import Contact from '../components/Contact.astro';
@@ -18,8 +13,6 @@ import MessengerBtn from '../components/MessengerBtn.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
 
 const hypothecaRates = await fetchHypothecaRates();
-// Use 5-year fixed as the calculator default; fall back to 4.99 if unavailable.
-const defaultRate = hypothecaRates?.fixe_5ans ?? 4.99;
 const hypothecaVariable = hypothecaRates?.variable ?? 5.99;
 
 // CDN cache: serve cached HTML for 6 h, revalidate in background for 1 h after expiry
@@ -28,20 +21,49 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 ---
 
 <MainLayout
-  title="Courtière hypothécaire Repentigny | Pré-approbation Québec"
-  description="Obtenez une pré-approbation hypothécaire à Repentigny. Accompagnement pour achat, renouvellement, refinancement et travailleurs autonomes partout au Québec."
+  fullTitle="Courtière hypothécaire Repentigny – Stéphanie Weyman"
+  description="Pré-approbation hypothécaire à Repentigny. Achat, renouvellement, refinancement, travailleurs autonomes. Réponse sous 24h – Stéphanie Weyman, AMF."
 >
   <MessengerBtn />
   <Nav />
   <main id="main-content">
     <Hero baseRate={hypothecaVariable} />
-    <Simulator defaultRate={defaultRate} />
-    <Calculator defaultRate={defaultRate} />
-    <Comparateur
-      defaultRate={defaultRate}
-      afficheRate={hypothecaRates?.affiche_fixe_5ans}
-      fetchedAt={hypothecaRates?.fetchedAt}
-    />
+
+    <section id="outils-teaser">
+      <div class="section-inner">
+        <div class="fade-up">
+          <div class="section-tag">Outils gratuits</div>
+          <h2 class="section-title">Préparez votre projet avec nos outils</h2>
+          <p class="section-sub">
+            Trois outils clairs pour planifier votre financement : capacité d’emprunt, versement estimé et comparaison des taux
+            entre la banque et un courtier.
+          </p>
+          <p class="outils-trust">Sans inscription · Résultats instantanés</p>
+        </div>
+
+        <div class="outils-teaser-grid fade-up">
+          <a href="/outils#simulateur" class="outils-card" aria-label="Simulateur d'emprunt — Estimez votre capacité d'achat">
+            <div class="service-icon" aria-hidden="true">🏠</div>
+            <div class="outils-card-title">Simulateur d'emprunt</div>
+            <p>Estimez votre capacité réelle selon vos revenus, dettes, mise de fonds et taux de qualification.</p>
+            <span class="outils-card-arrow" aria-hidden="true">→</span>
+          </a>
+          <a href="/outils#calculateur" class="outils-card" aria-label="Calculateur de versement — Calculez vos mensualités">
+            <div class="service-icon" aria-hidden="true">🧮</div>
+            <div class="outils-card-title">Calculateur de versement</div>
+            <p>Calculez des mensualités précises avec le taux, l'amortissement et les frais qui comptent vraiment.</p>
+            <span class="outils-card-arrow" aria-hidden="true">→</span>
+          </a>
+          <a href="/outils#comparateur" class="outils-card" aria-label="Comparateur de taux — Voyez votre économie sur 5 ans">
+            <div class="service-icon" aria-hidden="true">⚖️</div>
+            <div class="outils-card-title">Comparateur de taux</div>
+            <p>Comparez un taux public et un taux négocié par Stéphanie pour voir votre économie sur 5 ans.</p>
+            <span class="outils-card-arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
     <Services />
     <TauxSection hypothecaRates={hypothecaRates} />
     <About />
@@ -50,6 +72,47 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <Contact />
   </main>
   <Footer />
+
+  <style>
+    /* Tuiles cliquables — style cohérent avec les cartes Services */
+    .outils-trust {
+      margin: 0.25rem 0 0;
+      font-size: 0.78rem;
+      color: var(--clay, #c47a52);
+      font-weight: 500;
+    }
+    #outils-teaser .outils-card {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04);
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    #outils-teaser .outils-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 36px rgba(0,0,0,.10);
+    }
+    #outils-teaser .outils-card-title {
+      font-size: 1.2rem;
+    }
+    #outils-teaser .outils-card p {
+      font-size: 0.85rem;
+      flex: 1;
+    }
+    #outils-teaser .outils-card-arrow {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 1.1rem;
+      color: var(--clay, #c47a52);
+      transition: transform 0.2s;
+    }
+    #outils-teaser .outils-card:hover .outils-card-arrow {
+      transform: translateX(4px);
+    }
+  </style>
 
   <script>
     document.documentElement.classList.add('js-enabled');

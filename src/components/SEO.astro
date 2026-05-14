@@ -5,6 +5,7 @@ const config = loadSiteConfig();
 
 interface Props {
   title?: string;
+  fullTitle?: string;
   description?: string;
   canonicalURL?: string | URL;
   ogImage?: string;
@@ -13,13 +14,14 @@ interface Props {
 
 const {
   title,
+  fullTitle,
   description = config.meta_description,
   canonicalURL = new URL(Astro.url.pathname, config.site_url),
   ogImage = "/images/og-image.jpg",
   noindex = false,
 } = Astro.props;
 
-const formattedTitle = title ? `${title} | ${config.nom}` : config.meta_title;
+const formattedTitle = fullTitle ?? (title ? `${title} | ${config.nom}` : config.meta_title);
 const resolvedOgImage = new URL(ogImage, config.site_url);
 
 // JSON-LD : FinancialService + LocalBusiness (courtière hypothécaire)
@@ -39,16 +41,16 @@ const schema = {
   },
   "address": {
     "@type": "PostalAddress",
-    "streetAddress": "54 rue Bourbon",
-    "addressLocality": "Repentigny",
+    "streetAddress": "3344 Fleury Est",
+    "addressLocality": "Montréal",
     "addressRegion": "QC",
-    "postalCode": "J6A 3V7",
+    "postalCode": "H1H 2R5",
     "addressCountry": "CA"
   },
   "geo": {
     "@type": "GeoCoordinates",
-    "latitude": 45.7422,
-    "longitude": -73.4501
+    "latitude": 45.5794,
+    "longitude": -73.6492
   },
   "openingHoursSpecification": [
     {

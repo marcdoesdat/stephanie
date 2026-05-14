@@ -7,9 +7,6 @@ export default defineConfig({
   site: 'https://stephanieweyman.ca',
   adapter: netlify(),
   integrations: [
-    sitemap({
-      // Exclure toutes les pages de la zone client privée du sitemap
-      filter: (page) => !page.includes('/client/'),
-    })
+    sitemap()
   ],
 });

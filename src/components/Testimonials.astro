@@ -1,25 +1,50 @@
 ---
-// Tes témoignages (Facile à modifier ici !)
 const reviews = [
   {
     texte: "Très bon service avec Stéphanie ! Je vous la recommande sans hésitation.",
     auteur: "Romanica A.",
+    initiales: "RA",
     detail: "Nouvel achat · Montréal",
     etoiles: 5
   },
   {
     texte: "Une vraie championne des chiffres. Je la recommande fortement.",
     auteur: "Steven W.",
+    initiales: "SW",
     detail: "Travailleur autonome · Saint-Jérôme",
     etoiles: 5
   },
   {
-    texte: "Je suis client avec ma banque depuis l’âge de 7 ans et Stéphanie m’a trouvé un meilleur taux qu’eux. Incroyable. Merci !",
+    texte: "Je suis client avec ma banque depuis l'âge de 7 ans et Stéphanie m'a trouvé un meilleur taux qu'eux. Incroyable. Merci !",
     auteur: "Marc-André L.",
+    initiales: "ML",
     detail: "Renouvellement · Repentigny",
+    etoiles: 5
+  },
+  {
+    texte: "Stéphanie a rendu le processus tellement simple. En tant que premier acheteur, j'avais mille questions — elle a pris le temps de tout m'expliquer. Un énorme merci !",
+    auteur: "Julie D.",
+    initiales: "JD",
+    detail: "Premier achat · Laval",
+    etoiles: 5
+  },
+  {
+    texte: "Professionnelle, rapide et toujours disponible. J'ai obtenu un taux bien meilleur que ce que ma banque m'offrait. Je ne peux que recommander.",
+    auteur: "Patrick T.",
+    initiales: "PT",
+    detail: "Refinancement · Québec",
+    etoiles: 5
+  },
+  {
+    texte: "Après un refus de ma banque, Stéphanie a trouvé une solution en moins d'une semaine. Sans elle, je n'aurais jamais pu acheter. Merci infiniment.",
+    auteur: "Nathalie B.",
+    initiales: "NB",
+    detail: "Dossier refusé · Longueuil",
     etoiles: 5
   }
 ];
+
+const COLORS = ['#d4a88c', '#7a9e7e', '#8b7a9e', '#c47a52', '#5a7a8a', '#9e8a7a'];
 ---
 
 <section id="temoignages">
@@ -28,35 +53,185 @@ const reviews = [
       <div class="section-tag">Témoignages</div>
       <h2 class="section-title">Ce que disent<br />mes <em>clients</em></h2>
     </div>
-    
-    <div class="temoignages-grid">
-      {reviews.map((review, index) => (
-        <div class="temoignage-card fade-up" style={`transition-delay: ${index * 0.1}s`}>
-          <div class="stars" aria-label={`${review.etoiles} étoiles sur 5`}>
-            {"★".repeat(review.etoiles)}
-          </div>
-          <blockquote>
-            «&nbsp;{review.texte}&nbsp;»
-          </blockquote>
-          <div class="temoignage-author">
-            <div class="author-avatar" aria-hidden="true">👤</div>
-            <div>
-              <div class="author-name">{review.auteur}</div>
-              <div class="author-detail">{review.detail}</div>
-            </div>
-          </div>
-        </div>
-      ))}
+
+    <!-- Social proof banner -->
+    <div class="temoignages-social fade-up">
+      <span class="temoignages-rating">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#c47a52" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        5.0 sur Google
+      </span>
+      <span class="temoignages-sep" aria-hidden="true">·</span>
+      <span>50+ clients accompagnés</span>
     </div>
 
-    <div class="fade-up" style="text-align: center; margin-top: 3.5rem; transition-delay: 0.3s;">
-      <a href="https://www.google.com/search?q=St%C3%A9phanie+Weyman+Hypotheca+avis" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#c47a52">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-        </svg>
+    <!-- Carrousel -->
+    <div class="temoignages-carousel fade-up" id="temoignages-carousel" aria-roledescription="carrousel" aria-label="Témoignages clients">
+      <div class="temoignages-track" id="temoignages-track">
+        {reviews.map((review, index) => (
+          <div
+            class="temoignage-card"
+            role="group"
+            aria-roledescription="diapositive"
+            aria-label={`Témoignage ${index + 1} sur ${reviews.length}`}
+          >
+            <div class="stars" aria-label={`${review.etoiles} étoiles sur 5`}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={i < review.etoiles ? '#c47a52' : '#e0ddd7'} aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              ))}
+            </div>
+            <blockquote>
+              «&nbsp;{review.texte}&nbsp;»
+            </blockquote>
+            <div class="temoignage-author">
+              <div class="author-avatar" style={`background:${COLORS[index % COLORS.length]}`} aria-hidden="true">{review.initiales}</div>
+              <div>
+                <div class="author-name">{review.auteur}</div>
+                <div class="author-detail">{review.detail}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Navigation dots -->
+      <div class="temoignages-dots" id="temoignages-dots" aria-hidden="true"></div>
+    </div>
+
+    <div class="fade-up" style="text-align: center; margin-top: 3rem; transition-delay: 0.3s;">
+      <a href="https://www.google.com/search?q=St%C3%A9phanie+Weyman+Hypotheca+avis" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: .85rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#c47a52" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         Voir tous mes avis sur Google
       </a>
     </div>
   </div>
 </section>
 
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const track = document.getElementById('temoignages-track') as HTMLElement;
+    const dotsContainer = document.getElementById('temoignages-dots') as HTMLElement;
+    if (!track || !dotsContainer) return;
+
+    const cards = track.querySelectorAll<HTMLElement>('.temoignage-card');
+    const totalCards = cards.length;
+    const VISIBLE_DESKTOP = 3;
+    const VISIBLE_MOBILE = 1;
+    const AUTOPLAY_MS = 5000;
+    let currentIndex = 0;
+    let autoplayTimer: ReturnType<typeof setInterval> | undefined;
+    let isPaused = false;
+
+    function getVisible(): number {
+      return window.innerWidth < 900 ? VISIBLE_MOBILE : VISIBLE_DESKTOP;
+    }
+
+    function getMaxIndex(): number {
+      return totalCards - getVisible();
+    }
+
+    // Build dots
+    function buildDots() {
+      const max = getMaxIndex() + 1;
+      dotsContainer.innerHTML = '';
+      for (let i = 0; i < max; i++) {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'temoignages-dot';
+        dot.setAttribute('aria-label', `Aller au témoignage ${i + 1}`);
+        dot.addEventListener('click', () => goTo(i));
+        dotsContainer.appendChild(dot);
+      }
+      updateDots();
+    }
+
+    function updateDots() {
+      const dots = dotsContainer.querySelectorAll<HTMLButtonElement>('.temoignages-dot');
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentIndex);
+      });
+    }
+
+    function goTo(index: number) {
+      const max = getMaxIndex();
+      currentIndex = Math.max(0, Math.min(index, max));
+      const visible = getVisible();
+      const cardWidth = cards[0]?.offsetWidth ?? 0;
+      const gap = 24; // matches CSS gap
+      const offset = currentIndex * (cardWidth + gap);
+      track.style.transform = `translateX(-${offset}px)`;
+      updateDots();
+    }
+
+    function next() {
+      const max = getMaxIndex();
+      if (currentIndex >= max) {
+        goTo(0);
+      } else {
+        goTo(currentIndex + 1);
+      }
+    }
+
+    function prev() {
+      if (currentIndex <= 0) {
+        goTo(getMaxIndex());
+      } else {
+        goTo(currentIndex - 1);
+      }
+    }
+
+    function startAutoplay() {
+      stopAutoplay();
+      autoplayTimer = setInterval(next, AUTOPLAY_MS);
+    }
+
+    function stopAutoplay() {
+      if (autoplayTimer) {
+        clearInterval(autoplayTimer);
+        autoplayTimer = undefined;
+      }
+    }
+
+    // Pause on hover
+    const carousel = document.getElementById('temoignages-carousel')!;
+    carousel.addEventListener('mouseenter', () => { isPaused = true; stopAutoplay(); });
+    carousel.addEventListener('mouseleave', () => { isPaused = false; startAutoplay(); });
+    carousel.addEventListener('focusin', () => { isPaused = true; stopAutoplay(); });
+    carousel.addEventListener('focusout', () => { isPaused = false; startAutoplay(); });
+
+    // Touch swipe support
+    let touchStartX = 0;
+    carousel.addEventListener('touchstart', (e) => {
+      touchStartX = (e as TouchEvent).touches[0]?.clientX ?? 0;
+      stopAutoplay();
+    }, { passive: true });
+    carousel.addEventListener('touchend', (e) => {
+      const diff = touchStartX - ((e as TouchEvent).changedTouches[0]?.clientX ?? 0);
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) next();
+        else prev();
+      }
+      if (!isPaused) startAutoplay();
+    });
+
+    // Keyboard navigation
+    carousel.addEventListener('keydown', (e) => {
+      if ((e as KeyboardEvent).key === 'ArrowLeft') { e.preventDefault(); prev(); }
+      if ((e as KeyboardEvent).key === 'ArrowRight') { e.preventDefault(); next(); }
+    });
+
+    // Resize handling
+    let resizeDebounce: ReturnType<typeof setTimeout>;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeDebounce);
+      resizeDebounce = setTimeout(() => {
+        buildDots();
+        goTo(Math.min(currentIndex, getMaxIndex()));
+      }, 200);
+    });
+
+    // Init
+    buildDots();
+    goTo(0);
+    startAutoplay();
+  });
+</script>

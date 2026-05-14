@@ -21,7 +21,4 @@
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cloud.umami.is; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://cloud.umami.is; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
-# Protection par mot de passe pour /client/*
-# Implémentée via le middleware Astro (src/middleware.ts).
-# Définissez CLIENT_PASSWORD dans Netlify (Site settings → Environment variables)
-# pour activer le gate. Sans cette variable, /client/* reste accessible mais noindex.
+

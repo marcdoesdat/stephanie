@@ -29,14 +29,15 @@ Règles importantes :
 - `src/config/siteConfig.json` — toutes les coordonnées (téléphone, courriel, AMF, URLs). Modifié par la cliente, garder le JSON simple.
 - `src/config/index.ts` — type `SiteConfig` strict, `loadSiteConfig()`.
 - `src/services/ratesService.ts` — fetch + cache (Blobs/fichier) + parsing.
-- `src/middleware.ts` — gate `/client/*` par mot de passe (`CLIENT_PASSWORD` env, cookie 30 jours).
+
 - `src/layouts/MainLayout.astro` — wrapper SEO + head global.
 - `netlify.toml` — headers de sécurité (CSP stricte, HSTS, X-Frame-Options) et `included_files` pour les fonctions SSR.
 
 ## Pages
 - `/` — SSR (taux live)
+- `/outils` — SSR (taux live) ; regroupe Simulator, Calculator et Comparateur dans un système d'onglets (hash : `#simulateur`, `#calculateur`, `#comparateur`).
 - `/services/*` — pages statiques par type de clientèle
-- `/client/*` — espace privé (protégé par mot de passe, exclu du sitemap, noindex)
+
 - `/amortissement`, `/conditions`, `/confidentialite`, `/404` — statiques
 - `/api/bdc-rate` — endpoint
 
@@ -48,6 +49,5 @@ Règles importantes :
 
 ## Déploiement
 Push sur `main` → Netlify build automatique. Variables d'env à configurer dans Netlify :
-- `CLIENT_PASSWORD` (gate /client/*)
 - `ENABLE_RATES_PROXY=1` (optionnel, fallback proxy)
 - `DEBUG_RATES=1` (optionnel, logs détaillés)
