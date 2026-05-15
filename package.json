@@ -19,6 +19,7 @@
     "@astrojs/check": "^0.9.8",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.5.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.6"
   }
 }
