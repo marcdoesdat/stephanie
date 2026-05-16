@@ -5,10 +5,35 @@ import Footer from '../components/Footer.astro';
 import Simulator from '../components/Simulator.astro';
 import Calculator from '../components/Calculator.astro';
 import Comparateur from '../components/Comparateur.astro';
+import PenaliteCalculator from '../components/PenaliteCalculator.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
+import { loadSiteConfig } from '../config';
+import { preteursParCategorie } from '../data/preteurs';
 
+const config = loadSiteConfig();
 const hypothecaRates = await fetchHypothecaRates();
 const defaultRate = hypothecaRates?.fixe_5ans ?? 4.99;
+
+const taux5ans = hypothecaRates?.fixe_5ans ?? 4.89;
+const taux4ans = hypothecaRates?.fixe_4ans ?? ((hypothecaRates?.fixe_3ans ?? 4.69) + (hypothecaRates?.fixe_5ans ?? 4.89)) / 2;
+const taux3ans = hypothecaRates?.fixe_3ans ?? 4.69;
+const taux2ans = hypothecaRates?.fixe_2ans ?? ((hypothecaRates?.fixe_1ans ?? 5.49) + (hypothecaRates?.fixe_3ans ?? 4.69)) / 2;
+const taux1an  = hypothecaRates?.fixe_1ans ?? 5.49;
+
+const tauxMarcheDefaut = {
+  '6': (taux1an + 0.15).toFixed(2),
+  '12': taux1an.toFixed(2),
+  '24': taux2ans.toFixed(2),
+  '36': taux3ans.toFixed(2),
+  '48': taux4ans.toFixed(2),
+  '60': taux5ans.toFixed(2),
+};
+
+const dateMaj = hypothecaRates?.fetchedAt
+  ? new Date(hypothecaRates.fetchedAt).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' })
+  : null;
+
+const groupes = preteursParCategorie();
 
 Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
 
@@ -16,12 +41,13 @@ const tabs = [
   { id: 'simulateur', label: 'Simulateur d’emprunt', sub: 'Capacité' },
   { id: 'calculateur', label: 'Calculateur de paiement', sub: 'Versements' },
   { id: 'comparateur', label: 'Comparateur de taux', sub: 'Économies' },
+  { id: 'penalite', label: 'Calculer ma pénalité', sub: 'IRD' },
 ];
 ---
 
 <MainLayout
-  fullTitle="Calculateur hypothécaire Québec – Capacité d'emprunt, versements et comparateur de taux | Stéphanie Weyman"
-  description="Outils hypothécaires gratuits au Québec : simulateur de capacité d'emprunt, calculateur de versements hypothécaires et comparateur banque vs courtier. Taux Hypotheca en temps réel, sans inscription."
+  fullTitle="Calculateur hypothécaire Québec – Capacité d'emprunt, versements, comparateur de taux et pénalité IRD | Stéphanie Weyman"
+  description="Outils hypothécaires gratuits au Québec : simulateur de capacité d'emprunt, calculateur de versements, comparateur banque vs courtier et calculateur de pénalité IRD. Taux Hypotheca en temps réel, sans inscription."
 >
   <Nav />
   <main id="main-content">
@@ -30,8 +56,9 @@ const tabs = [
         <div class="section-tag">Outils gratuits</div>
         <h1 class="section-title">Calculateurs hypothécaires <em>gratuits</em> au Québec</h1>
         <p class="section-sub">
-          Estimez votre capacité d’emprunt, calculez un versement et comparez les taux affichés
-          en banque avec ceux qu’un courtier peut négocier — le tout dans un même endroit.
+          Estimez votre capacité d'emprunt, calculez un versement, comparez les taux affichés
+          en banque avec ceux qu'un courtier peut négocier et évaluez votre pénalité de
+          remboursement anticipé — le tout dans un même endroit.
         </p>
       </div>
     </section>
@@ -93,6 +120,22 @@ const tabs = [
             defaultRate={defaultRate}
             afficheRate={hypothecaRates?.affiche_fixe_5ans}
             fetchedAt={hypothecaRates?.fetchedAt}
+          />
+        </div>
+
+        <div
+          class="outils-panel"
+          id="panel-penalite"
+          role="tabpanel"
+          aria-labelledby="tab-penalite"
+          data-panel="penalite"
+          hidden
+        >
+          <PenaliteCalculator
+            config={config}
+            tauxMarcheDefaut={tauxMarcheDefaut}
+            dateMaj={dateMaj}
+            groupes={groupes}
           />
         </div>
       </div>

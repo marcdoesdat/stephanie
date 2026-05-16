@@ -1312,8 +1312,9 @@ footer strong{color:rgba(255,255,255,.85)}
 
 @media(max-width:720px){
   #outils-intro{padding:6rem 1rem 1rem}
-  .outils-tablist{padding:.3rem;gap:.35rem}
-  .outils-tab.comp-pill{padding:.6rem .5rem;font-size:.82rem;flex-basis:140px}
+  .outils-tablist{padding:.3rem;gap:.35rem;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .outils-tablist::-webkit-scrollbar{display:none}
+  .outils-tab.comp-pill{padding:.6rem .5rem;font-size:.82rem;flex:0 0 auto;min-width:120px}
   .outils-tab .outils-tab-label{font-size:.82rem}
 }
 @media(max-width:420px){

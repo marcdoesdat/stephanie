@@ -77,12 +77,55 @@ const GRANDES_BANQUES: Preteur[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Prêteurs — Méthode des taux RÉELS / contractuels (monolignes, virtuelles)
-// Ces prêteurs utilisent le taux contractuel (réel) comme référence,
+// Caisses
+// ---------------------------------------------------------------------------
+
+const CAISSES: Preteur[] = [
+  {
+    id: 'desjardins',
+    nom: 'Desjardins',
+    categorie: 'caisse',
+    methode_ird: 'taux_reel',
+    notes:
+      'Desjardins utilise généralement le taux contractuel comme référence, ' +
+      'ce qui est plus avantageux que les grandes banques. Chaque caisse ' +
+      'peut avoir ses particularités — vérifiez votre contrat.',
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Banques virtuelles
+// ---------------------------------------------------------------------------
+
+const BANQUES_VIRTUELLES: Preteur[] = [
+  {
+    id: 'tangerine',
+    nom: 'Tangerine',
+    categorie: 'virtuelle',
+    methode_ird: 'taux_affiche',
+    notes:
+      'Filiale de la Banque Scotia. Utilise généralement une méthode basée ' +
+      'sur les taux affichés, mais avec des particularités pour les produits ' +
+      'sans frais. Vérifiez votre contrat.',
+  },
+  {
+    id: 'manulife',
+    nom: 'Manulife Banque',
+    categorie: 'virtuelle',
+    methode_ird: 'taux_reel',
+    notes:
+      'Manulife utilise le taux d\'intérêt du contrat comme référence, ' +
+      'pas le taux affiché. Pénalité IRD généralement plus avantageuse.',
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Prêteurs spécialisés (monolignes) — Méthode des taux RÉELS
+// Ces prêteurs utilisent le taux contractuel comme référence,
 // ce qui produit des pénalités IRD nettement plus basses.
 // ---------------------------------------------------------------------------
 
-const MONOLIGNES_TAUX_REEL: Preteur[] = [
+const PRETEURS_SPECIALISES: Preteur[] = [
   {
     id: 'first-national',
     nom: 'First National',
@@ -104,15 +147,6 @@ const MONOLIGNES_TAUX_REEL: Preteur[] = [
       'vérifiez votre contrat pour les détails.',
   },
   {
-    id: 'manulife',
-    nom: 'Manulife Banque',
-    categorie: 'banque_secondaire',
-    methode_ird: 'taux_reel',
-    notes:
-      'Manulife Banque utilise le taux d\'intérêt du contrat comme référence, ' +
-      'pas le taux affiché. Pénalité IRD généralement plus avantageuse.',
-  },
-  {
     id: 'rfa',
     nom: 'RFA — Real Estate Financière Amérique',
     categorie: 'monoligne',
@@ -125,42 +159,29 @@ const MONOLIGNES_TAUX_REEL: Preteur[] = [
     methode_ird: 'taux_reel',
     notes: 'Prêteur monoligne émergent. Méthode basée sur le taux contractuel.',
   },
+  {
+    id: 'cmls',
+    nom: 'CMLS',
+    categorie: 'monoligne',
+    methode_ird: 'taux_reel',
+    notes: 'Prêteur monoligne. Méthode basée sur le taux contractuel.',
+  },
+  {
+    id: 'merix',
+    nom: 'MERIX / Lendwise',
+    categorie: 'monoligne',
+    methode_ird: 'taux_reel',
+    notes:
+      'MERIX (plateforme de prêt) et Lendwise (prêteur). ' +
+      'Utilisent le taux contractuel comme référence pour l\'IRD.',
+  },
 ];
 
 // ---------------------------------------------------------------------------
-// Prêteurs — Méthode mixte ou spécifique
+// Prêteurs alternatifs (B)
 // ---------------------------------------------------------------------------
 
-const PRETEURS_MIXTES: Preteur[] = [
-  {
-    id: 'desjardins',
-    nom: 'Desjardins',
-    categorie: 'caisse',
-    methode_ird: 'taux_reel',
-    notes:
-      'Desjardins utilise généralement le taux contractuel comme référence, ' +
-      'ce qui est plus avantageux que les grandes banques. Cependant, chaque ' +
-      'caisse peut avoir ses particularités. Vérifiez votre contrat.',
-  },
-  {
-    id: 'hsbc',
-    nom: 'HSBC Canada',
-    categorie: 'grande_banque',
-    methode_ird: 'taux_affiche',
-    notes:
-      'HSBC Canada a été acquise par RBC en 2024. Les prêts en cours conservent ' +
-      'leurs conditions d\'origine. Les nouveaux prêts suivent les politiques de RBC.',
-  },
-  {
-    id: 'tangerine',
-    nom: 'Tangerine',
-    categorie: 'virtuelle',
-    methode_ird: 'taux_affiche',
-    notes:
-      'Filiale de la Banque Scotia. Utilise généralement une méthode basée ' +
-      'sur les taux affichés, mais avec des particularités pour les produits ' +
-      'sans frais. Vérifiez votre contrat.',
-  },
+const PRETEURS_ALTERNATIFS: Preteur[] = [
   {
     id: 'equitable',
     nom: 'Equitable Bank',
@@ -169,6 +190,27 @@ const PRETEURS_MIXTES: Preteur[] = [
     notes:
       'Equitable Bank (et sa filiale EQ Bank) utilise le taux contractuel ' +
       'comme référence pour le calcul de l\'IRD.',
+  },
+  {
+    id: 'home-trust',
+    nom: 'Home Trust',
+    categorie: 'banque_secondaire',
+    methode_ird: 'taux_reel',
+    notes: 'Prêteur alternatif. Méthode basée sur le taux contractuel.',
+  },
+  {
+    id: 'haventree',
+    nom: 'Haventree',
+    categorie: 'banque_secondaire',
+    methode_ird: 'taux_reel',
+    notes: 'Prêteur alternatif spécialisé. Méthode basée sur le taux contractuel.',
+  },
+  {
+    id: 'b2b',
+    nom: 'B2B Banque',
+    categorie: 'banque_secondaire',
+    methode_ird: 'taux_reel',
+    notes: 'Banque à charte canadienne, spécialisée en prêts hypothécaires par l\'entremise de courtiers.',
   },
 ];
 
@@ -194,8 +236,10 @@ const AUTRE_PRETEUR: Preteur = {
 /** Tous les prêteurs, groupés par catégorie */
 export const tousLesPreteurs: Preteur[] = [
   ...GRANDES_BANQUES,
-  ...MONOLIGNES_TAUX_REEL,
-  ...PRETEURS_MIXTES,
+  ...CAISSES,
+  ...BANQUES_VIRTUELLES,
+  ...PRETEURS_SPECIALISES,
+  ...PRETEURS_ALTERNATIFS,
   AUTRE_PRETEUR,
 ];
 
@@ -214,8 +258,10 @@ export function trouverPreteur(id: string): Preteur | undefined {
 export function preteursParCategorie(): Record<string, Preteur[]> {
   const groupes: Record<string, Preteur[]> = {
     'Grandes banques (6)': GRANDES_BANQUES,
-    'Prêteurs monolignes et virtuels': MONOLIGNES_TAUX_REEL,
-    'Caisses et autres': PRETEURS_MIXTES,
+    'Caisses': CAISSES,
+    'Banques virtuelles': BANQUES_VIRTUELLES,
+    'Prêteurs spécialisés': PRETEURS_SPECIALISES,
+    'Prêteurs alternatifs (B)': PRETEURS_ALTERNATIFS,
     '': [AUTRE_PRETEUR],
   };
   return groupes;
