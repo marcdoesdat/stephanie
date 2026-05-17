@@ -33,6 +33,48 @@ Si les taux ne peuvent pas être récupérés et qu'aucun cache n'est disponible
 
 ---
 
+## 🌟 Architecture des avis Google
+
+Les avis sont récupérés depuis Google Places API (New) et mis en cache via **Netlify Blobs** (production) ou un fichier local (développement).
+
+### Flux de données
+
+```
+Google Places API (New) v1  →  reviewsService.ts  →  Netlify Blob (store: "reviews")
+                                                           ↓
+                            CDN cache (6h)  ←  index.astro (SSR)  →  HTML + JSON-LD
+```
+
+### Stratégie de cache (TTL 24 heures)
+
+1. **Requête utilisateur** → le CDN Netlify sert la page HTML en cache
+2. **Côté serveur**, `reviewsService.ts` vérifie le Blob cache :
+   - **Cache valide (< 24 h)** → retourne les avis en cache
+   - **Cache expiré** → fetch Google Places API, met à jour le Blob, retourne les avis frais
+   - **Fetch échoué + cache périmé (< 7 jours)** → retourne le cache stale
+   - **Aucune donnée disponible** → fallback statique (`src/data/fallbackReviews.json`)
+3. **JSON-LD** émis uniquement si la source n'est pas `"fallback"` (évite de publier un rating non vérifié)
+
+### Avis indisponibles
+
+Si l'API Google est down et qu'aucun cache n'est disponible, les témoignages de secours (3 avis manuels) sont affichés. Le site ne plante jamais — le build continue même sans clé API.
+
+### Configuration requise
+
+1. **Clé API** : `GOOGLE_PLACES_API_KEY` dans Netlify (Site settings → Environment variables)
+2. **Place ID** : `google_place_id` dans `src/config/siteConfig.json`
+3. La clé API doit être restreinte à `stephanieweyman.ca` et `localhost` (Google Cloud Console → API Keys → Restrictions)
+
+### Mise en place (étape par étape)
+
+1. Créer un projet Google Cloud et activer **Places API (New)** (pas l'ancienne Places API)
+2. Générer une clé API avec restrictions de domaine
+3. Trouver le Place ID via [Place ID Finder](https://developers.google.com/maps/documentation/places/web-service/place-id)
+4. Ajouter `GOOGLE_PLACES_API_KEY` dans Netlify (Site settings → Environment variables)
+5. Remplir `google_place_id` dans `src/config/siteConfig.json` et commit
+
+---
+
 ## 🗂️ Modifier les informations du site (téléphone, courriel, AMF…)
 
 Tout ce qui est personnel se trouve dans **un seul fichier** :
@@ -113,6 +155,9 @@ src/
     siteConfig.json    ← Modifie tes infos ici (téléphone, courriel, AMF...)
   services/
     ratesService.ts    Récupération et cache des taux (Netlify Blobs / fichier local)
+    reviewsService.ts  Récupération et cache des avis Google (Places API New → Blobs)
+  data/
+    fallbackReviews.json  Témoignages de secours si l'API Google est down
   components/
     Nav.astro          Navigation en haut
     Hero.astro         Section principale (grande intro)

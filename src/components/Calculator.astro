@@ -36,7 +36,7 @@ const { defaultRate = 4.99 } = Astro.props;
               <button type="button" id="mise-btn-pct" class="mise-toggle-btn" aria-pressed="false" title="Pourcentage du prix">%</button>
             </div>
           </div>
-          <small id="mise-pct" style="color:rgba(255,255,255,.78);font-size:.75rem;margin-top:.3rem;display:block;"></small>
+          <small id="mise-pct" style="color:var(--muted);font-size:.75rem;margin-top:.3rem;display:block;"></small>
         </div>
 
         <!-- Options avancées -->
@@ -48,7 +48,7 @@ const { defaultRate = 4.99 } = Astro.props;
             <div class="form-group">
               <label for="taux">Taux d'intérêt (%)</label>
               <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="25" />
-              <small style="color:rgba(255,255,255,.78);font-size:.72rem;margin-top:.3rem;display:block;">Modifiable — taux moyen actuel pré-rempli</small>
+              <small style="color:var(--muted);font-size:.72rem;margin-top:.3rem;display:block;">Modifiable — taux moyen actuel pré-rempli</small>
             </div>
             <div class="form-row">
               <div class="form-group" style="width: 100%;">
@@ -80,7 +80,7 @@ const { defaultRate = 4.99 } = Astro.props;
             <div class="form-group">
               <label for="calc-condo">Frais de copropriété / condo ($/mois)</label>
               <input type="number" id="calc-condo" value="0" inputmode="decimal" min="0" />
-              <small style="color:rgba(255,255,255,.78);font-size:.7rem;margin-top:.25rem;display:block;">50 % inclus dans le calcul du coût total mensuel</small>
+              <small style="color:var(--muted);font-size:.7rem;margin-top:.25rem;display:block;">50 % inclus dans le calcul du coût total mensuel</small>
             </div>
           </div>
         </div>
@@ -156,7 +156,7 @@ const { defaultRate = 4.99 } = Astro.props;
           * Résultats indicatifs uniquement — ne constituent pas une pré-approbation.
           La prime SCHL est une estimation aux taux standards. Les frais de notaire,
           droits de mutation (taxe de bienvenue), inspection et évaluation ne sont pas inclus.<br />
-          <a href="#contact" style="color: #a8c5b5; text-decoration: underline;">Analyse personnalisée avec {config.nom.split(' ')[0]}</a>.
+          <a href="#contact" style="color: var(--clay); text-decoration: underline;">Analyse personnalisée avec {config.nom.split(' ')[0]}</a>.
         </div>
       </div>
     </div>
@@ -441,7 +441,7 @@ const { defaultRate = 4.99 } = Astro.props;
 
         emailMsg.textContent   = 'Merci. Stéphanie vous enverra votre résumé sous peu.';
         emailMsg.style.display = '';
-        emailMsg.style.color   = '#a8c5b5';
+        emailMsg.style.color   = 'var(--clay)';
         nameInput.value = '';
         phoneInput.value = '';
         emailInput.value = '';

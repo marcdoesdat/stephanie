@@ -11,9 +11,15 @@ import Contact from '../components/Contact.astro';
 import Footer from '../components/Footer.astro';
 import MessengerBtn from '../components/MessengerBtn.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
+import { getReviews } from '../services/reviewsService';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
 
 const hypothecaRates = await fetchHypothecaRates();
 const hypothecaVariable = hypothecaRates?.variable ?? 5.99;
+
+const googleReviews = await getReviews();
 
 // CDN cache: serve cached HTML for 6 h, revalidate in background for 1 h after expiry
 Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
@@ -24,6 +30,28 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   fullTitle="Courtière hypothécaire Repentigny – Stéphanie Weyman"
   description="Pré-approbation hypothécaire à Repentigny. Achat, renouvellement, refinancement, travailleurs autonomes. Réponse sous 24h – Stéphanie Weyman, AMF."
 >
+  <!-- JSON-LD : AggregateRating (émis seulement si les avis sont live/cache, pas fallback) -->
+  {googleReviews.source !== 'fallback' && (
+    <Fragment slot="head">
+      <script type="application/ld+json" is:inline set:html={JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FinancialService',
+        'name': `${config.nom} — ${config.titre}`,
+        'telephone': config.telephone,
+        'email': config.courriel,
+        'url': config.site_url,
+        'areaServed': config.region,
+        'aggregateRating': {
+          '@type': 'AggregateRating',
+          'ratingValue': googleReviews.rating,
+          'reviewCount': googleReviews.totalReviews,
+          'bestRating': '5',
+          'worstRating': '1'
+        }
+      })} />
+    </Fragment>
+  )}
+
   <MessengerBtn />
   <Nav />
   <main id="main-content">
@@ -36,25 +64,25 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           <h2 class="section-title">Préparez votre projet avec nos outils</h2>
           <p class="section-sub">
             Trois outils clairs pour planifier votre financement : capacité d’emprunt, versement estimé et comparaison des taux
-            entre la banque et un courtier.
+            entre la banque et un courtier. Découvrez aussi notre calculateur de pénalité hypothécaire.
           </p>
           <p class="outils-trust">Sans inscription · Résultats instantanés</p>
         </div>
 
         <div class="outils-teaser-grid fade-up">
-          <a href="/outils#simulateur" class="outils-card" aria-label="Simulateur d'emprunt — Estimez votre capacité d'achat">
+          <a href="/outils/simulateur" class="outils-card" aria-label="Simulateur d'emprunt — Estimez votre capacité d'achat">
             <div class="service-icon" aria-hidden="true">🏠</div>
             <div class="outils-card-title">Simulateur d'emprunt</div>
             <p>Estimez votre capacité réelle selon vos revenus, dettes, mise de fonds et taux de qualification.</p>
             <span class="outils-card-arrow" aria-hidden="true">→</span>
           </a>
-          <a href="/outils#calculateur" class="outils-card" aria-label="Calculateur de versement — Calculez vos mensualités">
+          <a href="/outils/calculateur" class="outils-card" aria-label="Calculateur de versement — Calculez vos mensualités">
             <div class="service-icon" aria-hidden="true">🧮</div>
             <div class="outils-card-title">Calculateur de versement</div>
             <p>Calculez des mensualités précises avec le taux, l'amortissement et les frais qui comptent vraiment.</p>
             <span class="outils-card-arrow" aria-hidden="true">→</span>
           </a>
-          <a href="/outils#comparateur" class="outils-card" aria-label="Comparateur de taux — Voyez votre économie sur 5 ans">
+          <a href="/outils/comparateur" class="outils-card" aria-label="Comparateur de taux — Voyez votre économie sur 5 ans">
             <div class="service-icon" aria-hidden="true">⚖️</div>
             <div class="outils-card-title">Comparateur de taux</div>
             <p>Comparez un taux public et un taux négocié par Stéphanie pour voir votre économie sur 5 ans.</p>
@@ -67,7 +95,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <Services />
     <TauxSection hypothecaRates={hypothecaRates} />
     <About />
-    <Testimonials />
+    <Testimonials reviews={googleReviews} />
     <Faq />
     <Contact />
   </main>

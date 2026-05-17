@@ -1,50 +1,41 @@
 ---
-const reviews = [
-  {
-    texte: "Très bon service avec Stéphanie ! Je vous la recommande sans hésitation.",
-    auteur: "Romanica A.",
-    initiales: "RA",
-    detail: "Nouvel achat · Montréal",
-    etoiles: 5
-  },
-  {
-    texte: "Une vraie championne des chiffres. Je la recommande fortement.",
-    auteur: "Steven W.",
-    initiales: "SW",
-    detail: "Travailleur autonome · Saint-Jérôme",
-    etoiles: 5
-  },
-  {
-    texte: "Je suis client avec ma banque depuis l'âge de 7 ans et Stéphanie m'a trouvé un meilleur taux qu'eux. Incroyable. Merci !",
-    auteur: "Marc-André L.",
-    initiales: "ML",
-    detail: "Renouvellement · Repentigny",
-    etoiles: 5
-  },
-  {
-    texte: "Stéphanie a rendu le processus tellement simple. En tant que premier acheteur, j'avais mille questions — elle a pris le temps de tout m'expliquer. Un énorme merci !",
-    auteur: "Julie D.",
-    initiales: "JD",
-    detail: "Premier achat · Laval",
-    etoiles: 5
-  },
-  {
-    texte: "Professionnelle, rapide et toujours disponible. J'ai obtenu un taux bien meilleur que ce que ma banque m'offrait. Je ne peux que recommander.",
-    auteur: "Patrick T.",
-    initiales: "PT",
-    detail: "Refinancement · Québec",
-    etoiles: 5
-  },
-  {
-    texte: "Après un refus de ma banque, Stéphanie a trouvé une solution en moins d'une semaine. Sans elle, je n'aurais jamais pu acheter. Merci infiniment.",
-    auteur: "Nathalie B.",
-    initiales: "NB",
-    detail: "Dossier refusé · Longueuil",
-    etoiles: 5
-  }
-];
+import { loadSiteConfig } from '../config';
+import type { GoogleReviews } from '../services/reviewsService';
 
-const COLORS = ['#d4a88c', '#7a9e7e', '#8b7a9e', '#c47a52', '#5a7a8a', '#9e8a7a'];
+const config = loadSiteConfig();
+
+export interface Props {
+  reviews: GoogleReviews;
+}
+
+const { reviews } = Astro.props;
+
+const { rating, totalReviews, reviews: reviewItems } = reviews;
+
+// Palette de 5 couleurs pour les avatars — cohérentes avec le design (vert sauge, violet, terracotta, bleu poudré, ocre)
+const AVATAR_COLORS = ['#7a9e7e', '#8b7a9e', '#c47a52', '#5a7a8a', '#d4a88c'];
+
+/** Hash simple d'une chaîne → nombre déterministe */
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+/** Extrait les initiales d'un nom : "Marie T." → "MT", "Jean" → "J" */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts[parts.length - 1]?.[0] ?? '';
+  return (first + (parts.length > 1 ? last : '')).toUpperCase();
+}
+
+// Lien Google Reviews
+const googleReviewsUrl = config.google_place_id
+  ? `https://search.google.com/local/reviews?placeid=${encodeURIComponent(config.google_place_id)}`
+  : `https://www.google.com/search?q=${encodeURIComponent(config.nom + ' Hypotheca avis')}`;
 ---
 
 <section id="temoignages">
@@ -58,47 +49,57 @@ const COLORS = ['#d4a88c', '#7a9e7e', '#8b7a9e', '#c47a52', '#5a7a8a', '#9e8a7a'
     <div class="temoignages-social fade-up">
       <span class="temoignages-rating">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#c47a52" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        5.0 sur Google
+        {rating.toFixed(1)} sur Google
       </span>
       <span class="temoignages-sep" aria-hidden="true">·</span>
-      <span>50+ clients accompagnés</span>
+      <span>{totalReviews} avis vérifiés</span>
     </div>
 
     <!-- Carrousel -->
-    <div class="temoignages-carousel fade-up" id="temoignages-carousel" aria-roledescription="carrousel" aria-label="Témoignages clients">
-      <div class="temoignages-track" id="temoignages-track">
-        {reviews.map((review, index) => (
-          <div
-            class="temoignage-card"
-            role="group"
-            aria-roledescription="diapositive"
-            aria-label={`Témoignage ${index + 1} sur ${reviews.length}`}
-          >
-            <div class="stars" aria-label={`${review.etoiles} étoiles sur 5`}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill={i < review.etoiles ? '#c47a52' : '#e0ddd7'} aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              ))}
-            </div>
-            <blockquote>
-              «&nbsp;{review.texte}&nbsp;»
-            </blockquote>
-            <div class="temoignage-author">
-              <div class="author-avatar" style={`background:${COLORS[index % COLORS.length]}`} aria-hidden="true">{review.initiales}</div>
-              <div>
-                <div class="author-name">{review.auteur}</div>
-                <div class="author-detail">{review.detail}</div>
-              </div>
-            </div>
+    {
+      reviewItems.length > 0 ? (
+        <div class="temoignages-carousel fade-up" id="temoignages-carousel" aria-roledescription="carrousel" aria-label="Témoignages clients">
+          <div class="temoignages-track" id="temoignages-track">
+            {reviewItems.map((item, index) => {
+              const color = AVATAR_COLORS[hashStr(item.author) % AVATAR_COLORS.length]!;
+              return (
+                <div
+                  class="temoignage-card"
+                  role="group"
+                  aria-roledescription="diapositive"
+                  aria-label={`Témoignage ${index + 1} sur ${reviewItems.length}`}
+                >
+                  <div class="stars" aria-label={`${item.rating} étoiles sur 5`}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill={i < item.rating ? '#c47a52' : '#e0ddd7'} aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    ))}
+                  </div>
+                  <blockquote>
+                    «&nbsp;{item.text}&nbsp;»
+                  </blockquote>
+                  <div class="temoignage-author">
+                    <div class="author-avatar" style={`background:${color}`} aria-hidden="true">{initials(item.author)}</div>
+                    <div>
+                      <div class="author-name">{item.author}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
 
-      <!-- Navigation dots -->
-      <div class="temoignages-dots" id="temoignages-dots" aria-hidden="true"></div>
-    </div>
+          <!-- Navigation dots -->
+          <div class="temoignages-dots" id="temoignages-dots" aria-hidden="true"></div>
+        </div>
+      ) : (
+        <div class="fade-up" style="text-align:center;padding:2rem;color:var(--ink-secondary)">
+          <p>Aucun avis à afficher pour le moment. Revenez bientôt&nbsp;!</p>
+        </div>
+      )
+    }
 
     <div class="fade-up" style="text-align: center; margin-top: 3rem; transition-delay: 0.3s;">
-      <a href="https://www.google.com/search?q=St%C3%A9phanie+Weyman+Hypotheca+avis" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: .85rem;">
+      <a href={googleReviewsUrl} target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: .85rem;">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#c47a52" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         Voir tous mes avis sur Google
       </a>
@@ -114,6 +115,8 @@ const COLORS = ['#d4a88c', '#7a9e7e', '#8b7a9e', '#c47a52', '#5a7a8a', '#9e8a7a'
 
     const cards = track.querySelectorAll<HTMLElement>('.temoignage-card');
     const totalCards = cards.length;
+    if (totalCards === 0) return;
+
     const VISIBLE_DESKTOP = 3;
     const VISIBLE_MOBILE = 1;
     const AUTOPLAY_MS = 5000;

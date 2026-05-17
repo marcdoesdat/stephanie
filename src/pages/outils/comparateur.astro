@@ -1,0 +1,77 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import Comparateur from '../../components/Comparateur.astro';
+import { fetchHypothecaRates } from '../../services/ratesService';
+
+const hypothecaRates = await fetchHypothecaRates();
+const defaultRate = hypothecaRates?.fixe_5ans ?? 4.99;
+
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+---
+
+<MainLayout
+  fullTitle="Comparateur de taux hypothécaires — Banque vs Courtier | Stéphanie Weyman"
+  description="Comparez un taux affiché en banque avec un taux négocié par courtier. Voyez votre économie réelle sur 5 ans. Gratuit, sans inscription."
+>
+  <Nav />
+  <main id="main-content">
+    <section id="outil-intro" style="background:var(--sand);padding:7rem 4rem 3rem;text-align:center;">
+      <div class="section-inner">
+        <div class="fade-up">
+          <div class="section-tag">Outil gratuit</div>
+          <h1 class="section-title">Comparateur de taux<br /><em>Banque vs Courtier</em></h1>
+          <p class="section-sub" style="max-width:640px;margin:0 auto;">
+            Comparez un taux hypothécaire affiché en banque avec un taux négocié par un courtier.
+            Visualisez l'écart en dollars sur 5 ans. Gratuit, sans inscription.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <Comparateur
+      defaultRate={defaultRate}
+      afficheRate={hypothecaRates?.affiche_fixe_5ans}
+      fetchedAt={hypothecaRates?.fetchedAt}
+    />
+
+    <section id="outil-edito" style="background:var(--warm);padding:5rem 4rem;">
+      <div class="section-inner" style="max-width:800px;margin:0 auto;">
+        <article class="fade-up" style="margin-bottom:3rem;">
+          <h2 style="font-family:Lora,serif;font-size:2.2rem;font-weight:700;color:var(--ink);margin-bottom:1.5rem;">Pourquoi les taux des courtiers sont-ils plus bas ?</h2>
+          <p style="font-size:.95rem;color:var(--muted);line-height:1.9;margin-bottom:1rem;">
+            Les <strong>banques affichent des taux publics</strong> (souvent 0,5 % à 1,5 % au-dessus du marché)
+            tandis que les <strong>courtiers négocient des taux de gros</strong> auprès de 20+ prêteurs.
+            Cette différence, même minime en apparence, représente <strong>des milliers de dollars</strong>
+            sur un terme de 5 ans.
+          </p>
+          <p style="font-size:.95rem;color:var(--muted);line-height:1.9;margin-bottom:1rem;">
+            Un courtier hypothécaire ne travaille <strong>pas pour une institution</strong> — il travaille
+            <strong>pour vous</strong>. Il compare les offres de banques, de caisses et de prêteurs
+            monolignes pour vous obtenir le meilleur taux et les meilleures conditions.
+          </p>
+          <p style="font-size:.95rem;color:var(--muted);line-height:1.9;">
+            Le service est <strong>gratuit</strong> pour vous. Le courtier est rémunéré par le prêteur
+            qui vous accorde le financement.
+            <a href="/#contact" style="color:var(--clay);"> Obtenez votre taux personnalisé →</a>
+          </p>
+        </article>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</MainLayout>
+
+<script type="application/ld+json" is:inline>
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Comparateur de taux hypothécaires Banque vs Courtier — Stéphanie Weyman",
+  "url": "https://stephanieweyman.ca/outils/comparateur",
+  "description": "Comparez un taux hypothécaire affiché en banque avec un taux négocié par un courtier au Québec.",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Web",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CAD" }
+}
+</script>

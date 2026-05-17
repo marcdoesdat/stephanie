@@ -12,19 +12,19 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
 
 <footer role="contentinfo">
   <div class="footer-identity">
-    <span class="footer-name">{config.nom}</span> · {config.titre} · {config.region}<br />
+    <span class="footer-name">{config.nom}</span><span class="footer-dot" aria-hidden="true"> · </span>{config.titre}<span class="footer-dot" aria-hidden="true"> · </span>{config.region}<br class="footer-br" />
     Certificat AMF n° <strong>{config.amf}</strong>
     {config.amf_cabinet && (
-      <Fragment> · Cabinet&nbsp;: {config.organisation} (AMF n° {config.amf_cabinet})</Fragment>
+      <Fragment><span class="footer-dot" aria-hidden="true"> · </span>Cabinet&nbsp;: {config.organisation} (AMF n° {config.amf_cabinet})</Fragment>
     )}
     {!config.amf_cabinet && (
-      <Fragment> · Cabinet&nbsp;: {config.organisation}</Fragment>
+      <Fragment><span class="footer-dot" aria-hidden="true"> · </span>Cabinet&nbsp;: {config.organisation}</Fragment>
     )}
-    <br />
+    <br class="footer-br" />
     {config.adresse}
   </div>
 
-  <div class="footer-copy">© {currentYear} {config.nom} · <a href={config.site_url} target="_blank" rel="noopener noreferrer">{displayUrl}</a> · Tous droits réservés</div>
+  <div class="footer-copy">© {currentYear} {config.nom}<span class="footer-dot" aria-hidden="true"> · </span><a href={config.site_url} target="_blank" rel="noopener noreferrer">{displayUrl}</a><span class="footer-dot" aria-hidden="true"> · </span>Tous droits réservés</div>
 
   <div class="footer-disclaimer">
     <strong class="disclaimer-title">
@@ -36,7 +36,7 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
     Ils ne constituent en aucun cas une offre de financement, une promesse de taux ni un engagement de la part de {config.nom}, de {config.organisation} ou de tout prêteur partenaire. 
     Le taux hypothécaire réel dépend de votre profil de crédit, de vos revenus, de la valeur de la propriété et des conditions du marché. 
     <br /><br />
-    {config.nom}, courtière hypothécaire inscrite auprès de l'<strong>Autorité des marchés financiers (AMF) du Québec</strong> sous le numéro <strong>{config.amf}</strong>, décline toute responsabilité pour les décisions financières prises sur la base des informations présentées sur ce site.
+    {config.nom}, courtière hypothécaire inscrite auprès de l'<strong>Autorité des marchés financiers (AMF) du Québec</strong>, décline toute responsabilité pour les décisions financières prises sur la base des informations présentées sur ce site.
   </div>
 
   <div class="footer-legal-links">
@@ -45,8 +45,6 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
     <a href="/conditions">Conditions d'utilisation</a>
     <span class="footer-sep">|</span>
     <a href="https://hypotheca.ca/politique-du-cabinet" target="_blank" rel="noopener noreferrer">Politique du cabinet &amp; traitement des plaintes</a>
-    <span class="footer-sep">|</span>
-    <a href="https://hypotheca.ca/trouver-un-courtier-hypothecaire" target="_blank" rel="noopener noreferrer">Trouver un courtier Hypotheca</a>
   </div>
 </footer>
 
@@ -106,6 +104,28 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
     }
     .footer-sep {
       display: none;
+    }
+  }
+
+  /* Sur mobile étroit (<480px), masquer les · et empiler les lignes */
+  @media (max-width: 480px) {
+    .footer-dot {
+      display: none;
+    }
+    .footer-br {
+      display: none;
+    }
+    .footer-identity {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.15rem;
+    }
+    .footer-copy {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.1rem;
     }
   }
 </style>

@@ -56,9 +56,10 @@ const tabs = [
         <div class="section-tag">Outils gratuits</div>
         <h1 class="section-title">Calculateurs hypothécaires <em>gratuits</em> au Québec</h1>
         <p class="section-sub">
-          Estimez votre capacité d'emprunt, calculez un versement, comparez les taux affichés
-          en banque avec ceux qu'un courtier peut négocier et évaluez votre pénalité de
-          remboursement anticipé — le tout dans un même endroit.
+          Quatre calculateurs hypothécaires gratuits pour le Québec : estimez votre capacité
+          d'emprunt, calculez un versement, comparez les taux affichés en banque avec ceux
+          qu'un courtier peut négocier et évaluez votre pénalité de remboursement anticipé
+          — le tout dans un même endroit, sans inscription.
         </p>
       </div>
     </section>
@@ -95,6 +96,9 @@ const tabs = [
           data-panel="simulateur"
         >
           <Simulator defaultRate={defaultRate} />
+          <div class="outil-standalone-link">
+            <a href="/outils/simulateur">📄 Voir en pleine page →</a>
+          </div>
         </div>
 
         <div
@@ -106,6 +110,9 @@ const tabs = [
           hidden
         >
           <Calculator defaultRate={defaultRate} />
+          <div class="outil-standalone-link">
+            <a href="/outils/calculateur">📄 Voir en pleine page →</a>
+          </div>
         </div>
 
         <div
@@ -121,6 +128,9 @@ const tabs = [
             afficheRate={hypothecaRates?.affiche_fixe_5ans}
             fetchedAt={hypothecaRates?.fetchedAt}
           />
+          <div class="outil-standalone-link">
+            <a href="/outils/comparateur">📄 Voir en pleine page →</a>
+          </div>
         </div>
 
         <div
@@ -137,6 +147,9 @@ const tabs = [
             dateMaj={dateMaj}
             groupes={groupes}
           />
+          <div class="outil-standalone-link">
+            <a href="/outils/penalite">📄 Voir en pleine page →</a>
+          </div>
         </div>
       </div>
     </section>
@@ -228,4 +241,26 @@ const tabs = [
       fadeEls.forEach((el) => el.classList.add('visible'));
     }, 1000);
   </script>
+
+  <style>
+    .outil-standalone-link {
+      text-align: center;
+      margin-top: 2rem;
+    }
+    .outil-standalone-link a {
+      display: inline-block;
+      color: var(--clay);
+      font-size: .82rem;
+      font-weight: 600;
+      text-decoration: none;
+      padding: .6rem 1.2rem;
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      transition: background .2s, border-color .2s;
+    }
+    .outil-standalone-link a:hover {
+      background: var(--white);
+      border-color: var(--clay);
+    }
+  </style>
 </MainLayout>

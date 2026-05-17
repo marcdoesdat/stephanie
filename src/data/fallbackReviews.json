@@ -1,0 +1,26 @@
+{
+  "rating": 5.0,
+  "totalReviews": 3,
+  "reviews": [
+    {
+      "author": "Romanica A.",
+      "rating": 5,
+      "text": "Très bon service avec Stéphanie ! Je vous la recommande sans hésitation.",
+      "relativeTime": null
+    },
+    {
+      "author": "Steven W.",
+      "rating": 5,
+      "text": "Une vraie championne des chiffres. Je la recommande fortement.",
+      "relativeTime": null
+    },
+    {
+      "author": "Marc-André L.",
+      "rating": 5,
+      "text": "Je suis client avec ma banque depuis l'âge de 7 ans et Stéphanie m'a trouvé un meilleur taux qu'eux. Incroyable. Merci !",
+      "relativeTime": null
+    }
+  ],
+  "source": "fallback",
+  "fetchedAt": null
+}
