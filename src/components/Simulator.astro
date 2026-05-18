@@ -1,4 +1,8 @@
 ﻿---
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+
 interface Props {
   defaultRate?: number;
 }
@@ -144,14 +148,15 @@ const { defaultRate = 3.79 } = Astro.props;
               <label class="sim-gate-consent" for="sim-gate-consent">
                 <input type="checkbox" id="sim-gate-consent" />
                 <span>
-                  J'accepte que Stéphanie me recontacte au sujet de cette simulation. Aucun partage avec un tiers
+                  J'accepte que {config.nom.split(' ')[0]} me recontacte au sujet de cette simulation. Aucun partage avec un tiers
                   sans mon consentement — voir la <a href="/confidentialite">politique de confidentialité</a>.
                 </span>
               </label>
               <label class="sim-gate-consent" for="sim-gate-guide">
                 <input type="checkbox" id="sim-gate-guide" />
                 <span>
-                  Recevoir le <strong>guide gratuit du premier acheteur</strong> — directement de Stéphanie.
+                  Je consens à recevoir des communications électroniques de {config.nom.split(' ')[0]} Weyman,
+                  incluant le <strong>guide gratuit du premier acheteur</strong> (LCAP).
                 </span>
               </label>
               <button type="button" id="sim-gate-btn" class="sim-gate-submit">Voir mes résultats complets &rarr;</button>

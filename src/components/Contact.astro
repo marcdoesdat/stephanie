@@ -577,8 +577,13 @@ const prenomCourtiere = config.nom.split(' ')[0];
   const FLOW_GENERIC: StepId[] = [1, 2, 3, 4, 5];
   const FLOW_PA: StepId[] = [1, 'pa1', 'pa2', 'pa3', 5];
 
-  function flowFor(parcours: Parcours | ''): StepId[] {
-    return parcours === 'Premier achat' ? FLOW_PA : FLOW_GENERIC;
+  function flowFor(parcours: Parcours | '', currentHistory: StepId[]): StepId[] {
+    // Si l'utilisateur est dans le flow PA dédié (pa1/pa2/pa3), utiliser FLOW_PA.
+    // Sinon (quiz générique avec étapes numériques), utiliser FLOW_GENERIC.
+    if (parcours === 'Premier achat' && currentHistory.some((s) => typeof s === 'string' && s.startsWith('pa'))) {
+      return FLOW_PA;
+    }
+    return FLOW_GENERIC;
   }
 
   // Phrases de valeur dynamiques. Pour Premier achat, on utilise les nouveaux champs (revenus + mise).
@@ -737,7 +742,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
       if (visible) visible.removeAttribute('hidden');
 
       // Progress bar : position = index du step courant dans le flow actif (1-based)
-      const flow = flowFor(state.parcours);
+      const flow = flowFor(state.parcours, history);
       const idx = flow.indexOf(step);
       const totalSteps = flow.length;
       const positionInFlow = idx >= 0 ? idx + 1 : 1;
