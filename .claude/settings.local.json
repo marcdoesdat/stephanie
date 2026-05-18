@@ -5,7 +5,10 @@
       "Bash(npx astro *)",
       "Bash(mkdir -p src/pages/api)",
       "WebSearch",
-      "Bash(mkdir -p src/pages/services)"
+      "Bash(mkdir -p src/pages/services)",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

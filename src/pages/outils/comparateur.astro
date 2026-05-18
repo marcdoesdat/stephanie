@@ -2,7 +2,7 @@
 import MainLayout from '../../layouts/MainLayout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
-import Comparateur from '../../components/Comparateur.astro';
+import ComparateurComponent from '../../components/Comparateur.astro';
 import { fetchHypothecaRates } from '../../services/ratesService';
 
 const hypothecaRates = await fetchHypothecaRates();
@@ -30,7 +30,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       </div>
     </section>
 
-    <Comparateur
+    <ComparateurComponent
       defaultRate={defaultRate}
       afficheRate={hypothecaRates?.affiche_fixe_5ans}
       fetchedAt={hypothecaRates?.fetchedAt}
