@@ -21,4 +21,15 @@
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cloud.umami.is; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://cloud.umami.is; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
+[[redirects]]
+  from = "/outils/penalite"
+  to = "/outils/calculateur-penalite-hypothecaire"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/outils/penalite/"
+  to = "/outils/calculateur-penalite-hypothecaire/"
+  status = 301
+  force = true
 
