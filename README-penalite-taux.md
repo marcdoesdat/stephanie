@@ -6,7 +6,7 @@ de pénalité hypothécaire et comment les maintenir à jour.
 ## Source des données
 
 Les taux sont chargés depuis **Hypotheca** via le service `src/services/ratesService.ts`.
-Ce service scrape la page [hypotheca.ca/taux](https://hypotheca.ca/taux/) et retourne
+Ce service scrape la page [hypotheca.ca/taux-hypothecaires](https://hypotheca.ca/taux-hypothecaires) et retourne
 les taux suivants (entre autres) :
 
 | Champ            | Description                    | Utilisé pour       |

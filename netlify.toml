@@ -33,3 +33,40 @@
   status = 301
   force = true
 
+# Redirections des anciennes pages standalone d'outils vers les onglets
+[[redirects]]
+  from = "/outils/simulateur"
+  to = "/outils#simulateur"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/outils/simulateur/"
+  to = "/outils#simulateur"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/outils/calculateur"
+  to = "/outils#calculateur"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/outils/calculateur/"
+  to = "/outils#calculateur"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/outils/comparateur"
+  to = "/outils#comparateur"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/outils/comparateur/"
+  to = "/outils#comparateur"
+  status = 301
+  force = true
+
