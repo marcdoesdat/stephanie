@@ -5,7 +5,7 @@ interface Props {
   fetchedAt?: string | null;
 }
 const { defaultRate = 4.99, afficheRate = null, fetchedAt = null } = Astro.props;
-const displayedAfficheRate = afficheRate ?? defaultRate;
+const displayedAfficheRate = afficheRate ?? defaultRate + 1;
 
 import { calcPaiement, formatMoney } from '../utils/mortgageCalc';
 
@@ -42,9 +42,9 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
   <div class="section-inner">
     <div class="fade-up">
       <div class="section-tag">Banque vs courtier</div>
-      <h2 class="section-title">La vraie différence, <em>en chiffres</em>.</h2>
+      <h2 class="section-title">La vraie différence, <em>en chiffres.</em></h2>
       <p class="section-sub">
-        Les banques affichent des taux standards. Mon rôle est d'utiliser mon accès privilégié à plus de 20 prêteurs — incluant des institutions non accessibles au public — pour négocier des conditions souvent plus avantageuses que les taux affichés en succursale.
+        Les banques affichent des taux standards. Mon rôle est d'utiliser mon accès privilégié à plus de 20 prêteurs — incluant des institutions non accessibles au public — pour négocier un taux préférentiel que vous n'obtiendriez pas seul en succursale.
       </p>
     </div>
 
@@ -216,7 +216,6 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
             <span>Voir mon vrai taux en 24 h</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </a>
-          <p class="comp-disclaimer">Résultats à titre illustratif seulement. Ne constitue pas une garantie de taux ou d'économies.</p>
           <div class="comp-cta-proof">
             <span class="comp-proof-item">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
