@@ -49,11 +49,26 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       gtag('js', new Date());
       gtag('config', 'G-KFGH2CR8SJ');
     </script>
+
+    <!-- Calendly -->
+    <script is:inline async src="https://assets.calendly.com/assets/external/widget.js"></script>
+    <script is:inline>
+      document.addEventListener('DOMContentLoaded', () => {
+        const url = document.body.getAttribute('data-calendly-url');
+        if (!url) return;
+        document.querySelectorAll('[data-calendly]').forEach(el => {
+          el.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.Calendly) window.Calendly.initPopupWidget({ url });
+          });
+        });
+      });
+    </script>
   </head>
-  <body>
+  <body data-calendly-url={config.calendly_url}>
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
     <slot />
-    <a href="#contact" class="mobile-sticky-cta" aria-label="Prendre rendez-vous">Prendre rendez-vous</a>
+    <a href="#" data-calendly class="mobile-sticky-cta" aria-label="Prendre rendez-vous">Prendre rendez-vous</a>
   </body>
 </html>
 

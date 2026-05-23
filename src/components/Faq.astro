@@ -6,32 +6,40 @@ const prenom = config.nom.split(' ')[0];
 
 const faqs = [
   {
+    q: "Quel est l'objectif de Stéphanie ?",
+    a: "Dévouée et passionnée, je m'appuie sur un réseau de contacts clés et sur une méthode de travail structurée afin de vous offrir le meilleur service sur le marché pour votre financement hypothécaire tout en vous dénichant les meilleures conditions. Mon objectif premier est d'améliorer constamment la qualité du service que je suis en mesure d'offrir, tout en continuant de croître dans le milieu hypothécaire. La seule façon d'y arriver est de continuer de m'entourer de gens passionnés ayant un fort désir de réussir aux plus hauts niveaux."
+  },
+  {
+    q: "Quelles régions Stéphanie dessert-elle ?",
+    a: "Je dessers principalement la Rive-Nord de Montréal et la région de Lanaudière, dont Repentigny, Terrebonne, Mascouche, L'Assomption, Charlemagne, Le Gardeur, Lavaltrie et les environs. J'accompagne également des clients dans le Grand Montréal et ailleurs au Québec. Comme une grande partie du processus peut se faire à distance (téléphone, visioconférence, signature électronique), il m'est possible de vous accompagner peu importe où vous vous situez dans la province."
+  },
+  {
     q: "Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ?",
-    a: "Non, mes services sont entièrement gratuits pour vous. Je suis rémunérée par le prêteur qui vous accorde le financement — pas par vous. Vous bénéficiez donc d’un accompagnement professionnel complet sans frais supplémentaires."
+    a: "Non, mes services sont entièrement gratuits pour vous. Je suis rémunérée par le prêteur qui vous accorde le financement — pas par vous. Vous bénéficiez donc d'un accompagnement professionnel complet sans frais supplémentaires."
   },
   {
     q: "Quelle est la différence entre un courtier et ma banque ?",
-    a: "Votre banque ne vous propose que ses propres produits. Moi, j’ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution."
+    a: "Votre banque ne vous propose que ses propres produits. Moi, j'ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution."
   },
   {
-    q: "J’ai été refusé par ma banque. Puis-je quand même obtenir une hypothèque ?",
-    a: "Absolument. Un refus bancaire ne signifie pas que vous ne pouvez pas acheter — cela signifie que cette banque ne peut pas vous aider. J’ai accès à des prêteurs alternatifs spécialisés dans les dossiers complexes : mauvais crédit, travailleur autonome, revenus atypiques, etc."
+    q: "J'ai été refusé par ma banque. Puis-je quand même obtenir une hypothèque ?",
+    a: "Absolument. Un refus bancaire ne signifie pas que vous ne pouvez pas acheter — cela signifie que cette banque ne peut pas vous aider. J'ai accès à des prêteurs alternatifs spécialisés dans les dossiers complexes : mauvais crédit, travailleur autonome, revenus atypiques, etc."
   },
   {
     q: "De combien de mise de fonds ai-je besoin pour acheter au Québec ?",
-    a: "Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 999 999 $, c’est 5 % sur la première tranche et 10 % sur le reste. À partir de 1 000 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l’assurance SCHL."
+    a: "Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 999 999 $, c'est 5 % sur la première tranche et 10 % sur le reste. À partir de 1 000 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l'assurance SCHL."
   },
   {
-    q: "Combien de temps prend le processus d’approbation ?",
-    a: "En général, une pré-approbation peut être obtenue en 24 à 48 heures. Pour une approbation finale, comptez quelques jours à deux semaines selon la complexité de votre dossier. Je m’occupe de tout le suivi avec le prêteur pour accélérer le processus."
+    q: "Combien de temps prend le processus d'approbation ?",
+    a: "En général, une pré-approbation peut être obtenue en 24 à 48 heures. Pour une approbation finale, comptez de quelques jours à deux semaines selon la complexité de votre dossier. Je m'occupe de tout le suivi avec le prêteur afin de faire avancer le dossier le plus rapidement possible. Le délai dépend aussi de la rapidité avec laquelle les documents demandés (preuves de revenu, relevés, mise de fonds, etc.) me sont transmis : un dossier complet dès le départ permet d'accélérer considérablement les choses."
   },
   {
-    q: "C’est quoi la différence entre un taux fixe et un taux variable ?",
+    q: "C'est quoi la différence entre un taux fixe et un taux variable ?",
     a: "Un taux fixe reste le même pendant toute la durée du terme — vos versements ne changent jamais. Un taux variable fluctue selon le taux directeur de la Banque du Canada — vos versements peuvent monter ou descendre. Le meilleur choix dépend de votre tolérance au risque et du contexte économique. On en discute ensemble."
   },
   {
     q: "Mon renouvellement approche. Que dois-je faire ?",
-    a: "N’acceptez surtout pas la première offre de votre prêteur sans comparer ! Contactez-moi idéalement 4 à 6 mois avant l’échéance — c’est le moment idéal pour magasiner un meilleur taux. Le transfert vers un autre prêteur est souvent gratuit, et je m’occupe de tout."
+    a: "N'acceptez surtout pas la première offre de renouvellement de votre prêteur sans la comparer ! Contactez-moi idéalement 4 à 6 mois avant l'échéance — c'est le moment idéal pour évaluer vos options et faire jouer la concurrence. À votre renouvellement, le transfert vers un autre prêteur n'entraîne généralement pas de pénalité, et les frais qui peuvent s'appliquer sont souvent assumés par le nouveau prêteur. Je m'occupe de toutes les démarches avec les institutions pour vous simplifier le tout."
   },
 ];
 

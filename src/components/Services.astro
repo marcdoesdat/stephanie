@@ -1,8 +1,10 @@
 ---
 // Liste des services. Chaque carte est entièrement cliquable et pointe vers sa sous-page dédiée.
 // Sans `href`, on retombe sur l'ancre #contact (parcours de prise de rendez-vous).
+import { House, Repeat, Lightbulb, LockKeyholeOpen, Briefcase, Globe } from '@lucide/astro';
+
 interface ServiceItem {
-  icon: string;
+  icon: any;
   title: string;
   description: string;
   cta: string;
@@ -11,42 +13,42 @@ interface ServiceItem {
 
 const services: ServiceItem[] = [
   {
-    icon: "🏠",
+    icon: House,
     title: "Premier achat",
     description: "Vous achetez votre première propriété ? Je vous guide à travers la mise de fonds, le test de résistance, et je négocie les meilleures conditions pour vous.",
     cta: "Calculer ma capacité",
     href: "/services/premier-achat"
   },
   {
-    icon: "🔄",
+    icon: Repeat,
     title: "Renouvellement",
     description: "Votre hypothèque arrive à terme ? C'est le meilleur moment de magasiner. Je compare les offres de 20+ prêteurs pour vous obtenir un meilleur taux que votre banque.",
     cta: "Comparer les taux",
     href: "/services/renouvellement"
   },
   {
-    icon: "💡",
+    icon: Lightbulb,
     title: "Refinancement",
     description: "Consolidation de dettes, rénovations, achat locatif — le refinancement peut libérer des liquidités importantes. Analysons ensemble si c'est la bonne décision.",
     cta: "Découvrir mes options",
     href: "/services/refinancement"
   },
   {
-    icon: "🔓",
+    icon: LockKeyholeOpen,
     title: "Dossier refusé",
     description: "Votre banque vous a dit non ? Un refus bancaire, ce n'est pas une fin. J'ai accès à des prêteurs alternatifs adaptés aux situations complexes.",
     cta: "Trouver une solution",
     href: "/services/dossier-refuse"
   },
   {
-    icon: "💼",
+    icon: Briefcase,
     title: "Travailleur autonome",
     description: "Revenus variables, contrats, incorporation — je sais comment présenter votre dossier pour maximiser vos chances.",
     cta: "Maximiser mon dossier",
     href: "/services/travailleur-autonome"
   },
   {
-    icon: "🌍",
+    icon: Globe,
     title: "Nouveaux arrivants",
     description: "Vous venez d'arriver au Canada ? Il existe des programmes spéciaux pour les résidents permanents et certains détenteurs de permis de travail.",
     cta: "Voir les programmes",
@@ -66,7 +68,7 @@ const services: ServiceItem[] = [
       </p>
     </div>
 
-    <div class="services-grid">
+    <div class="services-grid stagger-children">
       {services.map((service, index) => (
         <a
           href={service.href ?? '#contact'}
@@ -74,7 +76,9 @@ const services: ServiceItem[] = [
           style={`transition-delay: ${(index % 3) * 0.1}s`}
           aria-label={`${service.cta} — ${service.title}`}
         >
-          <div class="service-icon" aria-hidden="true">{service.icon}</div>
+          <div class="service-icon" aria-hidden="true">
+            <service.icon size={22} stroke-width={1.8} />
+          </div>
 
           <h3>{service.title}</h3>
           <p>{service.description}</p>

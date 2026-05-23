@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.jpg';
 import { loadSiteConfig } from '../config';
+import { Phone, Mail, MapPin, Building2, Contact as ContactIcon } from '@lucide/astro';
 const config = loadSiteConfig();
 const telephoneHref = `tel:${config.telephone.replace(/[^\d+]/g, '')}`;
 const courrielHref = `mailto:${config.courriel}`;
@@ -10,7 +11,29 @@ const prenomCourtiere = config.nom.split(' ')[0];
 
 <section id="contact">
   <div class="section-inner">
-    <div class="contact-grid">
+
+    <!-- Calendly — prise de rendez-vous en ligne -->
+    {config.calendly_url && (
+      <div class="contact-calendly fade-up">
+        <div class="section-tag">Rendez-vous</div>
+        <h2 class="section-title">Réservez un <em>appel</em> avec {prenomCourtiere}</h2>
+        <p class="section-sub">
+          Choisissez le créneau qui vous convient — {prenomCourtiere} vous appelle au moment prévu. Gratuit, sans engagement.
+        </p>
+        <div class="calendly-card">
+          <div
+            class="calendly-inline-widget"
+            data-url={config.calendly_url}
+            style="min-width:320px;height:650px;"
+          ></div>
+        </div>
+        <p class="contact-calendly-alt">
+          Vous préférez écrire ? <a href="#contact-form-anchor">Utilisez le formulaire ci-dessous →</a>
+        </p>
+      </div>
+    )}
+
+    <div class="contact-grid" id="contact-form-anchor">
 
       <!-- ======== COLONNE GAUCHE : Présentation & confiance ======== -->
       <div class="fade-up">
@@ -22,23 +45,23 @@ const prenomCourtiere = config.nom.split(' ')[0];
           </p>
           <div class="contact-details">
             <div class="contact-item">
-              <div class="contact-icon" aria-hidden="true">📞</div>
+              <div class="contact-icon" aria-hidden="true"><Phone size={18} stroke-width={1.8} /></div>
               <a class="contact-link" href={telephoneHref}><strong>{config.telephone}</strong></a>
             </div>
             <div class="contact-item">
-              <div class="contact-icon" aria-hidden="true">✉️</div>
+              <div class="contact-icon" aria-hidden="true"><Mail size={18} stroke-width={1.8} /></div>
               <a class="contact-link" href={courrielHref}><strong>{config.courriel}</strong></a>
             </div>
             <div class="contact-item">
-              <div class="contact-icon" aria-hidden="true">📍</div>
+              <div class="contact-icon" aria-hidden="true"><MapPin size={18} stroke-width={1.8} /></div>
               <span>{config.region}</span>
             </div>
             <div class="contact-item">
-              <div class="contact-icon" aria-hidden="true">🏢</div>
+              <div class="contact-icon" aria-hidden="true"><Building2 size={18} stroke-width={1.8} /></div>
               <span>{config.organisation}</span>
             </div>
             <div class="contact-item">
-              <div class="contact-icon" aria-hidden="true">📇</div>
+              <div class="contact-icon" aria-hidden="true"><ContactIcon size={18} stroke-width={1.8} /></div>
               <a
                 class="contact-link"
                 href="/stephanie-weyman.vcf"

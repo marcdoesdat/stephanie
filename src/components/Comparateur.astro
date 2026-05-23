@@ -102,7 +102,7 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
           <!-- Taux éditables -->
           <div class="comp-rates-grid">
             <div class="comp-field comp-field--rate">
-              <label class="comp-input-label" for="comp-rate-bank-input">Taux succursale</label>
+              <label class="comp-input-label" for="comp-rate-bank-input">Inscrire votre taux succursale</label>
               <div class="comp-rate-input-wrap">
                 <input
                   type="number"
@@ -211,24 +211,6 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
           <div class="comp-savings-amount" id="comp-savings">{formatMoney(initialTotalSavings)}</div>
           <div class="comp-savings-sub">
             soit <strong id="comp-savings-monthly">{formatMoney(initialMonthlySavings)}</strong> <span id="comp-savings-monthly-unit">par mois</span> de plus dans votre poche.
-          </div>
-          <a href="#contact" class="comp-cta" data-track="comparateur_cta_click">
-            <span>Voir mon vrai taux en 24 h</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </a>
-          <div class="comp-cta-proof">
-            <span class="comp-proof-item">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              20+ prêteurs comparés
-            </span>
-            <span class="comp-proof-item">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              Sans engagement
-            </span>
-            <span class="comp-proof-item">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              Gratuit
-            </span>
           </div>
         </div>
 
@@ -479,12 +461,6 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
       document.addEventListener('click', (e) => {
         if (!panel.contains(e.target as Node) && e.target !== trigger) toggle(false);
       });
-    });
-
-    // --- CTA tracking ---
-    root.querySelector('.comp-cta[data-track]')?.addEventListener('click', () => {
-      // @ts-ignore — gtag may or may not be on window
-      if (typeof window.gtag === 'function') window.gtag('event', 'comparateur_cta_click');
     });
 
     recompute();

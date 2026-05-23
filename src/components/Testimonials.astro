@@ -88,6 +88,16 @@ const googleReviewsUrl = config.google_place_id
             })}
           </div>
 
+          <!-- Navigation arrows -->
+          <div class="temoignages-nav" id="temoignages-nav">
+            <button type="button" class="temoignages-arrow temoignages-arrow--prev" id="temoignages-prev" aria-label="Témoignage précédent">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button type="button" class="temoignages-arrow temoignages-arrow--next" id="temoignages-next" aria-label="Témoignage suivant">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
           <!-- Navigation dots -->
           <div class="temoignages-dots" id="temoignages-dots" aria-hidden="true"></div>
         </div>
@@ -236,5 +246,11 @@ const googleReviewsUrl = config.google_place_id
     buildDots();
     goTo(0);
     startAutoplay();
+
+    // Nav buttons
+    const prevBtn = document.getElementById('temoignages-prev');
+    const nextBtn = document.getElementById('temoignages-next');
+    prevBtn?.addEventListener('click', () => { stopAutoplay(); prev(); if (!isPaused) startAutoplay(); });
+    nextBtn?.addEventListener('click', () => { stopAutoplay(); next(); if (!isPaused) startAutoplay(); });
   });
 </script>

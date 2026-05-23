@@ -13,6 +13,7 @@ import MessengerBtn from '../components/MessengerBtn.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
 import { getReviews } from '../services/reviewsService';
 import { loadSiteConfig } from '../config';
+import { House, Calculator, Scale, ClipboardList } from '@lucide/astro';
 
 const config = loadSiteConfig();
 
@@ -69,27 +70,27 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           <p class="outils-trust">Sans inscription · Résultats instantanés</p>
         </div>
 
-        <div class="outils-teaser-grid fade-up">
+        <div class="outils-teaser-grid stagger-children">
           <a href="/outils#simulateur" class="outils-card" aria-label="Simulateur d'emprunt — Estimez votre capacité d'achat">
-            <div class="service-icon" aria-hidden="true">🏠</div>
+            <div class="service-icon" aria-hidden="true"><House size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Simulateur d'emprunt</div>
             <p>Estimez votre capacité réelle selon vos revenus, dettes, mise de fonds et taux de qualification.</p>
             <span class="outils-card-arrow" aria-hidden="true">→</span>
           </a>
           <a href="/outils#calculateur" class="outils-card" aria-label="Calculateur de versement — Calculez vos mensualités">
-            <div class="service-icon" aria-hidden="true">🧮</div>
+            <div class="service-icon" aria-hidden="true"><Calculator size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Calculateur de versement</div>
             <p>Calculez des mensualités précises avec le taux, l'amortissement et les frais qui comptent vraiment.</p>
             <span class="outils-card-arrow" aria-hidden="true">→</span>
           </a>
           <a href="/outils#comparateur" class="outils-card" aria-label="Comparateur de taux — Comparez les taux affichés en succursale et les taux négociés par un courtier">
-            <div class="service-icon" aria-hidden="true">⚖️</div>
+            <div class="service-icon" aria-hidden="true"><Scale size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Comparateur de taux</div>
             <p>Comparez un taux affiché en succursale et un taux négocié par Stéphanie pour visualiser l'écart potentiel sur 5 ans.</p>
             <span class="outils-card-arrow" aria-hidden="true">→</span>
           </a>
           <a href="/outils#penalite" class="outils-card" aria-label="Calculateur de pénalité — Estimez vos frais de remboursement anticipé">
-            <div class="service-icon" aria-hidden="true">📋</div>
+            <div class="service-icon" aria-hidden="true"><ClipboardList size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Calculateur de pénalité</div>
             <p>Estimez les frais de remboursement anticipé (IRD ou 3 mois d'intérêts) selon votre prêteur et votre contrat.</p>
             <span class="outils-card-arrow" aria-hidden="true">→</span>
@@ -151,7 +152,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   <script>
     document.documentElement.classList.add('js-enabled');
 
-    const fadeEls = document.querySelectorAll('.fade-up');
+    const animClasses = ['.fade-up', '.fade-left', '.fade-right', '.scale-in', '.stagger-children'];
+    const animEls = document.querySelectorAll(animClasses.join(','));
     const obs = new IntersectionObserver(
       (entries) =>
         entries.forEach((x) => {
@@ -162,12 +164,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         }),
       { threshold: 0.12 }
     );
-    fadeEls.forEach((el) => obs.observe(el));
+    animEls.forEach((el) => obs.observe(el));
 
     // Fallback: si l'observer ne déclenche pas (p. ex. éléments hors-fold avec layout figé),
-    // forcer la visibilité après 1 s.
+    // forcer la visibilité après 1.2 s.
     window.setTimeout(() => {
-      fadeEls.forEach((el) => el.classList.add('visible'));
-    }, 1000);
+      animEls.forEach((el) => el.classList.add('visible'));
+    }, 1200);
   </script>
 </MainLayout>

@@ -9,8 +9,11 @@ import PenaliteCalculator from '../components/PenaliteCalculator.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
 import { loadSiteConfig } from '../config';
 import { preteursParCategorie } from '../data/preteurs';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../assets/stephanie.jpg';
 
 const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0] ?? 'Stéphanie';
 const hypothecaRates = await fetchHypothecaRates();
 const defaultRate = hypothecaRates?.fixe_5ans ?? 4.99;
 
@@ -38,7 +41,7 @@ const groupes = preteursParCategorie();
 Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
 
 const tabs = [
-  { id: 'simulateur', label: 'Simulateur d’emprunt', sub: 'Capacité' },
+  { id: 'simulateur', label: "Simulateur d'emprunt", sub: 'Capacité' },
   { id: 'calculateur', label: 'Calculateur de paiement', sub: 'Versements' },
   { id: 'comparateur', label: 'Comparateur de taux', sub: 'Économies' },
   { id: 'penalite', label: 'Calculer ma pénalité', sub: 'IRD' },
@@ -144,6 +147,68 @@ const tabs = [
         </div>
       </div>
     </section>
+
+    <!-- Mini contact — conversion post-outils -->
+    <section id="outils-contact" class="fade-up">
+      <div class="section-inner" style="max-width:680px">
+        <div class="outils-contact-card">
+
+          <!-- Bandeau de confiance -->
+          <div class="outils-contact-trust">
+            <Image
+              src={stephaniePhoto}
+              alt={prenom}
+              width={56}
+              height={56}
+              loading="lazy"
+              decoding="async"
+              class="outils-contact-photo"
+            />
+            <div class="outils-contact-trust-text">
+              <strong>{prenom} répond elle-même.</strong>
+              <span>Réponse sous 24 h ouvrables. Gratuit, sans engagement.</span>
+            </div>
+          </div>
+
+          <h3 class="outils-contact-title">On en parle&nbsp;?</h3>
+          <p class="outils-contact-sub">
+            Vous avez vos chiffres en tête — {prenom} peut vous aider à passer à l'action.
+          </p>
+
+          <form
+            name="contact-outils"
+            method="POST"
+            data-netlify="true"
+            data-netlify-honeypot="bot-field"
+            class="outils-contact-form"
+            novalidate
+          >
+            <input type="hidden" name="form-name" value="contact-outils" />
+            <div style="display:none" aria-hidden="true">
+              <label>Ne pas remplir : <input name="bot-field" tabindex="-1" /></label>
+            </div>
+
+            <div class="outils-contact-fields">
+              <label class="sr-only" for="outils-prenom">Votre prénom</label>
+              <input type="text" id="outils-prenom" name="prenom" placeholder="Votre prénom" required autocomplete="given-name" class="outils-contact-input" />
+
+              <label class="sr-only" for="outils-email">Votre courriel</label>
+              <input type="email" id="outils-email" name="email" placeholder="votre@courriel.com" required autocomplete="email" class="outils-contact-input" />
+
+              <label class="sr-only" for="outils-message">Un message (optionnel)</label>
+              <textarea id="outils-message" name="message" placeholder="Dites-nous en quelques mots votre projet ou votre question…" rows="2" class="outils-contact-input"></textarea>
+
+              <button type="submit" class="btn-cta btn-cta--block">
+                <span>Recevoir mon analyse personnalisée</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+
+            <p class="outils-contact-note">Aucun partage avec un tiers sans votre consentement explicite — voir la <a href="/confidentialite">politique de confidentialité</a>.</p>
+          </form>
+        </div>
+      </div>
+    </section>
   </main>
   <Footer />
 
@@ -215,8 +280,9 @@ const tabs = [
     const initial = tabIdFromHash();
     if (initial) activate(initial);
 
-    // Fade-up fallback (même logique que la page d’accueil)
-    const fadeEls = document.querySelectorAll('.fade-up');
+    // Fade-up fallback (même logique que la page d'accueil)
+    const animClasses = ['.fade-up', '.fade-left', '.fade-right', '.scale-in', '.stagger-children'];
+    const animEls = document.querySelectorAll(animClasses.join(','));
     const obs = new IntersectionObserver(
       (entries) =>
         entries.forEach((x) => {
@@ -227,10 +293,10 @@ const tabs = [
         }),
       { threshold: 0.12 }
     );
-    fadeEls.forEach((el) => obs.observe(el));
+    animEls.forEach((el) => obs.observe(el));
     window.setTimeout(() => {
-      fadeEls.forEach((el) => el.classList.add('visible'));
-    }, 1000);
+      animEls.forEach((el) => el.classList.add('visible'));
+    }, 1200);
   </script>
 
   <style>
@@ -252,6 +318,121 @@ const tabs = [
     .outil-standalone-link a:hover {
       background: var(--white);
       border-color: var(--clay);
+    }
+
+    /* ---------- Mini contact bas de page ---------- */
+    #outils-contact {
+      padding-top: 1.5rem;
+      padding-bottom: 4rem;
+      background: var(--sand);
+    }
+    .outils-contact-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem 2rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .outils-contact-trust {
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+      background: linear-gradient(135deg, var(--sand) 0%, var(--warm) 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: .85rem 1rem;
+      margin-bottom: 2rem;
+    }
+    .outils-contact-photo {
+      border-radius: 999px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 2px solid white;
+      box-shadow: var(--shadow-xs);
+      width: 56px;
+      height: 56px;
+    }
+    .outils-contact-trust-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+    .outils-contact-trust-text strong {
+      font-size: .88rem;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .outils-contact-trust-text span {
+      font-size: .75rem;
+      color: var(--muted);
+    }
+    .outils-contact-title {
+      font-family: "Lora", serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0 0 .5rem;
+      text-align: center;
+    }
+    .outils-contact-sub {
+      font-size: .9rem;
+      color: var(--muted);
+      text-align: center;
+      margin: 0 0 1.8rem;
+      line-height: 1.6;
+    }
+    .outils-contact-fields {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+    .outils-contact-input {
+      width: 100%;
+      padding: .85rem 1.1rem;
+      background: var(--sand);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      font-family: "DM Sans", sans-serif;
+      font-size: .95rem;
+      transition: border-color .2s, background .2s;
+    }
+    .outils-contact-input:focus {
+      outline: none;
+      border-color: var(--clay);
+      background: var(--white);
+    }
+    .outils-contact-input::placeholder {
+      color: var(--muted);
+    }
+    .outils-contact-input[type="text"],
+    .outils-contact-input[type="email"] {
+      min-height: 48px;
+    }
+    .outils-contact textarea.outils-contact-input {
+      resize: vertical;
+      min-height: 64px;
+    }
+    .outils-contact-note {
+      font-size: .72rem;
+      color: var(--muted);
+      text-align: center;
+      margin: .85rem 0 0;
+      line-height: 1.5;
+    }
+    .outils-contact-note a {
+      color: var(--clay);
+      font-weight: 600;
+    }
+
+    @media (max-width: 720px) {
+      .outils-contact-card {
+        padding: 1.8rem 1.3rem;
+        border-radius: var(--radius-md);
+      }
+      .outils-contact-title {
+        font-size: 1.3rem;
+      }
     }
   </style>
 </MainLayout>
