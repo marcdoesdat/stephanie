@@ -92,7 +92,7 @@ Ouvre ce fichier avec n'importe quel éditeur de texte (Bloc-notes, VS Code, etc
   "nom": "Stéphanie Weyman",
   "titre": "Courtière hypothécaire",
   "organisation": "Hypotheca",
-  "region": "Partout au Québec",
+  "region": "Repentigny, Lanaudière et Rive-Nord",
 
   "amf": "3002365315",
   "telephone": "514-949-7627",

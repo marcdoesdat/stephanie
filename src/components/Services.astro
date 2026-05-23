@@ -1,8 +1,4 @@
 ---
-import { loadSiteConfig } from '../config';
-
-const config = loadSiteConfig();
-
 // Liste des services. Chaque carte est entièrement cliquable et pointe vers sa sous-page dédiée.
 // Sans `href`, on retombe sur l'ancre #contact (parcours de prise de rendez-vous).
 interface ServiceItem {
@@ -66,7 +62,7 @@ const services: ServiceItem[] = [
       <div class="section-tag">Services</div>
       <h2 class="section-title">Ce que je peux<br />faire pour <em>vous</em></h2>
       <p class="section-sub">
-        Du premier achat au renouvellement, du refinancement au dossier complexe — je vous accompagne à chaque étape, partout au {config.region.split(' ')[2] || 'Québec'}.
+        Du premier achat au renouvellement, du refinancement au dossier complexe — je vous accompagne à chaque étape, où que vous soyez au Québec.
       </p>
     </div>
 
