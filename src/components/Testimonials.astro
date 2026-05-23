@@ -167,7 +167,6 @@ const googleReviewsUrl = config.google_place_id
     function goTo(index: number) {
       const max = getMaxIndex();
       currentIndex = Math.max(0, Math.min(index, max));
-      const visible = getVisible();
       const cardWidth = cards[0]?.offsetWidth ?? 0;
       const gap = 24; // matches CSS gap
       const offset = currentIndex * (cardWidth + gap);

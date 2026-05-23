@@ -8,7 +8,8 @@
       "Bash(mkdir -p src/pages/services)",
       "Bash(git rm *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "WebFetch(domain:docs.astro.build)"
     ]
   }
 }

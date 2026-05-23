@@ -288,17 +288,17 @@ function fmtRate(val: number | null | undefined): string {
 <script>
   // Parallaxe subtil : la photo se déplace plus lentement que le texte au scroll
   (function() {
-    var photoContainer = document.querySelector('.photo-container');
-    var hero = document.getElementById('hero');
+    const photoContainer = document.querySelector<HTMLElement>('.photo-container');
+    const hero = document.getElementById('hero');
     if (!photoContainer || !hero) return;
-    var ticking = false;
+    let ticking = false;
     window.addEventListener('scroll', function() {
       if (!ticking) {
         requestAnimationFrame(function() {
-          var heroRect = hero.getBoundingClientRect();
-          var heroHeight = hero.offsetHeight;
-          var progress = Math.max(0, Math.min(1, -heroRect.top / (heroHeight - window.innerHeight)));
-          var offset = progress * 40;
+          const heroRect = hero.getBoundingClientRect();
+          const heroHeight = hero.offsetHeight;
+          const progress = Math.max(0, Math.min(1, -heroRect.top / (heroHeight - window.innerHeight)));
+          const offset = progress * 40;
           photoContainer.style.transform = 'translateY(-' + offset + 'px)';
           ticking = false;
         });

@@ -24,6 +24,10 @@ const {
 const formattedTitle = fullTitle ?? (title ? `${title} | ${config.nom}` : config.meta_title);
 const resolvedOgImage = new URL(ogImage, config.site_url);
 
+// Format E.164 pour JSON-LD (Canada : +1 + 10 chiffres)
+const digitsOnly = config.telephone.replace(/\D/g, '');
+const telephoneE164 = digitsOnly.startsWith('1') ? `+${digitsOnly}` : `+1${digitsOnly}`;
+
 // JSON-LD : FinancialService + LocalBusiness (courtière hypothécaire)
 const schema = {
   "@context": "https://schema.org",
@@ -33,7 +37,7 @@ const schema = {
   "alternateName": config.nom,
   "image": resolvedOgImage.toString(),
   "url": config.site_url,
-  "telephone": config.telephone,
+  "telephone": telephoneE164,
   "email": config.courriel,
   "areaServed": [
     { "@type": "City", "name": "Repentigny" },
@@ -73,7 +77,7 @@ const schema = {
     config.messenger_url
   ].filter(Boolean),
   "description": description,
-  "priceRange": "Gratuit — consultation sans frais",
+  "priceRange": "Free",
   "serviceType": ["Courtage hypothécaire", "Prêt hypothécaire", "Refinancement", "Renouvellement hypothécaire"],
   "hasCredential": {
     "@type": "EducationalOccupationalCredential",

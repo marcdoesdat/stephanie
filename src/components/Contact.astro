@@ -27,10 +27,10 @@ const prenomCourtiere = config.nom.split(' ')[0];
               <li><span aria-hidden="true">🗓️</span> Choisissez votre créneau — soirs et week-ends disponibles</li>
               <li><span aria-hidden="true">🎯</span> Gratuit, sans engagement</li>
             </ul>
-            <button type="button" class="btn-cta calendly-cta-btn" data-calendly aria-label={`Réserver un appel avec ${prenomCourtiere}`}>
+            <a href={config.calendly_url} target="_blank" rel="noopener" class="btn-cta calendly-cta-btn" data-calendly aria-label={`Réserver un appel avec ${prenomCourtiere}`}>
               <span>Choisir mon créneau</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </button>
+            </a>
             <p class="calendly-cta-note">La fenêtre Calendly s'ouvre dans une nouvelle fenêtre — fermez-la à tout moment.</p>
           </div>
         </div>
@@ -649,14 +649,14 @@ const prenomCourtiere = config.nom.split(' ')[0];
       }
       // Q1/Q2 anciens (visiteurs venant du parcours générique)
       if (q1 === 'Mise de fonds prête' && q2 === 'RAP/CELIAPP connus') {
-        return `Avec votre mise de fonds et l'optimisation de vos leviers (RAP + CELIAPP), on structure votre dossier pour maximiser votre capacité d'achat dès la pré-approbation. 5 minutes pour connaître vos vrais chiffres.`;
+        return `Avec votre mise de fonds et l'optimisation de vos leviers (RAP + CELIAPP), on structure votre dossier pour maximiser votre capacité d'achat dès la pré-approbation.`;
       }
-      return `Parler à ${prenomCourtiere}, c'est obtenir une stratégie claire en 5 minutes. Découvrez exactement quel montant vous pouvez viser et comment maximiser votre mise de fonds. Simple et sans engagement.`;
+      return `Parler à ${prenomCourtiere}, c'est obtenir une stratégie claire. Découvrez exactement quel montant vous pouvez viser et comment maximiser votre mise de fonds. Simple et sans engagement.`;
     }
 
     if (parcours === 'Renouvellement / Refinancement') {
       if (q1 === 'Terme < 6 mois') {
-        return `On a encore le temps de magasiner avant que votre banque ne vous envoie son offre de renouvellement — c'est précisément là que se capturent les meilleures économies.`;
+        return `On a encore le temps de comparer avant que votre banque ne vous envoie son offre de renouvellement. Beaucoup de propriétaires acceptent la première offre par défaut — magasiner vous permet de prendre une décision éclairée.`;
       }
       if (q2 === 'Libérer équité') {
         return `Une simulation comparative refinancement vs. marge hypothécaire vous sera préparée avant l'appel — vous saurez quelle option coûte le moins cher sur 5 ans.`;
