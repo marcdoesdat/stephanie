@@ -748,10 +748,17 @@ td:last-child{text-align:center}
 .contact-calendly .section-sub{margin-left:auto;margin-right:auto}
 .calendly-card{
   background:var(--white);border:1px solid var(--border);
-  border-radius:var(--radius-lg);overflow:hidden;
+  border-radius:var(--radius-lg);
   box-shadow:var(--shadow-sm);
-  max-width:800px;margin:2.5rem auto 0;
+  max-width:640px;margin:2.5rem auto 0;
+  padding:2.5rem 1.75rem;
 }
+.calendly-cta-wrap{display:flex;flex-direction:column;align-items:center;gap:1.5rem;text-align:center}
+.calendly-perks{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.65rem;font-size:.92rem;color:var(--ink);text-align:left}
+.calendly-perks li{display:flex;align-items:center;gap:.7rem}
+.calendly-perks li span{font-size:1.1rem;flex:0 0 auto}
+.calendly-cta-btn{min-width:260px}
+.calendly-cta-note{font-size:.78rem;color:var(--muted);margin:0}
 .contact-calendly-alt{
   margin-top:1.5rem;font-size:.88rem;color:var(--muted);
 }

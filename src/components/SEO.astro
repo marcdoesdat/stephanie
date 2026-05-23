@@ -35,10 +35,13 @@ const schema = {
   "url": config.site_url,
   "telephone": config.telephone,
   "email": config.courriel,
-  "areaServed": {
-    "@type": "AdministrativeArea",
-    "name": "Québec"
-  },
+  "areaServed": [
+    { "@type": "City", "name": "Repentigny" },
+    { "@type": "City", "name": "Mascouche" },
+    { "@type": "City", "name": "Terrebonne" },
+    { "@type": "City", "name": "L'Assomption" },
+    { "@type": "AdministrativeArea", "name": "Lanaudière" }
+  ],
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "3344 Fleury Est",

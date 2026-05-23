@@ -24,7 +24,7 @@ function fmtRate(val: number | null | undefined): string {
       </p>
 
       <div class="hero-btns">
-        <a href="#" data-calendly class="btn-cta">
+        <a href={config.calendly_url} data-calendly class="btn-cta" target="_blank" rel="noopener">
           <span>Prendre rendez-vous</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
@@ -273,28 +273,37 @@ function fmtRate(val: number | null | undefined): string {
   .photo-frame img {
     transform: scaleX(-1);
   }
+
+  /* Flottement de la photo (indépendant du scroll) */
+  .photo-frame {
+    animation: float-photo 6s ease-in-out infinite;
+  }
+
+  @keyframes float-photo {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
 </style>
 
 <script>
   // Parallaxe subtil : la photo se déplace plus lentement que le texte au scroll
-  const photoContainer = document.querySelector('.photo-container') as HTMLElement | null;
-  const hero = document.getElementById('hero');
-  if (photoContainer && hero) {
-    let ticking = false;
-    window.addEventListener('scroll', () => {
+  (function() {
+    var photoContainer = document.querySelector('.photo-container');
+    var hero = document.getElementById('hero');
+    if (!photoContainer || !hero) return;
+    var ticking = false;
+    window.addEventListener('scroll', function() {
       if (!ticking) {
-        requestAnimationFrame(() => {
-          const heroRect = hero.getBoundingClientRect();
-          const heroHeight = hero.offsetHeight;
-          // Progression du scroll dans le hero (0 = haut visible, 1 = bas visible)
-          const progress = Math.max(0, Math.min(1, -heroRect.top / (heroHeight - window.innerHeight)));
-          // Décalage parallaxe max de 40px vers le haut
-          const offset = progress * 40;
-          photoContainer.style.transform = `translateY(-${offset}px)`;
+        requestAnimationFrame(function() {
+          var heroRect = hero.getBoundingClientRect();
+          var heroHeight = hero.offsetHeight;
+          var progress = Math.max(0, Math.min(1, -heroRect.top / (heroHeight - window.innerHeight)));
+          var offset = progress * 40;
+          photoContainer.style.transform = 'translateY(-' + offset + 'px)';
           ticking = false;
         });
         ticking = true;
       }
     }, { passive: true });
-  }
+  })();
 </script>
