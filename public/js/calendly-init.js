@@ -25,7 +25,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', function() {
+  function start() {
     if (window.Calendly) {
       calendlyInit();
     } else {
@@ -40,5 +40,13 @@
         }
       }, 300);
     }
-  });
+  }
+
+  // Si le script est chargé après DOMContentLoaded (cas consent.js qui injecte le script
+  // dynamiquement après acceptation), exécuter immédiatement.
+  if (document.readyState !== 'loading') {
+    start();
+  } else {
+    document.addEventListener('DOMContentLoaded', start);
+  }
 })();

@@ -1,0 +1,133 @@
+---
+// Bannière de consentement Loi 25 (Québec).
+// Affichage et logique de chargement conditionnel dans /public/js/consent.js.
+---
+
+<div id="consent-banner" class="consent-banner" hidden role="dialog" aria-labelledby="consent-title" aria-describedby="consent-desc">
+  <div class="consent-inner">
+    <div class="consent-text">
+      <strong id="consent-title">Confidentialité — Loi 25</strong>
+      <p id="consent-desc">
+        Ce site utilise <strong>Google Analytics</strong> (mesure d'audience) et <strong>Calendly</strong>
+        (prise de rendez-vous), qui déposent des témoins (cookies) sur votre appareil.
+        Vous pouvez accepter, refuser, ou modifier votre choix à tout moment depuis le pied de page.
+        <a href="/confidentialite">En savoir plus</a>.
+      </p>
+    </div>
+    <div class="consent-actions">
+      <button type="button" id="consent-refuse" class="consent-btn consent-btn-secondary">Refuser</button>
+      <button type="button" id="consent-accept" class="consent-btn consent-btn-primary">Accepter</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .consent-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: var(--ink, #1a1a1a);
+    color: #fff;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+    animation: consent-slide-up 0.35s ease-out;
+  }
+
+  @keyframes consent-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .consent-inner {
+    max-width: 1300px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .consent-text {
+    flex: 1 1 320px;
+    min-width: 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .consent-text strong#consent-title {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+  }
+
+  .consent-text p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .consent-text a {
+    color: var(--clay, #c47a52);
+    text-decoration: underline;
+  }
+
+  .consent-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .consent-btn {
+    padding: 0.65rem 1.4rem;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  }
+
+  .consent-btn:focus-visible {
+    outline: 2px solid var(--clay, #c47a52);
+    outline-offset: 2px;
+  }
+
+  .consent-btn-primary {
+    background: var(--clay, #c47a52);
+    color: #fff;
+  }
+  .consent-btn-primary:hover {
+    background: var(--clay-dk, #a36540);
+  }
+
+  .consent-btn-secondary {
+    background: transparent;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+  .consent-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.55);
+  }
+
+  @media (max-width: 700px) {
+    .consent-banner {
+      padding: 0.9rem 1rem;
+    }
+    .consent-inner {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.85rem;
+    }
+    .consent-actions {
+      width: 100%;
+    }
+    .consent-btn {
+      flex: 1;
+    }
+  }
+</style>

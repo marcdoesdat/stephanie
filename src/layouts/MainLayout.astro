@@ -1,5 +1,6 @@
 ---
 import SEO from '../components/SEO.astro';
+import ConsentBanner from '../components/ConsentBanner.astro';
 import { loadSiteConfig } from '../config';
 import '../styles/global.css';
 
@@ -49,19 +50,19 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       data-domains={config.site_url.replace(/^https?:\/\//, '')}
     ></script>
 
-    <!-- Google tag (gtag.js) -->
-    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-KFGH2CR8SJ"></script>
-    <script is:inline defer src="/js/gtag-init.js"></script>
-
-    <!-- Calendly -->
+    <!-- Calendly : la feuille de styles est dépourvue de cookies, donc chargée sans consentement.
+         Les scripts Google Analytics + Calendly sont chargés conditionnellement par /js/consent.js
+         après acceptation explicite (conformité Loi 25). -->
     <link rel="stylesheet" href="https://assets.calendly.com/assets/external/widget.css" />
-    <script is:inline async src="https://assets.calendly.com/assets/external/widget.js"></script>
-    <script is:inline defer src="/js/calendly-init.js"></script>
+
+    <!-- Bannière de consentement Loi 25 : gère le chargement conditionnel de GA + Calendly -->
+    <script is:inline defer src="/js/consent.js"></script>
   </head>
   <body data-calendly-url={config.calendly_url}>
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
     <slot />
     <a href={config.calendly_url} data-calendly class="mobile-sticky-cta" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">Prendre rendez-vous</a>
+    <ConsentBanner />
   </body>
 </html>
 
