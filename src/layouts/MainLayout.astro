@@ -40,6 +40,15 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       data-website-id="9a2bb5e1-afd5-4d94-a89f-5584d5c44b12"
       data-domains={config.site_url.replace(/^https?:\/\//, '')}
     ></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-KFGH2CR8SJ"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-KFGH2CR8SJ');
+    </script>
   </head>
   <body>
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
