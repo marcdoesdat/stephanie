@@ -61,8 +61,76 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
   <body data-calendly-url={config.calendly_url}>
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
     <slot />
-    <a href={config.calendly_url} data-calendly class="mobile-sticky-cta" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">Prendre rendez-vous</a>
+    <a href={config.calendly_url} data-calendly class="mobile-sticky-cta" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">
+      <span class="sticky-label">Prendre rendez-vous</span>
+    </a>
     <ConsentBanner />
+
+    <!-- Sticky scroll-aware + état conversion -->
+    <script is:inline>
+      (function() {
+        const sticky = document.querySelector('.mobile-sticky-cta');
+        if (!sticky) return;
+
+        // --- Scroll-aware: hide on scroll down, show on scroll up ---
+        let lastY = window.scrollY;
+        let ticking = false;
+        const SCROLL_THRESHOLD = 8; // px minimum pour déclencher
+
+        function onScroll() {
+          const y = window.scrollY;
+          const delta = y - lastY;
+          if (Math.abs(delta) < SCROLL_THRESHOLD) return;
+
+          if (delta > 0) {
+            // scrolling down → hide
+            sticky.classList.add('sticky-hidden');
+          } else {
+            // scrolling up → show
+            sticky.classList.remove('sticky-hidden');
+          }
+          lastY = y;
+        }
+
+        window.addEventListener('scroll', () => {
+          if (!ticking) {
+            requestAnimationFrame(() => {
+              onScroll();
+              ticking = false;
+            });
+            ticking = true;
+          }
+        }, { passive: true });
+
+        // --- État de conversion /outils/ : discret → plein gaz ---
+        // Si l'utilisateur a déjà déverrouillé une simulation (localStorage) ou
+        // si un composant a marqué body[data-outils-converted], on passe en mode "converti".
+        function checkConverted() {
+          if (
+            document.body.dataset.outilsConverted === 'true' ||
+            localStorage.getItem('sim_unlocked') === '1' ||
+            localStorage.getItem('calc_email_sent') === '1' ||
+            localStorage.getItem('penalite_email_sent') === '1'
+          ) {
+            sticky.classList.add('sticky-converted');
+          }
+        }
+
+        // Vérifie au chargement
+        checkConverted();
+
+        // Observe les changements d'attribut sur body (quand un composant marque la conversion)
+        const observer = new MutationObserver(() => {
+          checkConverted();
+        });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['data-outils-converted'] });
+
+        // Écoute aussi un event custom pour être plus réactif
+        window.addEventListener('outils:converted', () => {
+          sticky.classList.add('sticky-converted');
+        });
+      })();
+    </script>
   </body>
 </html>
 
@@ -129,7 +197,8 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
 
   @media (max-width: 900px) {
     body {
-      padding-bottom: calc(4.7rem + env(safe-area-inset-bottom));
+      /* Hauteur de la sticky bar + safe area */
+      padding-bottom: calc(3.4rem + env(safe-area-inset-bottom));
     }
 
     .mobile-sticky-cta {
@@ -137,29 +206,62 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       display: flex;
       align-items: center;
       justify-content: center;
-      left: 0.9rem;
-      right: 0.9rem;
-      max-width: 28rem;
-      margin: 0 auto;
-      bottom: calc(0.75rem + env(safe-area-inset-bottom));
+      left: 0;
+      right: 0;
+      bottom: 0;
       z-index: 1000;
-      min-height: 2.95rem;
-      border-radius: 999px;
+      height: 52px;
       text-decoration: none;
-      font-weight: 700;
+      font-family: "DM Sans", sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
       letter-spacing: 0.02em;
+      color: var(--clay);
+      background: rgba(253, 250, 246, 0.97);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1.5px solid var(--border);
+      box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.06);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  background 0.3s,
+                  color 0.3s,
+                  box-shadow 0.3s,
+                  border-color 0.3s;
+      padding: 0 1rem;
+      padding-bottom: env(safe-area-inset-bottom);
+      gap: 0.5rem;
+    }
+
+    /* Scroll-aware : caché au scroll vers le bas */
+    .mobile-sticky-cta.sticky-hidden {
+      transform: translateY(calc(100% + env(safe-area-inset-bottom)));
+    }
+
+    /* --- État converti (après capture courriel sur /outils/) : plein gaz --- */
+    .mobile-sticky-cta.sticky-converted {
       color: #fff;
       background: linear-gradient(135deg, var(--clay), #b56f4c);
-      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+      border-top-color: transparent;
+      box-shadow: 0 -4px 24px rgba(196, 122, 82, 0.35);
+      font-weight: 700;
+    }
+
+    /* Effet hover subtil */
+    .mobile-sticky-cta:active {
+      background: rgba(240, 232, 218, 0.97);
+    }
+    .mobile-sticky-cta.sticky-converted:active {
+      background: linear-gradient(135deg, var(--clay-dk), #9e5f3e);
     }
   }
 
   @media (max-width: 420px) {
     .mobile-sticky-cta {
-      font-size: 0.92rem;
-      min-height: 2.85rem;
-      left: 0.7rem;
-      right: 0.7rem;
+      font-size: 0.82rem;
+      height: 48px;
+    }
+    body {
+      padding-bottom: calc(3.1rem + env(safe-area-inset-bottom));
     }
   }
 </style>

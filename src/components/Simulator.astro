@@ -407,6 +407,10 @@ const { defaultRate = 3.79 } = Astro.props;
     function unlockGate() {
       simGate.classList.remove('locked');
       simGate.classList.add('unlocked');
+
+      // Signaler la conversion au sticky CTA
+      document.body.dataset.outilsConverted = 'true';
+      window.dispatchEvent(new CustomEvent('outils:converted'));
     }
 
     if (localStorage.getItem('sim_unlocked') === '1') {

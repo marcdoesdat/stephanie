@@ -438,6 +438,11 @@ const { defaultRate = 4.99 } = Astro.props;
         nameInput.value = '';
         phoneInput.value = '';
         emailInput.value = '';
+
+        // Signaler la conversion au sticky CTA
+        document.body.dataset.outilsConverted = 'true';
+        localStorage.setItem('calc_email_sent', '1');
+        window.dispatchEvent(new CustomEvent('outils:converted'));
       } catch {
         emailMsg.textContent   = 'Impossible d\'envoyer le résumé pour le moment. Veuillez réessayer.';
         emailMsg.style.display = '';

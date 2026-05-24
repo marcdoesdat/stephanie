@@ -559,6 +559,15 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     const obs = new IntersectionObserver((entries) => entries.forEach((x) => { if (x.isIntersecting) { x.target.classList.add('visible'); obs.unobserve(x.target); } }), { threshold: 0.12 });
     fadeEls.forEach((el) => obs.observe(el));
     window.setTimeout(() => { fadeEls.forEach((el) => el.classList.add('visible')); }, 1000);
+
+    // Signaler la conversion au sticky CTA lors de la soumission du formulaire de capture
+    const captureForm = document.querySelector('.penalite-capture-form');
+    if (captureForm) {
+      captureForm.addEventListener('submit', () => {
+        document.body.dataset.outilsConverted = 'true';
+        localStorage.setItem('penalite_email_sent', '1');
+      });
+    }
   });
 </script>
 
