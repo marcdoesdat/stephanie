@@ -62,18 +62,18 @@ function fmtRate(val: number | null | undefined): string {
         <div class="hero-blob blob-1"></div>
         <div class="hero-blob blob-2"></div>
         
-        <div class="floating-card card-tl">
-          <div class="card-sm">Taux variable</div>
-          <div class="card-val">Dès {fmtRate(baseRate)}</div>
-        </div>
-        
-        <div class="floating-card card-tr">
-          <img src="/images/bonlogohypotheca.svg" alt="Hypotheca" style="height:56px;width:auto;display:block;" loading="lazy" />
-        </div>
-
-        <div class="floating-card card-br">
-          <div class="card-sm">Satisfaction</div>
-          <div class="card-val">⭐ 5&nbsp;/&nbsp;5</div>
+        <div class="hero-cards-ribbon">
+          <div class="ribbon-card">
+            <span class="card-sm">Taux variable</span>
+            <span class="card-val">Dès {fmtRate(baseRate)}</span>
+          </div>
+          <div class="ribbon-card ribbon-card--logo">
+            <img src="/images/hypotheca-couleur.png" alt="Hypotheca" style="height:76px;width:auto;display:block;" loading="lazy" />
+          </div>
+          <div class="ribbon-card">
+            <span class="card-sm">Satisfaction</span>
+            <span class="card-val">⭐ 5&nbsp;/&nbsp;5</span>
+          </div>
         </div>
       </div>
     </div>
@@ -150,38 +150,64 @@ function fmtRate(val: number | null | undefined): string {
     }
   }
 
-  /* Cartes flottantes — apparition cascadée puis flottement continu */
-  .floating-card {
+  /* --- Ruban de cartes (glass ribbon) en bas de la photo --- */
+  .hero-cards-ribbon {
+    position: absolute;
+    bottom: -6px;
+    left: 8%;
+    right: 8%;
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 18px;
+    padding: 0.55rem 0.65rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+    z-index: 3;
     animation:
-      appear-card 0.55s cubic-bezier(0.16, 1, 0.3, 1) both,
-      float 4s ease-in-out infinite;
+      appear-ribbon 0.55s cubic-bezier(0.16, 1, 0.3, 1) both,
+      float-ribbon 5s ease-in-out 0.6s infinite;
   }
 
-  .card-tl {
-    animation-delay: 0.54s, 1.1s;
+  @keyframes appear-ribbon {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
-  .card-tr {
-    animation-delay: 0.67s, 1.3s;
+  @keyframes float-ribbon {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
   }
 
-  .card-br {
-    animation-delay: 0.8s, 1.5s;
+  .ribbon-card {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    text-align: center;
+    padding: 0.35rem 0.3rem;
   }
 
-  .floating-card.card-tr {
-    padding: 0.8rem;
+  .ribbon-card .card-sm {
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
 
-  @keyframes appear-card {
-    0% {
-      opacity: 0;
-      transform: translateY(8px) scale(0.95);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+  .ribbon-card .card-val {
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .ribbon-card--logo {
+    flex: 0 0 auto;
+    padding: 0.15rem 0.5rem;
   }
 
   @media (max-width: 900px) {
@@ -207,21 +233,16 @@ function fmtRate(val: number | null | undefined): string {
       width: 108px;
       height: 108px;
     }
-    .floating-card.card-tl {
-      left: -5%;
-      top: -2%;
-      transform: scale(0.85);
+    .hero-cards-ribbon {
+      left: 4%;
+      right: 4%;
+      border-radius: 14px;
+      padding: 0.45rem 0.5rem;
+      gap: 0.3rem;
     }
-    .floating-card.card-tr {
-      right: -5%;
-      top: -2%;
-      transform: scale(0.85);
-    }
-    .floating-card.card-br {
-      right: -5%;
-      bottom: 8%;
-      transform: scale(0.85);
-    }
+    .ribbon-card .card-sm { font-size: 0.6rem; }
+    .ribbon-card .card-val { font-size: 0.8rem; }
+    .ribbon-card--logo img { height: 60px !important; }
   }
 
   @media (max-width: 520px) {
@@ -239,28 +260,24 @@ function fmtRate(val: number | null | undefined): string {
       max-width: 260px;
     }
     .hero-blob.blob-1 {
-      width: 120px;
-      height: 120px;
+      width: 100px;
+      height: 100px;
     }
     .hero-blob.blob-2 {
-      width: 108px;
-      height: 108px;
+      width: 88px;
+      height: 88px;
     }
-    .floating-card.card-tl {
-      left: -2%;
-      top: -6%;
-      transform: scale(0.75);
+    .hero-cards-ribbon {
+      left: 0;
+      right: 0;
+      bottom: -4px;
+      border-radius: 12px;
+      padding: 0.4rem 0.4rem;
+      gap: 0.2rem;
     }
-    .floating-card.card-tr {
-      right: -2%;
-      top: -6%;
-      transform: scale(0.75);
-    }
-    .floating-card.card-br {
-      right: -2%;
-      bottom: 5%;
-      transform: scale(0.75);
-    }
+    .ribbon-card .card-sm { font-size: 0.56rem; }
+    .ribbon-card .card-val { font-size: 0.74rem; }
+    .ribbon-card--logo img { height: 52px !important; }
   }
 
   @media (max-width: 390px) {
