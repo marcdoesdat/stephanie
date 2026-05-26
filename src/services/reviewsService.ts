@@ -5,6 +5,12 @@
  * Google peut le modifier lors d'une mise à jour de la fiche business.
  * Voir : https://developers.google.com/maps/documentation/places/web-service/place-id
  *
+ * ⚠️  IMPORTANT — La clé API GOOGLE_PLACES_API_KEY NE DOIT PAS avoir de
+ *     restriction HTTP referrer. Les appels se font côté serveur (SSR Netlify),
+ *     donc la requête ne provient pas d'un navigateur et n'a pas d'en-tête
+ *     Referer/Ongin correspondant au domaine. Préférez une restriction IP
+ *     (plages Netlify) ou aucune restriction.
+ *
  * Architecture inspirée de ratesService.ts :
  *   - Netlify Blobs (prod) / fichier local (dev)
  *   - TTL 24 h, stale max 7 jours
@@ -276,13 +282,18 @@ async function fetchGoogleReviews(
   placeId: string
 ): Promise<PlacesApiResponse> {
   const url = buildPlacesUrl(placeId);
-  const fieldMask = 'displayName,rating,userRatingCount,reviews';
+  // Seuls les champs utilisés : rating, userRatingCount, reviews
+  // displayName n'est PAS inclus — il déclenche le SKU « Pro » inutilement
+  // reviews déclenche le SKU « Enterprise + Atmosphere »
+  const fieldMask = 'rating,userRatingCount,reviews';
 
   const headers: Record<string, string> = {
     'X-Goog-Api-Key': apiKey,
     'X-Goog-FieldMask': fieldMask,
     'Accept': 'application/json',
   };
+
+  debug('Appel Places API →', url.replace(placeId, 'PLACE_ID'));
 
   const res = await fetch(url, {
     headers,
@@ -291,10 +302,13 @@ async function fetchGoogleReviews(
 
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new Error(`Places API HTTP ${res.status} : ${body.slice(0, 300)}`);
+    const detail = body.slice(0, 500);
+    console.error(`[reviewsService] Places API HTTP ${res.status} : ${detail}`);
+    throw new Error(`Places API HTTP ${res.status} : ${detail}`);
   }
 
   const data = await res.json() as PlacesApiResponse;
+  debug(`Places API OK : rating=${data.rating}, userRatingCount=${data.userRatingCount}, reviews=${data.reviews?.length ?? 0}`);
   return data;
 }
 
@@ -346,7 +360,10 @@ export async function getReviews(): Promise<GoogleReviews> {
 
   // Sans Place ID ni clé API, on passe directement au fallback
   if (!placeId || !apiKey) {
-    debug('Place ID ou clé API manquant, utilisation du fallback');
+    const missing: string[] = [];
+    if (!placeId) missing.push('google_place_id (siteConfig.json)');
+    if (!apiKey) missing.push('GOOGLE_PLACES_API_KEY (env)');
+    console.warn(`[reviewsService] ${missing.join(' + ')} manquant(s) → fallback statique`);
     return loadFallback();
   }
 
@@ -361,10 +378,11 @@ export async function getReviews(): Promise<GoogleReviews> {
     const data = await fetchGoogleReviews(apiKey, placeId);
     const result = formatApiResponse(data, 'fresh');
     await writeCache(result);
-    debug(`Avis frais : ${result.totalReviews} avis, note ${result.rating}`);
+    console.log(`[reviewsService] Avis frais : ${result.totalReviews} avis, note ${result.rating}`);
     return result;
   } catch (err) {
-    console.warn('[reviewsService] Échec du fetch Places API :', err);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.warn(`[reviewsService] Échec fetch Places API : ${errMsg}`);
 
     // 3. Cache stale ?
     if (
@@ -372,12 +390,13 @@ export async function getReviews(): Promise<GoogleReviews> {
       staleCache.ageMs <= CACHE_STALE_MAX_MS &&
       staleCache.reviews.source !== 'fallback'
     ) {
-      debug(`Cache stale utilisé (âge : ${Math.round(staleCache.ageMs / 60_000)} min)`);
+      const ageMin = Math.round(staleCache.ageMs / 60_000);
+      console.log(`[reviewsService] Cache stale (âge : ${ageMin} min)`);
       return { ...staleCache.reviews, source: 'stale' };
     }
 
     // 4. Fallback
-    debug('Aucun cache disponible, fallback statique');
+    console.warn('[reviewsService] Aucun cache → fallbackReviews.json');
     return loadFallback();
   }
 }

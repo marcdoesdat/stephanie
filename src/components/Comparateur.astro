@@ -1,11 +1,11 @@
 ---
 interface Props {
   defaultRate?: number;
+  afficheRate?: number | null;
   fetchedAt?: string | null;
 }
-const { defaultRate = 4.99, fetchedAt = null } = Astro.props;
-const BANK_RATE_SPREAD = 0.20;
-const displayedAfficheRate = Math.round((defaultRate + BANK_RATE_SPREAD) * 100) / 100;
+const { defaultRate = 4.99, afficheRate = null, fetchedAt = null } = Astro.props;
+const displayedAfficheRate = afficheRate ?? defaultRate + 1;
 
 import { calcPaiement, formatMoney } from '../utils/mortgageCalc';
 
@@ -44,7 +44,7 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
       <div class="section-tag">Banque vs courtier</div>
       <h2 class="section-title">La vraie différence, <em>en chiffres.</em></h2>
       <p class="section-sub">
-        Les banques affichent des taux standards. Mon rôle est d'utiliser mon accès privilégié à plus de 20 prêteurs — incluant des institutions non accessibles au public — pour négocier un taux préférentiel que vous n'obtiendriez pas seul en succursale.
+        Les banques affichent des taux standards. Mon rôle est d'utiliser mon accès privilégié à plus de 20 prêteurs — incluant des institutions non accessibles au public — pour négocier un taux souvent inférieur à celui affiché en succursale.
       </p>
     </div>
 
