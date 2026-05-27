@@ -1,6 +1,6 @@
 ---
 import { Image } from 'astro:assets';
-import stephaniePhoto from '../assets/stephanie.jpg';
+import stephaniePhoto from '../assets/stephanie.webp';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
@@ -68,7 +68,7 @@ function fmtRate(val: number | null | undefined): string {
             <span class="card-val">Dès {fmtRate(baseRate)}</span>
           </div>
           <div class="ribbon-card ribbon-card--logo">
-            <img src="/images/hypotheca-couleur.svg" alt="Hypotheca" style="height:76px;width:auto;display:block;" loading="lazy" />
+            <img src="/images/hypotheca-couleur.svg" alt="Hypotheca" width="76" height="76" style="display:block;" loading="lazy" />
           </div>
           <div class="ribbon-card">
             <span class="card-sm">Satisfaction</span>
@@ -242,7 +242,7 @@ function fmtRate(val: number | null | undefined): string {
     }
     .ribbon-card .card-sm { font-size: 0.6rem; }
     .ribbon-card .card-val { font-size: 0.8rem; }
-    .ribbon-card--logo img { height: 60px !important; }
+    .ribbon-card--logo img { height: 60px; }
   }
 
   @media (max-width: 520px) {
@@ -277,7 +277,7 @@ function fmtRate(val: number | null | undefined): string {
     }
     .ribbon-card .card-sm { font-size: 0.56rem; }
     .ribbon-card .card-val { font-size: 0.74rem; }
-    .ribbon-card--logo img { height: 52px !important; }
+    .ribbon-card--logo img { height: 52px; }
   }
 
   @media (max-width: 390px) {
