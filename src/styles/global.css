@@ -18,7 +18,7 @@
   --radius-lg:24px;
 }
 html{scroll-behavior:smooth}
-body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);font-size:16px;line-height:1.65;overflow-x:hidden}
+body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);font-size:16px;line-height:1.65;overflow-x:clip}
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important;scroll-behavior:auto!important}
@@ -46,6 +46,39 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
   .nav-links{gap:.85rem}
   .nav-links a{font-size:.74rem;letter-spacing:.02em}
   .nav-cta{padding:.5rem 1rem}
+}
+
+/* MOBILE JUMP NAV — barre d'ancres collante, mobile uniquement */
+#mobile-jump-nav{display:none}
+@media(max-width:900px){
+  #mobile-jump-nav{
+    display:block;position:sticky;top:68px;z-index:190;
+    background:rgba(253,250,246,0.97);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 4px 12px rgba(0,0,0,0.04);
+  }
+  #mobile-jump-nav .jump-track{
+    display:flex;gap:.45rem;list-style:none;margin:0;
+    padding:.55rem 1rem;overflow-x:auto;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+  }
+  #mobile-jump-nav .jump-track::-webkit-scrollbar{display:none}
+  #mobile-jump-nav .jump-link{
+    flex:0 0 auto;scroll-snap-align:center;
+    font-size:.82rem;font-weight:500;color:var(--muted);
+    text-decoration:none;white-space:nowrap;
+    padding:.42rem .85rem;border-radius:50px;
+    border:1px solid var(--border);background:var(--white);
+    transition:color .2s,background .2s,border-color .2s;
+  }
+  #mobile-jump-nav .jump-link:hover,
+  #mobile-jump-nav .jump-link:focus-visible{color:var(--ink);border-color:var(--clay)}
+  #mobile-jump-nav .jump-link.is-active{
+    color:var(--white);background:var(--clay);border-color:var(--clay);font-weight:600;
+  }
+  /* Décale l'ancrage des sections sous la nav + barre d'ancres collantes */
+  #main-content section[id],
+  #main-content [id]{scroll-margin-top:124px}
 }
 
 /* HERO */
@@ -639,6 +672,19 @@ td:last-child{text-align:center}
 .messenger-btn:hover{transform:scale(1.1);box-shadow:0 6px 30px rgba(0,132,255,.6)}
 .messenger-tooltip{position:absolute;right:70px;white-space:nowrap;background:var(--ink);color:white;font-size:.72rem;padding:.4rem .9rem;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s}
 .messenger-btn:hover .messenger-tooltip{opacity:1}
+
+/* BOUTON RETOUR EN HAUT (mobile) */
+#back-to-top{
+  position:fixed;bottom:5.3rem;left:1rem;z-index:300;
+  width:46px;height:46px;border-radius:50%;
+  border:1px solid var(--border);background:rgba(253,250,246,0.95);backdrop-filter:blur(8px);
+  color:var(--ink);display:none;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.12);
+  opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease;
+}
+#back-to-top.show{display:flex;opacity:1;transform:translateY(0)}
+#back-to-top:hover{border-color:var(--clay);color:var(--clay)}
+@media(min-width:901px){#back-to-top{display:none!important}}
 
 /* FORM ERROR */
 .form-error{display:none;background:#fef2f2;color:#c0392b;padding:.8rem 1rem;border-radius:10px;font-size:.82rem;margin-top:.8rem;margin-bottom:.8rem;border:1px solid #fca5a5}
@@ -1315,6 +1361,24 @@ footer strong{color:rgba(255,255,255,.85)}
   .taux-footer{flex-direction:column}
   .messenger-btn{bottom:5.3rem;right:1rem;width:52px;height:52px}
   .messenger-tooltip{display:none}
+
+  /* --- Condensation mobile : sections plus compactes (sans retirer de contenu) --- */
+  section{padding:2.75rem 1.5rem}
+  .section-title{margin-bottom:.75rem}
+  .section-sub{font-size:.95rem}
+
+  /* Outils teaser : cartes plus compactes, grille plus serrée */
+  #outils-teaser{padding-bottom:2.25rem}
+  #outils-teaser .outils-teaser-grid{margin-top:1.5rem;gap:1rem}
+  #outils-teaser .outils-card{padding:1.35rem;min-height:0;gap:.6rem}
+  #outils-teaser .outils-card-title{font-size:1.2rem}
+  #outils-teaser .outils-card p{font-size:.9rem;line-height:1.6}
+  #outils-teaser .outils-teaser-cta{margin-top:1.5rem}
+
+  /* Services : cartes plus compactes, grille plus serrée */
+  .services-grid{margin-top:2rem;gap:1rem}
+  .service-card{padding:1.5rem 1.35rem}
+  .service-icon{width:44px;height:44px;margin-bottom:1rem}
 }
 
 @media(max-width:520px){

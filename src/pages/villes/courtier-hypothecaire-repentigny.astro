@@ -20,7 +20,7 @@ const STEPHANIE_IMAGE = `${config.site_url}/_astro/stephanie.Cm30Blgc.jpg`;
 // Témoignages — placeholders éditables. Garder en haut du fichier pour faciliter l'édition.
 const testimonials = [
   {
-    citation: "Stéphanie a pris le temps de tout nous expliquer pour notre première maison à Repentigny. On a eu une réponse en moins de 24 h et un taux qu'on n'aurait jamais obtenu seuls à la banque.",
+    citation: "Stéphanie a pris le temps de tout nous expliquer pour notre première maison à Repentigny. On a eu une réponse rapide et un taux qu'on n'aurait jamais obtenu seuls à la banque.",
     prenom: "Marie-Claude",
     nomInitiale: "L.",
     transaction: "Premier achat",
@@ -61,7 +61,7 @@ const faq = [
   },
   {
     q: "Combien de temps pour obtenir une pré-approbation ?",
-    a: `Pour un dossier complet (documents fournis), je vise une <strong>réponse généralement en 24 h ouvrables</strong>. Une pré-approbation est valide jusqu'à 120 jours, ce qui vous laisse le temps de magasiner sereinement. Premier contact généralement en 24 h ouvrables après votre demande.`
+    a: `Pour un dossier complet (documents fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. Une pré-approbation est valide jusqu'à 120 jours, ce qui vous laisse le temps de magasiner sereinement. Je vous recontacte dès que possible après votre demande.`
   },
   {
     q: "Puis-je obtenir une hypothèque comme travailleur autonome à Repentigny ?",
@@ -135,7 +135,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
 <MainLayout
   fullTitle="Courtière hypothécaire à Repentigny – Stéphanie Weyman"
-  description="Courtière hypothécaire à Repentigny. Pré-approbation, achat, renouvellement, refinancement. Accès à 20+ prêteurs. Service gratuit. Réponse sous 24h."
+  description="Courtière hypothécaire à Repentigny. Pré-approbation, achat, renouvellement, refinancement. Accès à 20+ prêteurs. Service gratuit. Réponse rapide."
 >
   <Fragment slot="head">
     <link rel="canonical" href={PAGE_URL} />
@@ -171,7 +171,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
               </li>
               <li>
                 <span class="rep-trust-icon" aria-hidden="true">⏱️</span>
-                <span>Premier contact généralement en <strong>24 h ouvrables</strong></span>
+                <span>Premier contact <strong>dans les meilleurs délais</strong></span>
               </li>
             </ul>
 
@@ -393,7 +393,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <div class="rep-inner">
         <div class="rep-final-header">
           <h2 class="rep-section-title rep-section-title--center">Prêt à obtenir votre pré-approbation à Repentigny ?</h2>
-          <p class="rep-final-sub">Aucun engagement. Aucun frais. Réponse généralement en 24 h ouvrables.</p>
+          <p class="rep-final-sub">Aucun engagement. Aucun frais. Réponse dans les meilleurs délais.</p>
         </div>
       </div>
       <Contact />

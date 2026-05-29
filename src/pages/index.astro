@@ -1,6 +1,7 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 import Nav from '../components/Nav.astro';
+import MobileJumpNav from '../components/MobileJumpNav.astro';
 import Hero from '../components/Hero.astro';
 import About from '../components/About.astro';
 import Services from '../components/Services.astro';
@@ -30,7 +31,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
 <MainLayout
   fullTitle="Courtière hypothécaire Repentigny – Stéphanie Weyman"
-  description="Pré-approbation hypothécaire à Repentigny. Achat, renouvellement, refinancement, travailleurs autonomes. Réponse sous 24h – Stéphanie Weyman, AMF."
+  description="Pré-approbation hypothécaire à Repentigny. Achat, renouvellement, refinancement, travailleurs autonomes. Réponse rapide – Stéphanie Weyman, AMF."
 >
   <!-- JSON-LD : AggregateRating (émis seulement si les avis sont live/cache, pas fallback) -->
   {googleReviews.source !== 'fallback' && (
@@ -56,6 +57,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
   <MessengerBtn />
   <Nav />
+  <MobileJumpNav />
   <main id="main-content">
     <Hero baseRate={hypothecaVariable} />
 

@@ -64,7 +64,7 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       :root{--sand:#f7f2eb;--warm:#f0e8da;--clay:#c47a52;--clay-dk:#a85f38;--forest:#3d5a4a;--ink:#1f1e1c;--muted:#6a5f50;--border:#e3d9cc;--white:#fdfaf6;--shadow-sm:0 4px 16px rgba(0,0,0,.06);--shadow-clay:0 8px 24px rgba(196,122,82,.4);--radius-sm:12px;--radius-md:20px}
       *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
       [hidden]{display:none!important}
-      html{scroll-behavior:smooth}body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);font-size:16px;line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+      html{scroll-behavior:smooth}body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);font-size:16px;line-height:1.65;overflow-x:clip;-webkit-font-smoothing:antialiased}
       @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
       .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
       .skip-link{position:absolute;top:-40px;left:.5rem;z-index:10000;padding:.6rem 1rem;background:var(--ink);color:#fff;font-weight:600;border-radius:6px;text-decoration:none;transition:top .15s}
@@ -104,6 +104,11 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
     <a href={config.calendly_url} data-calendly class="mobile-sticky-cta" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">
       <span class="sticky-label">Prendre rendez-vous</span>
     </a>
+    <button id="back-to-top" type="button" aria-label="Revenir en haut de la page" hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 19V5M5 12l7-7 7 7"/>
+      </svg>
+    </button>
     <ConsentBanner />
 
     <!-- Sticky scroll-aware + état conversion -->
@@ -169,6 +174,37 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
         window.addEventListener('outils:converted', () => {
           sticky.classList.add('sticky-converted');
         });
+      })();
+    </script>
+
+    <!-- Bouton « revenir en haut » (mobile) -->
+    <script is:inline>
+      (function() {
+        const btn = document.getElementById('back-to-top');
+        if (!btn) return;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let visible = false;
+        let ticking = false;
+
+        function update() {
+          const show = window.scrollY > window.innerHeight * 1.5;
+          if (show !== visible) {
+            visible = show;
+            btn.hidden = !show;
+            btn.classList.toggle('show', show);
+          }
+          ticking = false;
+        }
+
+        window.addEventListener('scroll', () => {
+          if (!ticking) { requestAnimationFrame(update); ticking = true; }
+        }, { passive: true });
+
+        btn.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+        });
+
+        update();
       })();
     </script>
   </body>
