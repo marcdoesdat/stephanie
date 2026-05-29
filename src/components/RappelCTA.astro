@@ -1,0 +1,80 @@
+---
+// Carte CTA réutilisable — à insérer en bas des articles de blogue liés au
+// renouvellement / refinancement. Renvoie vers le formulaire de rappel (/rappel).
+//
+// Usage minimal :
+//   import RappelCTA from '../../components/RappelCTA.astro';
+//   <RappelCTA />
+//
+// Personnalisable :
+//   <RappelCTA
+//     titre="Votre terme arrive à échéance ?"
+//     texte="Le meilleur moment pour magasiner se situe 4 à 6 mois avant l'échéance."
+//     cta="Être rappelé·e au bon moment"
+//   />
+
+interface Props {
+  titre?: string;
+  texte?: string;
+  cta?: string;
+}
+
+const {
+  titre = 'Votre hypothèque arrive à échéance ?',
+  texte = "Le meilleur moment pour magasiner se situe 4 à 6 mois avant l'échéance. Laissez vos coordonnées : je vous rappelle personnellement au bon moment.",
+  cta = 'Être rappelé·e au bon moment',
+} = Astro.props;
+---
+
+<aside class="rappel-cta" aria-label="Demande de rappel">
+  <div class="rappel-cta-body">
+    <h2 class="rappel-cta-title">{titre}</h2>
+    <p class="rappel-cta-text">{texte}</p>
+  </div>
+  <a href="/rappel" class="btn-cta rappel-cta-btn">
+    <span>{cta}</span>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+  </a>
+</aside>
+
+<style>
+  .rappel-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.75rem;
+    flex-wrap: wrap;
+    background: var(--warm);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--clay);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.5rem, 4vw, 2.25rem);
+    margin: 2.5rem 0;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .rappel-cta-body { flex: 1 1 280px; }
+
+  .rappel-cta-title {
+    font-family: "Lora", serif;
+    font-size: clamp(1.3rem, 2.5vw, 1.6rem);
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0 0 .5rem;
+  }
+
+  .rappel-cta-text {
+    font-size: .95rem;
+    line-height: 1.7;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .rappel-cta-btn { flex: 0 0 auto; white-space: nowrap; }
+
+  @media (max-width: 640px) {
+    .rappel-cta { flex-direction: column; align-items: stretch; gap: 1.25rem; }
+    .rappel-cta-btn { justify-content: center; }
+  }
+</style>

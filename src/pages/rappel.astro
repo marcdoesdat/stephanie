@@ -1,0 +1,347 @@
+---
+export const prerender = true;
+
+import MainLayout from '../layouts/MainLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import MessengerBtn from '../components/MessengerBtn.astro';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+---
+
+<MainLayout
+  title="Rappel renouvellement / refinancement hypothécaire | Stéphanie Weyman"
+  description="Votre hypothèque arrive à échéance ? Le meilleur moment pour magasiner se situe 4 à 6 mois avant. Laissez vos coordonnées : Stéphanie Weyman, courtière hypothécaire, vous contactera au bon moment. Gratuit, sans engagement."
+>
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+    <section id="rappel" class="rappel-section">
+      <div class="section-inner rappel-inner">
+
+        <div class="rappel-intro fade-up">
+          <div class="section-tag">Renouvellement · Refinancement</div>
+          <h1 class="section-title">Soyez rappelé·e <em>au bon moment</em></h1>
+          <p class="section-sub">
+            Le meilleur moment pour magasiner votre hypothèque se situe <strong>4 à 6 mois avant
+            l'échéance</strong> de votre terme — c'est là que vous avez le plus de levier.
+            Laissez-moi vos coordonnées et la date d'échéance&nbsp;: {prenom} vous contactera
+            personnellement au moment idéal. Gratuit, sans engagement.
+          </p>
+        </div>
+
+        <div class="rappel-card fade-up">
+          <form id="rappel-form" novalidate>
+            <!-- Honeypot anti-spam (hors écran, non visible) -->
+            <div class="rappel-hp" aria-hidden="true">
+              <label>Ne pas remplir
+                <input type="text" name="company" tabindex="-1" autocomplete="off" />
+              </label>
+            </div>
+
+            <div class="rappel-field">
+              <label for="rappel-nom">Nom complet <span class="rappel-req">*</span></label>
+              <input type="text" id="rappel-nom" name="nom" required autocomplete="name" placeholder="Marie Tremblay" />
+            </div>
+
+            <div class="rappel-row">
+              <div class="rappel-field">
+                <label for="rappel-courriel">Courriel <span class="rappel-req">*</span></label>
+                <input type="email" id="rappel-courriel" name="courriel" required autocomplete="email" placeholder="marie@exemple.com" />
+              </div>
+              <div class="rappel-field">
+                <label for="rappel-tel">Téléphone <span class="rappel-req">*</span></label>
+                <input type="tel" id="rappel-tel" name="telephone" required autocomplete="tel" placeholder="514 000-0000" />
+              </div>
+            </div>
+
+            <div class="rappel-row">
+              <div class="rappel-field">
+                <label for="rappel-type">Type de demande <span class="rappel-req">*</span></label>
+                <select id="rappel-type" name="type" required>
+                  <option value="" disabled selected>Choisir…</option>
+                  <option value="Renouvellement">Renouvellement</option>
+                  <option value="Refinancement">Refinancement</option>
+                </select>
+              </div>
+              <div class="rappel-field">
+                <label for="rappel-echeance">Échéance du prêt actuel <span class="rappel-opt">(facultatif)</span></label>
+                <input type="month" id="rappel-echeance" name="echeance" />
+              </div>
+            </div>
+
+            <div class="rappel-field">
+              <label for="rappel-institution">Institution actuelle <span class="rappel-opt">(facultatif)</span></label>
+              <input type="text" id="rappel-institution" name="institution" autocomplete="organization" placeholder="Ex. Desjardins, BMO, TD…" />
+            </div>
+
+            <div class="rappel-field">
+              <label for="rappel-details">Détails additionnels <span class="rappel-opt">(facultatif)</span></label>
+              <textarea id="rappel-details" name="details" rows="4" placeholder="Une précision, une question, un détail utile…"></textarea>
+            </div>
+
+            <label class="rappel-consent" for="rappel-consent">
+              <input type="checkbox" id="rappel-consent" name="consentement" value="oui" required />
+              <span>
+                J'accepte que {prenom} me recontacte au sujet de ma demande de suivi hypothécaire.
+                Mes renseignements sont utilisés uniquement à cette fin — voir la
+                <a href="/confidentialite">politique de confidentialité</a>. <span class="rappel-req">*</span>
+              </span>
+            </label>
+
+            <button type="submit" class="btn-cta btn-cta--block" id="rappel-submit">
+              <span class="rappel-submit-label">Demander à être rappelé·e</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+
+            <p class="rappel-note">Gratuit · Sans engagement · Réponse sous 24 h ouvrables</p>
+          </form>
+
+          <!-- Message d'état accessible -->
+          <p id="rappel-status" class="rappel-status" role="status" aria-live="polite" hidden></p>
+
+          <div id="rappel-success" class="rappel-success" hidden>
+            <span class="rappel-success-check" aria-hidden="true">✅</span>
+            <strong>Votre demande est envoyée&nbsp;!</strong>
+            <p>{prenom} vous contactera personnellement au bon moment. Un courriel de confirmation vient de vous être envoyé.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<style>
+  .rappel-section { background: var(--sand); padding: 7rem 1.5rem 5rem; }
+  .rappel-inner { max-width: 720px; margin: 0 auto; }
+
+  .rappel-intro { text-align: center; margin-bottom: 2.5rem; }
+  .rappel-intro .section-tag { margin-bottom: 1rem; }
+  .rappel-intro .section-sub { margin: 1rem auto 0; }
+
+  .rappel-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.5rem, 4vw, 2.75rem);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Honeypot : retiré hors écran sans display:none (les bots l'ignorent moins) */
+  .rappel-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .rappel-field { margin-bottom: 1.25rem; }
+  .rappel-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.1rem;
+  }
+
+  .rappel-field label {
+    display: block;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: .5rem;
+  }
+  .rappel-req { color: var(--clay); }
+  .rappel-opt { text-transform: none; font-weight: 400; letter-spacing: 0; }
+
+  .rappel-field input,
+  .rappel-field select,
+  .rappel-field textarea {
+    width: 100%;
+    padding: .85rem 1.1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: "DM Sans", sans-serif;
+    font-size: .95rem;
+    transition: border-color .2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .rappel-field textarea { resize: vertical; min-height: 96px; line-height: 1.6; }
+  .rappel-field input:focus,
+  .rappel-field select:focus,
+  .rappel-field textarea:focus { outline: none; border-color: var(--clay); }
+  .rappel-field input::placeholder,
+  .rappel-field textarea::placeholder { color: var(--muted); }
+  .rappel-field select { cursor: pointer; }
+  .rappel-field input[aria-invalid="true"],
+  .rappel-field select[aria-invalid="true"] { border-color: var(--clay-dk); }
+
+  .rappel-consent {
+    display: flex;
+    gap: .6rem;
+    align-items: flex-start;
+    margin: .6rem 0 1.4rem;
+    font-size: .82rem;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .rappel-consent input[type="checkbox"] {
+    margin-top: .15rem;
+    flex: 0 0 auto;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--clay);
+  }
+  .rappel-consent a { color: var(--clay); text-decoration: underline; }
+
+  #rappel-submit[disabled] { opacity: .65; cursor: not-allowed; }
+
+  .rappel-note {
+    text-align: center;
+    font-size: .76rem;
+    color: var(--muted);
+    margin-top: 1rem;
+  }
+
+  .rappel-status {
+    margin-top: 1.25rem;
+    padding: .85rem 1.1rem;
+    border-radius: var(--radius-sm);
+    font-size: .88rem;
+    line-height: 1.5;
+  }
+  .rappel-status[data-state="error"] {
+    background: #fbeae3;
+    border: 1px solid var(--clay-dk);
+    color: var(--clay-dk);
+  }
+  .rappel-status[data-state="sending"] {
+    background: var(--warm);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .rappel-success {
+    text-align: center;
+    padding: 1rem 0;
+  }
+  .rappel-success-check { font-size: 2.2rem; display: block; margin-bottom: .5rem; }
+  .rappel-success strong {
+    font-family: "Lora", serif;
+    font-size: 1.4rem;
+    color: var(--forest);
+    display: block;
+    margin-bottom: .5rem;
+  }
+  .rappel-success p { color: var(--muted); line-height: 1.7; font-size: .95rem; }
+
+  @media (max-width: 600px) {
+    .rappel-row { grid-template-columns: 1fr; gap: 0; }
+    .rappel-row .rappel-field { margin-bottom: 1.25rem; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var form = document.getElementById('rappel-form');
+    if (!form) return;
+
+    var btn = document.getElementById('rappel-submit');
+    var label = form.querySelector('.rappel-submit-label');
+    var statusEl = document.getElementById('rappel-status');
+    var successEl = document.getElementById('rappel-success');
+    var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var TEL_RE = /\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d/;
+
+    function setStatus(state, msg) {
+      if (!statusEl) return;
+      if (!state) { statusEl.hidden = true; statusEl.removeAttribute('data-state'); statusEl.textContent = ''; return; }
+      statusEl.hidden = false;
+      statusEl.setAttribute('data-state', state);
+      statusEl.textContent = msg;
+    }
+
+    function fieldInvalid(el, invalid) {
+      if (!el) return;
+      if (invalid) el.setAttribute('aria-invalid', 'true');
+      else el.removeAttribute('aria-invalid');
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var nom = form.elements['nom'];
+      var courriel = form.elements['courriel'];
+      var telephone = form.elements['telephone'];
+      var type = form.elements['type'];
+      var consent = form.elements['consentement'];
+
+      // Validation côté client (le serveur revalide systématiquement)
+      var firstInvalid = null;
+      [nom, courriel, telephone, type, consent].forEach(function (el) { fieldInvalid(el, false); });
+
+      if (!nom.value.trim()) { fieldInvalid(nom, true); firstInvalid = firstInvalid || nom; }
+      if (!EMAIL_RE.test(courriel.value.trim())) { fieldInvalid(courriel, true); firstInvalid = firstInvalid || courriel; }
+      if (!TEL_RE.test(telephone.value.trim())) { fieldInvalid(telephone, true); firstInvalid = firstInvalid || telephone; }
+      if (!type.value) { fieldInvalid(type, true); firstInvalid = firstInvalid || type; }
+      if (!consent.checked) { firstInvalid = firstInvalid || consent; }
+
+      if (firstInvalid) {
+        setStatus('error', "Veuillez remplir les champs requis (nom, courriel, téléphone, type de demande) et cocher la case de consentement.");
+        firstInvalid.focus();
+        return;
+      }
+
+      var payload = {
+        nom: nom.value.trim(),
+        courriel: courriel.value.trim(),
+        telephone: form.elements['telephone'].value.trim(),
+        type: type.value,
+        echeance: form.elements['echeance'].value.trim(),
+        institution: form.elements['institution'].value.trim(),
+        details: form.elements['details'].value.trim(),
+        consentement: consent.checked,
+        company: form.elements['company'].value
+      };
+
+      btn.disabled = true;
+      if (label) label.textContent = 'Envoi en cours…';
+      setStatus('sending', 'Envoi de votre demande…');
+
+      fetch('/api/rappel-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (!data || !data.ok) throw new Error('Réponse inattendue');
+          form.reset();
+          form.hidden = true;
+          setStatus(null);
+          if (successEl) {
+            successEl.hidden = false;
+            successEl.focus && successEl.focus();
+          }
+        })
+        .catch(function () {
+          btn.disabled = false;
+          if (label) label.textContent = 'Demander à être rappelé·e';
+          setStatus('error', "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
+        });
+    });
+  })();
+</script>

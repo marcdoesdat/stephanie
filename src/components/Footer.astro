@@ -24,6 +24,18 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
     {config.adresse}
   </div>
 
+  <div class="footer-tools" role="navigation" aria-label="Outils et ressources">
+    <a href="/outils#simulateur">Simulateur d'emprunt</a>
+    <span class="footer-sep">|</span>
+    <a href="/outils#calculateur">Calculateur de versement</a>
+    <span class="footer-sep">|</span>
+    <a href="/outils#comparateur">Comparateur de taux</a>
+    <span class="footer-sep">|</span>
+    <a href="/outils/calculateur-penalite-hypothecaire">Calculateur de pénalité</a>
+    <span class="footer-sep">|</span>
+    <a href="/rappel">Rappel renouvellement&nbsp;/&nbsp;refinancement</a>
+  </div>
+
   <div class="footer-copy">© {currentYear} {config.nom}<span class="footer-dot" aria-hidden="true"> · </span><a href={config.site_url} target="_blank" rel="noopener noreferrer">{displayUrl}</a><span class="footer-dot" aria-hidden="true"> · </span>Tous droits réservés</div>
 
   <div class="footer-disclaimer">
@@ -66,6 +78,29 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
 
   .footer-copy {
     margin-top: 1rem;
+  }
+
+  .footer-tools {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 0.8rem;
+    font-size: 0.72rem;
+  }
+
+  .footer-tools a {
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-tools a:hover,
+  .footer-tools a:focus-visible {
+    color: #fff;
+    text-decoration: underline;
   }
 
   .footer-legal-links {

@@ -303,24 +303,38 @@ function fmtRate(val: number | null | undefined): string {
 </style>
 
 <script>
-  // Parallaxe subtil : la photo se déplace plus lentement que le texte au scroll
+  // Parallaxe subtil : la photo se déplace plus lentement que le texte au scroll.
+  // Désactivé sous 900px (layout empilé) pour éviter que la photo remonte sur le texte.
   (function() {
     const photoContainer = document.querySelector<HTMLElement>('.photo-container');
     const hero = document.getElementById('hero');
     if (!photoContainer || !hero) return;
+
+    const mql = window.matchMedia('(max-width: 900px)');
     let ticking = false;
-    window.addEventListener('scroll', function() {
+
+    function onScroll() {
+      if (mql.matches) return;
       if (!ticking) {
         requestAnimationFrame(function() {
-          const heroRect = hero.getBoundingClientRect();
-          const heroHeight = hero.offsetHeight;
+          const heroRect = hero!.getBoundingClientRect();
+          const heroHeight = hero!.offsetHeight;
           const progress = Math.max(0, Math.min(1, -heroRect.top / (heroHeight - window.innerHeight)));
           const offset = progress * 40;
-          photoContainer.style.transform = 'translateY(-' + offset + 'px)';
+          photoContainer!.style.transform = 'translateY(-' + offset + 'px)';
           ticking = false;
         });
         ticking = true;
       }
-    }, { passive: true });
+    }
+
+    function syncMode() {
+      // Sur mobile, on neutralise tout décalage résiduel laissé par le desktop.
+      if (mql.matches) photoContainer!.style.transform = '';
+    }
+
+    mql.addEventListener('change', syncMode);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    syncMode();
   })();
 </script>
