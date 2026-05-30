@@ -176,7 +176,20 @@ export const POST: APIRoute = async ({ request }) => {
   const apiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.RAPPEL_FROM_EMAIL;
   const notifyEmail = process.env.RAPPEL_NOTIFY_EMAIL;
+
+  // En développement sans clé Resend : on logue les courriels dans la console
+  // au lieu de les envoyer. Le formulaire retourne un succès pour faciliter
+  // les tests locaux. En production, les 3 variables sont obligatoires.
+  const isDev = import.meta.env.DEV;
   if (!apiKey || !fromEmail || !notifyEmail) {
+    if (isDev) {
+      console.log('[rappel-submit] ⚠️  Mode développement — Resend non configuré. Les courriels sont logués ci-dessous.');
+      console.log('[rappel-submit] 📨 Expéditeur simulé :', fromEmail || '(non défini)');
+      console.log('[rappel-submit] 📩 Notification interne simulée vers :', notifyEmail || '(non défini)');
+      console.log('[rappel-submit] ✉️  Confirmation client simulée vers :', courriel);
+      // On retourne un succès simulé pour permettre le test du flux complet
+      return jsonResponse({ ok: true, dev: true }, 200);
+    }
     console.error('[rappel-submit] Variables Resend manquantes (RESEND_API_KEY / RAPPEL_FROM_EMAIL / RAPPEL_NOTIFY_EMAIL).');
     return jsonResponse({ error: 'Service temporairement indisponible' }, 502);
   }
