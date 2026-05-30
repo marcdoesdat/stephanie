@@ -6,16 +6,16 @@ const prenom = config.nom.split(' ')[0];
 
 const faqs = [
   {
-    q: "Quel est l'objectif de Stéphanie ?",
+    q: "Quel est votre objectif ?",
     a: "Dévouée et passionnée, je m'appuie sur un réseau de contacts clés et sur une méthode de travail structurée afin de vous offrir le meilleur service sur le marché pour votre financement hypothécaire tout en vous dénichant les meilleures conditions. Mon objectif premier est d'améliorer constamment la qualité du service que je suis en mesure d'offrir, tout en continuant de croître dans le milieu hypothécaire. La seule façon d'y arriver est de continuer de m'entourer de gens passionnés ayant un fort désir de réussir aux plus hauts niveaux."
   },
   {
-    q: "Quelles régions Stéphanie dessert-elle ?",
+    q: "Quelles régions desservez-vous ?",
     a: "Je dessers principalement la Rive-Nord de Montréal et la région de Lanaudière, dont Repentigny, Terrebonne, Mascouche, L'Assomption, Charlemagne, Le Gardeur, Lavaltrie et les environs. J'accompagne également des clients dans le Grand Montréal et ailleurs au Québec. Comme une grande partie du processus peut se faire à distance (téléphone, visioconférence, signature électronique), il m'est possible de vous accompagner peu importe où vous vous situez dans la province."
   },
   {
     q: "Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ?",
-    a: "Non, mes services sont entièrement gratuits pour vous. Je suis rémunérée par le prêteur qui vous accorde le financement — pas par vous. Vous bénéficiez donc d'un accompagnement professionnel complet sans frais supplémentaires."
+    a: "Non, dans la vaste majorité des cas mes services sont gratuits pour vous. Je suis rémunérée par l'institution financière qui vous accorde le financement — pas par vous. Vous bénéficiez donc d'un accompagnement professionnel complet sans frais. (Certains dossiers plus complexes, comme un financement auprès d'un prêteur alternatif ou privé, peuvent comporter des frais; le cas échéant, je vous en informe toujours clairement avant toute démarche.)"
   },
   {
     q: "Quelle est la différence entre un courtier et ma banque ?",
@@ -97,7 +97,7 @@ const faqSchema = {
 
     <div class="fade-up" style="text-align:center;margin-top:2.5rem;">
       <p style="font-size:.9rem;color:var(--muted);margin-bottom:1rem;">Vous avez une autre question ?</p>
-      <a href="#contact" class="btn-primary" style="font-size:.85rem;padding:.7rem 1.6rem;">Poser ma question à {prenom} →</a>
+      <a href="#contact" class="btn-primary btn-primary--sm">Poser ma question à {prenom} →</a>
     </div>
   </div>
 </section>

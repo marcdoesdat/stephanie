@@ -42,7 +42,7 @@ const displayRows = hypothecaRates?.rows?.length
           Taux obtenus via notre réseau de 20+ prêteurs.
           {hypothecaRates?.source === 'live' ? ' Mis à jour automatiquement.' : ' Taux indicatifs.'}
         </p>
-        <p id="tv-freshness" style="margin:.45rem 0 0;font-size:.78rem;color:var(--clay);font-weight:600;">Mise à jour en cours…</p>
+        <p id="tv-freshness" data-updated-at={hypothecaRates.fetchedAt} style="margin:.45rem 0 0;font-size:.78rem;color:var(--clay);font-weight:600;">Mise à jour en cours…</p>
       </div>
       
       <div aria-live="polite" style="background:var(--sand);border:1px solid var(--border);border-radius:16px;padding:1.2rem 1.8rem;font-size:.75rem;color:var(--muted);line-height:1.8;text-align:right;min-width: 200px;">
@@ -87,7 +87,7 @@ const displayRows = hypothecaRates?.rows?.length
     
     <div class="taux-footer fade-up" style="transition-delay: 0.1s;">
       <div class="taux-note-text">* Certaines conditions s'appliquent. Taux sujets à changement sans préavis.</div>
-      <a href="#contact" class="btn-primary" style="font-size:.82rem;padding:.7rem 1.6rem;">Obtenir ce taux →</a>
+      <a href="#contact" class="btn-primary btn-primary--sm">Obtenir ce taux →</a>
     </div>
     
     <div class="bdc-bar fade-up" style="transition-delay: 0.2s;" aria-live="polite">
@@ -117,19 +117,31 @@ const displayRows = hypothecaRates?.rows?.length
   document.addEventListener('DOMContentLoaded', () => {
     let freshnessTimer: ReturnType<typeof setInterval> | undefined;
 
-    function startFreshnessClock(updatedAt: Date) {
+    function relativeLabel(iso: string): string {
+      const diff = Math.max(0, Date.now() - new Date(iso).getTime());
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'Taux mis à jour il y a moins d\'une minute.';
+      if (mins < 60) return `Taux mis à jour il y a ${mins} minute${mins > 1 ? 's' : ''}.`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `Taux mis à jour il y a ${hrs} heure${hrs > 1 ? 's' : ''}.`;
+      const days = Math.floor(hrs / 24);
+      return `Taux mis à jour il y a ${days} jour${days > 1 ? 's' : ''}.`;
+    }
+
+    function startFreshnessClock() {
       const freshnessEl = document.getElementById('tv-freshness');
       if (!freshnessEl) return;
+      const iso = freshnessEl.getAttribute('data-updated-at');
+      if (!iso) return;
 
-      const render = () => {
-        const mins = Math.max(0, Math.floor((Date.now() - updatedAt.getTime()) / 60000));
-        freshnessEl.textContent = `Taux mis à jour il y a ${mins} minute${mins > 1 ? 's' : ''}.`;
-      };
+      const render = () => { freshnessEl.textContent = relativeLabel(iso); };
 
       render();
       if (freshnessTimer) clearInterval(freshnessTimer);
       freshnessTimer = setInterval(render, 60000);
     }
+
+    startFreshnessClock();
 
     async function fetchTauxBdC() {
       try {
@@ -140,7 +152,6 @@ const displayRows = hypothecaRates?.rows?.length
         const directeur = Number(data?.directeur);
         const preferentiel = Number(data?.preferentiel);
         const obsDate = String(data?.date ?? '');
-        const fetchedAt = data?.fetchedAt ? new Date(data.fetchedAt) : new Date();
 
         if (!Number.isFinite(directeur) || !obsDate) throw new Error('Bad payload');
 
@@ -161,8 +172,6 @@ const displayRows = hypothecaRates?.rows?.length
 
         const tvDateInline = document.getElementById('tv-date-inline');
         if (tvDateInline) tvDateInline.textContent = dateStr;
-
-        startFreshnessClock(fetchedAt);
 
       } catch (_error) {
         const tvDirecteur = document.getElementById('tv-directeur');

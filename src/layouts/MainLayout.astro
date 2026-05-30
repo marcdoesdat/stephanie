@@ -104,11 +104,6 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
     <a href={config.calendly_url} data-calendly class="mobile-sticky-cta" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">
       <span class="sticky-label">Prendre rendez-vous</span>
     </a>
-    <button id="back-to-top" type="button" aria-label="Revenir en haut de la page" hidden>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 19V5M5 12l7-7 7 7"/>
-      </svg>
-    </button>
     <ConsentBanner />
 
     <!-- Sticky scroll-aware + état conversion -->
@@ -177,36 +172,44 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       })();
     </script>
 
-    <!-- Bouton « revenir en haut » (mobile) -->
+    <!-- Tooltips frais de courtage (global) -->
     <script is:inline>
       (function() {
-        const btn = document.getElementById('back-to-top');
-        if (!btn) return;
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        let visible = false;
-        let ticking = false;
-
-        function update() {
-          const show = window.scrollY > window.innerHeight * 1.5;
-          if (show !== visible) {
-            visible = show;
-            btn.hidden = !show;
-            btn.classList.toggle('show', show);
-          }
-          ticking = false;
+        function initFeeTooltips() {
+          document.querySelectorAll('.fee-info-btn').forEach(function(btn) {
+            var wrap = btn.closest('.fee-tooltip-wrap');
+            if (!wrap) return;
+            btn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              var open = wrap.classList.toggle('is-open');
+              btn.setAttribute('aria-expanded', String(open));
+            });
+          });
+          document.addEventListener('click', function() {
+            document.querySelectorAll('.fee-tooltip-wrap.is-open').forEach(function(wrap) {
+              wrap.classList.remove('is-open');
+              var b = wrap.querySelector('.fee-info-btn');
+              if (b) b.setAttribute('aria-expanded', 'false');
+            });
+          });
+          document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+              document.querySelectorAll('.fee-tooltip-wrap.is-open').forEach(function(wrap) {
+                wrap.classList.remove('is-open');
+                var b = wrap.querySelector('.fee-info-btn');
+                if (b) b.setAttribute('aria-expanded', 'false');
+              });
+            }
+          });
         }
-
-        window.addEventListener('scroll', () => {
-          if (!ticking) { requestAnimationFrame(update); ticking = true; }
-        }, { passive: true });
-
-        btn.addEventListener('click', () => {
-          window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
-        });
-
-        update();
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initFeeTooltips);
+        } else {
+          initFeeTooltips();
+        }
       })();
     </script>
+
   </body>
 </html>
 
@@ -286,10 +289,10 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       right: 0;
       bottom: 0;
       z-index: 1000;
-      height: 52px;
+      height: 58px;
       text-decoration: none;
       font-family: "DM Sans", sans-serif;
-      font-size: 0.88rem;
+      font-size: 0.92rem;
       font-weight: 600;
       letter-spacing: 0.02em;
       color: var(--clay);
@@ -333,11 +336,11 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
 
   @media (max-width: 420px) {
     .mobile-sticky-cta {
-      font-size: 0.82rem;
-      height: 48px;
+      font-size: 0.88rem;
+      height: 54px;
     }
     body {
-      padding-bottom: calc(3.1rem + env(safe-area-inset-bottom));
+      padding-bottom: calc(3.4rem + env(safe-area-inset-bottom));
     }
   }
 </style>

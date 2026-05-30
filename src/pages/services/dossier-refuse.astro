@@ -19,6 +19,29 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   title="Refus de prêt hypothécaire ? Plan B rapide | Stéphanie Weyman"
   description="Votre banque vous a dit non ? Votre promesse d'achat mérite une seconde évaluation. Accès à 20+ prêteurs alternatifs réglementés au Québec — diagnostic gratuit en 60 secondes, plan d'action dans les meilleurs délais."
 >
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce qu'un prêteur alternatif et comment peut-il m'aider après un refus de banque ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Les prêteurs alternatifs sont des institutions réglementées qui prêtent là où les grandes banques disent non. Au lieu d'un algorithme, ils analysent le gros bon sens de votre dossier : votre revenu réel, la solidité de la propriété, votre capacité de paiement actuelle." }
+        },
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce que la stratégie du tremplin hypothécaire ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Un prêt alternatif n'est presque jamais permanent. C'est un tremplin de 1 à 2 ans : vous achetez la propriété, vous bâtissez votre profil de crédit, et au prochain renouvellement on vous transfère vers une banque traditionnelle au taux régulier." }
+        },
+        {
+          "@type": "Question",
+          "name": "Combien de temps faut-il pour obtenir un financement après un refus bancaire ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Si vous avez une promesse d'achat avec condition de financement, je peux soumettre votre dossier à plusieurs prêteurs spécialisés en 24 à 48 h, négocier en parallèle, et revenir avec une offre ferme avant l'échéance." }
+        }
+      ]
+    })} />
+  </Fragment>
   <MessengerBtn />
   <Nav />
 
@@ -163,7 +186,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
               sous son meilleur jour aux prêteurs qui prêtent <em>justement</em> dans ces situations.
             </p>
             <p class="sp-approach-para">
-              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              Mon service est <strong>0&nbsp;$ sans frais de courtage</strong><span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>&nbsp;: ce sont les prêteurs qui me rémunèrent
               quand votre dossier se finalise. Pas de frais d'avance, pas de jugement,
               et si je ne peux pas vous aider, je vous le dis honnêtement — et je vous oriente.
             </p>

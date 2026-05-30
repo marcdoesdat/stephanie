@@ -48,38 +48,9 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
   .nav-cta{padding:.5rem 1rem}
 }
 
-/* MOBILE JUMP NAV — barre d'ancres collante, mobile uniquement */
-#mobile-jump-nav{display:none}
-@media(max-width:900px){
-  #mobile-jump-nav{
-    display:block;position:sticky;top:68px;z-index:190;
-    background:rgba(253,250,246,0.97);backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--border);
-    box-shadow:0 4px 12px rgba(0,0,0,0.04);
-  }
-  #mobile-jump-nav .jump-track{
-    display:flex;gap:.45rem;list-style:none;margin:0;
-    padding:.55rem 1rem;overflow-x:auto;scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
-  }
-  #mobile-jump-nav .jump-track::-webkit-scrollbar{display:none}
-  #mobile-jump-nav .jump-link{
-    flex:0 0 auto;scroll-snap-align:center;
-    font-size:.82rem;font-weight:500;color:var(--muted);
-    text-decoration:none;white-space:nowrap;
-    padding:.42rem .85rem;border-radius:50px;
-    border:1px solid var(--border);background:var(--white);
-    transition:color .2s,background .2s,border-color .2s;
-  }
-  #mobile-jump-nav .jump-link:hover,
-  #mobile-jump-nav .jump-link:focus-visible{color:var(--ink);border-color:var(--clay)}
-  #mobile-jump-nav .jump-link.is-active{
-    color:var(--white);background:var(--clay);border-color:var(--clay);font-weight:600;
-  }
-  /* Décale l'ancrage des sections sous la nav + barre d'ancres collantes */
-  #main-content section[id],
-  #main-content [id]{scroll-margin-top:124px}
-}
+/* Décale l'ancrage des sections sous la navbar fixe */
+#main-content section[id],
+#main-content [id]{scroll-margin-top:80px}
 
 /* HERO */
 #hero{min-height:100vh;background:var(--sand);display:flex;align-items:center;padding:8rem 4rem 4rem;position:relative;overflow:hidden}
@@ -93,8 +64,20 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
 .hero-btns{display:flex;gap:1rem;flex-wrap:wrap}
 .btn-primary{background:var(--clay);color:white;padding:.9rem 2rem;border-radius:50px;font-size:.9rem;font-weight:600;text-decoration:none;transition:background .2s,transform .15s;display:inline-block}
 .btn-primary:hover{background:var(--clay-dk);transform:translateY(-1px)}
+.btn-primary:focus-visible{outline:3px solid var(--clay);outline-offset:3px}
+.btn-primary--sm{font-size:.82rem;padding:.7rem 1.6rem}
 .btn-secondary{background:transparent;color:var(--ink);padding:.9rem 2rem;border-radius:50px;border:1.5px solid var(--border);font-size:.9rem;font-weight:500;text-decoration:none;transition:border-color .2s,transform .15s;display:inline-block}
 .btn-secondary:hover{border-color:var(--clay);transform:translateY(-1px)}
+.btn-secondary:focus-visible{outline:3px solid var(--clay);outline-offset:3px}
+.btn-secondary--sm{font-size:.85rem;padding:.7rem 1.6rem}
+.btn-secondary--icon{display:inline-flex;align-items:center;gap:.5rem}
+/* TOOLTIP FRAIS DE COURTAGE */
+.fee-tooltip-wrap{position:relative;display:inline-block;vertical-align:middle;margin-left:.3rem}
+.fee-info-btn{display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;border-radius:50%;border:1px solid var(--clay);background:transparent;color:var(--clay);font-size:.5rem;font-weight:700;font-style:italic;font-family:'Lora',serif;cursor:pointer;padding:0;line-height:1;transition:background .15s,color .15s;flex-shrink:0}
+.fee-info-btn:hover,.fee-info-btn[aria-expanded="true"]{background:var(--clay);color:white}
+.fee-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:240px;background:var(--ink);color:white;font-size:.72rem;font-weight:400;line-height:1.55;padding:.65rem .8rem;border-radius:10px;z-index:50;text-align:left;pointer-events:none}
+.fee-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink)}
+.fee-tooltip-wrap.is-open .fee-tooltip{display:block}
 
 /* CTA héro — utilisé aux moments stratégiques de décision (Hero, fin de Calculator/Simulator, submit final).
    Effet : ombre clay marquée, lift au hover, flèche animée. Ne pas étendre à plus d'endroits sans réfléchir
@@ -672,19 +655,9 @@ td:last-child{text-align:center}
 .messenger-btn:hover{transform:scale(1.1);box-shadow:0 6px 30px rgba(0,132,255,.6)}
 .messenger-tooltip{position:absolute;right:70px;white-space:nowrap;background:var(--ink);color:white;font-size:.72rem;padding:.4rem .9rem;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s}
 .messenger-btn:hover .messenger-tooltip{opacity:1}
-
-/* BOUTON RETOUR EN HAUT (mobile) */
-#back-to-top{
-  position:fixed;bottom:5.3rem;left:1rem;z-index:300;
-  width:46px;height:46px;border-radius:50%;
-  border:1px solid var(--border);background:rgba(253,250,246,0.95);backdrop-filter:blur(8px);
-  color:var(--ink);display:none;align-items:center;justify-content:center;
-  cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.12);
-  opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease;
-}
-#back-to-top.show{display:flex;opacity:1;transform:translateY(0)}
-#back-to-top:hover{border-color:var(--clay);color:var(--clay)}
-@media(min-width:901px){#back-to-top{display:none!important}}
+@media(prefers-reduced-motion:reduce){.messenger-btn,.messenger-tooltip{transition:none}}
+/* Zone de sécurité : empêche Messenger de chevaucher le contenu */
+.messenger-safe-zone{padding-bottom:5.5rem}
 
 /* FORM ERROR */
 .form-error{display:none;background:#fef2f2;color:#c0392b;padding:.8rem 1rem;border-radius:10px;font-size:.82rem;margin-top:.8rem;margin-bottom:.8rem;border:1px solid #fca5a5}
@@ -1234,7 +1207,7 @@ td:last-child{text-align:center}
   font-size:.85rem;font-weight:700;line-height:1;
 }
 .sp-approach-list strong{
-  display:block;color:white;font-size:.92rem;font-weight:700;margin-bottom:.15rem;
+  display:inline-flex;align-items:center;gap:.25rem;color:white;font-size:.92rem;font-weight:700;margin-bottom:.15rem;
 }
 .sp-approach-list span{font-size:.82rem;color:rgba(255,255,255,.7);line-height:1.5}
 
@@ -1275,6 +1248,8 @@ td:last-child{text-align:center}
   list-style:none;padding:0;margin:1.5rem 0 0;
   display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;justify-content:center;
   font-size:.78rem;color:var(--muted);position:relative;z-index:1;
+  /* Zone sécurité Messenger — évite le chevauchement sur mobile */
+  padding-bottom:4.5rem;
 }
 .sp-magnet-proof li{display:inline-flex;align-items:center;gap:.4rem}
 .sp-magnet-proof svg{color:var(--forest)}
@@ -1359,7 +1334,7 @@ footer strong{color:rgba(255,255,255,.85)}
   footer{padding:2rem 1.5rem}
   th,td{padding:.8rem 1rem!important}
   .taux-footer{flex-direction:column}
-  .messenger-btn{bottom:5.3rem;right:1rem;width:52px;height:52px}
+  .messenger-btn{bottom:calc(58px + 1rem);right:1rem;width:52px;height:52px}
   .messenger-tooltip{display:none}
 
   /* --- Condensation mobile : sections plus compactes (sans retirer de contenu) --- */

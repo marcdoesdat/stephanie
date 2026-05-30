@@ -8,9 +8,7 @@
     <div class="consent-text">
       <strong id="consent-title">Confidentialité — Loi 25</strong>
       <p id="consent-desc">
-        Ce site utilise <strong>Google Analytics</strong> (mesure d'audience) et <strong>Calendly</strong>
-        (prise de rendez-vous), qui déposent des témoins (cookies) sur votre appareil.
-        Vous pouvez accepter, refuser, ou modifier votre choix à tout moment depuis le pied de page.
+        Ce site utilise Google Analytics et Calendly (cookies). Vous pouvez refuser à tout moment.
         <a href="/confidentialite">En savoir plus</a>.
       </p>
     </div>
@@ -30,7 +28,7 @@
     z-index: 9999;
     background: var(--ink, #1a1a1a);
     color: #fff;
-    padding: 1rem 1.5rem;
+    padding: 0.6rem 1.5rem;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
     animation: consent-slide-up 0.35s ease-out;
   }
@@ -53,14 +51,14 @@
     flex: 1 1 320px;
     min-width: 0;
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    line-height: 1.5;
+    font-size: 0.78rem;
+    line-height: 1.4;
   }
 
   .consent-text strong#consent-title {
     display: block;
-    margin-bottom: 0.35rem;
-    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+    font-size: 0.82rem;
     letter-spacing: 0.02em;
   }
 
@@ -81,11 +79,11 @@
   }
 
   .consent-btn {
-    padding: 0.65rem 1.4rem;
+    padding: 0.45rem 1rem;
     border-radius: 8px;
     font-family: 'DM Sans', sans-serif;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     cursor: pointer;
     border: 1px solid transparent;
     transition: background 0.2s, border-color 0.2s, transform 0.15s;
@@ -116,28 +114,32 @@
 
   @media (max-width: 700px) {
     .consent-banner {
-      padding: 0.6rem 0.85rem;
+      padding: 0.55rem 1rem;
     }
     .consent-inner {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.5rem;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 0.75rem;
     }
     .consent-text {
-      font-size: 0.78rem;
-      line-height: 1.35;
+      font-size: 0.72rem;
+      line-height: 1.3;
+      flex: 1 1 0;
+      min-width: 0;
     }
     .consent-text strong#consent-title {
-      font-size: 0.82rem;
-      margin-bottom: 0.2rem;
+      display: none; /* titre masqué sur mobile pour gagner de la place */
     }
+    .consent-text p { margin: 0; }
     .consent-actions {
-      width: 100%;
+      flex-shrink: 0;
+      gap: 0.4rem;
     }
     .consent-btn {
-      flex: 1;
-      padding: 0.5rem 0.9rem;
-      font-size: 0.8rem;
+      padding: 0.4rem 0.7rem;
+      font-size: 0.72rem;
+      white-space: nowrap;
     }
   }
 </style>

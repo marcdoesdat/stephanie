@@ -19,6 +19,29 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   title="Hypothèque pour travailleur autonome au Québec | Stéphanie Weyman"
   description="Travailleur autonome, incorporé ou à commissions ? Vos revenus sont solides — ils ne rentrent juste pas dans la case standard des banques. Je sais comment présenter votre dossier pour obtenir le oui qu'il mérite. Évaluation gratuite."
 >
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Comment un travailleur autonome peut-il obtenir une hypothèque au Québec ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Chaque prêteurca lcule vos revenus différemment. Certaines banques exigent 2 ans d'avis de cotisation. D'autres acceptent un seul avis ou des programmes stated income qui valorisent vos dépôts bancaires. Une cortière identifie le prêteurdo nt la formule vous rend justice." }
+        },
+        {
+          "@type": "Question",
+          "name": "Mon revenu net déclaré est faible — puis-je quand même obtenir un bon financement hypothécaire ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Plusieurs dépenses déductibles (amortissement, kilométrage, bureau à domicile) peuvent être réajoutées au revenu admissible pour le calcul hypothécaire. Sur un revenu net de 65 000 $, on peut souvent justifier 80 000 $ ou plus, ce qui peut représenter 60 000 $ à 100 000 $ de plus en capacité d'achat." }
+        },
+        {
+          "@type": "Question",
+          "name": "Je suis incorporé : comment maximiser ma capacité d'emprunt hypothécaire ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Avec les bons états financiers de votre société, il est possible de faire reconnaître vos dividendes et les bénéfices retenus par les prêteursa cceptant cette structure — au lieu d'être limité à votre petit salaire." }
+        }
+      ]
+    })} />
+  </Fragment>
   <MessengerBtn />
   <Nav />
 
@@ -53,7 +76,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <ul class="sp-hero-proof">
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                100 % gratuit, sans engagement
+                0&nbsp;$ sans frais de courtage<span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>, sans engagement
               </li>
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
@@ -163,7 +186,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
               Présenté correctement, votre dossier devient <strong>impossible à refuser pour la mauvaise raison</strong>.
             </p>
             <p class="sp-approach-para">
-              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              Mon service est <strong>0&nbsp;$ sans frais de courtage</strong><span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>&nbsp;: ce sont les prêteurs qui me rémunèrent
               quand votre dossier se finalise. Pas de frais cachés. Pas de discours commercial.
               Si votre dossier n'est pas prêt cette année, je vous le dis — et je vous donne le plan pour qu'il le soit l'an prochain.
             </p>

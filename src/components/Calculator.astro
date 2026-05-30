@@ -90,7 +90,7 @@ const { defaultRate = 4.99 } = Astro.props;
         <!-- Capture courriel -->
         <div class="email-capture" id="email-capture-section" style="display:none;">
           <div class="email-capture-label">Recevoir ce résumé par courriel</div>
-          <div class="email-capture-note">Stéphanie vous enverra personnellement le résumé. Merci d'indiquer vos coordonnées.</div>
+          <div class="email-capture-note">Je vous enverrai personnellement le résumé. Merci d'indiquer vos coordonnées.</div>
           <div class="email-capture-row">
             <label for="calc-name" class="sr-only">Votre nom complet</label>
             <input type="text" id="calc-name" placeholder="Votre nom complet" class="email-capture-input" autocomplete="name" />
@@ -432,7 +432,7 @@ const { defaultRate = 4.99 } = Astro.props;
           throw new Error('Erreur serveur Netlify');
         }
 
-        emailMsg.textContent   = 'Merci. Stéphanie vous enverra votre résumé sous peu.';
+        emailMsg.textContent   = 'Merci. Je vous enverrai votre résumé sous peu.';
         emailMsg.style.display = '';
         emailMsg.style.color   = 'var(--clay)';
         nameInput.value = '';

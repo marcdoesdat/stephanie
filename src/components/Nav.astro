@@ -172,21 +172,28 @@ const nomDeFamille = nomArr.join(' ');
     transform: translateY(-7px) rotate(-45deg);
   }
 
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   @media (max-width: 1180px) {
     .nav-links.open {
       display: flex !important;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       position: absolute;
       top: 100%;
       left: 0;
       right: 0;
+      height: calc(100vh - 68px);
       background: var(--white);
+      overflow-x: hidden;
+      overflow-y: auto;
       padding: 2rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      gap: 1.5rem;
+      gap: 2.2rem;
       z-index: 199;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       animation: slideDown 0.3s ease forwards;
     }
 
@@ -196,18 +203,28 @@ const nomDeFamille = nomArr.join(' ');
     }
 
     .nav-links.open a {
+      font-size: 1.4rem;
+      font-weight: 600;
       white-space: normal;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .nav-links.open a:hover {
+      color: var(--clay);
     }
 
     .nav-links.open .nav-cta {
       display: inline-block;
-      padding: 0.75rem 1.6rem;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.85rem 2rem;
+      margin-top: 0.5rem;
     }
-    
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+  }
+
+  @media (max-width: 1180px) and (prefers-reduced-motion: reduce) {
+    .nav-links.open { animation: none; }
   }
 </style>
 
@@ -228,12 +245,23 @@ const nomDeFamille = nomArr.join(' ');
       }
     });
 
+    const messengerBtn = document.querySelector<HTMLElement>('.messenger-btn');
+
     function toggleMenu() {
       menuOpen = !menuOpen;
       btn?.setAttribute('aria-expanded', String(menuOpen));
       btn?.setAttribute('aria-label', menuOpen ? 'Fermer le menu' : 'Ouvrir le menu');
       menu?.classList.toggle('open', menuOpen);
       btn?.classList.toggle('open', menuOpen);
+
+      // Verrouille le scroll du body quand le menu est ouvert
+      document.body.style.overflow = menuOpen ? 'hidden' : '';
+
+      // Masque le bouton Messenger quand le menu est ouvert
+      if (messengerBtn) {
+        messengerBtn.setAttribute('aria-hidden', String(menuOpen));
+        messengerBtn.style.display = menuOpen ? 'none' : '';
+      }
     }
 
     btn?.addEventListener('click', toggleMenu);

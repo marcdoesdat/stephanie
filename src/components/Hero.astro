@@ -37,12 +37,25 @@ function fmtRate(val: number | null | undefined): string {
           <div class="stat-label">Prêteurs</div>
         </div>
         <div class="stat-item">
-          <div class="stat-num">100&nbsp;%</div>
-          <div class="stat-label">Gratuit</div>
+          <div class="stat-num">0&nbsp;$</div>
+          <div class="stat-label">
+            Sans frais de courtage
+            <span class="fee-tooltip-wrap">
+              <button
+                class="fee-info-btn"
+                aria-label="En savoir plus sur les frais de courtage"
+                aria-expanded="false"
+                type="button"
+              >i</button>
+              <span class="fee-tooltip" role="tooltip">
+                Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.
+              </span>
+            </span>
+          </div>
         </div>
         <div class="stat-item">
           <div class="stat-num">24&nbsp;h</div>
-          <div class="stat-label">Premier contact garanti</div>
+          <div class="stat-label">Premier contact</div>
         </div>
       </div>
     </div>
@@ -82,8 +95,8 @@ function fmtRate(val: number | null | undefined): string {
 
 <style>
   .hero-btns {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-direction: row;
     gap: 0.85rem;
     max-width: 430px;
   }
@@ -94,14 +107,14 @@ function fmtRate(val: number | null | undefined): string {
     align-items: center;
     justify-content: center;
     min-height: 54px;
-    padding: 0.65rem 1rem;
+    padding: 0.75rem 1.75rem;
     text-align: center;
     min-width: 0;
     white-space: nowrap;
     line-height: 1.15;
-    font-size: 0.92rem;
+    font-size: 0.85rem;
   }
-  .hero-btns .btn-cta { gap: 0.45rem; }
+  .hero-btns .btn-cta { gap: 0.6rem; border-radius: 50px; }
 
   .hero-badge::before {
     display: none !important;
@@ -247,13 +260,16 @@ function fmtRate(val: number | null | undefined): string {
 
   @media (max-width: 520px) {
     .hero-btns {
+      flex-direction: column;
       gap: 0.65rem;
+      max-width: 100%;
     }
 
     .hero-btns .btn-cta,
     .hero-btns .btn-secondary {
-      min-height: 50px;
-      font-size: 0.92rem;
+      width: 100%;
+      min-height: 52px;
+      font-size: 0.9rem;
     }
 
     .hero-right {
@@ -280,11 +296,7 @@ function fmtRate(val: number | null | undefined): string {
     .ribbon-card--logo img { height: 52px; }
   }
 
-  @media (max-width: 390px) {
-    .hero-btns {
-      grid-template-columns: 1fr;
-    }
-  }
+
 
   /* Photo en miroir */
   .photo-frame img {
@@ -337,4 +349,5 @@ function fmtRate(val: number | null | undefined): string {
     window.addEventListener('scroll', onScroll, { passive: true });
     syncMode();
   })();
+
 </script>

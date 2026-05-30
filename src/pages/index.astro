@@ -1,7 +1,6 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 import Nav from '../components/Nav.astro';
-import MobileJumpNav from '../components/MobileJumpNav.astro';
 import Hero from '../components/Hero.astro';
 import About from '../components/About.astro';
 import Services from '../components/Services.astro';
@@ -57,7 +56,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
   <MessengerBtn />
   <Nav />
-  <MobileJumpNav />
   <main id="main-content">
     <Hero baseRate={hypothecaVariable} />
 

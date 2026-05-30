@@ -19,6 +19,29 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   title="Refinancement hypothécaire au Québec | Débloquez l'équité de votre maison"
   description="Votre maison vaut probablement plus que vous pensez. Découvrez en 60 secondes combien d'équité vous pouvez débloquer pour consolider vos dettes, rénover ou acheter une 2e propriété — analyse gratuite avec une courtière hypothécaire au Québec."
 >
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Comment le refinancement peut-il m'aider à consolider mes dettes au Québec ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "30 000 $ de cartes et de marges à 19,99 % coûtent environ 500 $ d'intérêts par mois. Intégrés à votre hypothèque vers 5 %, c'est plutôt 125 $ d'intérêts — près de 4 500 $ par année qui restent dans votre compte au lieu de partir aux émetteurs de cartes." }
+        },
+        {
+          "@type": "Question",
+          "name": "Puis-je utiliser mon équité hypothécaire pour financer des rénovations ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Oui. Une cuisine refaite, un sous-sol fini, une thermopompe : ces rénovations stratégiques augmentent la valeur de revente de votre propriété. Vous financez à taux hypothécaire ce qui autrement finirait sur une marge à 9 % ou plus." }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment acheter un immeuble locatif en utilisant l'équité de ma résidence principale ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "La mise de fonds minimale pour un immeuble à revenus est de 20 %. Refinancer votre résidence principale peut générer cette mise de fonds sans toucher à vos liquidités — le levier le plus discret pour bâtir un patrimoine immobilier." }
+        }
+      ]
+    })} />
+  </Fragment>
   <MessengerBtn />
   <Nav />
 
@@ -53,7 +76,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <ul class="sp-hero-proof">
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                100 % gratuit, sans engagement
+                0&nbsp;$ sans frais de courtage<span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>, sans engagement
               </li>
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
@@ -159,7 +182,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
               Si les chiffres ne sont pas franchement à votre avantage, je vous le dis — et on attend le bon moment.
             </p>
             <p class="sp-approach-para">
-              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              Mon service est <strong>0&nbsp;$ sans frais de courtage</strong><span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>&nbsp;: ce sont les prêteurs qui me rémunèrent
               quand votre dossier se finalise. Pas de frais cachés, pas de pression, pas de discours commercial.
               Juste les chiffres, expliqués clairement.
             </p>
@@ -183,7 +206,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <li>
               <span class="sp-check" aria-hidden="true">✓</span>
               <div>
-                <strong>Service 100 % gratuit</strong>
+                <strong>0&nbsp;$ sans frais de courtage</strong><span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>
                 <span>Aucun frais à vous, ni avant, ni après.</span>
               </div>
             </li>

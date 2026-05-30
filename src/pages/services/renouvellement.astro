@@ -18,8 +18,29 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 <MainLayout
   title="Renouvellement hypothécaire au Québec | Comparez avant de signer"
   description="Votre hypothèque arrive à échéance en 2026 ? Avant de signer le renouvellement de votre banque, comparez 20+ prêteurs. Service gratuit, sans engagement, avec une courtière hypothécaire au Québec."
->
-  <MessengerBtn />
+>  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Quand devrais-je commencer à magasiner mon renouvellement hypothécaire ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "La plupart des prêteurs garantissent un taux jusqu'à 120 jours avant le renouvellement. Magasiner 4 à 6 mois avant l'échéance vous permet de bloquer un meilleur taux aujourd'hui et de continuer à surveiller le marché. Attendre la lettre de votre banque, c'est négocier sans aucun levier." }
+        },
+        {
+          "@type": "Question",
+          "name": "Y a-t-il une pénalité pour changer de prêteurau moment du renouvellement ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Au renouvellement à échéance, il n'y a aucune pénalité pour changer de prêteurC'est le seul moment où vous êtes 100 % libre. Restent les frais de transfert (parfois payés par le nouveau prêteurLes frais administratifs sont souvent largement compensés par l'économie sur le taux." }
+        },
+        {
+          "@type": "Question",
+          "name": "Puis-je revoir la structure de mon hypothèque à l'occasion du renouvellement ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Oui. Le renouvellement est le bon moment pour ajuster votre amortissement, passer en taux variable ou fixe selon votre tolérance, ou intégrer une marge de crédit hypothécaire pour des projets à venir. Une cortière vous propose la meilleure structure pour les 5 prochaines années, pas juste de renouveler." }
+        }
+      ]
+    })} />
+  </Fragment>  <MessengerBtn />
   <Nav />
 
   <main id="main-content">
@@ -53,7 +74,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <ul class="sp-hero-proof">
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                100 % gratuit, sans engagement
+                0&nbsp;$ sans frais de courtage<span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>, sans engagement
               </li>
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
@@ -161,7 +182,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
               Sinon, on passe à l'action.
             </p>
             <p class="sp-approach-para">
-              Mon service est <strong>100 % gratuit pour vous</strong>&nbsp;: ce sont les prêteurs qui me rémunèrent
+              Mon service est <strong>0&nbsp;$ sans frais de courtage</strong><span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>&nbsp;: ce sont les prêteurs qui me rémunèrent
               quand votre dossier se finalise. Aucun frais caché, aucun engagement à m'appeler.
               Une comparaison rapide vous coûte zéro — et peut vous faire économiser des milliers.
             </p>
@@ -178,7 +199,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <li>
               <span class="sp-check" aria-hidden="true">✓</span>
               <div>
-                <strong>Service 100 % gratuit</strong>
+                <strong>0&nbsp;$ sans frais de courtage</strong><span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>
                 <span>Aucun frais à vous, ni avant, ni après.</span>
               </div>
             </li>
