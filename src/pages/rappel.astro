@@ -34,7 +34,8 @@ const prenom = config.nom.split(' ')[0];
         </div>
 
         <div class="rappel-card fade-up">
-          <form id="rappel-form" novalidate>
+          <form id="rappel-form" name="rappel" data-netlify="true" data-netlify-honeypot="company" novalidate>
+            <input type="hidden" name="form-name" value="rappel" />
             <!-- Honeypot anti-spam (hors écran, non visible) -->
             <div class="rappel-hp" aria-hidden="true">
               <label>Ne pas remplir
@@ -106,7 +107,7 @@ const prenom = config.nom.split(' ')[0];
           <div id="rappel-success" class="rappel-success" hidden>
             <span class="rappel-success-check" aria-hidden="true">✅</span>
             <strong>Votre demande est envoyée&nbsp;!</strong>
-            <p>{prenom} vous contactera personnellement au bon moment. Un courriel de confirmation vient de vous être envoyé.</p>
+            <p>{prenom} vous contactera personnellement dans les meilleurs délais.</p>
           </div>
         </div>
 
@@ -302,39 +303,17 @@ const prenom = config.nom.split(' ')[0];
         return;
       }
 
-      var payload = {
-        nom: nom.value.trim(),
-        courriel: courriel.value.trim(),
-        telephone: form.elements['telephone'].value.trim(),
-        type: type.value,
-        echeance: form.elements['echeance'].value.trim(),
-        institution: form.elements['institution'].value.trim(),
-        details: form.elements['details'].value.trim(),
-        consentement: consent.checked,
-        company: form.elements['company'].value
-      };
-
       btn.disabled = true;
       if (label) label.textContent = 'Envoi en cours…';
       setStatus('sending', 'Envoi de votre demande…');
 
-      fetch('/api/rappel-submit', {
+      fetch('/rappel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(new FormData(form)).toString()
       })
         .then(function (res) {
-          if (!res.ok) {
-            return res.json().then(function (body) {
-              return Promise.reject(new Error(body && body.error ? body.error : 'Erreur ' + res.status));
-            }, function () {
-              return Promise.reject(new Error('Erreur ' + res.status));
-            });
-          }
-          return res.json();
-        })
-        .then(function (data) {
-          if (!data || !data.ok) throw new Error('Réponse inattendue');
+          if (!res.ok) throw new Error('Erreur ' + res.status);
           form.reset();
           form.hidden = true;
           setStatus(null);
@@ -343,10 +322,10 @@ const prenom = config.nom.split(' ')[0];
             successEl.focus && successEl.focus();
           }
         })
-        .catch(function (err) {
+        .catch(function () {
           btn.disabled = false;
           if (label) label.textContent = 'Demander à être rappelé·e';
-          setStatus('error', err && err.message ? err.message : "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
+          setStatus('error', "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
         });
     });
   })();
