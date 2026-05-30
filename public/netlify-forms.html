@@ -61,5 +61,20 @@
       <input type="text" name="versement" />
       <input type="text" name="consentement" />
     </form>
+    <form name="rappel" method="POST" data-netlify="true" data-netlify-honeypot="company" hidden>
+      <input type="hidden" name="form-name" value="rappel" />
+      <input type="text"     name="company" />
+      <input type="text"     name="nom" />
+      <input type="email"    name="courriel" />
+      <input type="tel"      name="telephone" />
+      <select name="type">
+        <option value="Renouvellement">Renouvellement</option>
+        <option value="Refinancement">Refinancement</option>
+      </select>
+      <input type="month"    name="echeance" />
+      <input type="text"     name="institution" />
+      <textarea              name="details"></textarea>
+      <input type="checkbox" name="consentement" value="oui" />
+    </form>
   </body>
 </html>
