@@ -155,7 +155,7 @@ const tabs = [
           data-panel="refinancement"
           hidden
         >
-          <RefinancementSimulator />
+          <RefinancementSimulator defaultRate={defaultRate} />
         </div>
       </div>
     </section>
@@ -206,6 +206,9 @@ const tabs = [
 
               <label class="sr-only" for="outils-email">Votre courriel</label>
               <input type="email" id="outils-email" name="email" placeholder="votre@courriel.com" required autocomplete="email" class="outils-contact-input" />
+
+              <label class="sr-only" for="outils-tel">Votre numéro de téléphone</label>
+              <input type="tel" id="outils-tel" name="telephone" placeholder="514 000-0000" required autocomplete="tel" class="outils-contact-input" />
 
               <label class="sr-only" for="outils-message">Un message (optionnel)</label>
               <textarea id="outils-message" name="message" placeholder="Dites-nous en quelques mots votre projet ou votre question…" rows="2" class="outils-contact-input"></textarea>
@@ -418,7 +421,8 @@ const tabs = [
       color: var(--muted);
     }
     .outils-contact-input[type="text"],
-    .outils-contact-input[type="email"] {
+    .outils-contact-input[type="email"],
+    .outils-contact-input[type="tel"] {
       min-height: 48px;
     }
     .outils-contact textarea.outils-contact-input {

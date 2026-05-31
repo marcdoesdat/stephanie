@@ -1,8 +1,17 @@
 ---
-// No server-side props needed — all values are user-entered client-side
+interface Props {
+  /** Meilleur taux fixe 5 ans live (Hypotheca) — sert de valeur par défaut au nouveau taux. */
+  defaultRate?: number;
+}
+const { defaultRate } = Astro.props;
+// Taux offert par défaut : taux live si disponible et plausible, sinon 4.29.
+const nouveauTauxDefaut =
+  typeof defaultRate === 'number' && defaultRate >= 0.5 && defaultRate <= 20
+    ? defaultRate.toFixed(2)
+    : '4.29';
 ---
 
-<section id="refinancement-simulator">
+<section id="refinancement-simulator" data-nouveau-taux-defaut={nouveauTauxDefaut}>
   <div class="section-inner">
     <form class="rsim-form" id="rsim-form" novalidate>
 
@@ -11,16 +20,24 @@
 
         <div class="rsim-row">
           <div class="rsim-field">
-            <label for="rsim-solde" class="rsim-label">Solde hypothécaire ($)</label>
-            <input type="number" id="rsim-solde" class="rsim-input" value="300000"
-              inputmode="decimal" min="0" max="5000000" />
+            <label for="rsim-solde" class="rsim-label">Solde hypothécaire</label>
+            <div class="rsim-money-wrap">
+              <span class="rsim-money-prefix" aria-hidden="true">$</span>
+              <input type="text" id="rsim-solde" class="rsim-input rsim-input--money" value="300 000"
+                inputmode="numeric" autocomplete="off" aria-describedby="rsim-solde-err" />
+            </div>
             <small class="rsim-error" id="rsim-solde-err"></small>
           </div>
           <div class="rsim-field">
-            <label for="rsim-valeur" class="rsim-label">Valeur actuelle de la propriété ($)
+            <label for="rsim-valeur" class="rsim-label">Valeur actuelle de la propriété
               <span class="rsim-opt">(optionnel)</span></label>
-            <input type="number" id="rsim-valeur" class="rsim-input" value=""
-              inputmode="decimal" min="0" max="10000000" placeholder="Ex. 500 000" />
+            <div class="rsim-money-wrap">
+              <span class="rsim-money-prefix" aria-hidden="true">$</span>
+              <input type="text" id="rsim-valeur" class="rsim-input rsim-input--money" value=""
+                inputmode="numeric" autocomplete="off" placeholder="500 000"
+                aria-describedby="rsim-valeur-err" />
+            </div>
+            <small class="rsim-error" id="rsim-valeur-err"></small>
           </div>
         </div>
 
@@ -29,40 +46,19 @@
             <label for="rsim-taux-actuel" class="rsim-label">Taux contractuel actuel (%)</label>
             <div class="rsim-rate-wrap">
               <input type="number" id="rsim-taux-actuel" class="rsim-input rsim-input--rate"
-                value="5.49" step="0.01" inputmode="decimal" min="0.01" max="20" />
+                value="5.49" step="0.01" inputmode="decimal" min="0.01" max="20"
+                aria-describedby="rsim-taux-actuel-err" />
               <span class="rsim-rate-suffix">%</span>
             </div>
             <small class="rsim-error" id="rsim-taux-actuel-err"></small>
           </div>
           <div class="rsim-field">
-            <label for="rsim-date-amort-fin" class="rsim-label">Date de fin d'amortissement</label>
-            <input type="month" id="rsim-date-amort-fin" class="rsim-input"
-              value="2048-01" />
-            <small class="rsim-hint" id="rsim-amort-restant-hint">≈ 22 ans restants</small>
-          </div>
-        </div>
-
-        <div class="rsim-field">
-          <label class="rsim-label">Fréquence de paiement</label>
-          <div class="rsim-pill-group" id="rsim-freq-group" role="radiogroup"
-            aria-label="Fréquence de paiement">
-            <button type="button" class="rsim-pill active" data-freq="12"
-              role="radio" aria-checked="true">Mensuel</button>
-            <button type="button" class="rsim-pill" data-freq="26"
-              role="radio" aria-checked="false">Bimensuel accéléré</button>
-            <button type="button" class="rsim-pill" data-freq="52"
-              role="radio" aria-checked="false">Hebdomadaire accéléré</button>
-          </div>
-        </div>
-
-        <div class="rsim-field">
-          <label for="rsim-versement-reel" class="rsim-label">
-            Versement actuel réel <span class="rsim-opt">(optionnel — si différent du calculé)</span>
-          </label>
-          <div class="rsim-rate-wrap">
-            <input type="number" id="rsim-versement-reel" class="rsim-input rsim-input--rate"
-              value="" inputmode="decimal" min="0" placeholder="Laissez vide pour utiliser le versement calculé" />
-            <span class="rsim-rate-suffix">$/mois</span>
+            <label for="rsim-annees-restantes" class="rsim-label">Années restantes à votre prêt</label>
+            <input type="number" id="rsim-annees-restantes" class="rsim-input"
+              value="22" min="1" max="35" step="1" inputmode="numeric"
+              aria-describedby="rsim-annees-err" />
+            <small class="rsim-error" id="rsim-annees-err"></small>
+            <small class="rsim-hint">Durée restante avant la fin de votre amortissement.</small>
           </div>
         </div>
       </fieldset>
@@ -75,17 +71,23 @@
             Pénalité estimée ($)
             <span class="rsim-penalite-badge" id="rsim-penalite-badge">Reprise depuis l'onglet Pénalité</span>
           </label>
-          <input type="number" id="rsim-penalite" class="rsim-input" value="0"
-            inputmode="decimal" min="0" />
+          <div class="rsim-money-wrap">
+            <span class="rsim-money-prefix" aria-hidden="true">$</span>
+            <input type="text" id="rsim-penalite" class="rsim-input rsim-input--money" value="0"
+              inputmode="numeric" autocomplete="off" />
+          </div>
           <a href="#penalite" class="rsim-penalite-link" id="rsim-penalite-link">
             → Calculer ma pénalité dans l'outil dédié
           </a>
         </div>
 
         <div class="rsim-field">
-          <label for="rsim-frais" class="rsim-label">Frais notaire / refinancement ($)</label>
-          <input type="number" id="rsim-frais" class="rsim-input" value="1500"
-            inputmode="decimal" min="0" />
+          <label for="rsim-frais" class="rsim-label">Frais notaire / refinancement</label>
+          <div class="rsim-money-wrap">
+            <span class="rsim-money-prefix" aria-hidden="true">$</span>
+            <input type="text" id="rsim-frais" class="rsim-input rsim-input--money" value="1 500"
+              inputmode="numeric" autocomplete="off" />
+          </div>
         </div>
       </fieldset>
 
@@ -94,10 +96,14 @@
 
         <div class="rsim-row">
           <div class="rsim-field">
-            <label for="rsim-taux-nouveau" class="rsim-label">Nouveau taux offert (%)</label>
+            <label for="rsim-taux-nouveau" class="rsim-label">
+              Nouveau taux offert (%)
+              <span class="rsim-taux-live-badge" id="rsim-taux-live-badge">Taux Hypotheca du jour</span>
+            </label>
             <div class="rsim-rate-wrap">
               <input type="number" id="rsim-taux-nouveau" class="rsim-input rsim-input--rate"
-                value="4.29" step="0.01" inputmode="decimal" min="0.01" max="20" />
+                value="4.29" step="0.01" inputmode="decimal" min="0.01" max="20"
+                aria-describedby="rsim-taux-nouveau-err" />
               <span class="rsim-rate-suffix">%</span>
             </div>
             <small class="rsim-error" id="rsim-taux-nouveau-err"></small>
@@ -108,7 +114,7 @@
               <span class="rsim-opt">(défaut = restant)</span>
             </label>
             <input type="number" id="rsim-amort-nouveau" class="rsim-input"
-              value="20" min="1" max="30" step="1" inputmode="numeric" />
+              value="22" min="1" max="30" step="1" inputmode="numeric" />
             <small class="rsim-hint rsim-amort-avert" id="rsim-amort-avert" style="display:none"></small>
           </div>
         </div>
@@ -118,9 +124,13 @@
             Dégagement d'équité — montant additionnel ($)
             <span class="rsim-opt">(optionnel)</span>
           </label>
-          <input type="number" id="rsim-montant-additionnel" class="rsim-input" value="0"
-            inputmode="decimal" min="0" />
-          <small class="rsim-hint">Laissez à 0 si vous ne retirez pas d'équité.</small>
+          <div class="rsim-money-wrap">
+            <span class="rsim-money-prefix" aria-hidden="true">$</span>
+            <input type="text" id="rsim-montant-additionnel" class="rsim-input rsim-input--money" value="0"
+              inputmode="numeric" autocomplete="off" aria-describedby="rsim-add-err" />
+          </div>
+          <small class="rsim-error" id="rsim-add-err"></small>
+          <small class="rsim-hint">Laissez à 0 si vous ne retirez pas d'équité. Le retrait est limité à 80 % de la valeur de la propriété.</small>
         </div>
       </fieldset>
 
@@ -136,6 +146,13 @@
       </div>
 
       <div id="rsim-content" style="display:none">
+
+        <!-- Verdict principal -->
+        <div class="rsim-verdict" id="rsim-verdict">
+          <div class="rsim-verdict-badge" id="rsim-verdict-badge">—</div>
+          <div class="rsim-verdict-title" id="rsim-verdict-title">—</div>
+          <div class="rsim-verdict-sub" id="rsim-verdict-sub"></div>
+        </div>
 
         <!-- Hero -->
         <div class="rsim-hero" id="rsim-hero">
@@ -189,29 +206,29 @@
           <div class="rsim-pointmort-bar" aria-hidden="true">
             <div class="rsim-pointmort-fill" id="rsim-pointmort-fill"></div>
           </div>
+          <div class="rsim-pointmort-axis" aria-hidden="true">
+            <span>0</span>
+            <span id="rsim-pointmort-axis-mid"></span>
+            <span id="rsim-pointmort-axis-max"></span>
+          </div>
         </div>
 
         <!-- Équité disponible (conditionnel) -->
         <div class="rsim-equite" id="rsim-equite" style="display:none">
-          <div class="rsim-equite-title">Équité et capacité de refinancement</div>
+          <div class="rsim-equite-title">Équité disponible</div>
           <dl class="rsim-equite-dl">
             <div>
-              <dt>Équité disponible (valeur × 80 % − solde)</dt>
-              <dd id="rsim-equite-dispo">—</dd>
-            </div>
-            <div>
-              <dt>Maximum refinançable</dt>
+              <dt>Maximum refinançable (80 % de la valeur − solde)</dt>
               <dd id="rsim-equite-max">—</dd>
             </div>
             <div id="rsim-equite-additionnel-row" style="display:none">
-              <dt>Nouveau solde (avec dégagement)</dt>
+              <dt>Nouveau solde avec dégagement</dt>
               <dd id="rsim-equite-nouveau-solde">—</dd>
             </div>
-            <div id="rsim-equite-impact-row" style="display:none">
-              <dt>Impact sur le versement (dégagement seul)</dt>
-              <dd id="rsim-equite-impact">—</dd>
-            </div>
           </dl>
+          <div class="rsim-ltv-alert" id="rsim-ltv-alert" style="display:none">
+            <span id="rsim-ltv-alert-text"></span>
+          </div>
         </div>
 
         <!-- Économie nette -->
@@ -234,6 +251,15 @@
             </svg>
           </a>
           <p class="rsim-cta-note">Analyse personnalisée · Sans engagement · Réponse rapide</p>
+          <button type="button" class="rsim-print-btn" id="rsim-print-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 9 6 2 18 2 18 9"/>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Imprimer / enregistrer mon analyse
+          </button>
         </div>
 
         <!-- Disclaimer AMF -->
@@ -258,24 +284,55 @@
     const DEBOUNCE_MS = 150;
     let debounceTimer: number | undefined;
 
+    // --- Formatage canadien-français des champs montants ($) ---
+    // Extrait la valeur numérique brute (accepte espaces et virgule décimale).
+    function parseVal(s: string): number {
+      return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
+    }
+    // Formate un entier avec espace fine comme séparateur de milliers (fr-CA).
+    function fmtThousands(n: number): string {
+      if (isNaN(n) || n <= 0) return '';
+      return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+    }
+    // Applique le formatage sur un <input type=text> en conservant le curseur.
+    function fmtInputEl(el: HTMLInputElement): void {
+      const val = parseVal(el.value);
+      if (val > 0) el.value = fmtThousands(val);
+    }
+
     // --- Form elements ---
+    const sectionEl      = document.getElementById('refinancement-simulator')!;
     const soldeEl        = document.getElementById('rsim-solde') as HTMLInputElement;
     const valeurEl       = document.getElementById('rsim-valeur') as HTMLInputElement;
     const tauxActuelEl   = document.getElementById('rsim-taux-actuel') as HTMLInputElement;
-    const dateAmortEl    = document.getElementById('rsim-date-amort-fin') as HTMLInputElement;
-    const amortHintEl    = document.getElementById('rsim-amort-restant-hint')!;
-    const versRéelEl     = document.getElementById('rsim-versement-reel') as HTMLInputElement;
+    const anneesEl       = document.getElementById('rsim-annees-restantes') as HTMLInputElement;
     const penaliteEl     = document.getElementById('rsim-penalite') as HTMLInputElement;
     const penaliteBadge  = document.getElementById('rsim-penalite-badge')!;
     const fraisEl        = document.getElementById('rsim-frais') as HTMLInputElement;
     const tauxNouveauEl  = document.getElementById('rsim-taux-nouveau') as HTMLInputElement;
+    const tauxLiveBadge  = document.getElementById('rsim-taux-live-badge')!;
     const amortNouveauEl = document.getElementById('rsim-amort-nouveau') as HTMLInputElement;
     const amortAvertEl   = document.getElementById('rsim-amort-avert')!;
     const montantAddEl   = document.getElementById('rsim-montant-additionnel') as HTMLInputElement;
+    const printBtn       = document.getElementById('rsim-print-btn')!;
+
+    // --- Error elements ---
+    const errEls: Record<string, HTMLElement> = {
+      solde:      document.getElementById('rsim-solde-err')!,
+      valeur:     document.getElementById('rsim-valeur-err')!,
+      tauxActuel: document.getElementById('rsim-taux-actuel-err')!,
+      annees:     document.getElementById('rsim-annees-err')!,
+      tauxNouveau:document.getElementById('rsim-taux-nouveau-err')!,
+      add:        document.getElementById('rsim-add-err')!,
+    };
 
     // --- Result elements ---
     const placeholder   = document.getElementById('rsim-placeholder')!;
     const content       = document.getElementById('rsim-content')!;
+    const verdictEl     = document.getElementById('rsim-verdict')!;
+    const verdictBadge  = document.getElementById('rsim-verdict-badge')!;
+    const verdictTitle  = document.getElementById('rsim-verdict-title')!;
+    const verdictSub    = document.getElementById('rsim-verdict-sub')!;
     const heroEl        = document.getElementById('rsim-hero')!;
     const heroEyebrow   = document.getElementById('rsim-hero-eyebrow')!;
     const heroAmount    = document.getElementById('rsim-hero-amount')!;
@@ -297,12 +354,11 @@
     const pmortFillEl    = document.getElementById('rsim-pointmort-fill') as HTMLElement;
 
     const equiteEl            = document.getElementById('rsim-equite')!;
-    const equiteDispoEl       = document.getElementById('rsim-equite-dispo')!;
     const equiteMaxEl         = document.getElementById('rsim-equite-max')!;
     const equiteAddRow        = document.getElementById('rsim-equite-additionnel-row')!;
     const equiteNouveauSolde  = document.getElementById('rsim-equite-nouveau-solde')!;
-    const equiteImpactRow     = document.getElementById('rsim-equite-impact-row')!;
-    const equiteImpactEl      = document.getElementById('rsim-equite-impact')!;
+    const ltvAlertEl          = document.getElementById('rsim-ltv-alert')!;
+    const ltvAlertText        = document.getElementById('rsim-ltv-alert-text')!;
 
     const netEl      = document.getElementById('rsim-net')!;
     const netLabelEl = document.getElementById('rsim-net-label')!;
@@ -310,52 +366,35 @@
     const netSubEl   = document.getElementById('rsim-net-sub')!;
 
     // --- State ---
-    let freq = 12; // periods per year
     let penaliteManuelle = false; // true when user manually edited the penalty field
 
-    // --- Frequency pill group ---
-    const freqGroup = document.getElementById('rsim-freq-group')!;
-    freqGroup.querySelectorAll<HTMLButtonElement>('.rsim-pill').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        freqGroup.querySelectorAll('.rsim-pill').forEach((b) => {
-          b.classList.remove('active');
-          b.setAttribute('aria-checked', 'false');
-        });
-        btn.classList.add('active');
-        btn.setAttribute('aria-checked', 'true');
-        freq = parseInt(btn.dataset.freq ?? '12', 10);
-        doCalculation();
-      });
-    });
+    // --- Pré-remplissage du nouveau taux depuis le taux live Hypotheca ---
+    const tauxLiveDefaut = sectionEl.dataset.nouveauTauxDefaut;
+    if (tauxLiveDefaut) {
+      tauxNouveauEl.value = tauxLiveDefaut;
+    } else {
+      tauxLiveBadge.style.display = 'none';
+    }
+    // Si l'utilisateur modifie le taux, on masque le badge "taux du jour".
+    tauxNouveauEl.addEventListener('input', () => { tauxLiveBadge.style.display = 'none'; });
 
-    // --- Date → remaining amortization ---
-    function moisRestantsDepuisDate(valeurMois: string): number {
-      if (!valeurMois) return 0;
-      const [annee, mois] = valeurMois.split('-').map(Number);
-      if (!annee || !mois) return 0;
-      const fin = new Date(annee, mois - 1, 1);
-      const now = new Date();
-      return (fin.getFullYear() - now.getFullYear()) * 12 + (fin.getMonth() - now.getMonth());
+    // --- Années restantes → mois ---
+    function moisRestants(): number {
+      const ans = parseFloat(anneesEl.value);
+      if (isNaN(ans) || ans <= 0) return 0;
+      return Math.round(ans * 12);
     }
 
-    function updateAmortHint() {
-      const moisR = moisRestantsDepuisDate(dateAmortEl.value);
-      if (moisR <= 0) {
-        amortHintEl.textContent = 'Date invalide ou déjà passée';
-        return;
-      }
-      const ans = Math.round(moisR / 12 * 10) / 10;
-      amortHintEl.textContent = `≈ ${ans} an${ans !== 1 ? 's' : ''} restant${ans !== 1 ? 's' : ''}`;
-      // Sync amort nouveau if user hasn't customized it
-      const moisR_actuel = moisRestantsDepuisDate(dateAmortEl.value);
-      const ansRound = Math.max(1, Math.min(30, Math.round(moisR_actuel / 12)));
-      if (!amortNouveauEl.dataset.userEdited) {
-        amortNouveauEl.value = String(ansRound);
-      }
+    function syncAmortNouveau() {
+      // Aligne le nouvel amortissement sur le restant si l'utilisateur ne l'a pas personnalisé.
+      if (amortNouveauEl.dataset.userEdited) return;
+      const ans = parseFloat(anneesEl.value);
+      if (isNaN(ans) || ans <= 0) return;
+      amortNouveauEl.value = String(Math.max(1, Math.min(30, Math.round(ans))));
     }
 
-    dateAmortEl.addEventListener('change', () => {
-      updateAmortHint();
+    anneesEl.addEventListener('input', () => {
+      syncAmortNouveau();
       scheduleRecalc();
     });
 
@@ -364,13 +403,30 @@
       scheduleRecalc();
     });
 
+    // --- Bouton imprimer ---
+    printBtn.addEventListener('click', () => window.print());
+
+    // --- Validation : affichage des messages d'erreur ---
+    const errInputs: Record<string, HTMLInputElement> = {
+      solde: soldeEl, valeur: valeurEl, tauxActuel: tauxActuelEl,
+      annees: anneesEl, tauxNouveau: tauxNouveauEl, add: montantAddEl,
+    };
+    function setError(key: string, msg: string) {
+      const el = errEls[key];
+      if (el) el.textContent = msg;
+      errInputs[key]?.classList.toggle('rsim-input--invalid', !!msg);
+    }
+    function clearErrors() {
+      Object.keys(errEls).forEach((k) => setError(k, ''));
+    }
+
     // --- SessionStorage — pré-remplissage pénalité ---
     function tryLoadPenaliteFromSession() {
       const saved = sessionStorage.getItem('penalite-resultat');
       if (saved && !penaliteManuelle) {
         const montant = parseFloat(saved);
         if (!isNaN(montant) && montant > 0) {
-          penaliteEl.value = String(montant);
+          penaliteEl.value = fmtThousands(montant);
           penaliteBadge.style.display = '';
         }
       }
@@ -410,13 +466,6 @@
       return totalInteret;
     }
 
-    // --- Unit label for payment frequency ---
-    function unitLabel(f: number): string {
-      if (f === 26) return '/2 sem.';
-      if (f === 52) return '/sem.';
-      return '/mois';
-    }
-
     function formatMoisDuree(mois: number): string {
       if (mois <= 0) return '—';
       if (mois < 24) return `${mois} mois`;
@@ -426,49 +475,71 @@
       return `${ans} an${ans > 1 ? 's' : ''} ${reste} mois`;
     }
 
+    // --- Validation des champs (messages visibles + retour booléen) ---
+    function validate(): boolean {
+      clearErrors();
+      let ok = true;
+      const solde = parseVal(soldeEl.value);
+      const tauxActuel = parseFloat(tauxActuelEl.value);
+      const tauxNouveau = parseFloat(tauxNouveauEl.value);
+      const annees = parseFloat(anneesEl.value);
+      const valeur = parseVal(valeurEl.value);
+      const montantAdd = parseVal(montantAddEl.value);
+
+      if (isNaN(solde) || solde <= 0) { setError('solde', 'Entrez votre solde hypothécaire.'); ok = false; }
+      if (isNaN(tauxActuel) || tauxActuel < 0.5 || tauxActuel > 20) {
+        setError('tauxActuel', 'Taux entre 0,5 % et 20 %.'); ok = false;
+      }
+      if (isNaN(tauxNouveau) || tauxNouveau < 0.5 || tauxNouveau > 20) {
+        setError('tauxNouveau', 'Taux entre 0,5 % et 20 %.'); ok = false;
+      }
+      if (isNaN(annees) || annees <= 0 || annees > 35) {
+        setError('annees', 'Entrez les années restantes (1 à 35).'); ok = false;
+      }
+      // Dégagement > équité disponible (uniquement si valeur fournie)
+      if (!isNaN(valeur) && valeur > 0 && !isNaN(montantAdd) && montantAdd > 0 && !isNaN(solde) && solde > 0) {
+        const maxRefi = valeur * 0.80 - solde;
+        if (montantAdd > maxRefi) {
+          setError('add', `Dépasse l'équité disponible (max ${formatMoney(Math.max(0, Math.round(maxRefi)))}).`);
+          // Non bloquant pour le calcul, mais signalé.
+        }
+      }
+      return ok;
+    }
+
     // --- Main calculation ---
     function doCalculation() {
-      const solde = parseFloat(soldeEl.value) || 0;
+      const solde = parseVal(soldeEl.value);
       const tauxActuel = parseFloat(tauxActuelEl.value) || 0;
       const tauxNouveau = parseFloat(tauxNouveauEl.value) || 0;
-      const penalite = Math.max(0, parseFloat(penaliteEl.value) || 0);
-      const frais = Math.max(0, parseFloat(fraisEl.value) || 0);
-      const montantAdd = Math.max(0, parseFloat(montantAddEl.value) || 0);
-      const valeur = Math.max(0, parseFloat(valeurEl.value) || 0);
-      const versReel = parseFloat(versRéelEl.value);
+      const penalite = Math.max(0, parseVal(penaliteEl.value));
+      const frais = Math.max(0, parseVal(fraisEl.value));
+      const montantAdd = Math.max(0, parseVal(montantAddEl.value));
+      const valeur = Math.max(0, parseVal(valeurEl.value));
 
-      // Validation
-      const moisRestants = moisRestantsDepuisDate(dateAmortEl.value);
-      if (solde <= 0 || tauxActuel <= 0 || tauxNouveau <= 0 || moisRestants <= 0) {
+      // Validation visible
+      const valide = validate();
+      const moisR = moisRestants();
+      if (!valide || solde <= 0 || tauxActuel <= 0 || tauxNouveau <= 0 || moisR <= 0) {
         placeholder.style.display = '';
         content.style.display = 'none';
         return;
       }
 
-      const amortRestantAns = moisRestants / 12;
+      const amortRestantAns = moisR / 12;
       const amortNouveauAns = Math.max(1, Math.min(30, parseFloat(amortNouveauEl.value) || amortRestantAns));
-      const horizonMois = moisRestants; // toujours le même pour les deux scénarios
+      const horizonMois = moisR; // toujours le même pour les deux scénarios
       const horizonAns = Math.round(amortRestantAns * 10) / 10;
 
-      // --- Payments ---
+      // --- Payments (mensuel) ---
       const nouveauSolde = solde + montantAdd;
-      const pmtActuelMensuel = !isNaN(versReel) && versReel > 0
-        ? versReel
-        : calcPaiement(solde, tauxActuel, amortRestantAns, 12);
+      const pmtActuelMensuel = calcPaiement(solde, tauxActuel, amortRestantAns, 12);
       const pmtNouveauMensuel = calcPaiement(nouveauSolde, tauxNouveau, amortNouveauAns, 12);
 
       // Effet taux pur : nouveau paiement si même amortissement que l'actuel
       const pmtNouveauMemeAmort = calcPaiement(solde, tauxNouveau, amortRestantAns, 12);
       const effetTauxMensuel = pmtActuelMensuel - pmtNouveauMemeAmort;
       const effetAmortMensuel = pmtNouveauMemeAmort - pmtNouveauMensuel; // positif si amort allongé
-
-      // For display at chosen frequency
-      const pmtActuelFreq = freq === 26
-        ? pmtActuelMensuel / 2
-        : freq === 52 ? pmtActuelMensuel / 4 : pmtActuelMensuel;
-      const pmtNouveauFreq = freq === 26
-        ? pmtNouveauMensuel / 2
-        : freq === 52 ? pmtNouveauMensuel / 4 : pmtNouveauMensuel;
 
       // --- Interest on same horizon ---
       const interetActuel = interetsPayesSurPeriode(solde, tauxActuel, amortRestantAns, horizonMois);
@@ -487,23 +558,43 @@
 
       // --- DOM updates ---
       placeholder.style.display = 'none';
-      content.style.display = '';
+      content.style.display = 'flex';
 
-      const unitStr = unitLabel(freq);
+      const unitStr = '/mois';
       const horizonLabel = `sur ≈ ${horizonAns} an${horizonAns !== 1 ? 's' : ''} restant${horizonAns !== 1 ? 's' : ''}`;
+
+      // --- Verdict principal ---
+      verdictEl.className = 'rsim-verdict';
+      const pointMortCourt = pointMortMois !== null && pointMortMois > 0 && pointMortMois <= 48;
+      if (economieNette > 0 && (pointMortMois === null || pointMortCourt)) {
+        verdictEl.classList.add('rsim-verdict--oui');
+        verdictBadge.textContent = 'OUI';
+        verdictTitle.textContent = 'Les conditions sont favorables pour un refinancement.';
+        verdictSub.textContent = `Vous épargnez ${formatMoney(Math.round(economieNette))} net ${horizonLabel}, coûts inclus.`;
+      } else if (economieNette > 0) {
+        verdictEl.classList.add('rsim-verdict--evaluer');
+        verdictBadge.textContent = 'À ÉVALUER';
+        verdictTitle.textContent = 'Rentable, mais sur un long horizon';
+        verdictSub.textContent = `Économie nette de ${formatMoney(Math.round(economieNette))}, mais le point mort est long — votre durée de détention compte.`;
+      } else {
+        verdictEl.classList.add('rsim-verdict--non');
+        verdictBadge.textContent = 'NON';
+        verdictTitle.textContent = 'Le refinancement n\'est pas avantageux ici';
+        verdictSub.textContent = `Les coûts dépassent les économies d'intérêts (${formatMoney(Math.round(Math.abs(economieNette)))} de perte nette).`;
+      }
 
       // Hero
       heroEl.className = 'rsim-hero';
       if (effetTauxMensuel > 5) {
         heroEl.classList.add('rsim-hero--positive');
         heroEyebrow.textContent = 'Économie mensuelle (effet taux)';
-        heroAmount.textContent = formatMoney(Math.round(effetTauxMensuel));
+        heroAmount.textContent = `${formatMoney(Math.round(effetTauxMensuel))}/mois`;
         heroSub.textContent = `Votre versement mensuel baisse de ${formatMoney(Math.round(effetTauxMensuel))} grâce au nouveau taux.`;
       } else if (effetTauxMensuel < -5) {
         heroEl.classList.add('rsim-hero--negative');
         heroEyebrow.textContent = 'Hausse du versement (effet taux)';
-        heroAmount.textContent = `+${formatMoney(Math.round(Math.abs(effetTauxMensuel)))}`;
-        heroSub.textContent = 'Le nouveau taux est plus élevé — vérifiez les paramètres.';
+        heroAmount.textContent = `+${formatMoney(Math.round(Math.abs(effetTauxMensuel)))}/mois`;
+        heroSub.textContent = `À amortissement égal, le nouveau taux (${tauxNouveau} %) fait augmenter votre versement de ${formatMoney(Math.round(Math.abs(effetTauxMensuel)))}/mois par rapport au taux actuel (${tauxActuel} %).`;
       } else {
         heroEl.classList.add('rsim-hero--neutral');
         heroEyebrow.textContent = 'Effet taux sur le versement';
@@ -524,8 +615,8 @@
       }
 
       // Comparison cards
-      pmtActuelEl.textContent = `${formatMoney(Math.round(pmtActuelFreq))}${unitStr}`;
-      pmtNouveauEl.textContent = `${formatMoney(Math.round(pmtNouveauFreq))}${unitStr}`;
+      pmtActuelEl.textContent = `${formatMoney(Math.round(pmtActuelMensuel))}${unitStr}`;
+      pmtNouveauEl.textContent = `${formatMoney(Math.round(pmtNouveauMensuel))}${unitStr}`;
       interetActuelEl.textContent = formatMoney(Math.round(interetActuel));
       interetNouveauEl.textContent = formatMoney(Math.round(interetNouveau));
       interetLabelActuel.textContent = `Intérêts ${horizonLabel}`;
@@ -540,11 +631,17 @@
           ? 'Aucun coût de refinancement — rentable immédiatement.'
           : 'L\'effet taux ne génère pas d\'économie — le refinancement ne s\'autofinance pas par le taux seul.';
         pmortFillEl.style.width = '0%';
+        const axisMidEl = document.getElementById('rsim-pointmort-axis-mid')!;
+        const axisMaxEl = document.getElementById('rsim-pointmort-axis-max')!;
+        axisMidEl.textContent = '';
+        axisMaxEl.textContent = '';
       } else if (pointMortMois === 0) {
         pmortValueEl.textContent = 'Immédiat';
         pmortSubEl.textContent = 'Aucun coût — rentable dès le premier mois.';
         pointMortEl.classList.add('rsim-pointmort--vert');
         pmortFillEl.style.width = '0%';
+        (document.getElementById('rsim-pointmort-axis-mid') as HTMLElement).textContent = '';
+        (document.getElementById('rsim-pointmort-axis-max') as HTMLElement).textContent = '';
       } else {
         pmortValueEl.textContent = formatMoisDuree(pointMortMois);
         if (pointMortMois < 24) {
@@ -557,31 +654,40 @@
           pointMortEl.classList.add('rsim-pointmort--rouge');
           pmortSubEl.textContent = 'Long — évaluez si vous resterez dans la propriété assez longtemps.';
         }
-        pmortFillEl.style.width = `${Math.min((pointMortMois / 60) * 100, 100)}%`;
+        const barMax = horizonMois;
+        pmortFillEl.style.width = `${Math.min((pointMortMois / barMax) * 100, 100)}%`;
+        const axisMid = document.getElementById('rsim-pointmort-axis-mid')!;
+        const axisMax = document.getElementById('rsim-pointmort-axis-max')!;
+        axisMid.textContent = formatMoisDuree(Math.round(barMax / 2));
+        axisMax.textContent = formatMoisDuree(barMax);
       }
 
       // Équité
       if (valeur > 0) {
         equiteEl.style.display = '';
         const maxRefi = Math.max(0, valeur * 0.80 - solde);
-        equiteDispoEl.textContent = formatMoney(Math.round(valeur * 0.80 - solde));
         equiteMaxEl.textContent = formatMoney(Math.round(maxRefi));
 
         if (montantAdd > 0) {
           equiteAddRow.style.display = '';
-          equiteImpactRow.style.display = '';
           equiteNouveauSolde.textContent = formatMoney(Math.round(nouveauSolde));
-          // Impact = différence entre pmt sur nouveauSolde vs solde seul
-          const pmtSansAdd = calcPaiement(solde, tauxNouveau, amortNouveauAns, 12);
-          const impactAdd = pmtNouveauMensuel - pmtSansAdd;
-          equiteImpactEl.textContent = `+${formatMoney(Math.round(impactAdd))}/mois`;
-          equiteImpactEl.style.color = 'var(--clay)';
         } else {
           equiteAddRow.style.display = 'none';
-          equiteImpactRow.style.display = 'none';
+        }
+
+        // Alerte ratio prêt-valeur (LTV)
+        const ltv = nouveauSolde / valeur;
+        if (ltv > 0.80 + 1e-9) {
+          ltvAlertEl.style.display = '';
+          ltvAlertText.textContent =
+            `⚠ Le nouveau solde (${formatMoney(Math.round(nouveauSolde))}) représente ${Math.round(ltv * 100)} % de la valeur. `
+            + `Le refinancement conventionnel est limité à 80 %. Réduisez le dégagement à ${formatMoney(Math.max(0, Math.round(maxRefi)))} maximum.`;
+        } else {
+          ltvAlertEl.style.display = 'none';
         }
       } else {
         equiteEl.style.display = 'none';
+        ltvAlertEl.style.display = 'none';
       }
 
       // Économie nette
@@ -604,13 +710,22 @@
     }
 
     // Bind inputs
-    [soldeEl, valeurEl, tauxActuelEl, versRéelEl, fraisEl, tauxNouveauEl, montantAddEl].forEach(
+    // Champs dollar : formatage au blur + recalcul à l'input
+    // (penaliteEl a son propre écouteur pour penaliteManuelle, on ajoute juste le blur ici)
+    const moneyEls = [soldeEl, valeurEl, fraisEl, montantAddEl];
+    moneyEls.forEach((el) => {
+      el.addEventListener('blur', () => fmtInputEl(el));
+      el.addEventListener('input', scheduleRecalc);
+    });
+    penaliteEl.addEventListener('blur', () => fmtInputEl(penaliteEl));
+    // Champs taux
+    [tauxActuelEl, tauxNouveauEl].forEach(
       (el) => el.addEventListener('input', scheduleRecalc)
     );
-    // Penalty: scheduleRecalc handled in the penaliteEl listener above
+    // années + amort + pénalité ont leurs propres écouteurs ci-dessus
 
     // Initial setup
-    updateAmortHint();
+    syncAmortNouveau();
     tryLoadPenaliteFromSession();
     doCalculation();
   });
@@ -671,9 +786,17 @@
     color: var(--muted);
     letter-spacing: .02em;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: wrap;
     gap: .3rem;
+    line-height: 1.3;
+  }
+
+  /* Dans une rangée 2 colonnes, on réserve la hauteur de deux lignes de
+     label pour que les inputs des deux colonnes s'alignent même si un seul
+     libellé déborde sur une deuxième ligne. */
+  .rsim-row .rsim-label {
+    min-height: 3.25rem;
   }
 
   .rsim-opt {
@@ -701,29 +824,53 @@
     background: white;
   }
 
-  .rsim-input::placeholder { color: var(--muted); opacity: .6; }
+  .rsim-input::placeholder { color: var(--muted); }
 
-  .rsim-rate-wrap {
+  .rsim-rate-wrap,
+  .rsim-money-wrap {
     position: relative;
     display: flex;
     align-items: center;
   }
 
   .rsim-input--rate { padding-right: 2.5rem; }
+  .rsim-input--money { padding-left: 1.75rem; }
 
-  .rsim-rate-suffix {
+  .rsim-rate-suffix,
+  .rsim-money-prefix {
     position: absolute;
-    right: .85rem;
     font-size: .8rem;
     font-weight: 600;
     color: var(--muted);
     pointer-events: none;
+    user-select: none;
   }
+
+  .rsim-rate-suffix { right: .85rem; }
+  .rsim-money-prefix { left: .75rem; }
 
   .rsim-error {
     font-size: .75rem;
     color: #c0392b;
     min-height: 1em;
+  }
+
+  .rsim-input--invalid {
+    border-color: #c0392b;
+    background: rgba(192, 57, 43, .04);
+  }
+
+  /* Badge "taux du jour" */
+  .rsim-taux-live-badge {
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    background: rgba(61, 90, 74, .1);
+    color: var(--forest);
+    border: 1px solid rgba(61, 90, 74, .2);
+    border-radius: 6px;
+    padding: .12rem .4rem;
   }
 
   .rsim-hint {
@@ -735,37 +882,6 @@
   .rsim-amort-avert {
     color: var(--clay);
     font-weight: 600;
-  }
-
-  /* Pill group (frequency) */
-  .rsim-pill-group {
-    display: flex;
-    gap: .4rem;
-    flex-wrap: wrap;
-  }
-
-  .rsim-pill {
-    flex: 1;
-    min-width: 0;
-    padding: .6rem .5rem;
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    background: var(--sand);
-    font-family: "DM Sans", sans-serif;
-    font-size: .8rem;
-    font-weight: 600;
-    color: var(--ink);
-    cursor: pointer;
-    text-align: center;
-    transition: background .2s, border-color .2s, color .2s;
-  }
-
-  .rsim-pill:hover { border-color: var(--clay); background: white; }
-
-  .rsim-pill.active {
-    background: var(--forest);
-    color: white;
-    border-color: transparent;
   }
 
   /* Penalty link and badge */
@@ -788,11 +904,13 @@
     margin-top: .35rem;
     font-size: .78rem;
     font-weight: 600;
-    color: var(--clay);
-    text-decoration: none;
+    /* #8a4820 sur fond --sand (#f7f2eb) = ratio ~5.6:1, passe WCAG AA */
+    color: #8a4820;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
-  .rsim-penalite-link:hover { text-decoration: underline; }
+  .rsim-penalite-link:hover { color: var(--ink); }
 
   /* ---- Results column ---- */
   .rsim-results {
@@ -800,7 +918,13 @@
     top: 100px;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.75rem;
+  }
+
+  #rsim-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
   }
 
   /* Placeholder */
@@ -827,6 +951,46 @@
     margin: 0;
     line-height: 1.6;
   }
+
+  /* Verdict principal */
+  .rsim-verdict {
+    border-radius: 18px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    border: 1.5px solid var(--border);
+    background: var(--sand);
+  }
+
+  .rsim-verdict--oui     { border-color: rgba(61,90,74,.4);  background: rgba(61,90,74,.06); }
+  .rsim-verdict--evaluer { border-color: rgba(196,122,52,.4); background: rgba(196,122,52,.06); }
+  .rsim-verdict--non     { border-color: rgba(180,60,50,.35); background: rgba(180,60,50,.05); }
+
+  .rsim-verdict-badge {
+    align-self: flex-start;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: .25rem .6rem;
+    border-radius: 999px;
+    color: white;
+  }
+
+  .rsim-verdict--oui .rsim-verdict-badge     { background: var(--forest); }
+  .rsim-verdict--evaluer .rsim-verdict-badge { background: var(--clay); }
+  .rsim-verdict--non .rsim-verdict-badge     { background: #b43c32; }
+
+  .rsim-verdict-title {
+    font-family: "Lora", serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+
+  .rsim-verdict-sub { font-size: .82rem; color: var(--muted); line-height: 1.5; }
 
   /* Hero */
   .rsim-hero {
@@ -997,6 +1161,15 @@
 
   .rsim-pointmort-sub { font-size: .78rem; color: var(--muted); line-height: 1.45; }
 
+  .rsim-pointmort-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: .65rem;
+    color: var(--muted);
+    opacity: .7;
+    margin-top: .15rem;
+  }
+
   .rsim-pointmort-bar {
     height: 5px;
     background: var(--border);
@@ -1054,6 +1227,17 @@
     font-family: "DM Sans", sans-serif;
   }
 
+  .rsim-ltv-alert {
+    margin-top: .5rem;
+    background: rgba(180, 60, 50, .08);
+    border: 1px solid rgba(180, 60, 50, .3);
+    border-radius: 10px;
+    padding: .6rem .85rem;
+    font-size: .76rem;
+    color: #8a2a20;
+    line-height: 1.5;
+  }
+
   /* Économie nette */
   .rsim-net {
     background: var(--sand);
@@ -1063,7 +1247,10 @@
     text-align: center;
   }
 
-  .rsim-net--positive { border-color: rgba(61, 90, 74, .3); }
+  .rsim-net--positive {
+    border-color: rgba(61, 90, 74, .3);
+    background: rgba(61, 90, 74, .04);
+  }
   .rsim-net--negative { border-color: rgba(196, 122, 82, .3); }
 
   .rsim-net-label {
@@ -1083,7 +1270,7 @@
     margin-bottom: .35rem;
   }
 
-  .rsim-net--positive .rsim-net-value { color: var(--forest); }
+  .rsim-net--positive .rsim-net-value { color: var(--forest); font-weight: 800; }
   .rsim-net--negative .rsim-net-value { color: var(--clay); }
 
   .rsim-net-sub { font-size: .75rem; color: var(--muted); line-height: 1.5; }
@@ -1098,6 +1285,26 @@
     color: var(--muted);
     text-align: center;
   }
+
+  .rsim-print-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    margin: .25rem auto 0;
+    padding: .55rem 1rem;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: "DM Sans", sans-serif;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+
+  .rsim-print-btn:hover { border-color: var(--clay); color: var(--ink); }
 
   /* Disclaimer */
   .rsim-disclaimer {
@@ -1118,11 +1325,47 @@
 
     #refinancement-simulator .section-inner {
       grid-template-columns: 1fr;
-      gap: 2rem;
+      gap: 1.5rem;
     }
+
+    /* Rend le <form> transparent côté layout : ses fieldsets deviennent
+       des enfants directs de la grille et peuvent être réordonnés. */
+    .rsim-form { display: contents; }
+
+    /* Résultats affichés immédiatement après les champs principaux,
+       avant les champs secondaires (coûts, nouveau prêt). */
+    .rsim-form .rsim-fieldset:nth-child(1) { order: 1; }
+    .rsim-results                           { order: 2; }
+    .rsim-form .rsim-fieldset:nth-child(2) { order: 3; }
+    .rsim-form .rsim-fieldset:nth-child(3) { order: 4; }
+    .rsim-form .rsim-disclaimer            { order: 5; }
 
     .rsim-results { position: static; }
     .rsim-compare-grid { grid-template-columns: 1fr; }
     .rsim-row { grid-template-columns: 1fr; }
+  }
+
+  /* Impression — n'imprimer que l'analyse */
+  @media print {
+    .rsim-form,
+    .rsim-placeholder,
+    .rsim-cta,
+    .rsim-print-btn { display: none !important; }
+
+    #refinancement-simulator { background: white; padding: 0; }
+    #refinancement-simulator .section-inner { display: block; gap: 0; }
+    .rsim-results { position: static; gap: .75rem; }
+    .rsim-hero--positive,
+    .rsim-hero--negative {
+      background: white !important;
+      box-shadow: none !important;
+      border: 1px solid #ccc;
+    }
+    .rsim-hero--positive .rsim-hero-eyebrow,
+    .rsim-hero--negative .rsim-hero-eyebrow,
+    .rsim-hero--positive .rsim-hero-amount,
+    .rsim-hero--negative .rsim-hero-amount,
+    .rsim-hero--positive .rsim-hero-sub,
+    .rsim-hero--negative .rsim-hero-sub { color: #1a1a1a !important; }
   }
 </style>
