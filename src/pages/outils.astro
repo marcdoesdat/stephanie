@@ -6,6 +6,7 @@ import Simulator from '../components/Simulator.astro';
 import Calculator from '../components/Calculator.astro';
 import Comparateur from '../components/Comparateur.astro';
 import PenaliteCalculator from '../components/PenaliteCalculator.astro';
+import RefinancementSimulator from '../components/RefinancementSimulator.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
 import { loadSiteConfig } from '../config';
 import { preteursParCategorie } from '../data/preteurs';
@@ -45,6 +46,7 @@ const tabs = [
   { id: 'calculateur', label: 'Calculateur de paiement', sub: 'Versements' },
   { id: 'comparateur', label: 'Comparateur de taux', sub: 'Économies' },
   { id: 'penalite', label: 'Calculer ma pénalité', sub: 'IRD' },
+  { id: 'refinancement', label: 'Simulateur de refinancement', sub: 'Refinancement' },
 ];
 ---
 
@@ -59,10 +61,10 @@ const tabs = [
         <div class="section-tag">Outils gratuits</div>
         <h1 class="section-title">Calculateurs hypothécaires <em>gratuits</em> au Québec</h1>
         <p class="section-sub">
-          Quatre calculateurs hypothécaires gratuits pour le Québec : estimez votre capacité
+          Cinq calculateurs hypothécaires gratuits pour le Québec : estimez votre capacité
           d'emprunt, calculez un versement, comparez les taux affichés en banque avec ceux
-          qu'un courtier peut négocier et évaluez votre pénalité de remboursement anticipé
-          — le tout dans un même endroit, sans inscription.
+          qu'un courtier peut négocier, évaluez votre pénalité de remboursement anticipé
+          et simulez un refinancement — le tout dans un même endroit, sans inscription.
         </p>
       </div>
     </section>
@@ -143,6 +145,17 @@ const tabs = [
           <div class="outil-standalone-link">
             <a href="/outils/calculateur-penalite-hypothecaire">📄 Voir en pleine page →</a>
           </div>
+        </div>
+
+        <div
+          class="outils-panel"
+          id="panel-refinancement"
+          role="tabpanel"
+          aria-labelledby="tab-refinancement"
+          data-panel="refinancement"
+          hidden
+        >
+          <RefinancementSimulator />
         </div>
       </div>
     </section>
