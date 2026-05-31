@@ -116,7 +116,7 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
         let lastY = window.scrollY;
         let ticking = false;
         const SCROLL_THRESHOLD = 8; // px minimum pour déclencher
-        const IDLE_DELAY = 3000; // ms sans scroll → réafficher le bouton
+        const IDLE_DELAY = 8000; // ms sans scroll → réafficher le bouton
         let idleTimer = null;
 
         function resetIdleTimer() {
