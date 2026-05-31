@@ -116,6 +116,15 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
         let lastY = window.scrollY;
         let ticking = false;
         const SCROLL_THRESHOLD = 8; // px minimum pour déclencher
+        const IDLE_DELAY = 3000; // ms sans scroll → réafficher le bouton
+        let idleTimer = null;
+
+        function resetIdleTimer() {
+          clearTimeout(idleTimer);
+          idleTimer = setTimeout(() => {
+            sticky.classList.remove('sticky-hidden');
+          }, IDLE_DELAY);
+        }
 
         function onScroll() {
           const y = window.scrollY;
@@ -140,7 +149,11 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
             });
             ticking = true;
           }
+          resetIdleTimer();
         }, { passive: true });
+
+        // Lance le timer dès le chargement : bouton caché par défaut, apparaît après 3 s sans scroll
+        resetIdleTimer();
 
         // --- État de conversion /outils/ : discret → plein gaz ---
         // Si l'utilisateur a déjà déverrouillé une simulation (localStorage) ou
