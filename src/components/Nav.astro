@@ -1,7 +1,9 @@
 ---
+import { Phone } from '@lucide/astro';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
+const telephoneHref = `tel:${config.telephone.replace(/[^\d+]/g, '')}`;
 
 // On sépare le prénom et le nom
 const [prenom, ...nomArr] = config.nom.split(' ');
@@ -29,6 +31,10 @@ const nomDeFamille = nomArr.join(' ');
       <li><a href="/#contact">Contact</a></li>
       <li><a href={config.calendly_url} data-calendly class="nav-cta" target="_blank" rel="noopener">Consultation gratuite</a></li>
     </ul>
+    
+    <a href={telephoneHref} class="nav-phone" aria-label="Appeler Stéphanie Weyman">
+      <Phone size={20} stroke-width={2} />
+    </a>
     
     <button
       class="hamburger"
@@ -98,6 +104,24 @@ const nomDeFamille = nomArr.join(' ');
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .nav-phone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: color 0.2s, background 0.2s;
+    text-decoration: none;
+    z-index: 201;
+    flex-shrink: 0;
+  }
+
+  .nav-phone:hover {
+    color: var(--clay);
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .nav-separator {

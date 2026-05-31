@@ -7,7 +7,7 @@ const config = loadSiteConfig();
 const { baseRate = 3.70 } = Astro.props;
 function fmtRate(val: number | null | undefined): string {
   if (val == null) return '—';
-  return val.toFixed(2).replace('.', ',') + ' %';
+  return val.toFixed(2).replace('.', ',') + ' %*';
 }
 ---
 

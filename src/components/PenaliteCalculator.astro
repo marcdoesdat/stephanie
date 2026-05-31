@@ -618,8 +618,9 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
   .penalite-toggle.active .penalite-toggle-sub{color:rgba(255,255,255,.7);}
 
   .penalite-actions{display:flex;gap:.75rem;}
-  .penalite-btn{flex:1;padding:.75rem 1rem;border-radius:12px;font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s;border:1.5px solid var(--border);background:var(--sand);color:var(--ink);}
-  .penalite-btn:hover{background:white;border-color:var(--clay);}
+  .penalite-btn{flex:1;appearance:none;-webkit-appearance:none;padding:.75rem 1rem;border-radius:12px;font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s;border:1.5px solid var(--border);background:var(--sand);color:var(--ink);}
+  .penalite-btn:hover{background:var(--warm);border-color:var(--clay);}
+  .penalite-btn:active{background:var(--warm);}
   .penalite-btn--secondary{flex:0;}
 
   .penalite-results{position:sticky;top:100px;}
