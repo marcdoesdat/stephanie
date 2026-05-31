@@ -482,6 +482,9 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
 
       capScenario.value = JSON.stringify({ solde: input.solde, taux: input.tauxContractuel, type: input.typeTaux, dateDebut: input.dateDebutTerme, dureeMois: input.dureeTermeMois, preteur: preteurSelect.selectedOptions[0]?.textContent ?? '' });
       capPenalite.value = formatArgent(Math.round(result.penaliteTotale));
+
+      // Rend la pénalité disponible pour le simulateur de refinancement
+      sessionStorage.setItem('penalite-resultat', String(Math.round(result.penaliteTotale)));
     }
 
     ctaBtn.addEventListener('click', () => {
