@@ -1443,13 +1443,15 @@ footer strong{color:rgba(255,255,255,.85)}
     border-bottom-color:transparent;
   }
   /* Sur mobile : onglet actif avec fond vert compact — plus lisible qu'un underline */
+  .outils-tab.comp-pill{color:var(--muted)}
+  .outils-tab.comp-pill .comp-pill-sub{color:var(--muted);opacity:.7}
   .outils-tab.comp-pill[aria-selected="true"],
   .outils-tab.comp-pill.active{
     background:var(--forest);color:white;
     border-radius:8px;
     border-bottom-color:transparent;
   }
-  .outils-tab.comp-pill[aria-selected="true"] .comp-pill-sub{color:rgba(255,255,255,.7)}
+  .outils-tab.comp-pill[aria-selected="true"] .comp-pill-sub{color:rgba(255,255,255,.7);opacity:1}
   .outils-tab .outils-tab-label{font-size:.8rem}
 }
 @media(max-width:420px){
