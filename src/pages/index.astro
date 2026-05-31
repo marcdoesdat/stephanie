@@ -14,7 +14,7 @@ import RappelCTA from '../components/RappelCTA.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
 import { getReviews } from '../services/reviewsService';
 import { loadSiteConfig } from '../config';
-import { House, Calculator, Scale, ClipboardList } from '@lucide/astro';
+import { House, Calculator, Scale, ClipboardList, TrendingUp, Landmark } from '@lucide/astro';
 
 const config = loadSiteConfig();
 
@@ -65,8 +65,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           <div class="section-tag">Outils gratuits</div>
           <h2 class="section-title">Préparez votre projet avec nos outils</h2>
           <p class="section-sub">
-            Quatre outils clairs pour planifier votre financement : capacité d'emprunt, versement estimé, comparaison des taux
-            entre la banque et un courtier, et calculateur de pénalité hypothécaire.
+            Cinq outils clairs pour planifier votre financement : capacité d'emprunt, versement estimé,
+            comparaison des taux, pénalité hypothécaire et simulation de refinancement — et un calculateur de droits de mutation bientôt disponible.
           </p>
           <p class="outils-trust">Sans inscription · Résultats instantanés</p>
         </div>
@@ -96,6 +96,18 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <p>Estimez les frais de remboursement anticipé (IRD ou 3 mois d'intérêts) selon votre prêteur et votre contrat.</p>
             <span class="outils-card-arrow" aria-hidden="true">→</span>
           </a>
+          <a href="/outils#refinancement" class="outils-card" aria-label="Simulateur de refinancement — Évaluez l'impact d'un refinancement">
+            <div class="service-icon" aria-hidden="true"><TrendingUp size={22} stroke-width={1.8} /></div>
+            <div class="outils-card-title">Simulateur de refinancement</div>
+            <p>Évaluez l'impact d'un refinancement : liquidités dégagées, nouveau versement et comparaison avec votre situation actuelle.</p>
+            <span class="outils-card-arrow" aria-hidden="true">→</span>
+          </a>
+          <div class="outils-card outils-card--coming-soon" aria-label="Calculateur de droits de mutation — Bientôt disponible">
+            <div class="service-icon" aria-hidden="true"><Landmark size={22} stroke-width={1.8} /></div>
+            <div class="outils-card-title">Droits de mutation</div>
+            <p>Estimez la taxe de bienvenue applicable à votre propriété selon le prix d'achat et la municipalité visée.</p>
+            <span class="outils-card-badge" aria-hidden="true">À venir</span>
+          </div>
         </div>
       </div>
     </section>
@@ -160,6 +172,9 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     }
     #outils-teaser .outils-card:hover .outils-card-arrow {
       transform: translateX(4px);
+    }
+    #outils-teaser .outils-card--coming-soon {
+      border-style: dashed;
     }
   </style>
 

@@ -1,8 +1,4 @@
 ﻿---
-import { loadSiteConfig } from '../config';
-
-const config = loadSiteConfig();
-
 interface Props {
   defaultRate?: number;
 }
@@ -86,8 +82,8 @@ const { defaultRate = 3.79 } = Astro.props;
           <div class="sr-sub" id="sim-sub">Entrez vos informations</div>
         </div>
 
-        <!-- Gate : détails verrouillés jusqu'à capture courriel -->
-        <div class="sim-gate locked" id="sim-gate">
+        <!-- Détails -->
+        <div class="sim-gate" id="sim-gate">
 
           <div class="sim-gate-content">
             <div class="sim-cards">
@@ -125,37 +121,6 @@ const { defaultRate = 3.79 } = Astro.props;
               <strong>Stress test :</strong> Capacité calculée au taux de qualification canadien (taux + 2 % ou 5,25 %, le plus élevé).<br/>
               * Inclut taxes, chauffage et 50 % des frais de condo dans les ratios d'endettement.<br/>
               * Prime SCHL ajoutée au prêt si la mise de fonds est inférieure à 20 %.
-            </div>
-          </div>
-
-          <!-- Overlay de capture (form Netlify déclaré dans /public/netlify-forms.html) -->
-          <div class="sim-gate-overlay" id="sim-gate-overlay">
-            <div class="sim-gate-card">
-              <div class="sim-gate-lock">&#128274;</div>
-              <h3 class="sim-gate-title">Voir le détail complet</h3>
-              <p class="sim-gate-sub">Affichez maintenant mes résultats</p>
-              <div class="sim-gate-fields">
-                <label for="sim-gate-prenom" class="sr-only">Votre prénom</label>
-                <input type="text" id="sim-gate-prenom" placeholder="Votre prénom" class="sim-gate-input" autocomplete="given-name" />
-                <label for="sim-gate-email" class="sr-only">Votre email</label>
-                <input type="email" id="sim-gate-email" placeholder="votre@courriel.com" class="sim-gate-input" autocomplete="email" />
-              </div>
-              <label class="sim-gate-consent" for="sim-gate-consent">
-                <input type="checkbox" id="sim-gate-consent" />
-                <span>
-                  J'accepte que {config.nom.split(' ')[0]} me recontacte au sujet de cette simulation. Aucun partage avec un tiers
-                  sans mon consentement — voir la <a href="/confidentialite">politique de confidentialité</a>.
-                </span>
-              </label>
-              <label class="sim-gate-consent" for="sim-gate-guide">
-                <input type="checkbox" id="sim-gate-guide" />
-                <span>
-                  Je consens à recevoir des communications électroniques de {config.nom.split(' ')[0]} Weyman,
-                  incluant le <strong>guide gratuit du premier acheteur</strong> (LCAP).
-                </span>
-              </label>
-              <button type="button" id="sim-gate-btn" class="sim-gate-submit">Voir mes résultats complets &rarr;</button>
-              <div id="sim-gate-msg" class="sim-gate-msg" style="display:none;"></div>
             </div>
           </div>
 
@@ -397,240 +362,12 @@ const { defaultRate = 3.79 } = Astro.props;
     });
     document.getElementById('sim-amort')!.addEventListener('change', simuler);
 
-    // --- Gate logic ---
-    const simGate      = document.getElementById('sim-gate') as HTMLElement;
-    const simGatePrenom = document.getElementById('sim-gate-prenom') as HTMLInputElement;
-    const simGateEmail  = document.getElementById('sim-gate-email') as HTMLInputElement;
-    const simGateBtn    = document.getElementById('sim-gate-btn') as HTMLButtonElement;
-    const simGateMsg    = document.getElementById('sim-gate-msg')!;
 
-    function unlockGate() {
-      simGate.classList.remove('locked');
-      simGate.classList.add('unlocked');
-
-      // Signaler la conversion au sticky CTA
-      document.body.dataset.outilsConverted = 'true';
-      window.dispatchEvent(new CustomEvent('outils:converted'));
-    }
-
-    if (localStorage.getItem('sim_unlocked') === '1') {
-      unlockGate();
-    }
-
-    simGateBtn.addEventListener('click', async () => {
-      const prenom = simGatePrenom.value.trim();
-      const email  = simGateEmail.value.trim();
-
-      if (prenom.length < 2) {
-        simGateMsg.textContent   = 'Veuillez entrer votre prénom.';
-        simGateMsg.style.display = '';
-        simGateMsg.style.color   = '#c0392b';
-        return;
-      }
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        simGateMsg.textContent   = 'Veuillez entrer une adresse courriel valide.';
-        simGateMsg.style.display = '';
-        simGateMsg.style.color   = '#c0392b';
-        return;
-      }
-      const consentEl = document.getElementById('sim-gate-consent') as HTMLInputElement | null;
-      if (!consentEl?.checked) {
-        simGateMsg.textContent   = 'Veuillez accepter la politique de confidentialité.';
-        simGateMsg.style.display = '';
-        simGateMsg.style.color   = '#c0392b';
-        return;
-      }
-
-      const prix_max  = document.getElementById('sim-max')?.textContent?.trim() || '-';
-      const versement = document.getElementById('sim-pmt')?.textContent?.trim() || '-';
-
-      simGateBtn.textContent = 'Un instant...';
-      simGateBtn.disabled    = true;
-      simGateMsg.style.display = 'none';
-
-      try {
-        await fetch('/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            'form-name': 'simulator-gate',
-            prenom,
-            email,
-            prix_max,
-            versement,
-            consentement: 'oui',
-            guide: (document.getElementById('sim-gate-guide') as HTMLInputElement)?.checked ? 'oui' : 'non',
-          }).toString(),
-        });
-      } catch {
-        // Ne pas bloquer l'unlock si le réseau échoue
-      }
-
-      localStorage.setItem('sim_unlocked', '1');
-      unlockGate();
-    });
 
     simuler();
   });
 </script>
 
 <style>
-  /* Gate wrapper */
-  .sim-gate {
-    position: relative;
-  }
 
-  .sim-gate.locked {
-    overflow: hidden;
-    padding-bottom: 1.5rem;
-  }
-
-  .sim-gate.locked .sim-gate-content {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    filter: blur(5px);
-    user-select: none;
-    pointer-events: none;
-    opacity: 0.65;
-    z-index: 1;
-  }
-
-  .sim-gate.unlocked .sim-gate-overlay {
-    display: none;
-  }
-
-  /* Overlay */
-  .sim-gate-overlay {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 0;
-    background: none;
-  }
-
-  /* Gate card */
-  .sim-gate-card {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
-    padding: 2rem 1.8rem 1.6rem;
-    width: 100%;
-    text-align: center;
-    margin-top: 1rem;
-  }
-
-  .sim-gate-lock {
-    font-size: 1.8rem;
-    margin-bottom: 0.6rem;
-    line-height: 1;
-  }
-
-  .sim-gate-title {
-    font-family: 'Lora', serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 0.5rem;
-  }
-
-  .sim-gate-sub {
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.65;
-    margin-bottom: 1.3rem;
-  }
-
-  .sim-gate-sub strong {
-    color: var(--ink);
-  }
-
-  .sim-gate-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    margin-bottom: 0.85rem;
-  }
-
-  .sim-gate-consent {
-    display: flex;
-    gap: .55rem;
-    align-items: flex-start;
-    margin: 0 0 .85rem;
-    font-size: .75rem;
-    line-height: 1.5;
-    color: var(--ink);
-    text-align: left;
-  }
-  .sim-gate-consent input[type="checkbox"] {
-    margin-top: .15rem;
-    flex: 0 0 auto;
-    width: 1rem;
-    height: 1rem;
-    accent-color: var(--clay, #c47a52);
-  }
-  .sim-gate-consent a { color: var(--clay, #c47a52); text-decoration: underline; }
-
-  .sim-gate-input {
-    width: 100%;
-    padding: 0.85rem 1.1rem;
-    background: var(--sand);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    color: var(--ink);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
-    transition: border-color 0.2s;
-    text-align: left;
-  }
-
-  .sim-gate-input:focus {
-    outline: none;
-    border-color: var(--clay);
-    background: var(--white);
-  }
-
-  .sim-gate-input::placeholder {
-    color: var(--muted);
-    opacity: 0.65;
-  }
-
-  .sim-gate-submit {
-    width: 100%;
-    padding: 1rem;
-    background: var(--clay);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 700;
-    cursor: pointer;
-    letter-spacing: 0.01em;
-    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-    box-shadow: 0 4px 18px rgba(196, 122, 82, 0.32);
-  }
-
-  .sim-gate-submit:hover {
-    background: var(--clay-dk);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(196, 122, 82, 0.42);
-  }
-
-  .sim-gate-msg {
-    font-size: 0.78rem;
-    line-height: 1.5;
-    margin-top: 0.5rem;
-  }
-
-  .sim-gate-privacy {
-    font-size: 0.68rem;
-    color: var(--muted);
-    margin-top: 0.8rem;
-    opacity: 0.75;
-  }
 </style>

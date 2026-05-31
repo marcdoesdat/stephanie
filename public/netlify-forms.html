@@ -61,6 +61,17 @@
       <input type="text" name="versement" />
       <input type="text" name="consentement" />
     </form>
+    <form name="contact-outils" method="POST" enctype="multipart/form-data" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="contact-outils" />
+      <input type="text" name="bot-field" />
+      <input type="text" name="prenom" />
+      <input type="email" name="email" />
+      <input type="tel" name="telephone" />
+      <textarea name="message"></textarea>
+      <input type="hidden" name="simulateur-donnees" />
+      <input type="file" name="screenshot" accept="image/png" />
+    </form>
+
     <form name="rappel" method="POST" data-netlify="true" data-netlify-honeypot="company" hidden>
       <input type="hidden" name="form-name" value="rappel" />
       <input type="text"     name="company" />

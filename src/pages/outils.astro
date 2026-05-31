@@ -46,13 +46,14 @@ const tabs = [
   { id: 'calculateur', label: 'Calculateur de paiement', sub: 'Versements' },
   { id: 'comparateur', label: 'Comparateur de taux', sub: 'Économies' },
   { id: 'penalite', label: 'Calculer ma pénalité', sub: 'IRD' },
-  { id: 'refinancement', label: 'Simulateur de refinancement', sub: 'Refinancement' },
+  { id: 'refinancement', label: 'Simulateur de refinancement', sub: 'Révision' },
+  { id: 'droits-mutation', label: 'Droits de mutation', sub: 'À venir', comingSoon: true },
 ];
 ---
 
 <MainLayout
   fullTitle="Calculateur hypothécaire Québec – Capacité d'emprunt, versements, comparateur de taux et pénalité IRD | Stéphanie Weyman"
-  description="Outils hypothécaires gratuits au Québec : simulateur de capacité d'emprunt, calculateur de versements, comparateur banque vs courtier et calculateur de pénalité IRD. Taux Hypotheca en temps réel, sans inscription."
+  description="Outils hypothécaires gratuits au Québec : simulateur de capacité d'emprunt, calculateur de versements, comparateur banque vs courtier, calculateur de pénalité IRD et simulateur de refinancement. Taux Hypotheca en temps réel, sans inscription."
 >
   <Nav />
   <main id="main-content">
@@ -65,6 +66,7 @@ const tabs = [
           d'emprunt, calculez un versement, comparez les taux affichés en banque avec ceux
           qu'un courtier peut négocier, évaluez votre pénalité de remboursement anticipé
           et simulez un refinancement — le tout dans un même endroit, sans inscription.
+          Un calculateur de droits de mutation (taxe de bienvenue) arrive bientôt.
         </p>
       </div>
     </section>
@@ -76,7 +78,16 @@ const tabs = [
           role="tablist"
           aria-label="Outils hypothécaires"
         >
-          {tabs.map((tab, i) => (
+          {tabs.map((tab, i) => tab.comingSoon ? (
+            <span
+              class="comp-pill outils-tab outils-tab--coming-soon"
+              title="Bientôt disponible"
+              aria-hidden="true"
+            >
+              <span class="outils-tab-label">{tab.label}</span>
+              <span class="comp-pill-sub">{tab.sub}</span>
+            </span>
+          ) : (
             <button
               type="button"
               role="tab"
@@ -190,12 +201,17 @@ const tabs = [
           <form
             name="contact-outils"
             method="POST"
+            enctype="multipart/form-data"
             data-netlify="true"
             data-netlify-honeypot="bot-field"
             class="outils-contact-form"
             novalidate
           >
             <input type="hidden" name="form-name" value="contact-outils" />
+            <!-- Champ peuplé par JS avec les données du simulateur actif -->
+            <input type="hidden" name="simulateur-donnees" id="hidden-simulateur-donnees" />
+            <!-- Capture d'écran du calculateur (injectée par JS au submit) -->
+            <input type="file" name="screenshot" id="hidden-screenshot" accept="image/png" style="display:none" />
             <div style="display:none" aria-hidden="true">
               <label>Ne pas remplir : <input name="bot-field" tabindex="-1" /></label>
             </div>
@@ -213,13 +229,22 @@ const tabs = [
               <label class="sr-only" for="outils-message">Un message (optionnel)</label>
               <textarea id="outils-message" name="message" placeholder="Dites-nous en quelques mots votre projet ou votre question…" rows="2" class="outils-contact-input"></textarea>
 
+              <div class="outils-contact-consents">
+                <label class="outils-consent-label">
+                  <input type="checkbox" name="consentement-recontact" class="outils-consent-check" required />
+                  <span>J’accepte que Stéphanie me recontacte au sujet de cette simulation. Aucun partage avec un tiers sans mon consentement — voir la <a href="/confidentialite">politique de confidentialité</a>.</span>
+                </label>
+                <label class="outils-consent-label">
+                  <input type="checkbox" name="consentement-lcap" class="outils-consent-check" />
+                  <span>Je consens à recevoir des communications électroniques de Stéphanie Weyman (conseils hypothécaires, guides et ressources) — conformément à la LCAP.</span>
+                </label>
+              </div>
+
               <button type="submit" class="btn-cta btn-cta--block">
                 <span>Recevoir mon analyse personnalisée</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
             </div>
-
-            <p class="outils-contact-note">Aucun partage avec un tiers sans votre consentement explicite — voir la <a href="/confidentialite">politique de confidentialité</a>.</p>
           </form>
         </div>
       </div>
@@ -232,7 +257,7 @@ const tabs = [
 
     const tablist = document.querySelector<HTMLElement>('.outils-tablist');
     const tabs = Array.from(
-      document.querySelectorAll<HTMLButtonElement>('.outils-tab')
+      document.querySelectorAll<HTMLButtonElement>('button.outils-tab')
     );
     const panels = Array.from(
       document.querySelectorAll<HTMLElement>('.outils-panel')
@@ -312,6 +337,71 @@ const tabs = [
     window.setTimeout(() => {
       animEls.forEach((el) => el.classList.add('visible'));
     }, 1200);
+
+    // --- Capture d'écran + données calculateur au submit ---
+    const contactForm = document.querySelector<HTMLFormElement>('.outils-contact-form');
+    const screenshotInput = document.getElementById('hidden-screenshot') as HTMLInputElement;
+    const simulateurInput = document.getElementById('hidden-simulateur-donnees') as HTMLInputElement;
+
+    function getActiveTabLabel(): string {
+      const activeTab = tabs.find((t) => t.getAttribute('aria-selected') === 'true');
+      return activeTab?.textContent?.trim() ?? 'Outil hypothécaire';
+    }
+
+    function updateSimulateurDonnees() {
+      if (!simulateurInput) return;
+      const activePanel = panels.find((p) => !p.hidden);
+      if (!activePanel) return;
+      const label = getActiveTabLabel();
+      const lines = (activePanel as HTMLElement).innerText
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+      simulateurInput.value = `Outil utilisé : ${label}\n\n${lines.join('\n')}`;
+    }
+
+    let screenshotCaptured = false;
+
+    contactForm?.addEventListener('submit', async (e) => {
+      if (screenshotCaptured) {
+        screenshotCaptured = false;
+        return; // laisser le submit natif se poursuivre
+      }
+      e.preventDefault();
+
+      // Texte résumé
+      updateSimulateurDonnees();
+
+      // Capture d'écran du panneau actif
+      const activePanel = panels.find((p) => !p.hidden) as HTMLElement | undefined;
+      if (activePanel && screenshotInput) {
+        try {
+          const { default: html2canvas } = await import('html2canvas');
+          const canvas = await html2canvas(activePanel, {
+            backgroundColor: '#fdfaf6',
+            scale: 1.5,
+            useCORS: true,
+            logging: false,
+          });
+          await new Promise<void>((resolve) => {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const file = new File([blob], 'calculateur-screenshot.png', { type: 'image/png' });
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                screenshotInput.files = dt.files;
+              }
+              resolve();
+            }, 'image/png', 0.9);
+          });
+        } catch {
+          // Ne pas bloquer le submit si la capture échoue
+        }
+      }
+
+      screenshotCaptured = true;
+      contactForm.requestSubmit();
+    });
   </script>
 
   <style>
@@ -429,16 +519,38 @@ const tabs = [
       resize: vertical;
       min-height: 64px;
     }
-    .outils-contact-note {
-      font-size: .72rem;
-      color: var(--muted);
-      text-align: center;
-      margin: .85rem 0 0;
+    .outils-contact-consents {
+      display: flex;
+      flex-direction: column;
+      gap: .65rem;
+    }
+    .outils-consent-label {
+      display: flex;
+      align-items: flex-start;
+      gap: .6rem;
+      cursor: pointer;
       line-height: 1.5;
     }
-    .outils-contact-note a {
+    .outils-consent-check {
+      flex-shrink: 0;
+      margin-top: .15rem;
+      width: 17px;
+      height: 17px;
+      accent-color: var(--forest);
+      cursor: pointer;
+    }
+    .outils-consent-label span {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+    .outils-consent-label span a {
       color: var(--clay);
       font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .outils-consent-label span strong {
+      color: var(--ink);
     }
 
     @media (max-width: 720px) {
