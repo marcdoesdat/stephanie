@@ -134,7 +134,71 @@ const nouveauTauxDefaut =
         </div>
       </fieldset>
 
+      <!-- Consolidation de dettes -->
+      <fieldset class="rsim-fieldset">
+        <legend class="rsim-legend">Consolidation de dettes <span class="rsim-opt">(optionnel)</span></legend>
+        <p class="rsim-fieldset-intro">
+          Regroupez vos dettes à taux élevé (cartes de crédit, marges, prêts auto…) dans votre
+          hypothèque pour réduire vos paiements mensuels.
+        </p>
+        <div class="rsim-dettes-list" id="rsim-dettes-list"></div>
+        <button type="button" class="rsim-dette-add-btn" id="rsim-dette-add">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Ajouter une dette
+        </button>
+      </fieldset>
+
     </form>
+
+    <!-- Gabarit d'une ligne de dette (cloné par JS) -->
+    <template id="rsim-dette-template">
+      <div class="rsim-dette-row">
+        <div class="rsim-dette-grid">
+          <div class="rsim-field rsim-dette-field-libelle">
+            <label class="rsim-label">Dette <span class="rsim-opt">(libellé)</span></label>
+            <input type="text" class="rsim-input rsim-dette-libelle"
+              placeholder="ex. Carte Visa" autocomplete="off" maxlength="40" />
+          </div>
+          <button type="button" class="rsim-dette-remove" aria-label="Retirer cette dette">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="rsim-dette-grid rsim-dette-grid--3">
+          <div class="rsim-field">
+            <label class="rsim-label">Montant dû ($)</label>
+            <div class="rsim-money-wrap">
+              <span class="rsim-money-prefix" aria-hidden="true">$</span>
+              <input type="text" class="rsim-input rsim-input--money rsim-dette-montant"
+                inputmode="numeric" autocomplete="off" placeholder="0" />
+            </div>
+          </div>
+          <div class="rsim-field">
+            <label class="rsim-label">Paiement ($/mois)</label>
+            <div class="rsim-money-wrap">
+              <span class="rsim-money-prefix" aria-hidden="true">$</span>
+              <input type="text" class="rsim-input rsim-input--money rsim-dette-paiement"
+                inputmode="numeric" autocomplete="off" placeholder="0" />
+            </div>
+          </div>
+          <div class="rsim-field">
+            <label class="rsim-label">Taux (%)</label>
+            <div class="rsim-rate-wrap">
+              <input type="number" class="rsim-input rsim-input--rate rsim-dette-taux"
+                step="0.1" inputmode="decimal" min="0" max="60" placeholder="19.9" />
+              <span class="rsim-rate-suffix">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <!-- ===== Résultats ===== -->
     <div class="rsim-results" id="rsim-results" aria-live="polite" aria-atomic="false">
@@ -146,6 +210,15 @@ const nouveauTauxDefaut =
       </div>
 
       <div id="rsim-content" style="display:none">
+
+        <!-- Bande sticky mobile : verdict + économie mensuelle -->
+        <div class="rsim-sticky-mobile" id="rsim-sticky-mobile">
+          <div class="rsim-sticky-mobile-left">
+            <span class="rsim-sticky-mobile-badge" id="rsim-sticky-badge">—</span>
+            <span class="rsim-sticky-mobile-label">Refinancement</span>
+          </div>
+          <span class="rsim-sticky-mobile-value" id="rsim-sticky-value">—</span>
+        </div>
 
         <!-- Verdict principal -->
         <div class="rsim-verdict" id="rsim-verdict">
@@ -222,13 +295,37 @@ const nouveauTauxDefaut =
               <dd id="rsim-equite-max">—</dd>
             </div>
             <div id="rsim-equite-additionnel-row" style="display:none">
-              <dt>Nouveau solde avec dégagement</dt>
+              <dt>Nouveau solde (dégagement + dettes inclus)</dt>
               <dd id="rsim-equite-nouveau-solde">—</dd>
             </div>
           </dl>
           <div class="rsim-ltv-alert" id="rsim-ltv-alert" style="display:none">
             <span id="rsim-ltv-alert-text"></span>
           </div>
+        </div>
+
+        <!-- Consolidation de dettes (conditionnel) -->
+        <div class="rsim-conso" id="rsim-conso" style="display:none">
+          <div class="rsim-conso-title">Consolidation de dettes</div>
+          <div class="rsim-conso-hero" id="rsim-conso-hero">
+            <div class="rsim-conso-eyebrow">Cash-flow libéré chaque mois</div>
+            <div class="rsim-conso-amount" id="rsim-conso-cashflow">—</div>
+            <div class="rsim-conso-sub" id="rsim-conso-sub"></div>
+          </div>
+          <dl class="rsim-conso-dl">
+            <div>
+              <dt>Total des dettes intégrées au prêt</dt>
+              <dd id="rsim-conso-total">—</dd>
+            </div>
+            <div>
+              <dt>Paiements de dettes actuels</dt>
+              <dd id="rsim-conso-paiements-actuels">—</dd>
+            </div>
+            <div>
+              <dt>Coût ajouté à l'hypothèque</dt>
+              <dd id="rsim-conso-cout-hypo">—</dd>
+            </div>
+          </dl>
         </div>
 
         <!-- Économie nette -->
@@ -315,6 +412,9 @@ const nouveauTauxDefaut =
     const amortAvertEl   = document.getElementById('rsim-amort-avert')!;
     const montantAddEl   = document.getElementById('rsim-montant-additionnel') as HTMLInputElement;
     const printBtn       = document.getElementById('rsim-print-btn')!;
+    const dettesListEl   = document.getElementById('rsim-dettes-list')!;
+    const detteAddBtn    = document.getElementById('rsim-dette-add')!;
+    const detteTemplate  = document.getElementById('rsim-dette-template') as HTMLTemplateElement;
 
     // --- Error elements ---
     const errEls: Record<string, HTMLElement> = {
@@ -329,6 +429,9 @@ const nouveauTauxDefaut =
     // --- Result elements ---
     const placeholder   = document.getElementById('rsim-placeholder')!;
     const content       = document.getElementById('rsim-content')!;
+    const stickyBar     = document.getElementById('rsim-sticky-mobile')!;
+    const stickyBadge   = document.getElementById('rsim-sticky-badge')!;
+    const stickyValue   = document.getElementById('rsim-sticky-value')!;
     const verdictEl     = document.getElementById('rsim-verdict')!;
     const verdictBadge  = document.getElementById('rsim-verdict-badge')!;
     const verdictTitle  = document.getElementById('rsim-verdict-title')!;
@@ -360,6 +463,13 @@ const nouveauTauxDefaut =
     const ltvAlertEl          = document.getElementById('rsim-ltv-alert')!;
     const ltvAlertText        = document.getElementById('rsim-ltv-alert-text')!;
 
+    const consoEl             = document.getElementById('rsim-conso')!;
+    const consoCashflowEl     = document.getElementById('rsim-conso-cashflow')!;
+    const consoSubEl          = document.getElementById('rsim-conso-sub')!;
+    const consoTotalEl        = document.getElementById('rsim-conso-total')!;
+    const consoPaiementsEl    = document.getElementById('rsim-conso-paiements-actuels')!;
+    const consoCoutHypoEl     = document.getElementById('rsim-conso-cout-hypo')!;
+
     const netEl      = document.getElementById('rsim-net')!;
     const netLabelEl = document.getElementById('rsim-net-label')!;
     const netValueEl = document.getElementById('rsim-net-value')!;
@@ -367,6 +477,57 @@ const nouveauTauxDefaut =
 
     // --- State ---
     let penaliteManuelle = false; // true when user manually edited the penalty field
+
+    // --- Consolidation de dettes ---
+    interface DettesTotaux { montant: number; paiementMensuel: number; nb: number; }
+
+    // Agrège toutes les lignes de dettes saisies (montant dû + paiement/mois).
+    function lireDettes(): DettesTotaux {
+      let montant = 0;
+      let paiementMensuel = 0;
+      let nb = 0;
+      const rows = dettesListEl.querySelectorAll('.rsim-dette-row');
+      rows.forEach((row) => {
+        const montantEl = row.querySelector('.rsim-dette-montant') as HTMLInputElement | null;
+        const paiementEl = row.querySelector('.rsim-dette-paiement') as HTMLInputElement | null;
+        const m = montantEl ? Math.max(0, parseVal(montantEl.value)) : 0;
+        const p = paiementEl ? Math.max(0, parseVal(paiementEl.value)) : 0;
+        if (m > 0) {
+          montant += m;
+          paiementMensuel += p;
+          nb++;
+        }
+      });
+      return { montant, paiementMensuel, nb };
+    }
+
+    // Ajoute une nouvelle ligne de dette à partir du gabarit.
+    function ajouterDette(): void {
+      const frag = detteTemplate.content.cloneNode(true) as DocumentFragment;
+      const row = frag.querySelector('.rsim-dette-row') as HTMLElement;
+      const montantEl = row.querySelector('.rsim-dette-montant') as HTMLInputElement;
+      const paiementEl = row.querySelector('.rsim-dette-paiement') as HTMLInputElement;
+      const tauxEl = row.querySelector('.rsim-dette-taux') as HTMLInputElement;
+      const removeBtn = row.querySelector('.rsim-dette-remove') as HTMLButtonElement;
+
+      [montantEl, paiementEl].forEach((el) => {
+        el.addEventListener('blur', () => fmtInputEl(el));
+        el.addEventListener('input', scheduleRecalc);
+      });
+      tauxEl.addEventListener('input', scheduleRecalc);
+      removeBtn.addEventListener('click', () => {
+        row.remove();
+        scheduleRecalc();
+      });
+
+      dettesListEl.appendChild(frag);
+      const ajout = dettesListEl.lastElementChild as HTMLElement | null;
+      const focusEl = ajout?.querySelector('.rsim-dette-montant') as HTMLInputElement | null;
+      focusEl?.focus();
+      scheduleRecalc();
+    }
+
+    detteAddBtn.addEventListener('click', ajouterDette);
 
     // --- Pré-remplissage du nouveau taux depuis le taux live Hypotheca ---
     const tauxLiveDefaut = sectionEl.dataset.nouveauTauxDefaut;
@@ -516,6 +677,7 @@ const nouveauTauxDefaut =
       const frais = Math.max(0, parseVal(fraisEl.value));
       const montantAdd = Math.max(0, parseVal(montantAddEl.value));
       const valeur = Math.max(0, parseVal(valeurEl.value));
+      const dettes = lireDettes();
 
       // Validation visible
       const valide = validate();
@@ -523,6 +685,8 @@ const nouveauTauxDefaut =
       if (!valide || solde <= 0 || tauxActuel <= 0 || tauxNouveau <= 0 || moisR <= 0) {
         placeholder.style.display = '';
         content.style.display = 'none';
+        stickyBar.classList.remove('js-visible');
+        sectionEl.classList.remove('rsim-bar-visible');
         return;
       }
 
@@ -532,9 +696,17 @@ const nouveauTauxDefaut =
       const horizonAns = Math.round(amortRestantAns * 10) / 10;
 
       // --- Payments (mensuel) ---
-      const nouveauSolde = solde + montantAdd;
+      // Le total des dettes consolidées s'ajoute au nouveau solde (comme le dégagement d'équité).
+      const nouveauSolde = solde + montantAdd + dettes.montant;
       const pmtActuelMensuel = calcPaiement(solde, tauxActuel, amortRestantAns, 12);
       const pmtNouveauMensuel = calcPaiement(nouveauSolde, tauxNouveau, amortNouveauAns, 12);
+
+      // Coût mensuel d'intégrer les dettes dans l'hypothèque (au taux + amort. du nouveau prêt).
+      const coutHypoDettes = dettes.montant > 0
+        ? calcPaiement(dettes.montant, tauxNouveau, amortNouveauAns, 12)
+        : 0;
+      // Cash-flow libéré : paiements de dettes remplacés − coût ajouté à l'hypothèque.
+      const cashflowDettes = dettes.paiementMensuel - coutHypoDettes;
 
       // Effet taux pur : nouveau paiement si même amortissement que l'actuel
       const pmtNouveauMemeAmort = calcPaiement(solde, tauxNouveau, amortRestantAns, 12);
@@ -566,22 +738,38 @@ const nouveauTauxDefaut =
       // --- Verdict principal ---
       verdictEl.className = 'rsim-verdict';
       const pointMortCourt = pointMortMois !== null && pointMortMois > 0 && pointMortMois <= 48;
+      let verdictKey: 'oui' | 'evaluer' | 'non';
       if (economieNette > 0 && (pointMortMois === null || pointMortCourt)) {
+        verdictKey = 'oui';
         verdictEl.classList.add('rsim-verdict--oui');
         verdictBadge.textContent = 'OUI';
         verdictTitle.textContent = 'Les conditions sont favorables pour un refinancement.';
         verdictSub.textContent = `Vous épargnez ${formatMoney(Math.round(economieNette))} net ${horizonLabel}, coûts inclus.`;
       } else if (economieNette > 0) {
+        verdictKey = 'evaluer';
         verdictEl.classList.add('rsim-verdict--evaluer');
         verdictBadge.textContent = 'À ÉVALUER';
         verdictTitle.textContent = 'Rentable, mais sur un long horizon';
         verdictSub.textContent = `Économie nette de ${formatMoney(Math.round(economieNette))}, mais le point mort est long — votre durée de détention compte.`;
       } else {
+        verdictKey = 'non';
         verdictEl.classList.add('rsim-verdict--non');
         verdictBadge.textContent = 'NON';
         verdictTitle.textContent = 'Le refinancement n\'est pas avantageux ici';
         verdictSub.textContent = `Les coûts dépassent les économies d'intérêts (${formatMoney(Math.round(Math.abs(economieNette)))} de perte nette).`;
       }
+
+      // --- Sticky mobile bar ---
+      stickyBar.className = 'rsim-sticky-mobile rsim-sticky-mobile--' + verdictKey;
+      stickyBadge.textContent = verdictBadge.textContent;
+      if (effetTauxMensuel > 5) {
+        stickyValue.textContent = `−${formatMoney(Math.round(effetTauxMensuel))}/mois`;
+      } else if (effetTauxMensuel < -5) {
+        stickyValue.textContent = `+${formatMoney(Math.round(Math.abs(effetTauxMensuel)))}/mois`;
+      } else {
+        stickyValue.textContent = '≈ 0 $/mois';
+      }
+      handleMobileSticky();
 
       // Hero
       heroEl.className = 'rsim-hero';
@@ -668,26 +856,60 @@ const nouveauTauxDefaut =
         const maxRefi = Math.max(0, valeur * 0.80 - solde);
         equiteMaxEl.textContent = formatMoney(Math.round(maxRefi));
 
-        if (montantAdd > 0) {
+        if (montantAdd > 0 || dettes.montant > 0) {
           equiteAddRow.style.display = '';
           equiteNouveauSolde.textContent = formatMoney(Math.round(nouveauSolde));
         } else {
           equiteAddRow.style.display = 'none';
         }
 
-        // Alerte ratio prêt-valeur (LTV)
+        // Alerte ratio prêt-valeur (LTV) — inclut dégagement + dettes consolidées
         const ltv = nouveauSolde / valeur;
         if (ltv > 0.80 + 1e-9) {
+          const surplus = Math.round(nouveauSolde - valeur * 0.80);
           ltvAlertEl.style.display = '';
           ltvAlertText.textContent =
             `⚠ Le nouveau solde (${formatMoney(Math.round(nouveauSolde))}) représente ${Math.round(ltv * 100)} % de la valeur. `
-            + `Le refinancement conventionnel est limité à 80 %. Réduisez le dégagement à ${formatMoney(Math.max(0, Math.round(maxRefi)))} maximum.`;
+            + `Le refinancement conventionnel est limité à 80 % (max ${formatMoney(Math.max(0, Math.round(valeur * 0.80)))}). `
+            + `Réduisez le dégagement et/ou les dettes consolidées d'environ ${formatMoney(Math.max(0, surplus))}.`;
         } else {
           ltvAlertEl.style.display = 'none';
         }
       } else {
         equiteEl.style.display = 'none';
         ltvAlertEl.style.display = 'none';
+      }
+
+      // Consolidation de dettes
+      if (dettes.montant > 0) {
+        consoEl.style.display = '';
+        consoTotalEl.textContent = formatMoney(Math.round(dettes.montant));
+        consoPaiementsEl.textContent = `${formatMoney(Math.round(dettes.paiementMensuel))}/mois`;
+        consoCoutHypoEl.textContent = `${formatMoney(Math.round(coutHypoDettes))}/mois`;
+
+        const consoHero = document.getElementById('rsim-conso-hero')!;
+        consoHero.className = 'rsim-conso-hero';
+        if (cashflowDettes > 5) {
+          consoHero.classList.add('rsim-conso-hero--positive');
+          consoCashflowEl.textContent = `${formatMoney(Math.round(cashflowDettes))}/mois`;
+          consoSubEl.textContent =
+            `En intégrant ${dettes.nb} dette${dettes.nb > 1 ? 's' : ''} au taux hypothécaire `
+            + `(${tauxNouveau} %), vous remplacez ${formatMoney(Math.round(dettes.paiementMensuel))}/mois `
+            + `de paiements par ${formatMoney(Math.round(coutHypoDettes))}/mois.`;
+        } else if (cashflowDettes < -5) {
+          consoHero.classList.add('rsim-conso-hero--negative');
+          consoCashflowEl.textContent = `−${formatMoney(Math.round(Math.abs(cashflowDettes)))}/mois`;
+          consoSubEl.textContent =
+            'Vos paiements de dettes actuels sont déjà bas — les intégrer à l\'hypothèque '
+            + 'augmente votre versement. La consolidation n\'améliore pas votre cash-flow ici.';
+        } else {
+          consoHero.classList.add('rsim-conso-hero--neutral');
+          consoCashflowEl.textContent = '≈ 0 $/mois';
+          consoSubEl.textContent =
+            'L\'intégration des dettes a peu d\'effet sur votre cash-flow mensuel.';
+        }
+      } else {
+        consoEl.style.display = 'none';
       }
 
       // Économie nette
@@ -723,6 +945,23 @@ const nouveauTauxDefaut =
       (el) => el.addEventListener('input', scheduleRecalc)
     );
     // années + amort + pénalité ont leurs propres écouteurs ci-dessus
+
+    // Mobile sticky verdict bar
+    function handleMobileSticky() {
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+      if (isMobile) {
+        stickyBar.classList.add('js-visible');
+        sectionEl.classList.add('rsim-bar-visible');
+        verdictEl.classList.add('js-hidden-mobile');
+        heroEl.classList.add('js-hidden-mobile');
+      } else {
+        stickyBar.classList.remove('js-visible');
+        sectionEl.classList.remove('rsim-bar-visible');
+        verdictEl.classList.remove('js-hidden-mobile');
+        heroEl.classList.remove('js-hidden-mobile');
+      }
+    }
+    window.addEventListener('resize', handleMobileSticky);
 
     // Initial setup
     syncAmortNouveau();
@@ -1238,6 +1477,153 @@ const nouveauTauxDefaut =
     line-height: 1.5;
   }
 
+  /* ===== Consolidation de dettes (formulaire) ===== */
+  .rsim-fieldset-intro {
+    font-size: .8rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: -.25rem 0 0;
+  }
+
+  .rsim-dettes-list {
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+  }
+
+  .rsim-dette-row {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: .9rem;
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+    background: var(--sand);
+  }
+
+  .rsim-dette-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: .6rem;
+  }
+
+  .rsim-dette-grid--3 {
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: start;
+  }
+
+  .rsim-dette-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--clay);
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+    flex-shrink: 0;
+  }
+
+  .rsim-dette-remove:hover {
+    background: rgba(196, 122, 82, .08);
+    border-color: rgba(196, 122, 82, .4);
+  }
+
+  .rsim-dette-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    align-self: flex-start;
+    padding: .55rem .95rem;
+    border: 1px dashed var(--clay);
+    border-radius: 10px;
+    background: rgba(196, 122, 82, .06);
+    color: var(--clay);
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+
+  .rsim-dette-add-btn:hover {
+    background: rgba(196, 122, 82, .12);
+    border-style: solid;
+  }
+
+  /* ===== Consolidation de dettes (résultats) ===== */
+  .rsim-conso {
+    background: rgba(61, 90, 74, .04);
+    border: 1px solid rgba(61, 90, 74, .25);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+  }
+
+  .rsim-conso-title {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--forest);
+  }
+
+  .rsim-conso-hero {
+    text-align: center;
+    padding: .5rem 0 .25rem;
+  }
+
+  .rsim-conso-eyebrow {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: .25rem;
+  }
+
+  .rsim-conso-amount {
+    font-family: "Lora", serif;
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .rsim-conso-hero--positive .rsim-conso-amount { color: var(--forest); }
+  .rsim-conso-hero--negative .rsim-conso-amount { color: var(--clay); }
+  .rsim-conso-hero--neutral .rsim-conso-amount { color: var(--ink); }
+
+  .rsim-conso-sub {
+    font-size: .76rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: .3rem;
+  }
+
+  .rsim-conso-dl { display: flex; flex-direction: column; gap: .3rem; margin: 0; }
+
+  .rsim-conso-dl > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .5rem;
+    font-size: .8rem;
+  }
+
+  .rsim-conso-dl dt { color: var(--muted); }
+
+  .rsim-conso-dl dd {
+    margin: 0;
+    font-weight: 700;
+    color: var(--ink);
+    font-family: "DM Sans", sans-serif;
+  }
+
   /* Économie nette */
   .rsim-net {
     background: var(--sand);
@@ -1332,17 +1718,97 @@ const nouveauTauxDefaut =
        des enfants directs de la grille et peuvent être réordonnés. */
     .rsim-form { display: contents; }
 
-    /* Résultats affichés immédiatement après les champs principaux,
-       avant les champs secondaires (coûts, nouveau prêt). */
+    /* Flux linéaire : tous les champs d'abord, résultats + CTA tout en bas. */
     .rsim-form .rsim-fieldset:nth-child(1) { order: 1; }
-    .rsim-results                           { order: 2; }
-    .rsim-form .rsim-fieldset:nth-child(2) { order: 3; }
-    .rsim-form .rsim-fieldset:nth-child(3) { order: 4; }
+    .rsim-form .rsim-fieldset:nth-child(2) { order: 2; }
+    .rsim-form .rsim-fieldset:nth-child(3) { order: 3; }
+    .rsim-form .rsim-fieldset:nth-child(4) { order: 4; }
     .rsim-form .rsim-disclaimer            { order: 5; }
+    .rsim-results                           { order: 6; }
+
+    .rsim-dette-grid--3 { grid-template-columns: 1fr 1fr; }
 
     .rsim-results { position: static; }
     .rsim-compare-grid { grid-template-columns: 1fr; }
     .rsim-row { grid-template-columns: 1fr; }
+
+    /* Barre sticky mobile — fixed sous la nav pour rester visible pendant le remplissage */
+    .rsim-sticky-mobile { display: none; }
+    .rsim-sticky-mobile.js-visible {
+      display: flex;
+      position: fixed;
+      top: 68px; /* hauteur de la nav fixe globale */
+      left: 0;
+      right: 0;
+      z-index: 201;
+    }
+
+    /* Compense la hauteur de la barre fixe pour éviter qu'elle chevauche le contenu */
+    #refinancement-simulator.rsim-bar-visible {
+      padding-top: 3rem;
+    }
+
+    /* Masquer les blocs en flux remplacés par la barre */
+    .rsim-verdict.js-hidden-mobile,
+    .rsim-hero.js-hidden-mobile { display: none; }
+  }
+
+  /* ---- Barre sticky mobile verdict ---- */
+  .rsim-sticky-mobile {
+    display: none; /* masqué par défaut ; activé seulement sur mobile via .js-visible */
+    position: sticky; /* remplacé par fixed sur mobile via .js-visible */
+    top: 0;
+    z-index: 20;
+    background: rgba(250, 246, 239, 0.96);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--border);
+    padding: .65rem 1.1rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+  }
+
+  .rsim-sticky-mobile-left {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+  }
+
+  .rsim-sticky-mobile-badge {
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    padding: .2rem .5rem;
+    border-radius: 999px;
+    color: white;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .rsim-sticky-mobile--oui     .rsim-sticky-mobile-badge { background: var(--forest); }
+  .rsim-sticky-mobile--evaluer .rsim-sticky-mobile-badge { background: var(--clay); }
+  .rsim-sticky-mobile--non     .rsim-sticky-mobile-badge { background: #b43c32; }
+
+  .rsim-sticky-mobile-label {
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: .02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .rsim-sticky-mobile-value {
+    font-family: "Lora", serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   /* Impression — n'imprimer que l'analyse */
