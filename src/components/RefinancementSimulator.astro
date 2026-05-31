@@ -417,13 +417,6 @@
       return '/mois';
     }
 
-    // --- Payment for given frequency (accelerated = monthly/2 or monthly/4) ---
-    function paiementFreq(pret: number, taux: number, amortAns: number, f: number): number {
-      if (f === 26) return calcPaiement(pret, taux, amortAns, 12) / 2;
-      if (f === 52) return calcPaiement(pret, taux, amortAns, 12) / 4;
-      return calcPaiement(pret, taux, amortAns, 12);
-    }
-
     function formatMoisDuree(mois: number): string {
       if (mois <= 0) return '—';
       if (mois < 24) return `${mois} mois`;
