@@ -82,7 +82,7 @@ const nouveauTauxDefaut =
         </div>
 
         <div class="rsim-field">
-          <label for="rsim-frais" class="rsim-label">Frais notaire / refinancement</label>
+          <label for="rsim-frais" class="rsim-label">Frais notaire pour refinancement</label>
           <div class="rsim-money-wrap">
             <span class="rsim-money-prefix" aria-hidden="true">$</span>
             <input type="text" id="rsim-frais" class="rsim-input rsim-input--money" value="1 500"
@@ -576,14 +576,15 @@ const nouveauTauxDefaut =
       amortNouveauEl.value = String(Math.max(1, Math.min(30, Math.round(ans))));
     }
 
-    anneesEl.addEventListener('input', () => {
-      syncAmortNouveau();
-      scheduleRecalc();
-    });
-
-    amortNouveauEl.addEventListener('input', () => {
-      amortNouveauEl.dataset.userEdited = '1';
-      scheduleRecalc();
+    ['input', 'change'].forEach((evt) => {
+      anneesEl.addEventListener(evt, () => {
+        syncAmortNouveau();
+        scheduleRecalc();
+      });
+      amortNouveauEl.addEventListener(evt, () => {
+        amortNouveauEl.dataset.userEdited = '1';
+        scheduleRecalc();
+      });
     });
 
     // --- Bouton imprimer ---

@@ -360,14 +360,16 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
       numberInput.select();
     });
 
-    numberInput.addEventListener('input', () => {
-      const v = parseInt(numberInput.value, 10);
-      if (!isNaN(v)) {
-        // Live update without clamping (clamp on blur)
-        amount = Math.max(100000, Math.min(1500000, v));
-        range.value = String(amount);
-        recompute();
-      }
+    ['input', 'change'].forEach((evt) => {
+      numberInput.addEventListener(evt, () => {
+        const v = parseInt(numberInput.value, 10);
+        if (!isNaN(v)) {
+          // Live update without clamping (clamp on blur)
+          amount = Math.max(100000, Math.min(1500000, v));
+          range.value = String(amount);
+          recompute();
+        }
+      });
     });
 
     numberInput.addEventListener('blur', () => {
@@ -388,13 +390,15 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
 
     // --- Taux ---
     [rateBankInput, rateNegoInput].forEach((input) => {
-      input.addEventListener('input', () => {
-        const v = parseFloat(input.value);
-        if (!isNaN(v) && v >= 0 && v <= 20) {
-          if (input === rateBankInput) bankRate = v;
-          else brokerRate = v;
-          recompute();
-        }
+      ['input', 'change'].forEach((evt) => {
+        input.addEventListener(evt, () => {
+          const v = parseFloat(input.value);
+          if (!isNaN(v) && v >= 0 && v <= 20) {
+            if (input === rateBankInput) bankRate = v;
+            else brokerRate = v;
+            recompute();
+          }
+        });
       });
       input.addEventListener('blur', () => {
         let v = parseFloat(input.value);

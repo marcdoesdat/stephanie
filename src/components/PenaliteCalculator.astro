@@ -370,8 +370,10 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     typeFixeBtn.addEventListener('click', () => setTypeTaux('fixe'));
     typeVariableBtn.addEventListener('click', () => setTypeTaux('variable'));
 
-    [soldeEl, tauxEl, dateDebutEl, dureeEl, tauxAfficheEl].forEach((el) => el.addEventListener('input', scheduleRecalc));
-    document.querySelectorAll<HTMLInputElement>('[id^="pen-marche-"]').forEach((el) => el.addEventListener('input', scheduleRecalc));
+    ['input', 'change'].forEach((evt) => {
+      [soldeEl, tauxEl, dateDebutEl, dureeEl, tauxAfficheEl].forEach((el) => el.addEventListener(evt, scheduleRecalc));
+      document.querySelectorAll<HTMLInputElement>('[id^="pen-marche-"]').forEach((el) => el.addEventListener(evt, scheduleRecalc));
+    });
 
     function getInputs(): PenaliteInput {
       const methode = (preteurSelect.selectedOptions[0]?.dataset.methode ?? 'taux_affiche') as MethodeIRD;

@@ -358,7 +358,9 @@ const { defaultRate = 3.79 } = Astro.props;
     }
 
     ['sim-revenu', 'sim-dettes', 'sim-mise', 'sim-taux', 'sim-taxes', 'sim-chauffage', 'sim-condo'].forEach(id => {
-      document.getElementById(id)!.addEventListener('input', scheduleSimulation);
+      const el = document.getElementById(id)!;
+      el.addEventListener('input', scheduleSimulation);
+      el.addEventListener('change', scheduleSimulation);
     });
     document.getElementById('sim-amort')!.addEventListener('change', simuler);
 
