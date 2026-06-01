@@ -1509,15 +1509,15 @@ const nouveauTauxDefaut =
     border-radius: 12px;
     padding: .9rem;
     display: grid;
-    grid-template-columns: 1fr 1fr 0.9fr auto;
+    grid-template-columns: 1fr 1fr auto;
     align-items: end;
     gap: .6rem;
     background: var(--sand);
   }
 
   /* « Dette » (libellé) seul sur la 1ère rangée, champs financiers sur la 2e */
-  .rsim-dette-field-libelle { grid-column: 1 / 4; grid-row: 1; }
-  .rsim-dette-remove { grid-column: 4; grid-row: 1; align-self: end; }
+  .rsim-dette-field-libelle { grid-column: 1 / 3; grid-row: 1; }
+  .rsim-dette-remove { grid-column: 3; grid-row: 1; align-self: end; }
 
   .rsim-dette-remove {
     display: inline-flex;
@@ -1785,10 +1785,10 @@ const nouveauTauxDefaut =
 
     /* Grille de dette : libéllé + × sur la 1ère rangée, 3 champs financières sur la 2e */
     .rsim-dette-row {
-      grid-template-columns: 1fr 1fr 1fr auto;
+      grid-template-columns: 1fr 1fr auto;
     }
-    .rsim-dette-field-libelle { grid-column: 1 / 4; }
-    .rsim-dette-remove { grid-column: 4; grid-row: 1; align-self: end; }
+    .rsim-dette-field-libelle { grid-column: 1 / 3; }
+    .rsim-dette-remove { grid-column: 3; grid-row: 1; align-self: end; }
 
     .rsim-results { position: static; }
     .rsim-compare-grid { grid-template-columns: 1fr; }
