@@ -7,6 +7,7 @@ import Calculator from '../components/Calculator.astro';
 import Comparateur from '../components/Comparateur.astro';
 import PenaliteCalculator from '../components/PenaliteCalculator.astro';
 import RefinancementSimulator from '../components/RefinancementSimulator.astro';
+import DroitsMutationCalculator from '../components/DroitsMutationCalculator.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
 import { loadSiteConfig } from '../config';
 import { preteursParCategorie } from '../data/preteurs';
@@ -47,7 +48,7 @@ const tabs = [
   { id: 'comparateur', label: 'Comparateur de taux', sub: 'Économies' },
   { id: 'penalite', label: 'Calculer ma pénalité', sub: 'IRD' },
   { id: 'refinancement', label: 'Simulateur de refinancement', sub: '+ consolidation' },
-  { id: 'droits-mutation', label: 'Droits de mutation', sub: 'À venir', comingSoon: true },
+  { id: 'droits-mutation', label: 'Droits de mutation', sub: 'Taxe de bienvenue' },
 ];
 ---
 
@@ -62,11 +63,11 @@ const tabs = [
         <div class="section-tag">Outils gratuits</div>
         <h1 class="section-title">Calculateurs hypothécaires <em>gratuits</em> au Québec</h1>
         <p class="section-sub">
-          Cinq calculateurs hypothécaires gratuits pour le Québec : estimez votre capacité
+          Six calculateurs hypothécaires gratuits pour le Québec : estimez votre capacité
           d'emprunt, calculez un versement, comparez les taux affichés en banque avec ceux
-          qu'un courtier peut négocier, évaluez votre pénalité de remboursement anticipé
-          et simulez un refinancement — le tout dans un même endroit, sans inscription.
-          Un calculateur de droits de mutation (taxe de bienvenue) arrive bientôt.
+          qu'un courtier peut négocier, évaluez votre pénalité de remboursement anticipé,
+          simulez un refinancement et calculez vos droits de mutation (taxe de bienvenue) —
+          le tout dans un même endroit, sans inscription.
         </p>
       </div>
     </section>
@@ -78,16 +79,7 @@ const tabs = [
           role="tablist"
           aria-label="Outils hypothécaires"
         >
-          {tabs.map((tab, i) => tab.comingSoon ? (
-            <span
-              class="comp-pill outils-tab outils-tab--coming-soon"
-              title="Bientôt disponible"
-              aria-hidden="true"
-            >
-              <span class="outils-tab-label">{tab.label}</span>
-              <span class="comp-pill-sub">{tab.sub}</span>
-            </span>
-          ) : (
+          {tabs.map((tab, i) => (
             <button
               type="button"
               role="tab"
@@ -167,6 +159,17 @@ const tabs = [
           hidden
         >
           <RefinancementSimulator defaultRate={defaultRate} />
+        </div>
+
+        <div
+          class="outils-panel"
+          id="panel-droits-mutation"
+          role="tabpanel"
+          aria-labelledby="tab-droits-mutation"
+          data-panel="droits-mutation"
+          hidden
+        >
+          <DroitsMutationCalculator />
         </div>
       </div>
     </section>
