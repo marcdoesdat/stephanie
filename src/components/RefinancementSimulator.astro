@@ -199,20 +199,22 @@ const nouveauTauxDefaut =
           <input type="text" class="rsim-input rsim-dette-libelle"
             placeholder="ex. Carte Visa" autocomplete="off" maxlength="40" />
         </div>
-        <div class="rsim-field">
-          <label class="rsim-label">Montant dû ($)</label>
-          <div class="rsim-money-wrap">
-            <span class="rsim-money-prefix" aria-hidden="true">$</span>
-            <input type="text" class="rsim-input rsim-input--money rsim-dette-montant"
-              inputmode="numeric" autocomplete="off" placeholder="0" />
+        <div class="rsim-dette-montants">
+          <div class="rsim-field">
+            <label class="rsim-label">Montant dû ($)</label>
+            <div class="rsim-money-wrap">
+              <span class="rsim-money-prefix" aria-hidden="true">$</span>
+              <input type="text" class="rsim-input rsim-input--money rsim-dette-montant"
+                inputmode="numeric" autocomplete="off" placeholder="0" />
+            </div>
           </div>
-        </div>
-        <div class="rsim-field">
-          <label class="rsim-label">Paiement ($/mois)</label>
-          <div class="rsim-money-wrap">
-            <span class="rsim-money-prefix" aria-hidden="true">$</span>
-            <input type="text" class="rsim-input rsim-input--money rsim-dette-paiement"
-              inputmode="numeric" autocomplete="off" placeholder="0" />
+          <div class="rsim-field">
+            <label class="rsim-label">Paiement ($/mois)</label>
+            <div class="rsim-money-wrap">
+              <span class="rsim-money-prefix" aria-hidden="true">$</span>
+              <input type="text" class="rsim-input rsim-input--money rsim-dette-paiement"
+                inputmode="numeric" autocomplete="off" placeholder="0" />
+            </div>
           </div>
         </div>
         <button type="button" class="rsim-dette-remove" aria-label="Retirer cette dette">
@@ -1509,15 +1511,23 @@ const nouveauTauxDefaut =
     border-radius: 12px;
     padding: .9rem;
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr auto;
     align-items: end;
     gap: .6rem;
     background: var(--sand);
   }
 
-  /* « Dette » (libellé) seul sur la 1ère rangée, champs financiers sur la 2e */
-  .rsim-dette-field-libelle { grid-column: 1 / 3; grid-row: 1; }
-  .rsim-dette-remove { grid-column: 3; grid-row: 1; align-self: end; }
+  /* Libellé sur la 1ère rangée, champs financiers sur la 2e (pleine largeur) */
+  .rsim-dette-field-libelle { grid-column: 1; grid-row: 1; }
+  .rsim-dette-remove { grid-column: 2; grid-row: 1; align-self: end; }
+
+  .rsim-dette-montants {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    gap: .6rem;
+  }
+  .rsim-dette-montants .rsim-field { flex: 1; }
 
   .rsim-dette-remove {
     display: inline-flex;
@@ -1783,14 +1793,7 @@ const nouveauTauxDefaut =
     .rsim-form .rsim-disclaimer            { order: 5; }
     .rsim-results                           { order: 6; }
 
-    /* Grille de dette : libéllé + × sur la 1ère rangée, 3 champs financières sur la 2e */
-    .rsim-dette-row {
-      grid-template-columns: 1fr 1fr auto;
-    }
-    .rsim-dette-field-libelle { grid-column: 1 / 3; }
-    .rsim-dette-remove { grid-column: 3; grid-row: 1; align-self: end; }
-
-    .rsim-results { position: static; }
+.rsim-results { position: static; }
     .rsim-compare-grid { grid-template-columns: 1fr; }
     .rsim-row { grid-template-columns: 1fr; }
 
