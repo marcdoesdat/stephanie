@@ -19,7 +19,7 @@ import { House, Calculator, Scale, ClipboardList, TrendingUp, Landmark } from '@
 const config = loadSiteConfig();
 
 const hypothecaRates = await fetchHypothecaRates();
-const hypothecaVariable = hypothecaRates?.variable ?? 5.99;
+const hypothecaVariable = hypothecaRates?.variable ?? null;
 
 const googleReviews = await getReviews();
 

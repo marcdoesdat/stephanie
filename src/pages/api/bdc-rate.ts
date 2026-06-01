@@ -25,6 +25,9 @@ interface CachedBdc {
   payload: BdcPayload;
 }
 
+// In-memory cache — only useful in local `astro dev` (single long-lived process).
+// In production, Netlify SSR functions are ephemeral Lambdas with no shared state
+// between invocations; the Blob cache is the only persistent store there.
 let memoryCache: CachedBdc | null = null;
 
 let _getStorePromise: Promise<typeof import('@netlify/blobs').getStore | undefined> | undefined;

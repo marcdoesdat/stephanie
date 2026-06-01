@@ -8,6 +8,7 @@
     "src/services/**",
     "src/utils/**",
     "src/config/**",
+    "src/data/**",
   ]
 
 # Headers de sécurité globaux

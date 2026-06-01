@@ -4,7 +4,7 @@ import stephaniePhoto from '../assets/stephanie.webp';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
-const { baseRate = 3.70 } = Astro.props;
+const { baseRate = null } = Astro.props;
 function fmtRate(val: number | null | undefined): string {
   if (val == null) return '—';
   return val.toFixed(2).replace('.', ',') + ' %*';
@@ -78,7 +78,10 @@ function fmtRate(val: number | null | undefined): string {
         <div class="hero-cards-ribbon">
           <div class="ribbon-card">
             <span class="card-sm">Taux variable</span>
-            <span class="card-val">Dès {fmtRate(baseRate)}</span>
+            {baseRate != null
+              ? <span class="card-val">Dès {fmtRate(baseRate)}</span>
+              : <a class="card-val card-val--link" href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener">hypotheca.ca</a>
+            }
           </div>
           <div class="ribbon-card ribbon-card--logo">
             <img src="/images/hypotheca-couleur.svg" alt="Hypotheca" width="76" height="76" style="display:block;" loading="lazy" />
@@ -217,6 +220,14 @@ function fmtRate(val: number | null | undefined): string {
     font-size: 0.9rem;
     white-space: nowrap;
   }
+
+  .ribbon-card .card-val--link {
+    color: var(--clay);
+    text-decoration: none;
+    font-family: "Lora", serif;
+    font-weight: 600;
+  }
+  .ribbon-card .card-val--link:hover { text-decoration: underline; }
 
   .ribbon-card--logo {
     flex: 0 0 auto;

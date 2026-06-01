@@ -21,6 +21,42 @@ export const prerender = false;
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 
 /* ------------------------------------------------------------------ */
+/*  Rate limiting (IP-based, Netlify Blobs)                            */
+/*  Max 5 submissions per IP per hour.                                 */
+/*  Skipped gracefully in dev (no Blobs available).                    */
+/* ------------------------------------------------------------------ */
+
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RATE_BLOB_STORE = 'rate-limit';
+
+interface RateEntry { count: number; windowStart: number; }
+
+async function checkRateLimit(ip: string): Promise<boolean> {
+  if (!process.env.NETLIFY) return true; // skip in local dev
+  let getStore: typeof import('@netlify/blobs').getStore | undefined;
+  try {
+    getStore = (await import('@netlify/blobs')).getStore;
+  } catch { return true; }
+  if (!getStore) return true;
+  try {
+    const store = getStore(RATE_BLOB_STORE);
+    const key = `rappel:${ip.slice(0, 64)}`; // cap key length
+    const raw = await store.get(key, { type: 'text' });
+    const now = Date.now();
+    let entry: RateEntry = raw ? (JSON.parse(raw) as RateEntry) : { count: 0, windowStart: now };
+    if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+      entry = { count: 0, windowStart: now };
+    }
+    entry.count += 1;
+    await store.set(key, JSON.stringify(entry));
+    return entry.count <= RATE_LIMIT_MAX;
+  } catch {
+    return true; // fail open — never block legitimate traffic over a Blob error
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Types & helpers                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -145,6 +181,16 @@ export const POST: APIRoute = async ({ request }) => {
   // 3. Honeypot : un bot a rempli le champ caché → succès silencieux, aucun envoi.
   if (asTrimmedString(payload.company) !== '') {
     return jsonResponse({ ok: true }, 200);
+  }
+
+  // 3b. Rate limiting : max 5 soumissions par IP par heure.
+  const clientIp =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('x-real-ip') ??
+    'unknown';
+  const allowed = await checkRateLimit(clientIp);
+  if (!allowed) {
+    return jsonResponse({ error: 'Trop de demandes. Veuillez réessayer dans une heure.' }, 429);
   }
 
   // 4. Validation des champs requis.

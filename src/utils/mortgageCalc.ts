@@ -78,12 +78,15 @@ export function calculateSCHL(prix: number, mise: number): number {
 }
 
 /**
- * Minimum required down payment — Canadian rules.
- * 5% on first $500k, 10% on $500k–$999,999, 20% if ≥ $1M.
+ * Minimum required down payment — Canadian rules (updated Dec 15 2024).
+ * 5 % on first $500 k, 10 % on $500 k–$1.5 M, 20 % if > $1.5 M.
+ * The $1 M–$1.5 M insured tier applies to first-time buyers and new-construction
+ * purchases only; repeat buyers of existing homes still require 20 % at $1 M+.
+ * This function returns the minimum for the most favourable eligible scenario.
  */
 export function miseMinimale(prix: number): number {
   if (prix <= 500_000) return prix * 0.05;
-  if (prix < 1_000_000) return 25_000 + (prix - 500_000) * 0.1;
+  if (prix <= 1_500_000) return 25_000 + (prix - 500_000) * 0.1;
   return prix * 0.2;
 }
 
@@ -107,11 +110,14 @@ export function prixMaxParMise(mise: number): number {
 
 /**
  * Quebec land transfer tax (droits de mutation / taxe de bienvenue).
+ * Thresholds are indexed annually by the ISQ. Update each January.
+ * 2026 values: 62 900 $ / 315 000 $ (source: Loi sur les droits sur les mutations immobilières).
+ * The ≥ 500 000 $ tier at 2 % is a municipal option — applies to Repentigny and most QC cities.
  */
 export function droitsMutation(prix: number): number {
   const tranches = [
-    { seuil: 58_900, taux: 0.005 },
-    { seuil: 294_600, taux: 0.01 },
+    { seuil: 62_900,  taux: 0.005 },
+    { seuil: 315_000, taux: 0.01 },
     { seuil: 500_000, taux: 0.015 },
     { seuil: Infinity, taux: 0.02 },
   ];
@@ -142,15 +148,15 @@ export function calcAbsoluteMax(
 ): { prix: number; miseMin: number } {
   if (pretMax <= 0) return { prix: 0, miseMin: 0 };
 
-  // --- Conventional scenario (≥ $1M, 20% down, no SCHL) ---
+  // --- Conventional scenario (> $1.5M, 20% down, no CMHC) ---
   const prixConv = pretMax / 0.8;
-  // Only valid if the loan at that price is ≥ 20% down
-  const isConvValid = prixConv >= 1_000_000;
+  // Only valid if the price exceeds the insured mortgage cap ($1.5 M as of Dec 15 2024)
+  const isConvValid = prixConv >= 1_500_000;
 
-  // --- Insured scenario (< $1M, min down payment, SCHL applies) ---
+  // --- Insured scenario (≤ $1.5M, min down payment, CMHC applies) ---
   // Iterate to converge: prix = (pretMax / (1 + SCHL_rate)) + miseMinimale(prix)
-  // Initial guess capped just under $1M so high pretMax values don't short-circuit.
-  let prixIns = Math.min(pretMax / 0.95, 999_999);
+  // Initial guess capped just under $1.5M so high pretMax values don't short-circuit.
+  let prixIns = Math.min(pretMax / 0.95, 1_499_999);
   let miseIns = miseMinimale(prixIns);
 
   for (let i = 0; i < 30; i++) {
@@ -158,7 +164,7 @@ export function calcAbsoluteMax(
     const schlRate = tauxPrimeSCHL(ltv);
     const baseLoan = pretMax / (1 + schlRate);
     let nextPrix = baseLoan + miseIns;
-    if (nextPrix >= 1_000_000) nextPrix = 999_999;
+    if (nextPrix >= 1_500_000) nextPrix = 1_499_999;
     if (Math.abs(nextPrix - prixIns) < 10) {
       prixIns = nextPrix;
       miseIns = miseMinimale(prixIns);
@@ -168,7 +174,7 @@ export function calcAbsoluteMax(
     miseIns = miseMinimale(prixIns);
   }
 
-  const insValid = prixIns > 0 && prixIns < 1_000_000;
+  const insValid = prixIns > 0 && prixIns < 1_500_000;
 
   if (isConvValid && (!insValid || prixConv > prixIns)) {
     return { prix: Math.round(prixConv), miseMin: Math.round(prixConv * 0.2) };
