@@ -215,14 +215,6 @@ const nouveauTauxDefaut =
               inputmode="numeric" autocomplete="off" placeholder="0" />
           </div>
         </div>
-        <div class="rsim-field">
-          <label class="rsim-label">Taux (%)</label>
-          <div class="rsim-rate-wrap">
-            <input type="number" class="rsim-input rsim-input--rate rsim-dette-taux"
-              step="0.1" inputmode="decimal" min="0" max="60" placeholder="19.9" />
-            <span class="rsim-rate-suffix">%</span>
-          </div>
-        </div>
         <button type="button" class="rsim-dette-remove" aria-label="Retirer cette dette">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -510,7 +502,6 @@ const nouveauTauxDefaut =
       const row = frag.querySelector('.rsim-dette-row') as HTMLElement;
       const montantEl = row.querySelector('.rsim-dette-montant') as HTMLInputElement;
       const paiementEl = row.querySelector('.rsim-dette-paiement') as HTMLInputElement;
-      const tauxEl = row.querySelector('.rsim-dette-taux') as HTMLInputElement;
       const removeBtn = row.querySelector('.rsim-dette-remove') as HTMLButtonElement;
 
       // Pré-remplir le paiement à 5 % du montant dû tant que l'utilisateur ne l'a pas édité manuellement
@@ -528,7 +519,6 @@ const nouveauTauxDefaut =
 
       paiementEl.addEventListener('blur', () => fmtInputEl(paiementEl));
       paiementEl.addEventListener('input', scheduleRecalc);
-      tauxEl.addEventListener('input', scheduleRecalc);
       removeBtn.addEventListener('click', () => {
         row.remove();
         scheduleRecalc();
