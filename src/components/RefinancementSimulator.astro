@@ -721,25 +721,26 @@ const nouveauTauxDefaut =
       // Cash-flow libéré : paiements de dettes remplacés − coût ajouté à l'hypothèque.
       const cashflowDettes = dettes.paiementMensuel - coutHypoDettes;
 
-      // Effet taux pur : nouveau paiement si même amortissement que l'actuel
-      const pmtNouveauMemeAmort = calcPaiement(solde, tauxNouveau, amortRestantAns, 12);
-      const effetTauxMensuel = pmtActuelMensuel - pmtNouveauMemeAmort;
-      const effetAmortMensuel = pmtNouveauMemeAmort - pmtNouveauMensuel; // positif si amort allongé
+      // pmtNouveauMensuel (ligne 715) reste sur l'amort. CHOISI → tuiles réactives.
+      const pmtNouveauDureeEgale = calcPaiement(nouveauSolde, tauxNouveau, amortRestantAns, 12);
+      const effetTauxMensuel   = pmtActuelMensuel - pmtNouveauDureeEgale;   // >0 = baisse due au taux
+      const effetAmortMensuel  = pmtNouveauDureeEgale - pmtNouveauMensuel;  // >0 allongé, <0 raccourci
 
-      // --- Interest on same horizon ---
-      const interetActuel = interetsPayesSurPeriode(solde, tauxActuel, amortRestantAns, horizonMois);
-      const interetNouveau = interetsPayesSurPeriode(nouveauSolde, tauxNouveau, amortNouveauAns, horizonMois);
+      const interetActuel            = interetsPayesSurPeriode(solde, tauxActuel, amortRestantAns, horizonMois);
+      const interetNouveauDureeEgale = interetsPayesSurPeriode(nouveauSolde, tauxNouveau, amortRestantAns, horizonMois);
+      const interetNouveauReel       = interetsPayesSurPeriode(nouveauSolde, tauxNouveau, amortNouveauAns, horizonMois);
 
-      // --- Costs ---
-      const coutTotal = penalite + frais;
+      const coutTotal     = penalite + frais;
+      const economieTaux  = interetActuel - interetNouveauDureeEgale;        // dû au taux seul
+      const economieAmort = interetNouveauDureeEgale - interetNouveauReel;   // dû au remb. accéléré
 
-      // --- Break-even (based on taux effect only, not amort extension) ---
-      const pointMortMois = effetTauxMensuel > 0
-        ? Math.ceil(coutTotal / effetTauxMensuel)
-        : null;
+      const effetTauxArrondi = Math.round(effetTauxMensuel);
+      const pointMortMois = effetTauxArrondi > 0 ? Math.ceil(coutTotal / effetTauxArrondi) : null;
 
-      // --- Net savings over horizon ---
-      const economieNette = (interetActuel - interetNouveau) - coutTotal;
+      // VERDICT basé sur l'effet taux net (l'amortissement est un choix, pas un gain gratuit).
+      const economieNetteTaux = economieTaux - coutTotal;
+      // Vrai écart de versement (taux + amort. choisi) — affiché dans le hero.
+      const deltaVersementReel = pmtActuelMensuel - pmtNouveauMensuel;
 
       // --- DOM updates ---
       placeholder.style.display = 'none';
@@ -752,24 +753,24 @@ const nouveauTauxDefaut =
       verdictEl.className = 'rsim-verdict';
       const pointMortCourt = pointMortMois !== null && pointMortMois > 0 && pointMortMois <= 48;
       let verdictKey: 'oui' | 'evaluer' | 'non';
-      if (economieNette > 0 && (pointMortMois === null || pointMortCourt)) {
+      if (economieNetteTaux > 0 && (pointMortMois === null || pointMortCourt)) {
         verdictKey = 'oui';
         verdictEl.classList.add('rsim-verdict--oui');
         verdictBadge.textContent = 'OUI';
         verdictTitle.textContent = 'Les conditions sont favorables pour un refinancement.';
-        verdictSub.textContent = `Vous épargnez ${formatMoney(Math.round(economieNette))} net ${horizonLabel}, coûts inclus.`;
-      } else if (economieNette > 0) {
+        verdictSub.textContent = `Vous épargnez ${formatMoney(Math.round(economieNetteTaux))} net ${horizonLabel}, coûts inclus.`;
+      } else if (economieNetteTaux > 0) {
         verdictKey = 'evaluer';
         verdictEl.classList.add('rsim-verdict--evaluer');
         verdictBadge.textContent = 'À ÉVALUER';
         verdictTitle.textContent = 'Rentable, mais sur un long horizon';
-        verdictSub.textContent = `Économie nette de ${formatMoney(Math.round(economieNette))}, mais le point mort est long — votre durée de détention compte.`;
+        verdictSub.textContent = `Économie nette de ${formatMoney(Math.round(economieNetteTaux))}, mais le point mort est long — votre durée de détention compte.`;
       } else {
         verdictKey = 'non';
         verdictEl.classList.add('rsim-verdict--non');
         verdictBadge.textContent = 'NON';
         verdictTitle.textContent = 'Le refinancement n\'est pas avantageux ici';
-        verdictSub.textContent = `Les coûts dépassent les économies d'intérêts (${formatMoney(Math.round(Math.abs(economieNette)))} de perte nette).`;
+        verdictSub.textContent = `Les coûts dépassent les économies d'intérêts (${formatMoney(Math.round(Math.abs(economieNetteTaux)))} de perte nette).`;
       }
 
       // --- Sticky mobile bar ---
@@ -786,29 +787,36 @@ const nouveauTauxDefaut =
 
       // Hero
       heroEl.className = 'rsim-hero';
-      if (effetTauxMensuel > 5) {
+      if (deltaVersementReel > 5) {
         heroEl.classList.add('rsim-hero--positive');
-        heroEyebrow.textContent = 'Économie mensuelle (effet taux)';
-        heroAmount.textContent = `${formatMoney(Math.round(effetTauxMensuel))}/mois`;
-        heroSub.textContent = `Votre versement mensuel baisse de ${formatMoney(Math.round(effetTauxMensuel))} grâce au nouveau taux.`;
-      } else if (effetTauxMensuel < -5) {
+        heroEyebrow.textContent = 'Baisse du versement mensuel';
+        heroAmount.textContent = `−${formatMoney(Math.round(deltaVersementReel))}/mois`;
+      } else if (deltaVersementReel < -5) {
         heroEl.classList.add('rsim-hero--negative');
-        heroEyebrow.textContent = 'Hausse du versement (effet taux)';
-        heroAmount.textContent = `+${formatMoney(Math.round(Math.abs(effetTauxMensuel)))}/mois`;
-        heroSub.textContent = `À amortissement égal, le nouveau taux (${tauxNouveau} %) fait augmenter votre versement de ${formatMoney(Math.round(Math.abs(effetTauxMensuel)))}/mois par rapport au taux actuel (${tauxActuel} %).`;
+        heroEyebrow.textContent = 'Hausse du versement mensuel';
+        heroAmount.textContent = `+${formatMoney(Math.round(-deltaVersementReel))}/mois`;
       } else {
         heroEl.classList.add('rsim-hero--neutral');
-        heroEyebrow.textContent = 'Effet taux sur le versement';
+        heroEyebrow.textContent = 'Versement quasi inchangé';
         heroAmount.textContent = '≈ 0 $';
-        heroSub.textContent = 'Le changement de taux a peu d\'effet sur le versement.';
       }
+      heroSub.textContent =
+        `Dont ${effetTauxMensuel >= 0 ? '−' : '+'}${formatMoney(Math.round(Math.abs(effetTauxMensuel)))} d'effet taux `
+        + `et ${effetAmortMensuel >= 0 ? '−' : '+'}${formatMoney(Math.round(Math.abs(effetAmortMensuel)))} `
+        + `d'amortissement ${effetAmortMensuel >= 0 ? 'allongé' : 'raccourci'}.`;
 
-      // Badge allongement amortissement
-      const amortAllonge = amortNouveauAns > amortRestantAns + 0.5;
-      if (amortAllonge && effetAmortMensuel > 5) {
+      // Bloc amortissement — explique l'écart durée égale vs amort. CHOISI (les deux sens).
+      const deltaMois = Math.round((amortNouveauAns - amortRestantAns) * 12);
+      const amortDiffere = Math.abs(amortNouveauAns - amortRestantAns) > 0.5;
+      if (amortDiffere && Math.abs(effetAmortMensuel) > 5) {
         amortWarning.style.display = '';
-        amortWarnText.textContent = `Le versement est aussi réduit de ${formatMoney(Math.round(effetAmortMensuel))}/mois grâce à l'allongement de l'amortissement — ce n'est pas une économie de taux.`;
-        amortAvertEl.textContent = `⚠ Amortissement prolongé de ${Math.round((amortNouveauAns - amortRestantAns) * 12)} mois vs le restant actuel`;
+        if (effetAmortMensuel > 0) {
+          amortWarnText.textContent = `Avec l'amortissement de ${Math.round(amortNouveauAns)} ans, votre versement réel est ${formatMoney(Math.round(pmtNouveauMensuel))}/mois (${formatMoney(Math.round(effetAmortMensuel))}/mois de moins) — c'est l'allongement, pas le taux. Intérêts totaux : ${formatMoney(Math.round(interetNouveauReel))}.`;
+          amortAvertEl.textContent = `⚠ Amortissement prolongé de ${deltaMois} mois vs le restant actuel`;
+        } else {
+          amortWarnText.textContent = `Avec l'amortissement de ${Math.round(amortNouveauAns)} ans, votre versement réel grimpe à ${formatMoney(Math.round(pmtNouveauMensuel))}/mois (+${formatMoney(Math.round(-effetAmortMensuel))}/mois) : vous remboursez plus vite. L'économie d'intérêts qui en découle (${formatMoney(Math.round(economieAmort))}) vient du remboursement accéléré, pas du taux.`;
+          amortAvertEl.textContent = `⚠ Amortissement raccourci de ${Math.abs(deltaMois)} mois vs le restant actuel`;
+        }
         amortAvertEl.style.display = '';
       } else {
         amortWarning.style.display = 'none';
@@ -817,11 +825,11 @@ const nouveauTauxDefaut =
 
       // Comparison cards
       pmtActuelEl.textContent = `${formatMoney(Math.round(pmtActuelMensuel))}${unitStr}`;
-      pmtNouveauEl.textContent = `${formatMoney(Math.round(pmtNouveauMensuel))}${unitStr}`;
+      pmtNouveauEl.textContent = `${formatMoney(Math.round(pmtNouveauMensuel))}${unitStr}`;   // versement réel (amort. choisi)
       interetActuelEl.textContent = formatMoney(Math.round(interetActuel));
-      interetNouveauEl.textContent = formatMoney(Math.round(interetNouveau));
-      interetLabelActuel.textContent = `Intérêts ${horizonLabel}`;
-      interetLabelNouv.textContent = `Intérêts ${horizonLabel}`;
+      interetNouveauEl.textContent = formatMoney(Math.round(interetNouveauReel));              // intérêts réels (amort. choisi)
+      interetLabelActuel.textContent = `Intérêts sur ${Math.round(amortRestantAns)} ans`;
+      interetLabelNouv.textContent   = `Intérêts sur ${Math.round(amortNouveauAns)} ans`;
       coutRefiEl.textContent = formatMoney(Math.round(coutTotal));
 
       // Point mort
@@ -928,14 +936,14 @@ const nouveauTauxDefaut =
       // Économie nette
       netEl.className = 'rsim-net';
       netLabelEl.textContent = `Économie nette ${horizonLabel}`;
-      if (economieNette > 0) {
+      if (economieNetteTaux > 0) {
         netEl.classList.add('rsim-net--positive');
-        netValueEl.textContent = formatMoney(Math.round(economieNette));
-        netSubEl.textContent = `Économies d'intérêts ${formatMoney(Math.round(interetActuel - interetNouveau))} moins les coûts ${formatMoney(Math.round(coutTotal))}.`;
+        netValueEl.textContent = formatMoney(Math.round(economieNetteTaux));
+        netSubEl.textContent = `Économies d'intérêts ${formatMoney(Math.round(economieTaux))} moins les coûts ${formatMoney(Math.round(coutTotal))}.`;
       } else {
         netEl.classList.add('rsim-net--negative');
-        netValueEl.textContent = `−${formatMoney(Math.round(Math.abs(economieNette)))}`;
-        netSubEl.textContent = `Les coûts (${formatMoney(Math.round(coutTotal))}) dépassent les économies d'intérêts (${formatMoney(Math.round(interetActuel - interetNouveau))}) sur cette période.`;
+        netValueEl.textContent = `−${formatMoney(Math.round(Math.abs(economieNetteTaux)))}`;
+        netSubEl.textContent = `Les coûts (${formatMoney(Math.round(coutTotal))}) dépassent les économies d'intérêts (${formatMoney(Math.round(economieTaux))}) sur cette période.`;
       }
     }
 
@@ -1509,15 +1517,15 @@ const nouveauTauxDefaut =
     border-radius: 12px;
     padding: .9rem;
     display: grid;
-    grid-template-columns: 1fr 1fr 0.9fr auto;
+    grid-template-columns: 1fr 1fr auto;
     align-items: end;
     gap: .6rem;
     background: var(--sand);
   }
 
-  /* « Dette » (libellé) seul sur la 1ère rangée, champs financiers sur la 2e */
-  .rsim-dette-field-libelle { grid-column: 1 / 4; grid-row: 1; }
-  .rsim-dette-remove { grid-column: 4; grid-row: 1; align-self: end; }
+  /* Rangée 1 : libellé (col 1-2) + × (col 3) — Rangée 2 : Montant + Paiement à 50 % chacun */
+  .rsim-dette-field-libelle { grid-column: 1 / 3; grid-row: 1; }
+  .rsim-dette-remove { grid-column: 3; grid-row: 1; align-self: end; }
 
   .rsim-dette-remove {
     display: inline-flex;
@@ -1783,12 +1791,12 @@ const nouveauTauxDefaut =
     .rsim-form .rsim-disclaimer            { order: 5; }
     .rsim-results                           { order: 6; }
 
-    /* Grille de dette : libéllé + × sur la 1ère rangée, 3 champs financières sur la 2e */
+    /* Grille de dette : libellé + × sur la 1ère rangée, Montant+Paiement à 50 % sur la 2e */
     .rsim-dette-row {
-      grid-template-columns: 1fr 1fr 1fr auto;
+      grid-template-columns: 1fr 1fr auto;
     }
-    .rsim-dette-field-libelle { grid-column: 1 / 4; }
-    .rsim-dette-remove { grid-column: 4; grid-row: 1; align-self: end; }
+    .rsim-dette-field-libelle { grid-column: 1 / 3; }
+    .rsim-dette-remove { grid-column: 3; grid-row: 1; align-self: end; }
 
     .rsim-results { position: static; }
     .rsim-compare-grid { grid-template-columns: 1fr; }
