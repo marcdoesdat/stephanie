@@ -64,34 +64,6 @@ const nouveauTauxDefaut =
       </fieldset>
 
       <fieldset class="rsim-fieldset">
-        <legend class="rsim-legend">Coûts du refinancement</legend>
-
-        <div class="rsim-field">
-          <label for="rsim-penalite" class="rsim-label">
-            Pénalité estimée ($)
-            <span class="rsim-penalite-badge" id="rsim-penalite-badge">Reprise depuis l'onglet Pénalité</span>
-          </label>
-          <div class="rsim-money-wrap">
-            <span class="rsim-money-prefix" aria-hidden="true">$</span>
-            <input type="text" id="rsim-penalite" class="rsim-input rsim-input--money" value="0"
-              inputmode="numeric" autocomplete="off" />
-          </div>
-          <a href="#penalite" class="rsim-penalite-link" id="rsim-penalite-link">
-            → Calculer ma pénalité dans l'outil dédié
-          </a>
-        </div>
-
-        <div class="rsim-field">
-          <label for="rsim-frais" class="rsim-label">Frais notaire pour refinancement</label>
-          <div class="rsim-money-wrap">
-            <span class="rsim-money-prefix" aria-hidden="true">$</span>
-            <input type="text" id="rsim-frais" class="rsim-input rsim-input--money" value="1 500"
-              inputmode="numeric" autocomplete="off" />
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset class="rsim-fieldset">
         <legend class="rsim-legend">Nouveau prêt</legend>
 
         <div class="rsim-row">
@@ -121,7 +93,7 @@ const nouveauTauxDefaut =
 
         <div class="rsim-field">
           <label for="rsim-montant-additionnel" class="rsim-label">
-            Dégagement d'équité — montant additionnel ($)
+            Montant à retirer en cash ($)
             <span class="rsim-opt">(optionnel)</span>
           </label>
           <div class="rsim-money-wrap">
@@ -189,6 +161,34 @@ const nouveauTauxDefaut =
         </div>
       </fieldset>
 
+      <fieldset class="rsim-fieldset">
+        <legend class="rsim-legend">Coûts du refinancement</legend>
+
+        <div class="rsim-field">
+          <label for="rsim-penalite" class="rsim-label">
+            Pénalité estimée ($)
+            <span class="rsim-penalite-badge" id="rsim-penalite-badge">Reprise depuis l'onglet Pénalité</span>
+          </label>
+          <div class="rsim-money-wrap">
+            <span class="rsim-money-prefix" aria-hidden="true">$</span>
+            <input type="text" id="rsim-penalite" class="rsim-input rsim-input--money" value="0"
+              inputmode="numeric" autocomplete="off" />
+          </div>
+          <a href="#penalite" class="rsim-penalite-link" id="rsim-penalite-link">
+            → Calculer ma pénalité dans l'outil dédié
+          </a>
+        </div>
+
+        <div class="rsim-field">
+          <label for="rsim-frais" class="rsim-label">Frais notaire pour refinancement et +</label>
+          <div class="rsim-money-wrap">
+            <span class="rsim-money-prefix" aria-hidden="true">$</span>
+            <input type="text" id="rsim-frais" class="rsim-input rsim-input--money" value="1 500"
+              inputmode="numeric" autocomplete="off" />
+          </div>
+        </div>
+      </fieldset>
+
     </form>
 
     <!-- Gabarit d'une ligne de dette (cloné par JS) -->
@@ -213,6 +213,14 @@ const nouveauTauxDefaut =
             <span class="rsim-money-prefix" aria-hidden="true">$</span>
             <input type="text" class="rsim-input rsim-input--money rsim-dette-paiement"
               inputmode="numeric" autocomplete="off" placeholder="0" />
+          </div>
+        </div>
+        <div class="rsim-field">
+          <label class="rsim-label">Taux (%)</label>
+          <div class="rsim-rate-wrap">
+            <input type="number" class="rsim-input rsim-input--rate rsim-dette-taux"
+              value="19.99" step="0.01" inputmode="decimal" min="0.5" max="40" />
+            <span class="rsim-rate-suffix">%</span>
           </div>
         </div>
         <button type="button" class="rsim-dette-remove" aria-label="Retirer cette dette">
@@ -347,6 +355,14 @@ const nouveauTauxDefaut =
             </svg>
             Imprimer / enregistrer mon analyse
           </button>
+          <button type="button" class="rsim-print-btn" id="rsim-reset-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.5 17.5A9 9 0 1 0 12 3"/>
+            </svg>
+            Réinitialiser le simulateur
+          </button>
         </div>
 
         <!-- Disclaimer AMF -->
@@ -467,33 +483,39 @@ const nouveauTauxDefaut =
 
     // --- State ---
     let penaliteManuelle = false; // true when user manually edited the penalty field
+    let lastLoadedPenalite: number | null = null; // dernière valeur chargée depuis sessionStorage
 
     // --- Consolidation de dettes ---
     const consoToggle = document.getElementById('rsim-conso-toggle') as HTMLButtonElement;
     const consoPanel  = document.getElementById('rsim-conso-panel')!;
     let consoOuvert = false;
-    interface DettesTotaux { montant: number; paiementMensuel: number; nb: number; }
+    interface DetteLigne { montant: number; paiementMensuel: number; taux: number; }
+    interface DettesTotaux { montant: number; paiementMensuel: number; nb: number; dettes: DetteLigne[]; }
 
-    // Agrège toutes les lignes de dettes saisies (montant dû + paiement/mois).
+    // Agrège toutes les lignes de dettes saisies (montant dû + paiement/mois + taux).
     // Si le bloc consolidation est replié, on ignore les dettes.
     function lireDettes(): DettesTotaux {
-      if (!consoOuvert) return { montant: 0, paiementMensuel: 0, nb: 0 };
+      if (!consoOuvert) return { montant: 0, paiementMensuel: 0, nb: 0, dettes: [] };
       let montant = 0;
       let paiementMensuel = 0;
       let nb = 0;
+      const lignes: DetteLigne[] = [];
       const rows = dettesListEl.querySelectorAll('.rsim-dette-row');
       rows.forEach((row) => {
         const montantEl = row.querySelector('.rsim-dette-montant') as HTMLInputElement | null;
         const paiementEl = row.querySelector('.rsim-dette-paiement') as HTMLInputElement | null;
+        const tauxEl = row.querySelector('.rsim-dette-taux') as HTMLInputElement | null;
         const m = montantEl ? Math.max(0, parseVal(montantEl.value)) : 0;
         const p = paiementEl ? Math.max(0, parseVal(paiementEl.value)) : 0;
+        const t = tauxEl ? Math.max(0.5, Math.min(40, parseFloat(tauxEl.value) || 19.99)) : 19.99;
         if (m > 0) {
           montant += m;
           paiementMensuel += p;
           nb++;
+          lignes.push({ montant: m, paiementMensuel: p, taux: t });
         }
       });
-      return { montant, paiementMensuel, nb };
+      return { montant, paiementMensuel, nb, dettes: lignes };
     }
 
     // Ajoute une nouvelle ligne de dette à partir du gabarit.
@@ -502,6 +524,7 @@ const nouveauTauxDefaut =
       const row = frag.querySelector('.rsim-dette-row') as HTMLElement;
       const montantEl = row.querySelector('.rsim-dette-montant') as HTMLInputElement;
       const paiementEl = row.querySelector('.rsim-dette-paiement') as HTMLInputElement;
+      const tauxEl = row.querySelector('.rsim-dette-taux') as HTMLInputElement;
       const removeBtn = row.querySelector('.rsim-dette-remove') as HTMLButtonElement;
 
       // Pré-remplir le paiement à 5 % du montant dû tant que l'utilisateur ne l'a pas édité manuellement
@@ -519,9 +542,23 @@ const nouveauTauxDefaut =
 
       paiementEl.addEventListener('blur', () => fmtInputEl(paiementEl));
       paiementEl.addEventListener('input', scheduleRecalc);
+      tauxEl.addEventListener('input', scheduleRecalc);
+      // Suppression en deux étapes pour éviter les clics accidentels.
+      let dettesRemoveTimer: number | undefined;
       removeBtn.addEventListener('click', () => {
-        row.remove();
-        scheduleRecalc();
+        if (removeBtn.classList.contains('rsim-dette-remove--confirm')) {
+          clearTimeout(dettesRemoveTimer);
+          row.remove();
+          scheduleRecalc();
+          return;
+        }
+        // Premier clic : passage en mode confirmation (4 s).
+        removeBtn.classList.add('rsim-dette-remove--confirm');
+        removeBtn.setAttribute('aria-label', 'Confirmer la suppression');
+        dettesRemoveTimer = window.setTimeout(() => {
+          removeBtn.classList.remove('rsim-dette-remove--confirm');
+          removeBtn.setAttribute('aria-label', 'Retirer cette dette');
+        }, 4000);
       });
 
       dettesListEl.appendChild(frag);
@@ -580,6 +617,40 @@ const nouveauTauxDefaut =
     // --- Bouton imprimer ---
     printBtn.addEventListener('click', () => window.print());
 
+    // --- Bouton réinitialiser ---
+    const resetBtn = document.getElementById('rsim-reset-btn')!;
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('Voulez-vous vraiment réinitialiser le simulateur ? Toutes vos données seront perdues.')) return;
+      // Champs prêt actuel
+      soldeEl.value = '300\u202F000';
+      valeurEl.value = '';
+      tauxActuelEl.value = '5.49';
+      anneesEl.value = '22';
+      // Coûts
+      penaliteEl.value = '0';
+      penaliteManuelle = false;
+      penaliteBadge.style.display = 'none';
+      lastLoadedPenalite = null;
+      fraisEl.value = '1\u202F500';
+      // Nouveau prêt
+      tauxNouveauEl.value = tauxLiveDefaut || '4.29';
+      tauxLiveBadge.style.display = tauxLiveDefaut ? '' : 'none';
+      delete amortNouveauEl.dataset.userEdited;
+      amortNouveauEl.value = '22';
+      montantAddEl.value = '0';
+      // Dettes
+      dettesListEl.innerHTML = '';
+      if (consoOuvert) {
+        consoOuvert = false;
+        consoToggle.setAttribute('aria-expanded', 'false');
+        consoPanel.classList.remove('is-open');
+      }
+      // Recalcul
+      clearErrors();
+      syncAmortNouveau();
+      doCalculation();
+    });
+
     // --- Validation : affichage des messages d'erreur ---
     const errInputs: Record<string, HTMLInputElement> = {
       solde: soldeEl, valeur: valeurEl, tauxActuel: tauxActuelEl,
@@ -597,13 +668,17 @@ const nouveauTauxDefaut =
     // --- SessionStorage — pré-remplissage pénalité ---
     function tryLoadPenaliteFromSession() {
       const saved = sessionStorage.getItem('penalite-resultat');
-      if (saved && !penaliteManuelle) {
-        const montant = parseFloat(saved);
-        if (!isNaN(montant) && montant > 0) {
-          penaliteEl.value = fmtThousands(montant);
-          penaliteBadge.style.display = '';
-        }
-      }
+      if (!saved) return;
+      const montant = parseFloat(saved);
+      if (isNaN(montant) || montant <= 0) return;
+
+      // Charge si c'est un nouveau résultat (même si l'utilisateur avait édité manuellement).
+      if (penaliteManuelle && montant === lastLoadedPenalite) return;
+
+      penaliteEl.value = fmtThousands(montant);
+      penaliteBadge.style.display = '';
+      lastLoadedPenalite = montant;
+      penaliteManuelle = false; // réinitialise : un prochain calcul sera repris automatiquement
     }
 
     penaliteEl.addEventListener('input', () => {
@@ -734,11 +809,26 @@ const nouveauTauxDefaut =
       const economieTaux  = interetActuel - interetNouveauDureeEgale;        // dû au taux seul
       const economieAmort = interetNouveauDureeEgale - interetNouveauReel;   // dû au remb. accéléré
 
-      const effetTauxArrondi = Math.round(effetTauxMensuel);
-      const pointMortMois = effetTauxArrondi > 0 ? Math.ceil(coutTotal / effetTauxArrondi) : null;
+      // Économie sur les dettes consolidées : intérêts évités vs taux hypothécaire.
+      // Chaque dette utilise son propre taux (défaut 19,99 % — carte de crédit).
+      let economieConsolidation = 0;
+      if (dettes.montant > 0) {
+        for (const d of dettes.dettes) {
+          if (d.montant > 0 && d.taux > 0) {
+            const interetHautTaux = interetsPayesSurPeriode(d.montant, d.taux, amortRestantAns, horizonMois);
+            const interetTauxHypo = interetsPayesSurPeriode(d.montant, tauxNouveau, amortRestantAns, horizonMois);
+            economieConsolidation += interetHautTaux - interetTauxHypo;
+          }
+        }
+      }
+
+      // Point mort basé sur l'effet taux réel (garde contre les valeurs infimes).
+      const pointMortMois = effetTauxMensuel > 0.01 ? Math.ceil(coutTotal / effetTauxMensuel) : null;
 
       // VERDICT basé sur l'effet taux net (l'amortissement est un choix, pas un gain gratuit).
       const economieNetteTaux = economieTaux - coutTotal;
+      // Économie nette totale : inclut les intérêts évités sur les dettes consolidées.
+      const economieNetteTotale = economieNetteTaux + economieConsolidation;
       // Vrai écart de versement (taux + amort. choisi) — affiché dans le hero.
       const deltaVersementReel = pmtActuelMensuel - pmtNouveauMensuel;
 
@@ -753,24 +843,32 @@ const nouveauTauxDefaut =
       verdictEl.className = 'rsim-verdict';
       const pointMortCourt = pointMortMois !== null && pointMortMois > 0 && pointMortMois <= 48;
       let verdictKey: 'oui' | 'evaluer' | 'non';
-      if (economieNetteTaux > 0 && (pointMortMois === null || pointMortCourt)) {
+      if (economieNetteTotale > 0 && (pointMortMois === null || pointMortCourt)) {
         verdictKey = 'oui';
         verdictEl.classList.add('rsim-verdict--oui');
         verdictBadge.textContent = 'OUI';
         verdictTitle.textContent = 'Les conditions sont favorables pour un refinancement.';
-        verdictSub.textContent = `Vous épargnez ${formatMoney(Math.round(economieNetteTaux))} net ${horizonLabel}, coûts inclus.`;
-      } else if (economieNetteTaux > 0) {
+        if (dettes.montant > 0 && economieConsolidation > 0) {
+          verdictSub.textContent = `Vous épargnez ${formatMoney(Math.round(economieNetteTotale))} net ${horizonLabel} (dont ${formatMoney(Math.round(economieConsolidation))} grâce à la consolidation de dettes).`;
+        } else {
+          verdictSub.textContent = `Vous épargnez ${formatMoney(Math.round(economieNetteTotale))} net ${horizonLabel}, coûts inclus.`;
+        }
+      } else if (economieNetteTotale > 0) {
         verdictKey = 'evaluer';
         verdictEl.classList.add('rsim-verdict--evaluer');
         verdictBadge.textContent = 'À ÉVALUER';
         verdictTitle.textContent = 'Rentable, mais sur un long horizon';
-        verdictSub.textContent = `Économie nette de ${formatMoney(Math.round(economieNetteTaux))}, mais le point mort est long — votre durée de détention compte.`;
+        verdictSub.textContent = `Économie nette de ${formatMoney(Math.round(economieNetteTotale))}, mais le point mort est long — votre durée de détention compte.`;
       } else {
         verdictKey = 'non';
         verdictEl.classList.add('rsim-verdict--non');
         verdictBadge.textContent = 'NON';
-        verdictTitle.textContent = 'Le refinancement n\'est pas avantageux ici';
-        verdictSub.textContent = `Les coûts dépassent les économies d'intérêts (${formatMoney(Math.round(Math.abs(economieNetteTaux)))} de perte nette).`;
+        verdictTitle.textContent = 'Moins avantageux selon ces chiffres';
+        if (dettes.montant > 0 && economieConsolidation > 0) {
+          verdictSub.textContent = `Même avec ${formatMoney(Math.round(economieConsolidation))} d'économies sur les dettes, les coûts (${formatMoney(Math.round(coutTotal))}) dépassent les économies.`;
+        } else {
+          verdictSub.textContent = `Les coûts dépassent les économies d'intérêts (${formatMoney(Math.round(Math.abs(economieNetteTotale)))} de perte nette).`;
+        }
       }
 
       // --- Sticky mobile bar ---
@@ -896,6 +994,16 @@ const nouveauTauxDefaut =
         } else {
           ltvAlertEl.style.display = 'none';
         }
+      } else if (montantAdd > 0 || dettes.montant > 0) {
+        // Dégagement ou consolidation demandé mais valeur de propriété manquante.
+        equiteEl.style.display = '';
+        equiteMaxEl.textContent = '—';
+        equiteAddRow.style.display = 'none';
+        ltvAlertEl.style.display = '';
+        ltvAlertText.textContent =
+          `⚠ Vous avez demandé un dégagement d'équité ou une consolidation de dettes, `
+          + `mais la valeur de la propriété n'est pas renseignée. `
+          + `Entrez la valeur actuelle pour vérifier que le nouveau prêt respecte le ratio maximal de 80 %.`;
       } else {
         equiteEl.style.display = 'none';
         ltvAlertEl.style.display = 'none';
@@ -916,7 +1024,8 @@ const nouveauTauxDefaut =
           consoSubEl.textContent =
             `En intégrant ${dettes.nb} dette${dettes.nb > 1 ? 's' : ''} au taux hypothécaire `
             + `(${tauxNouveau} %), vous remplacez ${formatMoney(Math.round(dettes.paiementMensuel))}/mois `
-            + `de paiements par ${formatMoney(Math.round(coutHypoDettes))}/mois.`;
+            + `de paiements par ${formatMoney(Math.round(coutHypoDettes))}/mois. `
+            + `Économie d'intérêts estimée à ${formatMoney(Math.round(economieConsolidation))} sur la période.`;
         } else if (cashflowDettes < -5) {
           consoHero.classList.add('rsim-conso-hero--negative');
           consoCashflowEl.textContent = `−${formatMoney(Math.round(Math.abs(cashflowDettes)))}/mois`;
@@ -936,13 +1045,17 @@ const nouveauTauxDefaut =
       // Économie nette
       netEl.className = 'rsim-net';
       netLabelEl.textContent = `Économie nette ${horizonLabel}`;
-      if (economieNetteTaux > 0) {
+      if (economieNetteTotale > 0) {
         netEl.classList.add('rsim-net--positive');
-        netValueEl.textContent = formatMoney(Math.round(economieNetteTaux));
-        netSubEl.textContent = `Économies d'intérêts ${formatMoney(Math.round(economieTaux))} moins les coûts ${formatMoney(Math.round(coutTotal))}.`;
+        netValueEl.textContent = formatMoney(Math.round(economieNetteTotale));
+        if (dettes.montant > 0 && economieConsolidation > 0) {
+          netSubEl.textContent = `Économies d'intérêts hypothécaires ${formatMoney(Math.round(economieTaux))} + consolidation ${formatMoney(Math.round(economieConsolidation))} − coûts ${formatMoney(Math.round(coutTotal))}.`;
+        } else {
+          netSubEl.textContent = `Économies d'intérêts ${formatMoney(Math.round(economieTaux))} moins les coûts ${formatMoney(Math.round(coutTotal))}.`;
+        }
       } else {
         netEl.classList.add('rsim-net--negative');
-        netValueEl.textContent = `−${formatMoney(Math.round(Math.abs(economieNetteTaux)))}`;
+        netValueEl.textContent = `−${formatMoney(Math.round(Math.abs(economieNetteTotale)))}`;
         netSubEl.textContent = `Les coûts (${formatMoney(Math.round(coutTotal))}) dépassent les économies d'intérêts (${formatMoney(Math.round(economieTaux))}) sur cette période.`;
       }
     }
@@ -1517,15 +1630,15 @@ const nouveauTauxDefaut =
     border-radius: 12px;
     padding: .9rem;
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr auto;
     align-items: end;
     gap: .6rem;
     background: var(--sand);
   }
 
-  /* Rangée 1 : libellé (col 1-2) + × (col 3) — Rangée 2 : Montant + Paiement à 50 % chacun */
-  .rsim-dette-field-libelle { grid-column: 1 / 3; grid-row: 1; }
-  .rsim-dette-remove { grid-column: 3; grid-row: 1; align-self: end; }
+  /* Rangée 1 : libellé (col 1-3) + × (col 4) — Rangée 2 : Montant + Paiement + Taux */
+  .rsim-dette-field-libelle { grid-column: 1 / 4; grid-row: 1; }
+  .rsim-dette-remove { grid-column: 4; grid-row: 1; align-self: end; }
 
   .rsim-dette-remove {
     display: inline-flex;
@@ -1542,9 +1655,10 @@ const nouveauTauxDefaut =
     flex-shrink: 0;
   }
 
-  .rsim-dette-remove:hover {
-    background: rgba(196, 122, 82, .08);
-    border-color: rgba(196, 122, 82, .4);
+  .rsim-dette-remove--confirm {
+    background: rgba(180, 60, 50, .15) !important;
+    border-color: rgba(180, 60, 50, .5) !important;
+    color: #b43c32 !important;
   }
 
   .rsim-dette-add-btn {
@@ -1791,12 +1905,17 @@ const nouveauTauxDefaut =
     .rsim-form .rsim-disclaimer            { order: 5; }
     .rsim-results                           { order: 6; }
 
-    /* Grille de dette : libellé + × sur la 1ère rangée, Montant+Paiement à 50 % sur la 2e */
+    /* Grille de dette — layout 2 colonnes : libellé + montant pleine largeur, paiement/taux côte à côte */
     .rsim-dette-row {
       grid-template-columns: 1fr 1fr auto;
     }
-    .rsim-dette-field-libelle { grid-column: 1 / 3; }
+    .rsim-dette-field-libelle { grid-column: 1 / 3; grid-row: 1; }
     .rsim-dette-remove { grid-column: 3; grid-row: 1; align-self: end; }
+    /* Montant dû — pleine largeur */
+    .rsim-dette-row > .rsim-field:nth-child(2) { grid-column: 1 / 3; grid-row: 2; }
+    /* Paiement + Taux côte à côte */
+    .rsim-dette-row > .rsim-field:nth-child(3) { grid-column: 1; grid-row: 3; }
+    .rsim-dette-row > .rsim-field:nth-child(4) { grid-column: 2; grid-row: 3; }
 
     .rsim-results { position: static; }
     .rsim-compare-grid { grid-template-columns: 1fr; }
