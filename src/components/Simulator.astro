@@ -139,6 +139,7 @@ const { defaultRate = 3.79 } = Astro.props;
     miseMinimale,
     prixMaxParMise,
     calcAbsoluteMax,
+    formatMoney,
   } from '../utils/mortgageCalc';
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -146,7 +147,7 @@ const { defaultRate = 3.79 } = Astro.props;
     let simDebounceTimer: number | undefined;
 
     function fmt(n: number): string {
-      return Math.round(n).toLocaleString('fr-CA') + ' $';
+      return formatMoney(Math.round(n));
     }
 
     // --- Accordion ---
