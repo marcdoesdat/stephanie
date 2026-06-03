@@ -17,12 +17,13 @@
         <div class="form-group">
           <label for="dm-prix">Prix de la propriété ($)</label>
           <input
-            type="number"
+            type="text"
             id="dm-prix"
-            placeholder="450000"
-            value="450000"
-            inputmode="decimal"
-            min="0"
+            class="rsim-input"
+            placeholder="450 000"
+            value="450 000"
+            inputmode="numeric"
+            autocomplete="off"
           />
         </div>
         <p class="dm-note">
@@ -70,6 +71,19 @@
     { label: '500 000 $ et plus', seuil: Infinity, taux: 0.02 },
   ];
 
+  // --- Formatage français pour le champ prix ---
+  function parseVal(s: string): number {
+    return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
+  }
+  function fmtThousands(n: number): string {
+    if (isNaN(n) || n <= 0) return '';
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+  }
+  function fmtInputEl(el: HTMLInputElement): void {
+    const val = parseVal(el.value);
+    if (val > 0) el.value = fmtThousands(val);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const prixEl = document.getElementById('dm-prix') as HTMLInputElement;
     const totalEl = document.getElementById('dm-total')!;
@@ -80,7 +94,7 @@
     }
 
     function compute() {
-      const prix = parseFloat(prixEl.value) || 0;
+      const prix = parseVal(prixEl.value);
       if (prix <= 0) {
         totalEl.textContent = '0 $';
         tbodyEl.innerHTML = '';
@@ -106,8 +120,8 @@
       tbodyEl.innerHTML = rows;
     }
 
+    prixEl.addEventListener('blur', () => fmtInputEl(prixEl));
     prixEl.addEventListener('input', compute);
-    prixEl.addEventListener('change', compute);
 
     compute();
   });

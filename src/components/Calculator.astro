@@ -24,7 +24,7 @@ const { defaultRate = 4.99 } = Astro.props;
 
         <div class="form-group">
           <label for="prix">Prix de la propriété ($)</label>
-          <input type="number" id="prix" placeholder="450000" value="450000" inputmode="decimal" min="0" />
+          <input type="text" id="prix" placeholder="450 000" value="450 000" inputmode="numeric" autocomplete="off" />
         </div>
 
         <div class="form-group">
@@ -163,6 +163,15 @@ const { defaultRate = 4.99 } = Astro.props;
     const form = document.getElementById('calc-form');
     if (!form) return;
 
+    // --- Formatage français pour le champ prix ---
+    function parsePrixVal(s: string): number {
+      return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
+    }
+    function fmtPrixEl(): void {
+      const val = parsePrixVal(prixEl.value);
+      if (val > 0) prixEl.value = Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+    }
+
     const prixEl      = document.getElementById('prix') as HTMLInputElement;
     const miseEl      = document.getElementById('mise') as HTMLInputElement;
     const tauxEl      = document.getElementById('taux') as HTMLInputElement;
@@ -203,7 +212,7 @@ const { defaultRate = 4.99 } = Astro.props;
     // --- Toggle $ / % ---
     function switchToMode(toPct: boolean) {
       if (toPct === miseEnPct) return;
-      const prix = parseFloat(prixEl.value) || 0;
+      const prix = parsePrixVal(prixEl.value);
       const miseVal = parseFloat(miseEl.value) || 0;
       miseEnPct = toPct;
       if (miseEnPct) {
@@ -232,7 +241,7 @@ const { defaultRate = 4.99 } = Astro.props;
     btnPct.addEventListener('click', () => switchToMode(true));
 
     function updateMisePct() {
-      const prix = parseFloat(prixEl.value) || 0;
+      const prix = parsePrixVal(prixEl.value);
       const miseVal = parseFloat(miseEl.value) || 0;
       if (misePctEl && prix > 0) {
         if (miseEnPct) {
@@ -244,7 +253,7 @@ const { defaultRate = 4.99 } = Astro.props;
     }
 
     function doCalculation() {
-      const prix = parseFloat(prixEl.value) || 0;
+      const prix = parsePrixVal(prixEl.value);
       let mise: number;
       if (miseEnPct) {
         mise = Math.round(prix * (parseFloat(miseEl.value) || 0) / 100);
@@ -482,6 +491,12 @@ const { defaultRate = 4.99 } = Astro.props;
         field.addEventListener('input', scheduleCalculation);
       }
     });
+
+    // Formatage du champ prix : séparateurs de milliers au blur, retirés au focus
+    prixEl.addEventListener('focus', () => {
+      prixEl.value = prixEl.value.replace(/\s/g, '');
+    });
+    prixEl.addEventListener('blur', fmtPrixEl);
 
     doCalculation();
   });

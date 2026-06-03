@@ -12,13 +12,12 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
 
 <footer role="contentinfo">
   <div class="footer-identity">
-    <span class="footer-name">{config.nom}</span><span class="footer-dot" aria-hidden="true"> · </span>{config.titre}<span class="footer-dot" aria-hidden="true"> · </span>{config.region}<br class="footer-br" />
-    Certificat AMF n° <strong>{config.amf}</strong>
+    <span class="footer-name">{config.nom}</span><span class="footer-dot" aria-hidden="true"> · </span>{config.titre} {config.region}<br class="footer-br" />
     {config.amf_cabinet && (
-      <Fragment><span class="footer-dot" aria-hidden="true"> · </span>Cabinet&nbsp;: {config.organisation} (AMF n° {config.amf_cabinet})</Fragment>
+      <Fragment>Cabinet&nbsp;: {config.organisation} (AMF n° {config.amf_cabinet})</Fragment>
     )}
     {!config.amf_cabinet && (
-      <Fragment><span class="footer-dot" aria-hidden="true"> · </span>Cabinet&nbsp;: {config.organisation}</Fragment>
+      <Fragment>Cabinet&nbsp;: {config.organisation}</Fragment>
     )}
     <br class="footer-br" />
     {config.adresse}

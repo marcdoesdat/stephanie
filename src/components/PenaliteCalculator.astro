@@ -77,7 +77,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
               <button type="button" class="penalite-tooltip" aria-describedby="pen-solde-tip" data-tip="Le solde actuel restant à payer, pas le prix d'achat original.">?</button>
               <span id="pen-solde-tip" class="sr-only" role="tooltip">Le solde actuel restant à payer, pas le prix d'achat original.</span>
             </label>
-            <input type="number" id="pen-solde" class="penalite-input" value="300000" inputmode="decimal" min="0" max="5000000" required />
+            <input type="text" id="pen-solde" class="penalite-input" value="300 000" inputmode="numeric" autocomplete="off" maxlength="10" required />
             <small class="penalite-error" id="pen-solde-err"></small>
           </div>
           <div class="penalite-field">
@@ -301,6 +301,17 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     const typeVariableBtn = document.getElementById('pen-type-variable') as HTMLButtonElement;
     const fieldsetAffiche = document.getElementById('pen-fieldset-affiche')!;
     const soldeEl = document.getElementById('pen-solde') as HTMLInputElement;
+
+    // --- Formatage français pour le champ solde ---
+    function parseSoldeVal(s: string): number {
+      return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
+    }
+    function fmtSoldeEl(): void {
+      const val = parseSoldeVal(soldeEl.value);
+      if (val > 0) soldeEl.value = Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+    }
+    soldeEl.addEventListener('focus', () => { soldeEl.value = soldeEl.value.replace(/\s/g, ''); });
+    soldeEl.addEventListener('blur', fmtSoldeEl);
     const tauxEl = document.getElementById('pen-taux') as HTMLInputElement;
     const dateDebutEl = document.getElementById('pen-date-debut') as HTMLInputElement;
     const dureeEl = document.getElementById('pen-duree') as HTMLSelectElement;
@@ -385,7 +396,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
       });
       const tauxAfficheVal = parseFloat(tauxAfficheEl.value);
       return {
-        solde: parseFloat(soldeEl.value) || 0,
+        solde: parseSoldeVal(soldeEl.value),
         tauxContractuel: parseFloat(tauxEl.value) || 0,
         dateDebutTerme: dateDebutEl.value,
         dureeTermeMois: parseInt(dureeEl.value, 10) || 60,
@@ -496,7 +507,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     });
 
     document.getElementById('pen-reset')?.addEventListener('click', () => {
-      soldeEl.value = '300000'; tauxEl.value = '5.49'; dateDebutEl.value = '2023-06-01'; dureeEl.value = '60'; tauxAfficheEl.value = '';
+      soldeEl.value = '300 000'; tauxEl.value = '5.49'; dateDebutEl.value = '2023-06-01'; dureeEl.value = '60'; tauxAfficheEl.value = '';
       setTypeTaux('fixe'); preteurSelect.value = 'rbc'; updatePreteurInfo();
       const defauts: Record<string, string> = { '6': '5.64', '12': '5.49', '24': '5.09', '36': '4.69', '48': '4.79', '60': '4.89' };
       document.querySelectorAll<HTMLInputElement>('[id^="pen-marche-"]').forEach((el) => {
@@ -528,7 +539,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     function restoreFromParams() {
       const params = new URLSearchParams(window.location.search);
       if (!params.has('s')) return;
-      const s = params.get('s'); if (s) soldeEl.value = s;
+      const s = params.get('s'); if (s) { soldeEl.value = s.replace(/\s/g, ''); fmtSoldeEl(); }
       const t = params.get('t'); if (t) tauxEl.value = t;
       const d = params.get('d'); if (d) dateDebutEl.value = d;
       const dm = params.get('dm'); if (dm) dureeEl.value = dm;
