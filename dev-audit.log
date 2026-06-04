@@ -1,0 +1,133 @@
+
+> stephanie-weyman@0.0.1 dev
+> astro dev --host 127.0.0.1 --port 4322
+
+[2m20 h 34 min 59 s[22m [34m[@astrojs/netlify][39m Enabling sessions with Netlify Blobs
+[vite] connected.
+[2m20 h 35 min 01 s[22m [34m[vite][39m Environment loaded
+[2m20 h 35 min 01 s[22m [34m[vite][39m Middleware loaded. Emulating features: aiGateway, blobs, edgeFunctions, functions, geolocation, headers, images, redirects, static.
+[2m20 h 35 min 01 s[22m [34m[vite][39m 💭 Linking this project to a Netlify site lets you deploy your site, use any environment variables defined on your team and site and much more. Run npx netlify init to get started.
+[2m20 h 35 min 01 s[22m [34m[types][39m Generated [2m1ms[22m
+[33m[1m20 h 35 min 01 s[22m [WARN] [content][39m Content config not loaded
+[2m20 h 35 min 01 s[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[42m[1m astro [22m[49m [32mv6.1.9[39m [2mready in[22m 4060 [2mms[22m
+[2m┃[22m Local    [36mhttp://127.0.0.1:4322/[39m
+[2m20 h 35 min 01 s[22m [32mwatching for file changes...[39m
+[ratesService] Cache expired, will refresh
+[ratesService] Failed to fetch Hypotheca rates: Error: HTTP 429 for https://www.hypotheca.ca/taux-hypothecaires
+    at fetchRatesHtml (C:\Dev\stephanie\src\services\ratesService.ts:387:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async fetchHypothecaRates (C:\Dev\stephanie\src\services\ratesService.ts:446:18)
+    at async $$result (C:\Dev\stephanie\src\pages\index.astro:21:24)
+    at async callComponentAsTemplateResultOrResponse (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:97:25)
+    at async renderToAsyncIterable (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:129:26)
+    at async renderPage (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\page.js:72:24)
+    at async lastNext (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:279:25)
+    at async callMiddleware (C:\Dev\stephanie\node_modules\astro\dist\core\middleware\callMiddleware.js:11:10)
+    at async RenderContext.render (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:313:73)
+[ratesService] Using stale live cache as backup (age: 39667 min)
+[reviewsService] GOOGLE_PLACES_API_KEY (env) manquant(s) → fallback statique
+[reviewsService] Fallback chargé depuis fallbackReviews.json
+[2m20 h 35 min 17 s[22m [34m[200][39m / [2m2039ms[22m
+[ratesService] Cache expired, will refresh
+[ratesService] Failed to fetch Hypotheca rates: Error: HTTP 429 for https://www.hypotheca.ca/taux-hypothecaires
+    at fetchRatesHtml (C:\Dev\stephanie\src\services\ratesService.ts:387:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async fetchHypothecaRates (C:\Dev\stephanie\src\services\ratesService.ts:446:18)
+    at async $$result (C:\Dev\stephanie\src\pages\index.astro:21:24)
+    at async callComponentAsTemplateResultOrResponse (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:97:25)
+    at async renderToAsyncIterable (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:129:26)
+    at async renderPage (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\page.js:72:24)
+    at async lastNext (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:279:25)
+    at async callMiddleware (C:\Dev\stephanie\node_modules\astro\dist\core\middleware\callMiddleware.js:11:10)
+    at async RenderContext.render (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:313:73)
+[ratesService] Using stale live cache as backup (age: 39669 min)
+[reviewsService] GOOGLE_PLACES_API_KEY (env) manquant(s) → fallback statique
+[reviewsService] Fallback chargé depuis fallbackReviews.json
+[2m20 h 36 min 47 s[22m [34m[200][39m / [2m1953ms[22m
+[ratesService] Cache expired, will refresh
+[ratesService] Failed to fetch Hypotheca rates: Error: HTTP 429 for https://www.hypotheca.ca/taux-hypothecaires
+    at fetchRatesHtml (C:\Dev\stephanie\src\services\ratesService.ts:387:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async fetchHypothecaRates (C:\Dev\stephanie\src\services\ratesService.ts:446:18)
+    at async $$result (C:\Dev\stephanie\src\pages\index.astro:21:24)
+    at async callComponentAsTemplateResultOrResponse (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:97:25)
+    at async renderToAsyncIterable (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:129:26)
+    at async renderPage (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\page.js:72:24)
+    at async lastNext (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:279:25)
+    at async callMiddleware (C:\Dev\stephanie\node_modules\astro\dist\core\middleware\callMiddleware.js:11:10)
+    at async RenderContext.render (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:313:73)
+[ratesService] Using stale live cache as backup (age: 39670 min)
+[reviewsService] GOOGLE_PLACES_API_KEY (env) manquant(s) → fallback statique
+[reviewsService] Fallback chargé depuis fallbackReviews.json
+[2m20 h 37 min 26 s[22m [34m[200][39m / [2m1938ms[22m
+[2m20 h 37 min 26 s[22m [34m[vite][39m [32m✨ new dependencies optimized: [33mastro/runtime/client/dev-toolbar/entrypoint.js[32m[39m
+[2m20 h 37 min 26 s[22m [34m[vite][39m [32m✨ optimized dependencies changed. reloading[39m
+[ratesService] Cache expired, will refresh
+[2m20 h 37 min 26 s[22m [34m[200][39m /api/bdc-rate [2m39ms[22m
+[ratesService] Failed to fetch Hypotheca rates: Error: HTTP 429 for https://www.hypotheca.ca/taux-hypothecaires
+    at fetchRatesHtml (C:\Dev\stephanie\src\services\ratesService.ts:387:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async fetchHypothecaRates (C:\Dev\stephanie\src\services\ratesService.ts:446:18)
+    at async $$result (C:\Dev\stephanie\src\pages\index.astro:21:24)
+    at async callComponentAsTemplateResultOrResponse (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:97:25)
+    at async renderToAsyncIterable (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:129:26)
+    at async renderPage (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\page.js:72:24)
+    at async lastNext (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:279:25)
+    at async callMiddleware (C:\Dev\stephanie\node_modules\astro\dist\core\middleware\callMiddleware.js:11:10)
+    at async RenderContext.render (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:313:73)
+[ratesService] Using stale live cache as backup (age: 39670 min)
+[reviewsService] GOOGLE_PLACES_API_KEY (env) manquant(s) → fallback statique
+[reviewsService] Fallback chargé depuis fallbackReviews.json
+[2m20 h 37 min 28 s[22m [34m[200][39m / [2m1944ms[22m
+[2m20 h 37 min 28 s[22m [34m[200][39m /api/bdc-rate [2m0ms[22m
+[ratesService] Cache expired, will refresh
+[ratesService] Failed to fetch Hypotheca rates: Error: HTTP 429 for https://www.hypotheca.ca/taux-hypothecaires
+    at fetchRatesHtml (C:\Dev\stephanie\src\services\ratesService.ts:387:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async fetchHypothecaRates (C:\Dev\stephanie\src\services\ratesService.ts:446:18)
+    at async $$result (C:\Dev\stephanie\src\pages\index.astro:21:24)
+    at async callComponentAsTemplateResultOrResponse (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:97:25)
+    at async renderToAsyncIterable (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:129:26)
+    at async renderPage (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\page.js:72:24)
+    at async lastNext (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:279:25)
+    at async callMiddleware (C:\Dev\stephanie\node_modules\astro\dist\core\middleware\callMiddleware.js:11:10)
+    at async RenderContext.render (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:313:73)
+[ratesService] Using stale live cache as backup (age: 39670 min)
+[reviewsService] GOOGLE_PLACES_API_KEY (env) manquant(s) → fallback statique
+[reviewsService] Fallback chargé depuis fallbackReviews.json
+[2m20 h 38 min 04 s[22m [34m[200][39m / [2m1931ms[22m
+[2m20 h 38 min 04 s[22m [34m[200][39m /api/bdc-rate [2m0ms[22m
+[ratesService] Cache expired, will refresh
+[ratesService] Failed to fetch Hypotheca rates: Error: HTTP 429 for https://www.hypotheca.ca/taux-hypothecaires
+    at fetchRatesHtml (C:\Dev\stephanie\src\services\ratesService.ts:387:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async fetchHypothecaRates (C:\Dev\stephanie\src\services\ratesService.ts:446:18)
+    at async $$result (C:\Dev\stephanie\src\pages\index.astro:21:24)
+    at async callComponentAsTemplateResultOrResponse (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:97:25)
+    at async renderToAsyncIterable (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:129:26)
+    at async renderPage (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\page.js:72:24)
+    at async lastNext (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:279:25)
+    at async callMiddleware (C:\Dev\stephanie\node_modules\astro\dist\core\middleware\callMiddleware.js:11:10)
+    at async RenderContext.render (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:313:73)
+[ratesService] Using stale live cache as backup (age: 39670 min)
+[reviewsService] GOOGLE_PLACES_API_KEY (env) manquant(s) → fallback statique
+[reviewsService] Fallback chargé depuis fallbackReviews.json
+[2m20 h 38 min 08 s[22m [34m[200][39m / [2m1918ms[22m
+[2m20 h 38 min 08 s[22m [34m[200][39m /api/bdc-rate [2m1ms[22m
+[ratesService] Cache expired, will refresh
+[ratesService] Failed to fetch Hypotheca rates: Error: HTTP 429 for https://www.hypotheca.ca/taux-hypothecaires
+    at fetchRatesHtml (C:\Dev\stephanie\src\services\ratesService.ts:387:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async fetchHypothecaRates (C:\Dev\stephanie\src\services\ratesService.ts:446:18)
+    at async $$result (C:\Dev\stephanie\src\pages\outils.astro:19:24)
+    at async callComponentAsTemplateResultOrResponse (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:97:25)
+    at async renderToAsyncIterable (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\astro\render.js:129:26)
+    at async renderPage (C:\Dev\stephanie\node_modules\astro\dist\runtime\server\render\page.js:72:24)
+    at async lastNext (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:279:25)
+    at async callMiddleware (C:\Dev\stephanie\node_modules\astro\dist\core\middleware\callMiddleware.js:11:10)
+    at async RenderContext.render (C:\Dev\stephanie\node_modules\astro\dist\core\render-context.js:313:73)
+[ratesService] Using stale live cache as backup (age: 39671 min)
+[2m20 h 38 min 26 s[22m [34m[200][39m /outils [2m1983ms[22m
+[31m[1m20 h 38 min 32 s[22m [ERROR] [vite][39m [31merror while updating dependencies:
+Error: EPERM: operation not permitted, rename 'C:\Dev\stephanie\node_modules\.vite\deps' -> 'C:\Dev\stephanie\node_modules\.vite\deps_temp_c330004b'[39m

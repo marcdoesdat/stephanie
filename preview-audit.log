@@ -1,0 +1,11 @@
+
+> stephanie-weyman@0.0.1 preview
+> astro preview --host 127.0.0.1 --port 4322
+
+[2m20 h 34 min 28 s[22m [34m[@astrojs/netlify][39m Enabling sessions with Netlify Blobs
+[preview] The @astrojs/netlify adapter does not support the preview command.
+  [1mLocation:[22m
+    [4mC:\Dev\stephanie\node_modules\astro\dist\core\preview\index.js:48:11[24m
+  [1mStack trace:[22m
+[2m    at preview (file:///C:/Dev/stephanie/node_modules/astro/dist/core/preview/index.js:48:11)
+    at async runCommand (file:///C:/Dev/stephanie/node_modules/astro/dist/cli/index.js:211:22)[22m

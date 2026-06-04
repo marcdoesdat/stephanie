@@ -14,6 +14,7 @@ export interface SiteConfig {
   messenger_url?: string;      // Page Facebook (SEO sameAs)
   messenger_chat_url?: string; // Lien chat direct m.me
   calendly_url?: string;       // Optionnel
+  hypotheca_profile_url?: string; // Profil officiel sur hypotheca.ca
   google_place_id?: string;    // Google Place ID pour les avis (Places API New)
   meta_title: string;
   meta_description: string;

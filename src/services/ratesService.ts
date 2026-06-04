@@ -358,6 +358,16 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Exponential backoff with jitter to avoid thundering-herd on 429.
+ * Base delay ~1 s, doubles each attempt, capped at ~30 s, ±25 % jitter.
+ */
+function backoffDelay(attempt: number): number {
+  const base = Math.min(1000 * Math.pow(2, attempt - 1), 30_000);
+  const jitter = base * 0.25 * (Math.random() * 2 - 1); // ±25 %
+  return Math.round(base + jitter);
+}
+
 async function fetchRatesHtml(): Promise<string> {
   const urls = [
     'https://hypotheca.ca/taux-hypothecaires',
@@ -375,23 +385,46 @@ async function fetchRatesHtml(): Promise<string> {
   };
 
   let lastError: unknown = null;
+
   for (const url of urls) {
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    for (let attempt = 1; attempt <= 4; attempt++) {
       try {
         const res = await fetch(url, {
           headers,
-          signal: AbortSignal.timeout(12_000),
+          signal: AbortSignal.timeout(15_000),
         });
+
+        if (res.status === 429) {
+          // Respect Retry-After header if present, otherwise use backoff
+          const retryAfter = res.headers.get('Retry-After');
+          const delay = retryAfter
+            ? parseInt(retryAfter, 10) * 1000
+            : backoffDelay(attempt);
+          lastError = new Error(`HTTP 429 for ${url} (attempt ${attempt})`);
+          if (attempt < 4) {
+            debug(`Rate-limited (429) on ${url}, waiting ${Math.round(delay / 1000)}s before retry ${attempt + 1}`);
+            await sleep(delay);
+          }
+          continue;
+        }
 
         if (!res.ok) {
           throw new Error(`HTTP ${res.status} for ${url}`);
         }
 
+        debug(`Successfully fetched rates from ${url} on attempt ${attempt}`);
         return await res.text();
       } catch (err) {
         lastError = err;
-        if (attempt < 3) {
-          await sleep(300 * attempt);
+        // Don't retry on DNS / TLS errors — go to next URL immediately
+        if (err instanceof Error && (err.message.includes('fetch failed') || err.message.includes('ENOTFOUND'))) {
+          debug(`Network error on ${url}: ${err.message}`);
+          break; // skip remaining retries for this URL
+        }
+        if (attempt < 4) {
+          const delay = backoffDelay(attempt);
+          debug(`Attempt ${attempt} failed for ${url}, retrying in ${Math.round(delay / 1000)}s`);
+          await sleep(delay);
         }
       }
     }
@@ -405,21 +438,25 @@ async function fetchRatesHtml(): Promise<string> {
       'https://r.jina.ai/http://www.hypotheca.ca/taux-hypothecaires',
     ];
     for (const url of proxyUrls) {
-      try {
-        const res = await fetch(url, {
-          headers: {
-            'User-Agent': headers['User-Agent'],
-            Accept: 'text/plain,text/markdown;q=0.9,*/*;q=0.8',
-            'Cache-Control': 'no-cache',
-          },
-          signal: AbortSignal.timeout(15_000),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-        const text = await res.text();
-        if (!text || text.length < 200) throw new Error(`Unexpected proxy payload for ${url}`);
-        return text;
-      } catch (err) {
-        lastError = err;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const res = await fetch(url, {
+            headers: {
+              'User-Agent': headers['User-Agent'],
+              Accept: 'text/plain,text/markdown;q=0.9,*/*;q=0.8',
+              'Cache-Control': 'no-cache',
+            },
+            signal: AbortSignal.timeout(15_000),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+          const text = await res.text();
+          if (!text || text.length < 200) throw new Error(`Unexpected proxy payload for ${url}`);
+          debug(`Successfully fetched rates via proxy ${url}`);
+          return text;
+        } catch (err) {
+          lastError = err;
+          if (attempt < 2) await sleep(backoffDelay(attempt));
+        }
       }
     }
   }
@@ -427,58 +464,79 @@ async function fetchRatesHtml(): Promise<string> {
   throw lastError ?? new Error('Unable to fetch Hypotheca rates HTML');
 }
 
+// In-flight request deduplication: concurrent SSR invocations share
+// a single fetch to avoid thundering-herd 429s after cold starts.
+let _inflightPromise: Promise<HypothecaRates | null> | null = null;
+
 /**
  * Fetches live mortgage rates from hypotheca.ca, decodes the obfuscated
  * `occ("…")` values, and returns a structured rates object.
  *
  * Uses Netlify Blobs (prod) or file cache (dev) with a 6-hour TTL.
  * Returns `null` when rates are unavailable — no fake fallback data.
+ *
+ * Concurrent calls are coalesced into a single upstream fetch to avoid
+ * triggering rate-limiting (HTTP 429) on hypotheca.ca after cold starts.
  */
 export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
   // 1. Return cached rates if still valid (< 6 h old)
   const cached = await readCache();
   if (cached) return cached;
 
+  // 2. If a refresh is already in-flight, piggyback on it
+  if (_inflightPromise) {
+    debug('Reusing in-flight rates fetch');
+    return _inflightPromise;
+  }
+
   const staleCache = await readCacheAny();
-
   const fetchedAt = new Date().toISOString();
-  try {
-    const html = await fetchRatesHtml();
 
-    const rows = extractAllRates(html);
+  const doFetch = async (): Promise<HypothecaRates | null> => {
+    try {
+      const html = await fetchRatesHtml();
 
-    if (rows.length === 0) {
-      console.warn('[ratesService] No rows parsed from HTML');
-      // Return stale cache if available, otherwise null
-      if (staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.rates.source === 'live') {
-        debug(`Using stale cache (age: ${Math.round(staleCache.ageMs / 60_000)} min)`);
+      const rows = extractAllRates(html);
+
+      if (rows.length === 0) {
+        console.warn('[ratesService] No rows parsed from HTML');
+        // Return stale cache if available, otherwise null
+        if (staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.rates.source === 'live') {
+          debug(`Using stale cache (age: ${Math.round(staleCache.ageMs / 60_000)} min)`);
+          return staleCache.rates;
+        }
+        return null;
+      }
+
+      const flat = rowsToFlat(rows);
+      const hasAnyRate = Object.values(flat).some((v) => v !== null);
+      if (!hasAnyRate) throw new Error('No valid rates decoded from the page');
+
+      // Cache live results
+      const result = buildFull(rows, flat, 'live', fetchedAt);
+      await writeCache(result);
+      return result;
+    } catch (err) {
+      console.warn('[ratesService] Failed to fetch Hypotheca rates:', err);
+
+      if (
+        staleCache &&
+        staleCache.ageMs <= CACHE_STALE_MAX_MS &&
+        staleCache.rates.source === 'live'
+      ) {
+        debug(
+          `Using stale live cache as backup (age: ${Math.round(staleCache.ageMs / 60_000)} min)`,
+        );
         return staleCache.rates;
       }
+
       return null;
+    } finally {
+      // Always clear the in-flight lock so the next request can try again
+      _inflightPromise = null;
     }
+  };
 
-    const flat = rowsToFlat(rows);
-    const hasAnyRate = Object.values(flat).some((v) => v !== null);
-    if (!hasAnyRate) throw new Error('No valid rates decoded from the page');
-
-    // 2. Cache live results
-    const result = buildFull(rows, flat, 'live', fetchedAt);
-    await writeCache(result);
-    return result;
-  } catch (err) {
-    console.warn('[ratesService] Failed to fetch Hypotheca rates:', err);
-
-    if (
-      staleCache &&
-      staleCache.ageMs <= CACHE_STALE_MAX_MS &&
-      staleCache.rates.source === 'live'
-    ) {
-      debug(
-        `Using stale live cache as backup (age: ${Math.round(staleCache.ageMs / 60_000)} min)`,
-      );
-      return staleCache.rates;
-    }
-
-    return null;
-  }
+  _inflightPromise = doFetch();
+  return _inflightPromise;
 }
