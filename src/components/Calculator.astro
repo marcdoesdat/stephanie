@@ -93,13 +93,13 @@ const { defaultRate = 4.99 } = Astro.props;
           <div class="email-capture-note">Je vous enverrai personnellement le résumé. Merci d'indiquer vos coordonnées.</div>
           <div class="email-capture-row">
             <label for="calc-name" class="sr-only">Votre nom complet</label>
-            <input type="text" id="calc-name" placeholder="Votre nom complet" class="email-capture-input" autocomplete="name" />
+            <input type="text" id="calc-name" placeholder="Votre nom complet" class="email-capture-input" autocomplete="name" required />
             <label for="calc-phone" class="sr-only">Votre téléphone</label>
-            <input type="tel" id="calc-phone" placeholder="Votre téléphone" class="email-capture-input" autocomplete="tel" />
+            <input type="tel" id="calc-phone" placeholder="Votre téléphone" class="email-capture-input" autocomplete="tel" required />
           </div>
           <div class="email-capture-row">
             <label for="calc-email" class="sr-only">Votre email</label>
-            <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" autocomplete="email" />
+            <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" autocomplete="email" required />
             <button type="button" id="calc-email-btn" class="email-capture-btn">Envoyer →</button>
           </div>
           <label class="email-capture-consent" for="calc-consent">
@@ -111,6 +111,11 @@ const { defaultRate = 4.99 } = Astro.props;
           </label>
           <div id="calc-email-msg" class="email-capture-msg" style="display:none;"></div>
         </div>
+      </form>
+
+      <!-- Formulaire Netlify Forms invisible (détection au build pour la capture courriel AJAX) -->
+      <form name="calculator-summary" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
+        <input type="hidden" name="form-name" value="calculator-summary" />
       </form>
 
       <div class="calc-results fade-up" style="transition-delay:.2s">
@@ -148,7 +153,7 @@ const { defaultRate = 4.99 } = Astro.props;
 
         <div class="calc-disclaimer">
           * Résultats indicatifs uniquement — ne constituent pas une pré-approbation.
-          La prime SCHL est une estimation aux taux standards. Les frais de notaire,
+          La prime assurance prêt hypothécaire est une estimation aux taux standards. Les frais de notaire,
           droits de mutation (taxe de bienvenue), inspection et évaluation ne sont pas inclus.
         </div>
       </div>

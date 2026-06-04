@@ -164,7 +164,7 @@ Toutes les coordonnées de la courtière — modifié directement par la cliente
   "nom": "Stéphanie Weyman",
   "titre": "Courtière hypothécaire",
   "organisation": "Hypotheca",
-  "amf": "3002365315",
+  "amf": "255885",
   "telephone": "514-949-7627",
   "courriel": "sweyman@hypotheca.ca",
   "site_url": "https://stephanieweyman.ca",

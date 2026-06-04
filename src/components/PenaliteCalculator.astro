@@ -241,7 +241,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
           </button>
 
           <div class="penalite-capture" id="pen-capture" style="display:none;">
-            <form name="penalite-lead" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="penalite-capture-form">
+            <form name="penalite-lead" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" class="penalite-capture-form">
               <input type="hidden" name="form-name" value="penalite-lead" />
               <p class="sr-only"><label>Ne remplissez pas ce champ <input name="bot-field" /></label></p>
               <div class="penalite-capture-label">Recevoir ce rapport par courriel</div>
@@ -258,12 +258,12 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
               </details>
 
               <div class="penalite-capture-fields">
-                <label for="pen-cap-prenom" class="sr-only">Votre prénom</label>
-                <input type="text" id="pen-cap-prenom" name="prenom" placeholder="Votre prénom" class="penalite-capture-input" autocomplete="given-name" required />
+                <label for="pen-cap-prenom" class="sr-only">Votre Nom et Prénom</label>
+                <input type="text" id="pen-cap-prenom" name="prenom" placeholder="Votre Nom et Prénom" class="penalite-capture-input" autocomplete="given-name" required />
                 <label for="pen-cap-email" class="sr-only">Votre courriel</label>
                 <input type="email" id="pen-cap-email" name="email" placeholder="votre@courriel.com" class="penalite-capture-input" autocomplete="email" required />
                 <label for="pen-cap-tel" class="sr-only">Téléphone (optionnel)</label>
-                <input type="tel" id="pen-cap-tel" name="telephone" placeholder="Téléphone (optionnel)" class="penalite-capture-input" autocomplete="tel" />
+                <input type="tel" id="pen-cap-tel" name="telephone" placeholder="Votre téléphone" class="penalite-capture-input" autocomplete="tel" required />
               </div>
               <input type="hidden" name="scenario" id="pen-cap-scenario" value="" />
               <input type="hidden" name="penalite" id="pen-cap-penalite" value="" />
