@@ -14,13 +14,13 @@ function fmtRate(val: number | null | undefined): string {
 <section id="hero">
   <div class="hero-inner">
     <div class="hero-left fade-up">
-      <div class="hero-badge">Courtière hypothécaire · {config.region}</div>
+      <div class="hero-badge">{config.region}</div>
       
-      <h1>Votre hypothèque,<br /> <em>enfin expliquée</em><br /> simplement.</h1>
+      <h1>Acheter ou renouveler,<br /> <em>c'est stressant.</em><br /> Pas avec moi.</h1>
       
       <p>
-        Je vous accompagne dans l'un des projets les plus importants de votre vie — sans jargon,
-        sans pression, avec des taux obtenus via un réseau de plus de 20&nbsp;prêteurs.
+        Je magasine parmi une panoplie de prêteurs à ta place et je t'explique tout — sans jargon,
+        sans pression. On parle de ton projet quand t'es prêt.
       </p>
 
       <div class="hero-btns">
@@ -28,7 +28,7 @@ function fmtRate(val: number | null | undefined): string {
           <span>Prendre rendez-vous</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
-        <a href="/outils#simulateur" class="btn-secondary">Voir mes outils</a>
+        <a href="/outils#simulateur" class="btn-secondary btn-outils">Voir mes outils</a>
       </div>
       
       <div class="hero-stats scale-in">
@@ -62,7 +62,7 @@ function fmtRate(val: number | null | undefined): string {
     
     <div class="hero-right fade-up" style="transition-delay:.2s">
       <div class="photo-container">
-        <div class="photo-frame">
+        <div class="photo-frame" id="hero-photo">
           <Image
             src={stephaniePhoto}
             alt="Stéphanie Weyman"
@@ -118,6 +118,22 @@ function fmtRate(val: number | null | undefined): string {
     font-size: 0.85rem;
   }
   .hero-btns .btn-cta { gap: 0.6rem; border-radius: 50px; }
+
+  /* Bouton secondaire "Voir mes outils" — outline vert forêt */
+  .hero-btns .btn-outils {
+    border-radius: 50px;
+    border: 1.5px solid var(--forest);
+    color: var(--forest);
+    background: transparent;
+    font-weight: 600;
+    transition: background 0.25s, color 0.25s, border-color 0.25s, transform 0.15s;
+  }
+  .hero-btns .btn-outils:hover {
+    background: rgba(61, 90, 74, 0.08);
+    border-color: var(--forest);
+    color: var(--forest);
+    transform: translateY(-1px);
+  }
 
   .hero-badge::before {
     display: none !important;
@@ -260,6 +276,7 @@ function fmtRate(val: number | null | undefined): string {
     .hero-cards-ribbon {
       left: 4%;
       right: 4%;
+      bottom: -20px;
       border-radius: 14px;
       padding: 0.45rem 0.5rem;
       gap: 0.3rem;
@@ -297,7 +314,7 @@ function fmtRate(val: number | null | undefined): string {
     .hero-cards-ribbon {
       left: 0;
       right: 0;
-      bottom: -4px;
+      bottom: -18px;
       border-radius: 12px;
       padding: 0.4rem 0.4rem;
       gap: 0.2rem;
@@ -308,11 +325,6 @@ function fmtRate(val: number | null | undefined): string {
   }
 
 
-
-  /* Photo en miroir */
-  .photo-frame img {
-    transform: scaleX(-1);
-  }
 
   /* Flottement de la photo (indépendant du scroll) */
   .photo-frame {
@@ -359,6 +371,64 @@ function fmtRate(val: number | null | undefined): string {
     mql.addEventListener('change', syncMode);
     window.addEventListener('scroll', onScroll, { passive: true });
     syncMode();
+  })();
+
+  // Easter egg : 5 clics sur la photo → blagues hypothécaires
+  (function() {
+    const photo = document.getElementById('hero-photo');
+    if (!photo) return;
+
+    const blagues = [
+      'Pourquoi le taux variable a consulté un psychologue? Parce qu\'il avait trop de hauts et de bas.',
+      'Stéphanie m\'a dit : « Votre hypothèque est comme un bon mariage. » J\'ai répondu : « 25 ans, et impossible de partir sans pénalité? »',
+      'C\'est quoi le comble pour un emprunteur? Trouver que sa maison vaut une fortune… mais devoir la garder 25 ans pour le prouver.',
+      'Pourquoi les premiers acheteurs dorment mal? Parce qu\'ils calculent les moutons à 6,5 % d\'intérêt.',
+      'Mon courtier m\'a dit que mon dossier était « solide ». J\'ai compris plus tard que c\'était pour le poids des documents à fournir.',
+      'Quelle est la différence entre l\'amour et un taux fixe 5 ans? L\'amour, on espère que ça dure plus longtemps.',
+      'Stéphanie dit au client : « Bonne nouvelle, vous êtes pré-approuvé! » Le client : « Et la mauvaise? » Le banquier : « Vous devez maintenant trouver une maison à ce prix-là. »',
+      'Pourquoi l\'IRD (différentiel de taux) est le méchant des films d\'horreur hypothécaires? Parce qu\'on ne le voit jamais venir, mais il fait toujours mal à la fin.',
+      'C\'est un emprunteur qui dit : « Je veux rembourser au plus vite! » Sa banque, les larmes aux yeux : « Mais pourquoi nous quitter si tôt? »',
+      'Comment reconnaître quelqu\'un qui vient de renouveler son hypothèque en 2026? Il sourit beaucoup moins qu\'en 2021.',
+    ];
+
+    // Création du toast — en position fixed pour éviter le clipping par overflow:hidden du #hero
+    const toast = document.createElement('div');
+    toast.className = 'hero-joke-toast';
+    toast.setAttribute('aria-live', 'polite');
+    toast.style.cssText = 'display:none;position:fixed;z-index:9999;background:var(--ink);color:#fff;padding:.75rem 1.1rem;border-radius:12px;font-size:.82rem;line-height:1.5;max-width:260px;text-align:center;pointer-events:none;white-space:normal;box-shadow:0 8px 24px rgba(0,0,0,.25);';
+    document.body.appendChild(toast);
+
+    // Curseur pour indiquer que c'est cliquable
+    photo.style.cursor = 'pointer';
+
+    let clicks = 0;
+    let jokeIndex = 0;
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    let resetTimer: ReturnType<typeof setTimeout> | null = null;
+
+    photo.addEventListener('click', () => {
+      clicks++;
+      if (resetTimer) clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => { clicks = 0; }, 3000);
+
+      if (clicks < 5) return;
+      clicks = 0;
+
+      if (hideTimer) clearTimeout(hideTimer);
+      toast.textContent = blagues[jokeIndex] ?? blagues[0]!;
+
+      // Positionner le toast juste au-dessus de la photo
+      const rect = photo.getBoundingClientRect();
+      toast.style.left = `${rect.left + rect.width / 2}px`;
+      toast.style.top = `${rect.top - 12}px`;
+      toast.style.transform = 'translate(-50%, -100%)';
+      toast.style.display = 'block';
+      jokeIndex = (jokeIndex + 1) % blagues.length;
+
+      hideTimer = setTimeout(() => {
+        toast.style.display = 'none';
+      }, 5000);
+    });
   })();
 
 </script>

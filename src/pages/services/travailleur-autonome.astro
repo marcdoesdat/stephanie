@@ -5,6 +5,7 @@ import MainLayout from '../../layouts/MainLayout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import MessengerBtn from '../../components/MessengerBtn.astro';
+import Contact from '../../components/Contact.astro';
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
@@ -53,7 +54,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <div class="sp-hero-grid">
           <div class="sp-hero-text">
             <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
-            <div class="sp-eyebrow">Travailleur autonome · Québec 2026</div>
 
             <h1 class="sp-h1">
               Vous gagnez bien votre vie.<br />Faites en sorte que <em>votre banque le voie aussi.</em>
@@ -113,7 +113,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ EMPATHIE ============ -->
     <section class="sp-empathy">
       <div class="sp-inner">
-        <div class="sp-empathy-tag">On va se le dire</div>
         <h2 class="sp-section-title">Vous êtes pénalisé·e <em>pour avoir bien optimisé vos impôts</em>.</h2>
         <p class="sp-empathy-text">
           Vous facturez 150 000 $ par année, mais vos avis de cotisation montrent 65 000 $ après dépenses.
@@ -131,41 +130,49 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ ÉDUCATION EXPRESS ============ -->
     <section class="sp-education" id="approche">
       <div class="sp-inner">
-        <div class="sp-section-tag">Les 3 leviers spécifiques aux travailleurs autonomes</div>
         <h2 class="sp-section-title">Ce qu'on regarde ensemble pour <em>faire parler vos vrais revenus</em>.</h2>
 
         <div class="sp-steps">
           <article class="sp-step">
             <div class="sp-step-num" aria-hidden="true">1</div>
-            <h3 class="sp-step-title">Le bon prêteur, pas n'importe lequel</h3>
+            <h3 class="sp-step-title">Chaque prêteur calcule le revenu différemment</h3>
             <p class="sp-step-text">
-              Chaque prêteur calcule vos revenus différemment. Certaines banques exigent
-              <strong>2 ans d'avis de cotisation</strong> et plafonnent à la moyenne. D'autres acceptent
-              un seul avis. D'autres encore offrent des programmes <em>« stated income »</em> qui valorisent vos
-              dépôts bancaires plutôt que vos déclarations fiscales. Mon travail&nbsp;: identifier le prêteur
-              dont la formule de calcul vous rend justice — pas vous envoyer au premier guichet venu.
+              La majorité exigent 2 ans de déclarations fiscales. Certains acceptent un seul avis de cotisation
+              en conventionnel sans majoration. Quelques prêteurs alternatifs offrent des programmes basés
+              sur la capacité de remboursement démontrée, mais jamais sans aucune documentation.
+            </p>
+            <p class="sp-step-note">
+              <strong>À noter :</strong> Les programmes sans déclarations fiscales sont rares, réservés
+              aux profils B et comportent des conditions strictes (crédit, mise de fonds, etc.).
             </p>
           </article>
 
           <article class="sp-step">
             <div class="sp-step-num" aria-hidden="true">2</div>
-            <h3 class="sp-step-title">Optimiser le ratio brut + dépenses ajoutées</h3>
+            <h3 class="sp-step-title">Certaines dépenses peuvent être réintégrées au revenu</h3>
             <p class="sp-step-text">
-              Plusieurs dépenses déductibles (amortissement, kilométrage, bureau à domicile, intérêts d'affaires)
-              peuvent être <strong>réajoutées au revenu admissible</strong> pour le calcul hypothécaire — si on présente
-              les bons documents. Sur un revenu net déclaré de 65 000 $, on peut souvent justifier
-              80 000 $ ou plus en revenu admissible. La différence&nbsp;: 60 000 $ à 100 000 $ de plus en capacité d'achat.
+              Pour les travailleurs autonomes <strong>non incorporés</strong>, les dépenses admissibles
+              (amortissement, kilométrage, bureau à domicile) peuvent être rajoutées au revenu net.
+              Plusieurs prêteurs permettent aussi une majoration forfaitaire de 15 %.
+            </p>
+            <p class="sp-step-note">
+              <strong>À noter :</strong> Cette majoration ne s'applique pas aux entreprises incorporées.
+              Le gain réel varie selon les dépenses déclarées — l'exemple « +15 000 $ » n'est pas garanti.
             </p>
           </article>
 
           <article class="sp-step">
             <div class="sp-step-num" aria-hidden="true">3</div>
-            <h3 class="sp-step-title">Si incorporé : combiner salaire + dividendes + bénéfices retenus</h3>
+            <h3 class="sp-step-title">Si incorporé : salaire + dividendes peuvent être combinés</h3>
             <p class="sp-step-text">
-              Vous vous versez un petit salaire pour minimiser les charges sociales et laissez le reste dans la compagnie&nbsp;?
-              Bien joué fiscalement — mais lu seul, ça donne un dossier maigre. Avec les bons états financiers
-              de votre société (bilan, résultats, flux de trésorerie), je peux faire reconnaître vos
-              <strong>dividendes ET les bénéfices retenus</strong> par les prêteurs qui acceptent cette structure.
+              Plusieurs prêteurs acceptent d'additionner le salaire (T4) et les dividendes (T5)
+              pour calculer le revenu admissible. Certains permettent une majoration de 15 % sur les
+              dividendes si l'année la plus récente est la plus élevée.
+            </p>
+            <p class="sp-step-note">
+              <strong>À noter :</strong> Les bénéfices non répartis (BNR) ne sont généralement
+              <em>pas</em> admissibles comme revenu chez les prêteurs A. Des états financiers complets
+              des 2 dernières années sont requis.
             </p>
           </article>
         </div>
@@ -177,7 +184,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <div class="sp-inner">
         <div class="sp-approach-grid">
           <div class="sp-approach-text">
-            <div class="sp-section-tag">L'approche {prenom}</div>
             <h2 class="sp-section-title sp-section-title--light">Je parle <em>autonome</em>. Je parle <em>incorporé</em>. Et je parle banque.</h2>
             <p class="sp-approach-para">
               Avant de soumettre quoi que ce soit, je prends le temps de comprendre comment vous structurez vos revenus
@@ -230,7 +236,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="sp-magnet">
       <div class="sp-inner">
         <div class="sp-magnet-card">
-          <div class="sp-magnet-eyebrow">Évaluation autonome — 60 secondes</div>
           <h2 class="sp-magnet-title">
             Découvrez votre <em>vraie</em> capacité d'achat<br />— celle que les banques refusent de voir.
           </h2>
@@ -242,16 +247,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <strong>Aucun engagement, aucun pointage de crédit.</strong>
           </p>
 
-          <a href="/?parcours=travailleur-autonome#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_ta_magnet_cta">
-            <span>Évaluer mon dossier gratuitement</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </a>
-
           <ul class="sp-magnet-proof">
-            <li>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              60 secondes
-            </li>
             <li>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
               Aucun pointage de crédit
@@ -267,6 +263,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
   </main>
 
+  <Contact />
   <Footer />
 </MainLayout>
 

@@ -1,6 +1,6 @@
 ---
 import { Image } from 'astro:assets';
-import stephaniePhoto from '../assets/stephanie.webp';
+import stephaniePhoto from '../assets/stephanie-2.webp';
 import { loadSiteConfig } from '../config';
 import { Handshake, Zap, BadgeCheck } from '@lucide/astro';
 
@@ -24,7 +24,6 @@ const prenom = config.nom.split(' ')[0];
       </div>
       
       <div class="fade-right" style="transition-delay:.15s">
-        <div class="section-tag">À propos</div>
         <div class="apropos-text">
           <h2>Bonjour, moi c'est {prenom}.</h2>
           
@@ -73,10 +72,6 @@ const prenom = config.nom.split(' ')[0];
               />
               <span>{config.nom}, courtière hypothécaire affiliée à {config.organisation}</span>
             </a>
-            <div class="cred-amf">
-              <span class="val-icon" aria-hidden="true"><BadgeCheck size={16} stroke-width={1.8} /></span>
-              <span>Certificat AMF n° {config.amf}</span>
-            </div>
           </div>
         </div>
       </div>

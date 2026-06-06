@@ -4,73 +4,156 @@ import { loadSiteConfig } from '../config';
 const config = loadSiteConfig();
 const prenom = config.nom.split(' ')[0];
 
+const categories: { id: string; label: string }[] = [
+  { id: 'tous', label: 'Toutes' },
+  { id: 'general', label: 'Général' },
+  { id: 'premier-achat', label: 'Premier achat' },
+  { id: 'renouvellement', label: 'Renouvellement' },
+  { id: 'refus-atypique', label: 'Refus & atypique' },
+  { id: 'taux-penalite', label: 'Taux & pénalité' },
+];
+
 const faqs = [
+  // ===== GÉNÉRAL =====
   {
-    q: "Quel est votre objectif ?",
-    a: "Dévouée et passionnée, je m'appuie sur un réseau de contacts clés et sur une méthode de travail structurée afin de vous offrir le meilleur service sur le marché pour votre financement hypothécaire tout en vous dénichant les meilleures conditions. Mon objectif premier est d'améliorer constamment la qualité du service que je suis en mesure d'offrir, tout en continuant de croître dans le milieu hypothécaire. La seule façon d'y arriver est de continuer de m'entourer de gens passionnés ayant un fort désir de réussir aux plus hauts niveaux."
+    q: "Quel est ton objectif en tant que courtière ?",
+    a: "Dévouée et passionnée, je m'appuie sur un réseau de contacts clés et sur une méthode de travail structurée afin de vous offrir le meilleur service sur le marché pour votre financement hypothécaire tout en vous dénichant les meilleures conditions. Mon objectif premier est d'améliorer constamment la qualité du service que je suis en mesure d'offrir, tout en continuant de croître dans le milieu hypothécaire.",
+    cat: 'general',
+    slug: 'objectif',
   },
   {
-    q: "Quelles régions desservez-vous ?",
-    a: "Je dessers principalement la Rive-Nord de Montréal et la région de Lanaudière, dont Repentigny, Terrebonne, Mascouche, L'Assomption, Charlemagne, Le Gardeur, Lavaltrie et les environs. J'accompagne également des clients dans le Grand Montréal et ailleurs au Québec. Comme une grande partie du processus peut se faire à distance (téléphone, visioconférence, signature électronique), il m'est possible de vous accompagner peu importe où vous vous situez dans la province."
+    q: "Quelles régions dessers-tu ?",
+    a: "Mes clients sont principalement sur la Rive-Nord de Montréal et dans Lanaudière : Repentigny, Terrebonne, Mascouche, L'Assomption, Charlemagne, Le Gardeur, Lavaltrie et les environs. Comme une grande partie du processus se fait à distance (téléphone, visioconférence, signature électronique), je peux aussi t'accompagner partout au Québec.",
+    cat: 'general',
+    slug: 'regions-desservies',
   },
   {
-    q: "Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ?",
-    a: "Non, dans la vaste majorité des cas mes services sont gratuits pour vous. Je suis rémunérée par l'institution financière qui vous accorde le financement — pas par vous. Vous bénéficiez donc d'un accompagnement professionnel complet sans frais. (Certains dossiers plus complexes, comme un financement auprès d'un prêteur alternatif ou privé, peuvent comporter des frais; le cas échéant, je vous en informe toujours clairement avant toute démarche.)"
+    q: "Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ?",
+    a: "Non, dans la vaste majorité des cas mes services sont gratuits pour vous. Je suis rémunérée par l'institution financière qui vous accorde le financement — pas par vous. Vous bénéficiez donc d'un accompagnement professionnel complet sans frais. (Certains dossiers plus complexes, comme un financement auprès d'un prêteur alternatif ou privé, peuvent comporter des frais; le cas échéant, je vous en informe toujours clairement avant toute démarche.)",
+    cat: 'general',
+    slug: 'cout-courtier',
   },
   {
-    q: "Quelle est la différence entre un courtier et ma banque ?",
-    a: "Votre banque ne vous propose que ses propres produits. Moi, j'ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution."
+    q: "Quelle est la différence entre un courtier et ma banque ?",
+    a: "Votre banque ne vous propose que ses propres produits. Moi, j'ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution. Un écart de 0,30 % sur un prêt de 400 000 $, ça représente près de 4 000 $ d'intérêts sur 5 ans. C'est exactement ce type d'écart qu'on veut à aller chercher pour vous.",
+    cat: 'general',
+    slug: 'courtier-vs-banque',
+  },
+
+  // ===== PREMIER ACHAT =====
+  {
+    q: "De combien de mise de fonds ai-je besoin pour acheter au Québec ?",
+    a: "Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 1 500 000 $ (seuil rehaussé en décembre 2024), c'est 5 % sur la première tranche de 500 000 $ et 10 % sur le reste. À partir de 1 500 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l'assurance prêt hypothécaire (SCHL, Sagen ou Canada Guaranty). Ces seuils sont des règles générales; le montant exact selon votre situation se confirme à l'analyse de votre dossier.",
+    cat: 'premier-achat',
+    slug: 'mise-de-fonds',
   },
   {
-    q: "J'ai été refusé par ma banque. Puis-je quand même obtenir une hypothèque ?",
-    a: "Un refus bancaire ne signifie pas que vous ne pouvez pas acheter — cela signifie que cette banque ne peut pas vous aider. J'ai accès à des prêteurs alternatifs spécialisés dans les dossiers complexes : mauvais crédit, travailleur autonome, revenus atypiques, etc."
+    q: "Qu'est-ce qu'une pré-approbation hypothécaire et pourquoi en ai-je besoin ?",
+    a: "La pré-approbation, c'est une analyse sérieuse de votre capacité d'emprunt, avec un taux réservé généralement entre 90 et 120 jours. Avant de magasiner une maison, on magasine votre dossier. Vous visitez avec confiance, vous négociez d'égal à égal, et vous évitez de tomber en amour avec une propriété hors de portée. Je m'occupe de monter votre dossier et de le présenter aux prêteurs pour obtenir la meilleure pré-approbation possible.",
+    cat: 'premier-achat',
+    slug: 'pre-approbation',
   },
   {
-    q: "De combien de mise de fonds ai-je besoin pour acheter au Québec ?",
-    a: "Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 999 999 $, c'est 5 % sur la première tranche et 10 % sur le reste. À partir de 1 000 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l'assurance prêt hypothécaire (SCHL, Sagen ou Canada Guaranty). Ces seuils sont des règles générales; le montant exact selon votre situation se confirme à l'analyse de votre dossier."
+    q: "Suis-je admissible au RAP ou au CELIAPP pour ma mise de fonds ?",
+    a: "Le RAP (Régime d'accession à la propriété) permet de retirer jusqu'à 60 000 $ de vos REER par personne — donc 120 000 $ pour un couple — sans impôt immédiat, à condition de rembourser sur 15 ans. Le CELIAPP, lui, combine les avantages du REER et du CELI : les cotisations sont déductibles d'impôt et les retraits pour l'achat d'une première propriété sont non imposables. Vous pouvez cotiser jusqu'à 8 000 $ par an (maximum 40 000 $ à vie). Bonus : RAP et CELIAPP peuvent être combinés. On fait le point ensemble sur ce qui maximise votre mise sans toucher à votre coussin de sécurité.",
+    cat: 'premier-achat',
+    slug: 'rap-celiapp',
   },
+
+  // ===== RENOUVELLEMENT =====
   {
-    q: "Combien de temps prend le processus d'approbation ?",
-    a: "En général, une pré-approbation peut être obtenue en 24 à 48 heures. Pour une approbation finale, comptez de quelques jours à deux semaines selon la complexité de votre dossier. Je m'occupe de tout le suivi avec le prêteur afin de faire avancer le dossier le plus rapidement possible. Le délai dépend aussi de la rapidité avec laquelle les documents demandés (preuves de revenu, relevés, mise de fonds, etc.) me sont transmis : un dossier complet dès le départ permet d'accélérer considérablement les choses."
+    q: "Mon renouvellement approche. Que dois-je faire ?",
+    a: "N'acceptez surtout pas la première offre de renouvellement de votre prêteur sans la comparer ! Contactez-moi idéalement 4 à 6 mois avant l'échéance — c'est le moment idéal pour évaluer vos options et faire jouer la concurrence. À votre renouvellement, le transfert vers un autre prêteur n'entraîne généralement pas de pénalité, et les frais qui peuvent s'appliquer sont souvent assumés par le nouveau prêteur. Je m'occupe de toutes les démarches avec les institutions pour vous simplifier le tout.",
+    cat: 'renouvellement',
+    slug: 'renouvellement',
   },
   {
     q: "C'est quoi la différence entre un taux fixe et un taux variable ?",
-    a: "Un taux fixe reste le même pendant toute la durée du terme — vos versements ne changent jamais. Un taux variable fluctue selon le taux directeur de la Banque du Canada — vos versements peuvent monter ou descendre. Le meilleur choix dépend de votre tolérance au risque et du contexte économique. On en discute ensemble."
+    a: "Un taux fixe reste le même pendant toute la durée du terme — vos versements ne changent jamais, ce qui facilite le budget. Un taux variable fluctue selon le taux directeur de la Banque du Canada. Selon le produit choisi, vos versements peuvent varier, ou rester fixes avec une portion capital/intérêts qui s'ajuste. Le taux variable a pu s'avérer avantageux sur certaines périodes, mais il exige une tolérance au risque plus élevée. Le meilleur choix dépend de votre profil, de votre horizon et du contexte économique. On en discute ensemble pour prendre la décision éclairée.",
+    cat: 'renouvellement',
+    slug: 'fixe-vs-variable',
   },
   {
-    q: "Mon renouvellement approche. Que dois-je faire ?",
-    a: "N'acceptez surtout pas la première offre de renouvellement de votre prêteur sans la comparer ! Contactez-moi idéalement 4 à 6 mois avant l'échéance — c'est le moment idéal pour évaluer vos options et faire jouer la concurrence. À votre renouvellement, le transfert vers un autre prêteur n'entraîne généralement pas de pénalité, et les frais qui peuvent s'appliquer sont souvent assumés par le nouveau prêteur. Je m'occupe de toutes les démarches avec les institutions pour vous simplifier le tout."
+    q: "Combien de temps prend le processus d'approbation ?",
+    a: "En général, une pré-approbation peut être obtenue en 24 à 48 heures. Pour une approbation finale, comptez de quelques jours à deux semaines selon la complexité de votre dossier. Je m'occupe de tout le suivi avec le prêteur afin de faire avancer le dossier le plus rapidement possible. Le délai dépend aussi de la rapidité avec laquelle les documents demandés (preuves de revenu, relevés, mise de fonds, etc.) me sont transmis : un dossier complet dès le départ permet d'accélérer considérablement les choses.",
+    cat: 'renouvellement',
+    slug: 'delai-approbation',
+  },
+
+  // ===== REFUS & ATYPIQUE =====
+  {
+    q: "J'ai été refusé par ma banque. Puis-je quand même obtenir une hypothèque ?",
+    a: "Un refus bancaire ne signifie pas que vous ne pouvez pas acheter — cela signifie que cette banque ne peut pas vous aider. J'ai accès à des prêteurs alternatifs spécialisés dans les dossiers complexes : mauvais crédit, travailleur autonome, revenus atypiques, etc. Chaque dossier est unique : on analyse votre situation ensemble et on trouve le prêteur qui correspond à votre profil.",
+    cat: 'refus-atypique',
+    slug: 'refus-bancaire',
+  },
+  {
+    q: "Je suis travailleur autonome : puis-je obtenir un prêt hypothécaire ?",
+    a: "Oui — mais les règles sont différentes. Les prêteurs demandent généralement 2 ans de déclarations fiscales complètes pour établir votre revenu moyen. Dans certains cas exceptionnels, une documentation alternative peut compenser, mais c'est rare et très encadré. Le défi principal : votre revenu imposable peut ne pas refléter votre revenu réel si vous optimisez vos déductions. Je connais les prêteurs les plus flexibles pour les travailleurs autonomes et je vous aide à structurer votre dossier pour maximiser votre capacité d'emprunt.",
+    cat: 'refus-atypique',
+    slug: 'travailleur-autonome',
+    ctaLink: '/services/travailleur-autonome',
+    ctaText: 'Plus de détails sur notre page travailleur autonome →',
+  },
+
+  // ===== TAUX & PÉNALITÉ =====
+  {
+    q: "Comment calculer la pénalité si je rembourse mon prêt avant l'échéance ?",
+    a: "La pénalité dépend de votre contrat et de votre prêteur. Pour un prêt à taux variable, c'est généralement 3 mois d'intérêt — un calcul simple. Pour un prêt à taux fixe, c'est le plus élevé entre 3 mois d'intérêt et l'IRD (différentiel de taux d'intérêt), qui peut représenter plusieurs milliers de dollars. Chaque prêteur a sa propre méthode de calcul IRD — certaines grandes banques utilisent leur taux affiché (souvent plus pénalisant), tandis que les prêteurs monolines utilisent leur taux réel. À noter : si vous vendez pour racheter, la portabilité de votre prêt peut vous permettre d'éviter une partie, voire la totalité de la pénalité — une option à explorer avant toute décision.",
+    cat: 'taux-penalite',
+    slug: 'penalite-remboursement',
+    ctaLink: '/outils/calculateur-penalite-hypothecaire',
+    ctaText: 'Utilisez notre calculateur de pénalité gratuit →',
   },
 ];
 
-// JSON-LD FAQPage pour les résultats enrichis Google
+// JSON-LD FAQPage
 const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": faqs.map(item => ({
-    "@type": "Question",
-    "name": item.q,
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": item.a
-    }
-  }))
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(item => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.ctaText ? `${item.a} ${item.ctaText}` : item.a,
+    },
+  })),
 };
 ---
 
 <section id="faq">
   <div class="section-inner">
     <div class="fade-up">
-      <div class="section-tag">FAQ</div>
       <h2 class="section-title">Questions <em>fréquentes</em></h2>
       <p class="section-sub">
         Les réponses à vos questions sur l'hypothèque — sans le jargon bancaire.
       </p>
     </div>
 
-    <div class="faq-list fade-up">
+    <!-- Chips de catégories -->
+    <div class="faq-categories fade-up" role="tablist" aria-label="Catégories de questions">
+      {categories.map((cat) => (
+        <button
+          id={`faq-cat-${cat.id}`}
+          class="faq-cat-chip"
+          role="tab"
+          aria-selected={cat.id === 'tous' ? 'true' : 'false'}
+          aria-controls="faq-list"
+          data-cat={cat.id}
+        >{cat.label}</button>
+      ))}
+    </div>
+
+    <!-- Liste des questions -->
+    <div class="faq-list fade-up" id="faq-list" role="region" aria-label="Questions et réponses">
       {faqs.map((item, index) => (
-        <div class="faq-item">
+        <div
+          class="faq-item"
+          data-cat={item.cat}
+          data-text={`${item.q} ${item.a}`.toLowerCase()}
+          id={`faq-${item.slug}`}
+        >
           <h3>
             <button
               id={`faq-question-${index}`}
@@ -78,8 +161,12 @@ const faqSchema = {
               aria-expanded="false"
               aria-controls={`faq-answer-${index}`}
             >
-              <span>{item.q}</span>
-              <span class="faq-icon" aria-hidden="true">+</span>
+              <span class="faq-q-text">{item.q}</span>
+              <span class="faq-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </span>
             </button>
           </h3>
           <div
@@ -89,25 +176,33 @@ const faqSchema = {
             aria-labelledby={`faq-question-${index}`}
             aria-hidden="true"
           >
-            <div class="faq-a-inner">{item.a}</div>
+            <div class="faq-a-inner">
+              <p>{item.a}</p>
+              {item.ctaLink && item.ctaText && (
+                <p><a href={item.ctaLink}>{item.ctaText}</a></p>
+              )}
+            </div>
           </div>
         </div>
       ))}
     </div>
 
-    <div class="fade-up" style="text-align:center;margin-top:2.5rem;">
+    <!-- CTA final -->
+    <div class="fade-up" style="text-align:center;margin-top:3rem;">
       <p style="font-size:.9rem;color:var(--muted);margin-bottom:1rem;">Vous avez une autre question ?</p>
       <a href="#contact" class="btn-primary btn-primary--sm">Poser ma question à {prenom} →</a>
     </div>
   </div>
 </section>
 
+<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} is:inline />
+
 <style>
   .faq-item h3 {
     margin: 0;
     padding: 0;
   }
-  
+
   button.faq-q {
     width: 100%;
     background: transparent;
@@ -118,23 +213,33 @@ const faqSchema = {
   }
 </style>
 
-<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} is:inline />
-
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    const catChips = document.querySelectorAll<HTMLButtonElement>('.faq-cat-chip');
+    const faqItems = document.querySelectorAll<HTMLElement>('.faq-item');
+    const faqList = document.getElementById('faq-list');
+
+    let activeCat = 'tous';
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // -------------------------------------------
+    // 1. Accordéon — un seul ouvert
+    // -------------------------------------------
     document.querySelectorAll('.faq-q').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const item = btn.closest('.faq-item');
+        const item = btn.closest('.faq-item') as HTMLElement | null;
         if (!item) return;
 
         const isOpen = item.classList.contains('open');
 
-        document.querySelectorAll('.faq-item').forEach((i) => {
-          i.classList.remove('open');
-          const otherBtn = i.querySelector('.faq-q');
-          const otherAns = i.querySelector('.faq-a');
-          if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
-          if (otherAns) otherAns.setAttribute('aria-hidden', 'true');
+        // Fermer tous
+        document.querySelectorAll('.faq-item.open').forEach((openItem) => {
+          openItem.classList.remove('open');
+          const ob = openItem.querySelector('.faq-q');
+          const oa = openItem.querySelector('.faq-a');
+          if (ob) ob.setAttribute('aria-expanded', 'false');
+          if (oa) oa.setAttribute('aria-hidden', 'true');
         });
 
         if (!isOpen) {
@@ -142,8 +247,97 @@ const faqSchema = {
           btn.setAttribute('aria-expanded', 'true');
           const ans = item.querySelector('.faq-a');
           if (ans) ans.setAttribute('aria-hidden', 'false');
+
+          // Scroll into view si pas déjà visible
+          if (!reduceMotion) {
+            setTimeout(() => {
+              item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 150);
+          }
+
+          // Mise à jour du hash (sans déclencher hashchange)
+          const slug = item.id.replace('faq-', '');
+          if (slug && window.location.hash !== `#faq-${slug}`) {
+            history.replaceState(null, '', `#faq-${slug}`);
+          }
         }
       });
     });
+
+    // -------------------------------------------
+    // 2. Filtre par catégorie
+    // -------------------------------------------
+    function applyFilters() {
+      faqItems.forEach((item) => {
+        const cat = item.dataset.cat ?? '';
+        const show = activeCat === 'tous' || cat === activeCat;
+
+        if (show) {
+          item.removeAttribute('hidden');
+        } else {
+          item.setAttribute('hidden', '');
+          item.classList.remove('open');
+          const q = item.querySelector('.faq-q');
+          const a = item.querySelector('.faq-a');
+          if (q) q.setAttribute('aria-expanded', 'false');
+          if (a) a.setAttribute('aria-hidden', 'true');
+        }
+      });
+    }
+
+    catChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        catChips.forEach((c) => c.setAttribute('aria-selected', 'false'));
+        chip.setAttribute('aria-selected', 'true');
+        activeCat = chip.dataset.cat ?? 'tous';
+        applyFilters();
+      });
+    });
+
+    // -------------------------------------------
+    // 3. Deep-linking : ouvre une question via l'ancre d'URL
+    // -------------------------------------------
+    function openFromHash() {
+      const hash = window.location.hash;
+      if (!hash.startsWith('#faq-')) return;
+
+      const slug = hash.replace('#faq-', '');
+      let target = document.getElementById(`faq-${slug}`);
+      if (!target && faqList) {
+        // Fallback : cherche par id sur la liste
+        target = faqList.querySelector(`[id="faq-${CSS.escape(slug)}"]`) as HTMLElement | null;
+      }
+      if (!target || !target.classList.contains('faq-item')) return;
+
+      // Si caché par un filtre, reset tout
+      target.removeAttribute('hidden');
+      catChips.forEach((c) => c.setAttribute('aria-selected', 'false'));
+      const tousChip = document.querySelector<HTMLButtonElement>('[data-cat="tous"]');
+      if (tousChip) tousChip.setAttribute('aria-selected', 'true');
+      activeCat = 'tous';
+      applyFilters();
+
+      // Fermer tout, ouvrir la cible
+      document.querySelectorAll('.faq-item.open').forEach((i) => {
+        i.classList.remove('open');
+        const q = i.querySelector('.faq-q');
+        const a = i.querySelector('.faq-a');
+        if (q) q.setAttribute('aria-expanded', 'false');
+        if (a) a.setAttribute('aria-hidden', 'true');
+      });
+
+      const btn = target.querySelector('.faq-q') as HTMLButtonElement | null;
+      const ans = target.querySelector('.faq-a') as HTMLElement | null;
+      target.classList.add('open');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+      if (ans) ans.setAttribute('aria-hidden', 'false');
+
+      setTimeout(() => {
+        target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+      }, 200);
+    }
+
+    openFromHash();
+    window.addEventListener('hashchange', openFromHash);
   });
 </script>

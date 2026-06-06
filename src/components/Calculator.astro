@@ -12,7 +12,6 @@ const { defaultRate = 4.99 } = Astro.props;
 <section id="calculateur">
   <div class="section-inner">
     <div class="fade-up">
-      <div class="section-tag">Outil gratuit</div>
       <h2 class="section-title">Calculez vos <em>versements hypothécaires</em></h2>
       <p class="section-sub">
         Estimez vos versements hypothécaires en quelques secondes. Pour un calcul précis adapté à votre dossier, contactez {config.nom.split(' ')[0]}.
@@ -30,7 +29,7 @@ const { defaultRate = 4.99 } = Astro.props;
         <div class="form-group">
           <label for="mise">Mise de fonds</label>
           <div class="mise-input-row">
-            <input type="number" id="mise" placeholder="45000" value="45000" inputmode="decimal" min="0" />
+            <input type="text" id="mise" placeholder="45 000" value="45 000" inputmode="numeric" autocomplete="off" />
             <div class="mise-toggle-group" role="group" aria-label="Unité de la mise de fonds">
               <button type="button" id="mise-btn-dollar" class="mise-toggle-btn active" aria-pressed="true" title="Montant en dollars">$</button>
               <button type="button" id="mise-btn-pct" class="mise-toggle-btn" aria-pressed="false" title="Pourcentage du prix">%</button>
@@ -39,12 +38,10 @@ const { defaultRate = 4.99 } = Astro.props;
           <small id="mise-pct" style="color:var(--muted);font-size:.75rem;margin-top:.3rem;display:block;"></small>
         </div>
 
-        <!-- Options avancées -->
+        <!-- Paramètres du prêt -->
         <div class="adv-options">
-          <button type="button" class="adv-toggle-btn" id="adv-toggle-btn" aria-expanded="false" aria-controls="adv-panel">
-            Options avancées <span class="adv-arrow" aria-hidden="true">▾</span>
-          </button>
-          <div class="adv-panel" id="adv-panel" hidden>
+          <div class="adv-section-label">Paramètres du prêt</div>
+          <div class="adv-panel" id="adv-panel">
             <div class="form-group">
               <label for="taux">Taux d'intérêt (%)</label>
               <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="25" />
@@ -92,23 +89,25 @@ const { defaultRate = 4.99 } = Astro.props;
           <div class="email-capture-label">Recevoir ce résumé par courriel</div>
           <div class="email-capture-note">Je vous enverrai personnellement le résumé. Merci d'indiquer vos coordonnées.</div>
           <div class="email-capture-row">
-            <label for="calc-name" class="sr-only">Votre nom complet</label>
-            <input type="text" id="calc-name" placeholder="Votre nom complet" class="email-capture-input" autocomplete="name" required />
-            <label for="calc-phone" class="sr-only">Votre téléphone</label>
-            <input type="tel" id="calc-phone" placeholder="Votre téléphone" class="email-capture-input" autocomplete="tel" required />
+            <div style="flex:1;min-width:0;">
+              <label class="email-capture-field-label" for="calc-name">Nom complet</label>
+              <input type="text" id="calc-name" placeholder="Marie Tremblay" class="email-capture-input" autocomplete="name" required />
+            </div>
+            <div style="flex:1;min-width:0;">
+              <label class="email-capture-field-label" for="calc-phone">Téléphone</label>
+              <input type="tel" id="calc-phone" placeholder="514 000-0000" class="email-capture-input" inputmode="tel" autocomplete="tel" />
+            </div>
           </div>
           <div class="email-capture-row">
-            <label for="calc-email" class="sr-only">Votre email</label>
-            <input type="email" id="calc-email" placeholder="votre@courriel.com" class="email-capture-input" autocomplete="email" required />
+            <div style="flex:1;min-width:0;">
+              <label class="email-capture-field-label" for="calc-email">Courriel</label>
+              <input type="email" id="calc-email" placeholder="marie@exemple.com" class="email-capture-input" autocomplete="email" />
+            </div>
             <button type="button" id="calc-email-btn" class="email-capture-btn">Envoyer →</button>
           </div>
-          <label class="email-capture-consent" for="calc-consent">
-            <input type="checkbox" id="calc-consent" />
-            <span>
-              J'accepte de recevoir ce résumé par courriel et d'être recontacté(e) par {config.nom.split(' ')[0]} —
-              voir la <a href="/confidentialite">politique de confidentialité</a>.
-            </span>
-          </label>
+          <p class="email-capture-note-sub">
+            En envoyant ce formulaire, vous acceptez d'être recontacté·e. Vos données ne sont jamais partagées — voir la <a href="/confidentialite">politique de confidentialité</a>.
+          </p>
           <div id="calc-email-msg" class="email-capture-msg" style="display:none;"></div>
         </div>
       </form>
@@ -119,6 +118,8 @@ const { defaultRate = 4.99 } = Astro.props;
       </form>
 
       <div class="calc-results fade-up" style="transition-delay:.2s">
+
+        <div class="calc-warning" id="calc-warning" style="display:none;"></div>
 
         <div class="result-card main">
           <div class="result-label" id="label-freq">Versement mensuel</div>
@@ -162,19 +163,24 @@ const { defaultRate = 4.99 } = Astro.props;
 </section>
 
 <script>
-  import { calculateSCHL, formatMoney, calcPaiement } from '../utils/mortgageCalc';
+  import { calculateSCHL, formatMoney, calcPaiement, miseMinimale } from '../utils/mortgageCalc';
 
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('calc-form');
     if (!form) return;
 
-    // --- Formatage français pour le champ prix ---
+    // --- Formatage français pour les champs montant ---
     function parsePrixVal(s: string): number {
       return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
     }
     function fmtPrixEl(): void {
       const val = parsePrixVal(prixEl.value);
       if (val > 0) prixEl.value = Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+    }
+    function fmtMiseEl(): void {
+      if (miseEnPct) return;
+      const val = parsePrixVal(miseEl.value);
+      if (val > 0) miseEl.value = Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
     }
 
     const prixEl      = document.getElementById('prix') as HTMLInputElement;
@@ -187,9 +193,7 @@ const { defaultRate = 4.99 } = Astro.props;
     const btnPct      = document.getElementById('mise-btn-pct') as HTMLButtonElement;
     const lienAmortEl = document.getElementById('lien-amortissement') as HTMLAnchorElement;
 
-    // Advanced options
-    const advBtn   = document.getElementById('adv-toggle-btn') as HTMLButtonElement;
-    const advPanel = document.getElementById('adv-panel') as HTMLDivElement;
+    // Advanced options fields
     const taxesEl    = document.getElementById('calc-taxes') as HTMLInputElement;
     const chauffageEl= document.getElementById('calc-chauffage') as HTMLInputElement;
     const condoEl    = document.getElementById('calc-condo') as HTMLInputElement;
@@ -206,19 +210,11 @@ const { defaultRate = 4.99 } = Astro.props;
 
     let miseEnPct = false;
 
-    // --- Accordion ---
-    advBtn.addEventListener('click', () => {
-      const isOpen = !advPanel.hidden;
-      advPanel.hidden = isOpen;
-      advBtn.setAttribute('aria-expanded', String(!isOpen));
-      advBtn.querySelector('.adv-arrow')!.textContent = isOpen ? '▾' : '▴';
-    });
-
     // --- Toggle $ / % ---
     function switchToMode(toPct: boolean) {
       if (toPct === miseEnPct) return;
       const prix = parsePrixVal(prixEl.value);
-      const miseVal = parseFloat(miseEl.value) || 0;
+      const miseVal = miseEnPct ? (parseFloat(miseEl.value) || 0) : (parsePrixVal(miseEl.value));
       miseEnPct = toPct;
       if (miseEnPct) {
         btnPct.classList.add('active');
@@ -234,8 +230,8 @@ const { defaultRate = 4.99 } = Astro.props;
         btnDollar.setAttribute('aria-pressed', 'true');
         btnPct.classList.remove('active');
         btnPct.setAttribute('aria-pressed', 'false');
-        if (prix > 0) miseEl.value = Math.round(prix * (miseVal / 100)).toString();
-        miseEl.placeholder = '45000';
+        if (prix > 0) miseEl.value = Math.round(prix * (miseVal / 100)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+        miseEl.placeholder = '45 000';
         miseEl.removeAttribute('max');
         miseEl.removeAttribute('step');
       }
@@ -247,7 +243,7 @@ const { defaultRate = 4.99 } = Astro.props;
 
     function updateMisePct() {
       const prix = parsePrixVal(prixEl.value);
-      const miseVal = parseFloat(miseEl.value) || 0;
+      const miseVal = miseEnPct ? (parseFloat(miseEl.value) || 0) : parsePrixVal(miseEl.value);
       if (misePctEl && prix > 0) {
         if (miseEnPct) {
           misePctEl.textContent = `≈ ${formatMoney(Math.round(prix * miseVal / 100))}`;
@@ -257,15 +253,50 @@ const { defaultRate = 4.99 } = Astro.props;
       }
     }
 
+    // --- Messages de validation ---
+    const calcWarningEl = document.getElementById('calc-warning')!;
+    function showCalcWarning(msg: string | null) {
+      if (msg) {
+        calcWarningEl.textContent = '⚠️ ' + msg;
+        calcWarningEl.style.display = 'block';
+      } else {
+        calcWarningEl.style.display = 'none';
+      }
+    }
+    function clearResults() {
+      document.getElementById('res-paiement')!.textContent = '0 $';
+      document.getElementById('res-pret')!.textContent     = '0 $';
+      document.getElementById('res-schl')!.textContent     = '0 $';
+      document.getElementById('res-detail-cap-int')!.textContent = 'Capital et intérêts — prime SCHL incluse (financée dans le prêt)';
+      document.getElementById('label-freq')!.textContent   = 'Versement mensuel';
+      const schlDetail = document.getElementById('res-schl-detail')!;
+      schlDetail.style.display = 'none';
+      const primeSchlMicroEl = document.getElementById('res-detail-prime-schl');
+      if (primeSchlMicroEl) {
+        primeSchlMicroEl.textContent = 'Dont ≈ 0 $/mois pour la prime SCHL';
+        primeSchlMicroEl.style.display = '';
+      }
+      document.getElementById('card-cout-mensuel')!.style.display = 'none';
+      if (lienAmortEl) lienAmortEl.style.display = 'none';
+      if (misePctEl) misePctEl.textContent = '';
+    }
+
     function doCalculation() {
       const prix = parsePrixVal(prixEl.value);
       let mise: number;
       if (miseEnPct) {
         mise = Math.round(prix * (parseFloat(miseEl.value) || 0) / 100);
       } else {
-        mise = parseFloat(miseEl.value) || 0;
+        mise = parsePrixVal(miseEl.value);
       }
       const taux  = parseFloat(tauxEl.value) || 0;
+
+      // Easter egg : taux à 0 %
+      if (tauxEl.value.trim() === '0' && prix > 0 && mise > 0) {
+        clearResults();
+        showCalcWarning('On aimerait tous ça… ✨');
+        return;
+      }
       const amort = parseInt(amortEl.value) || 25;
       const freq  = parseInt(freqEl.value) || 12;
 
@@ -274,7 +305,41 @@ const { defaultRate = 4.99 } = Astro.props;
       const chauffage= parseFloat(chauffageEl.value) || 0;
       const condo    = parseFloat(condoEl.value) || 0;
 
-      if (prix <= 0 || mise < 0 || mise >= prix) return;
+      // --- Validation de la mise de fonds ---
+      if (prix <= 0) { clearResults(); showCalcWarning(null); return; }
+
+      // Règle 5 : mise supérieure ou égale au prix
+      if (mise >= prix) {
+        clearResults();
+        showCalcWarning('La mise de fonds ne peut pas dépasser le prix de la propriété.');
+        return;
+      }
+
+      // Règle 1 : mise absente ou nulle (règle 6 : valeurs négatives/non numériques filtrées par parsePrixVal → 0)
+      if (mise <= 0 || isNaN(mise)) {
+        clearResults();
+        showCalcWarning('Veuillez entrer une mise de fonds.');
+        return;
+      }
+
+      // Règle 3 : propriété ≥ 1,5 M$ — pas assurable, 20 % obligatoires
+      if (prix >= 1_500_000 && (mise / prix) < 0.2) {
+        clearResults();
+        showCalcWarning('Pour une propriété de 1,5 M$ et plus, une mise de fonds d\u2019au moins 20 % est requise. Le prêt ne peut pas être assuré par la SCHL.');
+        return;
+      }
+
+      // Règle 2 : mise inférieure au minimum légal
+      const miseMin = miseMinimale(prix);
+      if (mise < miseMin) {
+        clearResults();
+        const minFmt = formatMoney(Math.round(miseMin));
+        const pctFmt = (miseMin / prix * 100).toFixed(1);
+        showCalcWarning('La mise de fonds minimale requise est de ' + minFmt + ' (' + pctFmt + ' % du prix d\u2019achat).');
+        return;
+      }
+
+      showCalcWarning(null);
 
       // 30-year amortization requires ≥ 20% down
       if (amort === 30 && (mise / prix) < 0.2) {
@@ -307,14 +372,18 @@ const { defaultRate = 4.99 } = Astro.props;
       document.getElementById('res-pret')!.textContent      = formatMoney(pretTotal);
       document.getElementById('label-freq')!.textContent    = labelTexte;
 
-      // SCHL
+      // Règle 4 : mise ≥ 20 % → pas de prime SCHL (feedback positif)
       const schlEl     = document.getElementById('res-schl')!;
       const schlDetail = document.getElementById('res-schl-detail')!;
-      schlEl.textContent = schl > 0 ? formatMoney(schl) : 'Aucune';
       if (schl > 0 && schlRate) {
+        schlEl.textContent = formatMoney(schl);
         schlDetail.textContent = `Taux : ${schlRate} % du prêt de base`;
         schlDetail.style.display = 'block';
+      } else if (mise / prix >= 0.2) {
+        schlEl.textContent = 'Aucune prime SCHL applicable';
+        schlDetail.style.display = 'none';
       } else {
+        schlEl.textContent = 'Aucune';
         schlDetail.style.display = 'none';
       }
 
@@ -388,23 +457,15 @@ const { defaultRate = 4.99 } = Astro.props;
         return;
       }
 
-      if (telephone.length < 7) {
-        emailMsg.textContent   = 'Veuillez entrer un numéro de téléphone valide.';
+      if (!telephone && !email) {
+        emailMsg.textContent   = 'Veuillez indiquer au moins un moyen de vous joindre (téléphone ou courriel).';
         emailMsg.style.display = '';
         emailMsg.style.color   = '#c0392b';
         return;
       }
 
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         emailMsg.textContent   = 'Veuillez entrer une adresse courriel valide.';
-        emailMsg.style.display = '';
-        emailMsg.style.color   = '#c0392b';
-        return;
-      }
-
-      const consentEl = document.getElementById('calc-consent') as HTMLInputElement | null;
-      if (!consentEl?.checked) {
-        emailMsg.textContent   = 'Veuillez accepter la politique de confidentialité pour recevoir le résumé.';
         emailMsg.style.display = '';
         emailMsg.style.color   = '#c0392b';
         return;
@@ -497,11 +558,20 @@ const { defaultRate = 4.99 } = Astro.props;
       }
     });
 
-    // Formatage du champ prix : séparateurs de milliers au blur, retirés au focus
+    // Formatage des champs montant : séparateurs de milliers au blur, retirés au focus
     prixEl.addEventListener('focus', () => {
       prixEl.value = prixEl.value.replace(/\s/g, '');
+      prixEl.select();
     });
     prixEl.addEventListener('blur', fmtPrixEl);
+
+    miseEl.addEventListener('focus', () => {
+      if (!miseEnPct) {
+        miseEl.value = miseEl.value.replace(/\s/g, '');
+        miseEl.select();
+      }
+    });
+    miseEl.addEventListener('blur', fmtMiseEl);
 
     doCalculation();
   });

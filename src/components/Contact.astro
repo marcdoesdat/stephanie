@@ -15,7 +15,6 @@ const prenomCourtiere = config.nom.split(' ')[0];
     <!-- Calendly — prise de rendez-vous en ligne -->
     {config.calendly_url && (
       <div class="contact-calendly fade-up">
-        <div class="section-tag">Rendez-vous</div>
         <h2 class="section-title">Réservez un <em>appel</em> avec {prenomCourtiere}</h2>
         <p class="section-sub">
           Choisissez le créneau qui vous convient — {prenomCourtiere} vous appelle au moment prévu. Gratuit, sans engagement.
@@ -44,7 +43,6 @@ const prenomCourtiere = config.nom.split(' ')[0];
 
       <!-- ======== COLONNE GAUCHE : Présentation & confiance ======== -->
       <div class="fade-up">
-        <div class="section-tag">Contact</div>
         <h2 class="section-title">Parlons de <br />votre <em>projet</em></h2>
         <div class="contact-info">
           <p>
@@ -487,7 +485,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
 
               <div class="quiz-field">
                 <label class="cform-label" for="contact-email">Courriel</label>
-                <input type="email" id="contact-email" name="email" placeholder="marie@exemple.com" required autocomplete="email" />
+                <input type="email" id="contact-email" name="email" placeholder="marie@exemple.com" autocomplete="email" />
               </div>
 
               <div class="quiz-field">
@@ -496,7 +494,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
                   <span class="cform-optional" data-tel-optional>(facultatif)</span>
                   <span class="cform-required" data-tel-required hidden>(requis)</span>
                 </label>
-                <input type="tel" id="contact-tel" name="telephone" placeholder="514 000-0000" autocomplete="tel" />
+                <input type="tel" id="contact-tel" name="telephone" placeholder="514 000-0000" inputmode="tel" autocomplete="tel" />
               </div>
 
               <div class="quiz-field">
@@ -524,15 +522,6 @@ const prenomCourtiere = config.nom.split(' ')[0];
 
             <div class="form-error" id="form-error">Une erreur s'est produite. Veuillez réessayer.</div>
 
-            <label class="cform-consent" for="contact-consent">
-              <input type="checkbox" id="contact-consent" name="consent" required value="oui" />
-              <span>
-                J'accepte que {prenomCourtiere} me recontacte au sujet de ma demande hypothécaire.
-                Vos renseignements ne sont partagés avec un prêteur qu'avec votre consentement explicite —
-                voir la <a href="/confidentialite">politique de confidentialité</a>.
-              </span>
-            </label>
-
             <label class="cform-consent" for="contact-lcap">
               <input type="checkbox" id="contact-lcap" name="lcap_consent" value="oui" />
               <span>
@@ -543,10 +532,13 @@ const prenomCourtiere = config.nom.split(' ')[0];
             </label>
 
             <button type="submit" class="btn-cta btn-cta--block" id="contact-submit-btn">
-              <span>Recevoir mon analyse personnalisée</span>
+              <span>Envoyer ma demande</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
 
+            <p class="quiz-final-note">
+              En envoyant ce formulaire, vous acceptez d'être recontacté·e au sujet de votre demande. Vos données ne sont jamais partagées — voir la <a href="/confidentialite">politique de confidentialité</a>.
+            </p>
             <p class="quiz-final-note">
               Gratuit · Sans engagement · Réponse dans les meilleurs délais
             </p>
@@ -938,6 +930,13 @@ const prenomCourtiere = config.nom.split(' ')[0];
     // --- Submit ---
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      // Validation : au moins un moyen de contact (courriel ou téléphone)
+      const emailVal = (document.getElementById('contact-email') as HTMLInputElement)?.value.trim() || '';
+      const telVal = (document.getElementById('contact-tel') as HTMLInputElement)?.value.trim() || '';
+      if (!emailVal && !telVal) {
+        alert('Veuillez indiquer au moins un moyen de vous joindre (courriel ou téléphone).');
+        return;
+      }
       if (!form.checkValidity()) {
         form.reportValidity();
         return;

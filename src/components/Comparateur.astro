@@ -41,7 +41,6 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
 <section id="comparateur">
   <div class="section-inner">
     <div class="fade-up">
-      <div class="section-tag">Banque vs courtier</div>
       <h2 class="section-title">La vraie différence, <em>en chiffres.</em></h2>
       <p class="section-sub">
         Les banques affichent des taux standards. Mon rôle est d'utiliser mon accès privilégié à plus de 20 prêteurs — incluant des institutions non accessibles au public — pour négocier un taux souvent inférieur à celui affiché en succursale.
@@ -203,14 +202,31 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
       <!-- ============ COLONNE DROITE : RÉSULTATS ============ -->
       <div class="comp-results" aria-live="polite">
 
-        <!-- Hero : économies dominantes -->
-        <div class="comp-savings-hero">
-          <div class="comp-savings-eyebrow">
-            Vous économisez sur le terme de <span id="comp-terme-label">5 ans</span>
+        <!-- Hero économies / message selon l'état -->
+        <div class="comp-savings-hero" id="comp-hero">
+          <!-- ÉTAT 1 : Stéphanie gagnante -->
+          <div class="comp-hero-state" data-comp-state="win">
+            <div class="comp-savings-eyebrow">
+              Vous économisez sur le terme de <span id="comp-terme-label">5 ans</span>
+            </div>
+            <div class="comp-savings-amount" id="comp-savings">{formatMoney(initialTotalSavings)}</div>
+            <div class="comp-savings-sub">
+              soit <strong id="comp-savings-monthly">{formatMoney(initialMonthlySavings)}</strong> par mois de plus dans votre poche.
+            </div>
           </div>
-          <div class="comp-savings-amount" id="comp-savings">{formatMoney(initialTotalSavings)}</div>
-          <div class="comp-savings-sub">
-            soit <strong id="comp-savings-monthly">{formatMoney(initialMonthlySavings)}</strong> <span id="comp-savings-monthly-unit">par mois</span> de plus dans votre poche.
+
+          <!-- ÉTAT 2 : taux comparable ou écart faible -->
+          <div class="comp-hero-state" data-comp-state="tie" hidden>
+            <p class="comp-hero-msg">
+              À taux comparable, la différence se joue ailleurs&nbsp;: conditions de remboursement anticipé, portabilité, pénalités, et accès à plusieurs prêteurs. Stéphanie compare pour vous — sans frais.
+            </p>
+          </div>
+
+          <!-- ÉTAT 3 : la succursale affiche un meilleur taux -->
+          <div class="comp-hero-state" data-comp-state="lose" hidden>
+            <p class="comp-hero-msg">
+              Votre succursale affiche un meilleur taux aujourd'hui. Ça vaut la peine de creuser&nbsp;: un taux n'est qu'une partie de l'équation. Stéphanie magasine parmi plusieurs prêteurs et vérifie les conditions qui coûtent cher plus tard (pénalités, privilèges de remboursement). Parlons-en.
+            </p>
           </div>
         </div>
 
@@ -303,9 +319,11 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
     const totalNegoEl = root.querySelector('#comp-total-nego');
     const savingsEl = root.querySelector('#comp-savings');
     const savingsMonthly = root.querySelector('#comp-savings-monthly');
-    const savingsMonthlyUnit = root.querySelector('#comp-savings-monthly-unit');
     const termeLabel = root.querySelector('#comp-terme-label');
-    const heroEl = root.querySelector('.comp-savings-hero') as HTMLElement | null;
+    const heroEl = root.querySelector('#comp-hero') as HTMLElement | null;
+
+    const TOLERANCE_RATE = 0.05; // ±0,05 % = écart négligeable
+    const TOLERANCE_MONTHLY = 5; // ±5 $/mois = écart négligeable
 
     let amount = parseInt(numberInput.value, 10) || 500000;
     let bankRate = parseFloat(rateBankInput.value) || parseFloat(root.dataset.bankRate ?? '5.99');
@@ -337,10 +355,31 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
       if (totalNegoEl) totalNegoEl.textContent = formatMoney(totalNego);
       if (savingsEl) savingsEl.textContent = formatMoney(totalSavings);
       if (savingsMonthly) savingsMonthly.textContent = formatMoney(monthlySavings);
-      if (savingsMonthlyUnit) savingsMonthlyUnit.textContent = 'par mois';
       if (termeLabel) termeLabel.textContent = `${termeAns} an${termeAns > 1 ? 's' : ''}`;
 
-      if (heroEl) heroEl.classList.toggle('is-zero', totalSavings <= 0);
+      // --- 3-state logic ---
+      const rateDiff = bankRate - brokerRate;
+      const absMonthlyDiff = Math.abs(monthlyBase - monthlyNego);
+      let compState: 'win' | 'tie' | 'lose';
+
+      if (rateDiff > TOLERANCE_RATE && absMonthlyDiff > TOLERANCE_MONTHLY) {
+        // Broker is meaningfully cheaper
+        compState = 'win';
+      } else if (rateDiff < -TOLERANCE_RATE && absMonthlyDiff > TOLERANCE_MONTHLY) {
+        // Bank is meaningfully cheaper
+        compState = 'lose';
+      } else {
+        // Rates are within tolerance band
+        compState = 'tie';
+      }
+
+      if (heroEl) {
+        heroEl.classList.remove('is-win', 'is-tie', 'is-lose');
+        heroEl.classList.add(`is-${compState}`);
+        heroEl.querySelectorAll('[data-comp-state]').forEach((el) => {
+          (el as HTMLElement).hidden = (el as HTMLElement).dataset.compState !== compState;
+        });
+      }
     }
 
     function setAmount(v: number) {

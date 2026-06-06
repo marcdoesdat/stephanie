@@ -34,9 +34,8 @@ const displayRows = hypothecaRates?.rows?.length
     
     {hypothecaRates ? (
     <Fragment>
-    <div class="fade-up" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;margin-bottom:3rem;">
+    <div class="fade-up" style="margin-bottom:3rem;">
       <div>
-        <div class="section-tag">Taux en vigueur</div>
         <h2 class="section-title">Consulter les meilleurs taux hypothécaires<br />du moment <em>via notre réseau</em></h2>
         <p class="section-sub">
           Taux obtenus via notre réseau de 20+ prêteurs.
@@ -44,22 +43,16 @@ const displayRows = hypothecaRates?.rows?.length
         </p>
         <p id="tv-freshness" data-updated-at={hypothecaRates.fetchedAt} style="margin:.45rem 0 0;font-size:.78rem;color:var(--clay);font-weight:600;">Mise à jour en cours…</p>
       </div>
-      
-      <div aria-live="polite" style="background:var(--sand);border:1px solid var(--border);border-radius:16px;padding:1.2rem 1.8rem;font-size:.75rem;color:var(--muted);line-height:1.8;text-align:right;min-width: 200px;">
-        <strong style="color:var(--ink);display:block;text-transform:uppercase;letter-spacing:0.05em;font-size:0.7rem;">Taux directeur BdC</strong>
-        <span id="tv-directeur" style="font-family:'Lora',serif;font-size:1.8rem;font-weight:700;color:var(--clay);">...</span><br />
-        <span id="tv-date" style="font-size:.7rem;">Chargement en cours</span>
-      </div>
     </div>
     
     <div class="taux-table-wrap fade-up" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-      <table class="taux-table" style="min-width: 660px;">
+      <table class="taux-table">
         <thead>
           <tr>
-            <th scope="col" style="min-width: 110px; width: 1%; white-space: nowrap;">Terme</th>
+            <th scope="col">Terme</th>
             <th scope="col" class="th-hypotheca" style="color:var(--forest);">
               <div class="th-hypotheca-inner">
-                 <img src="/images/logo-hypotheca.svg" alt="Hypotheca" style="height:6.7em;vertical-align:middle;" loading="lazy" />
+                 <img src="/images/icone-hypotheca-blanc.webp" alt="Hypotheca" style="height:5.36em;vertical-align:middle;" loading="lazy" />
                 <span class="th-hypotheca-label">Votre taux</span>
               </div>
             </th>
@@ -91,14 +84,16 @@ const displayRows = hypothecaRates?.rows?.length
     </div>
     
     <div class="bdc-bar fade-up" style="transition-delay: 0.2s;" aria-live="polite">
-      <div><strong style="color:var(--ink);">Taux directeur BdC :</strong> <span id="tv-directeur-inline" style="font-weight:600;">...</span></div>
-      <div><strong style="color:var(--ink);">Taux préférentiel estimé :</strong> <span id="tv-preferentiel-inline" style="font-weight:600;">...</span></div>
-      <div>Mis à jour le <span id="tv-date-inline">—</span> · <a href="https://www.bankofcanada.ca" target="_blank" rel="noopener noreferrer" style="color:var(--clay);text-decoration:none;">Source : bankofcanada.ca</a></div>
+      <span class="bdc-bar-label">Taux directeur BdC</span>
+      <span id="tv-directeur-inline" class="bdc-bar-rate">...</span>
+      <span class="bdc-bar-sep">·</span>
+      <span>Taux préférentiel estimé : <strong id="tv-preferentiel-inline">...</strong></span>
+      <span class="bdc-bar-sep">·</span>
+      <span class="bdc-bar-meta">Mis à jour le <span id="tv-date-inline">—</span> · <a href="https://www.bankofcanada.ca" target="_blank" rel="noopener noreferrer">Source : bankofcanada.ca</a></span>
     </div>
     </Fragment>
     ) : (
     <div class="fade-up">
-      <div class="section-tag">Taux en vigueur</div>
       <h2 class="section-title">Consulter les meilleurs taux hypothécaires<br />du moment <em>via notre réseau</em></h2>
       <div class="taux-unavailable">
         <p>Les taux ne sont pas disponibles pour le moment.</p>
@@ -160,12 +155,6 @@ const displayRows = hypothecaRates?.rows?.length
 
         const f = (n: number) => n.toFixed(2).replace('.', ',') + ' %';
 
-        const tvDirecteur = document.getElementById('tv-directeur');
-        if (tvDirecteur) tvDirecteur.textContent = f(directeur);
-
-        const tvDate = document.getElementById('tv-date');
-        if (tvDate) tvDate.textContent = dateStr;
-
         const tvDirecteurInline = document.getElementById('tv-directeur-inline');
         if (tvDirecteurInline) tvDirecteurInline.textContent = f(directeur);
 
@@ -176,11 +165,8 @@ const displayRows = hypothecaRates?.rows?.length
         if (tvDateInline) tvDateInline.textContent = dateStr;
 
       } catch (_error) {
-        const tvDirecteur = document.getElementById('tv-directeur');
-        if (tvDirecteur) tvDirecteur.textContent = "—";
-
-        const tvDate = document.getElementById('tv-date');
-        if (tvDate) tvDate.textContent = 'Données temporairement indisponibles';
+        const tvDirecteurInline = document.getElementById('tv-directeur-inline');
+        if (tvDirecteurInline) tvDirecteurInline.textContent = "—";
 
         const freshnessEl = document.getElementById('tv-freshness');
         if (freshnessEl) freshnessEl.textContent = 'Taux en attente de synchronisation.';

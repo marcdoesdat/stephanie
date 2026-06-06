@@ -60,7 +60,6 @@ const tabs = [
   <main id="main-content">
     <section id="outils-intro">
       <div class="section-inner outils-intro-inner">
-        <div class="section-tag">Outils gratuits</div>
         <h1 class="section-title">Calculateurs hypothécaires <em>gratuits</em> au Québec</h1>
         <p class="section-sub">
           Six calculateurs hypothécaires gratuits pour le Québec : estimez votre capacité
@@ -221,23 +220,19 @@ const tabs = [
             </div>
 
             <div class="outils-contact-fields">
-              <label class="sr-only" for="outils-prenom">Votre Nom et Prénom</label>
-              <input type="text" id="outils-prenom" name="prenom" placeholder="Votre Nom et Prénom" required autocomplete="given-name" class="outils-contact-input" />
+              <label class="outils-contact-label" for="outils-prenom">Nom et prénom</label>
+              <input type="text" id="outils-prenom" name="prenom" placeholder="Marie Tremblay" required autocomplete="given-name" class="outils-contact-input" />
 
-              <label class="sr-only" for="outils-email">Votre courriel</label>
-              <input type="email" id="outils-email" name="email" placeholder="votre@courriel.com" required autocomplete="email" class="outils-contact-input" />
+              <label class="outils-contact-label" for="outils-email">Courriel</label>
+              <input type="email" id="outils-email" name="email" placeholder="marie@exemple.com" autocomplete="email" class="outils-contact-input" />
 
-              <label class="sr-only" for="outils-tel">Votre numéro de téléphone</label>
-              <input type="tel" id="outils-tel" name="telephone" placeholder="514 000-0000" required autocomplete="tel" class="outils-contact-input" />
+              <label class="outils-contact-label" for="outils-tel">Téléphone</label>
+              <input type="tel" id="outils-tel" name="telephone" placeholder="514 000-0000" inputmode="tel" autocomplete="tel" class="outils-contact-input" />
 
-              <label class="sr-only" for="outils-message">Un message (optionnel)</label>
+              <label class="outils-contact-label" for="outils-message">Message <span class="cform-optional">(facultatif)</span></label>
               <textarea id="outils-message" name="message" placeholder="Dites-nous en quelques mots votre projet ou votre question…" rows="2" class="outils-contact-input"></textarea>
 
               <div class="outils-contact-consents">
-                <label class="outils-consent-label">
-                  <input type="checkbox" name="consentement-recontact" class="outils-consent-check" required />
-                  <span>J’accepte que Stéphanie me recontacte au sujet de cette simulation. Aucun partage avec un tiers sans mon consentement — voir la <a href="/confidentialite">politique de confidentialité</a>.</span>
-                </label>
                 <label class="outils-consent-label">
                   <input type="checkbox" name="consentement-lcap" class="outils-consent-check" />
                   <span>Je consens à recevoir des communications électroniques de Stéphanie Weyman (conseils hypothécaires, guides et ressources) — conformément à la LCAP.</span>
@@ -245,9 +240,10 @@ const tabs = [
               </div>
 
               <button type="submit" class="btn-cta btn-cta--block">
-                <span>Recevoir mon analyse personnalisée</span>
+                <span>Envoyer ma demande</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
+              <p class="outils-contact-note">En envoyant ce formulaire, vous acceptez d'être recontacté·e au sujet de votre demande. Vos données ne sont jamais partagées — voir la <a href="/confidentialite">politique de confidentialité</a>.</p>
             </div>
           </form>
         </div>
@@ -494,6 +490,27 @@ const tabs = [
       display: flex;
       flex-direction: column;
       gap: .75rem;
+    }
+    .outils-contact-label {
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: -.35rem;
+    }
+    .outils-contact-note {
+      font-size: .72rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: .8rem;
+      line-height: 1.5;
+    }
+    .outils-contact-note a {
+      color: var(--clay);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
     .outils-contact-input {
       width: 100%;

@@ -5,6 +5,7 @@ import MainLayout from '../../layouts/MainLayout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import MessengerBtn from '../../components/MessengerBtn.astro';
+import Contact from '../../components/Contact.astro';
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
@@ -51,7 +52,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <div class="sp-hero-grid">
           <div class="sp-hero-text">
             <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
-            <div class="sp-eyebrow">Renouvellement · Québec 2026</div>
 
             <h1 class="sp-h1">
               Ne signez <em>jamais</em> le premier renouvellement<br />que votre banque vous envoie.
@@ -111,7 +111,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ EMPATHIE ============ -->
     <section class="sp-empathy">
       <div class="sp-inner">
-        <div class="sp-empathy-tag">On va se le dire</div>
         <h2 class="sp-section-title">Le « choc de paiement » de 2026, <em>ça vous parle ?</em></h2>
         <p class="sp-empathy-text">
           Vous avez signé en 2021-2022 à un taux historique. Vous savez que le renouvellement va faire grincer des dents —
@@ -129,7 +128,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ ÉDUCATION EXPRESS ============ -->
     <section class="sp-education">
       <div class="sp-inner">
-        <div class="sp-section-tag">Les 3 étapes d'un renouvellement intelligent</div>
         <h2 class="sp-section-title">Avant de signer, on regarde ensemble <em>3 choses précises</em>.</h2>
 
         <div class="sp-steps">
@@ -148,10 +146,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <div class="sp-step-num" aria-hidden="true">2</div>
             <h3 class="sp-step-title">Calculer le vrai coût d'un changement de prêteur</h3>
             <p class="sp-step-text">
-              Au renouvellement (à échéance), il n'y a <strong>aucune pénalité</strong> pour changer de prêteur —
-              c'est le seul moment où vous êtes 100 % libre. Restent les frais de transfert (parfois payés par le nouveau prêteur)
-              et l'évaluation. Sur un solde de 300 000 $, 0,40 % d'écart de taux sur 5 ans, c'est environ
-              <strong>4 000 $ de plus dans vos poches</strong> — bien au-delà de tout frais administratif.
+              Au renouvellement, il n'y a <strong>aucune pénalité</strong> pour changer de prêteur —
+              c'est le seul moment où vous êtes 100 % libre. Et dans la majorité des cas, les frais de
+              transfert et d'évaluation sont absorbés par le nouveau prêteur, pas par vous. Ce qui compte
+              vraiment, c'est l'écart de taux : sur un solde de 300 000 $, 0,40 % de différence sur 5 ans,
+              c'est environ <strong>4 000 $ de plus dans vos poches</strong> — bien au-delà de tout frais
+              résiduel. Attendre la lettre de votre banque, c'est négocier sans aucun levier.
             </p>
           </article>
 
@@ -173,7 +173,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <div class="sp-inner">
         <div class="sp-approach-grid">
           <div class="sp-approach-text">
-            <div class="sp-section-tag">L'approche {prenom}</div>
             <h2 class="sp-section-title sp-section-title--light">20+ prêteurs en concurrence pour <em>votre</em> renouvellement.</h2>
             <p class="sp-approach-para">
               Je récupère votre lettre de renouvellement, je l'analyse, et je vous reviens avec
@@ -226,7 +225,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="sp-magnet">
       <div class="sp-inner">
         <div class="sp-magnet-card">
-          <div class="sp-magnet-eyebrow">Comparaison gratuite — 60 secondes</div>
           <h2 class="sp-magnet-title">
             Combien votre banque vous coûte-t-elle <em>vraiment</em> ?<br />Découvrez-le avant de signer.
           </h2>
@@ -237,16 +235,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <strong>Aucun engagement, aucun pointage de crédit.</strong>
           </p>
 
-          <a href="/?parcours=renouvellement#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_renouvellement_magnet_cta">
-            <span>Voir combien je peux économiser</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </a>
-
           <ul class="sp-magnet-proof">
-            <li>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              60 secondes
-            </li>
             <li>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
               Aucun pointage de crédit
@@ -262,6 +251,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
   </main>
 
+  <Contact />
   <Footer />
 </MainLayout>
 

@@ -61,7 +61,6 @@ const services: ServiceItem[] = [
   <div class="section-inner">
 
     <div class="fade-up">
-      <div class="section-tag">Services</div>
       <h2 class="section-title">Ce que je peux<br />faire pour <em>vous</em></h2>
       <p class="section-sub">
         Du premier achat au renouvellement, du refinancement au dossier complexe — je vous accompagne à chaque étape, où que vous soyez au Québec.
@@ -102,6 +101,12 @@ const services: ServiceItem[] = [
     text-decoration: none;
     color: inherit;
     cursor: pointer;
+    box-shadow: var(--shadow-xs);
+    transition: transform 0.25s, box-shadow 0.25s;
+  }
+  .services-grid .service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 36px rgba(0,0,0,.10);
   }
   .services-grid .service-card,
   .services-grid .service-card:hover,

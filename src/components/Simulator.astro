@@ -9,7 +9,6 @@ const { defaultRate = 3.79 } = Astro.props;
   <div class="section-inner">
 
     <div class="fade-up">
-      <div class="section-tag">Simulateur</div>
       <h2 class="section-title">Combien puis-je <br /><em>emprunter ?</em></h2>
       <p class="section-sub">
         Entrez vos informations pour obtenir une estimation de votre capacité d'emprunt au Québec en quelques secondes.
@@ -21,17 +20,17 @@ const { defaultRate = 3.79 } = Astro.props;
       <div class="sim-form fade-up">
         <div class="sim-group">
           <label for="sim-revenu">Revenu annuel brut de votre ménage ($)</label>
-          <input type="number" id="sim-revenu" value="80000" inputmode="decimal" min="0" />
+          <input type="text" id="sim-revenu" value="80 000" inputmode="numeric" autocomplete="off" />
         </div>
 
         <div class="sim-group">
           <label for="sim-dettes">Dettes mensuelles ($) <span style="font-weight:400;text-transform:none;letter-spacing:0">(auto, cartes, prêts...)</span></label>
-          <input type="number" id="sim-dettes" value="500" inputmode="decimal" min="0" />
+          <input type="text" id="sim-dettes" value="500" inputmode="numeric" autocomplete="off" />
         </div>
 
         <div class="sim-group">
           <label for="sim-mise">Mise de fonds disponible ($)</label>
-          <input type="number" id="sim-mise" value="50000" inputmode="decimal" min="0" />
+          <input type="text" id="sim-mise" value="50 000" inputmode="numeric" autocomplete="off" />
         </div>
 
         <div class="sim-group">
@@ -48,25 +47,21 @@ const { defaultRate = 3.79 } = Astro.props;
           </select>
         </div>
 
-        <!-- Options avancées -->
+        <!-- Frais de propriété (inclus dans les ratios ABD/ATD) -->
         <div class="sim-adv-options">
-          <button type="button" class="sim-adv-btn" id="sim-adv-btn" aria-expanded="false" aria-controls="sim-adv-panel">
-            Options avancées <span class="adv-arrow" aria-hidden="true">▾</span>
-          </button>
-          <div class="sim-adv-panel" id="sim-adv-panel" hidden>
-            <div class="sim-group">
-              <label for="sim-taxes">Taxes municipales et scolaires ($/mois)</label>
-              <input type="number" id="sim-taxes" value="250" inputmode="decimal" min="0" />
-            </div>
-            <div class="sim-group">
-              <label for="sim-chauffage">Frais de chauffage ($/mois)</label>
-              <input type="number" id="sim-chauffage" value="100" inputmode="decimal" min="0" />
-            </div>
-            <div class="sim-group">
-              <label for="sim-condo">Frais de copropriété / condo ($/mois)</label>
-              <input type="number" id="sim-condo" value="0" inputmode="decimal" min="0" />
-              <small style="color:var(--muted);font-size:.7rem;margin-top:.25rem;display:block;">50 % de ce montant est inclus dans le calcul des ratios ABD/ATD</small>
-            </div>
+          <div class="sim-adv-heading">Frais de propriété</div>
+          <div class="sim-group">
+            <label for="sim-taxes">Taxes municipales et scolaires ($/mois)</label>
+            <input type="number" id="sim-taxes" value="250" inputmode="decimal" min="0" />
+          </div>
+          <div class="sim-group">
+            <label for="sim-chauffage">Frais de chauffage ($/mois)</label>
+            <input type="number" id="sim-chauffage" value="100" inputmode="decimal" min="0" />
+          </div>
+          <div class="sim-group">
+            <label for="sim-condo">Frais de copropriété / condo ($/mois)</label>
+            <input type="number" id="sim-condo" value="0" inputmode="decimal" min="0" />
+            <small style="color:var(--muted);font-size:.7rem;margin-top:.25rem;display:block;">50 % de ce montant est inclus dans le calcul des ratios ABD/ATD</small>
           </div>
         </div>
 
@@ -109,7 +104,10 @@ const { defaultRate = 3.79 } = Astro.props;
             <div class="sim-absolute-max" id="sim-absolute-card" style="display:none;">
               <div class="sam-header">
                 <span class="sam-tag">SCÉNARIO ALTERNATIF À L'ACHAT</span>
-                <span class="sam-info" title="Capacité calculée uniquement sur vos revenus et dettes, sans tenir compte de votre mise de fonds actuelle.">ℹ</span>
+                <span class="sam-info" id="sam-info-btn" role="button" tabindex="0" aria-label="Plus d'information sur le scénario alternatif">
+                  ℹ
+                  <span class="sam-tooltip" id="sam-tooltip">Capacité calculée uniquement sur vos revenus et dettes, sans tenir compte de votre mise de fonds actuelle.</span>
+                </span>
               </div>
               <div class="sam-label">Achat avec mise de fonds minimale</div>
               <div class="sam-val" id="sim-abs-prix">—</div>
@@ -150,15 +148,39 @@ const { defaultRate = 3.79 } = Astro.props;
       return formatMoney(Math.round(n));
     }
 
-    // --- Accordion ---
-    const advBtn   = document.getElementById('sim-adv-btn') as HTMLButtonElement;
-    const advPanel = document.getElementById('sim-adv-panel') as HTMLDivElement;
-    advBtn.addEventListener('click', () => {
-      const isOpen = !advPanel.hidden;
-      advPanel.hidden = isOpen;
-      advBtn.setAttribute('aria-expanded', String(!isOpen));
-      advBtn.querySelector('.adv-arrow')!.textContent = isOpen ? '▾' : '▴';
+    // --- Formatage français pour les champs montant ---
+    function parseMoneyVal(s: string): number {
+      return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
+    }
+    function fmtMoneyEl(el: HTMLInputElement): void {
+      const val = parseMoneyVal(el.value);
+      if (val > 0) el.value = Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+    }
+
+    const revenuEl = document.getElementById('sim-revenu') as HTMLInputElement;
+    const dettesEl = document.getElementById('sim-dettes') as HTMLInputElement;
+    const miseEl   = document.getElementById('sim-mise') as HTMLInputElement;
+
+    [revenuEl, dettesEl, miseEl].forEach(el => {
+      el.addEventListener('blur', () => fmtMoneyEl(el));
+      el.addEventListener('focus', () => {
+        const val = parseMoneyVal(el.value);
+        if (val > 0) el.value = Math.round(val).toString();
+        el.select();
+      });
     });
+
+    // --- Info tooltip (mobile + desktop) ---
+    const infoBtn = document.getElementById('sam-info-btn');
+    const tooltip = document.getElementById('sam-tooltip');
+    if (infoBtn && tooltip) {
+      infoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        tooltip.classList.toggle('open');
+      });
+      // Fermer au clic ailleurs
+      document.addEventListener('click', () => tooltip.classList.remove('open'));
+    }
 
     function showWarning(msg: string | null) {
       const el = document.getElementById('sim-warning')!;
@@ -190,10 +212,18 @@ const { defaultRate = 3.79 } = Astro.props;
     }
 
     function simuler() {
-      const revenu = parseFloat((document.getElementById('sim-revenu') as HTMLInputElement).value) || 0;
-      const dettes = parseFloat((document.getElementById('sim-dettes') as HTMLInputElement).value) || 0;
-      let mise     = parseFloat((document.getElementById('sim-mise') as HTMLInputElement).value) || 0;
+      const revenu = parseMoneyVal((document.getElementById('sim-revenu') as HTMLInputElement).value);
+      const dettes = parseMoneyVal((document.getElementById('sim-dettes') as HTMLInputElement).value);
+      let mise     = parseMoneyVal((document.getElementById('sim-mise') as HTMLInputElement).value);
       const taux   = parseFloat((document.getElementById('sim-taux') as HTMLInputElement).value) || 3.79;
+
+      // Easter egg : taux à 0 %
+      const tauxRaw = (document.getElementById('sim-taux') as HTMLInputElement).value.trim();
+      if (tauxRaw === '0' && revenu > 0) {
+        resetDisplay();
+        showWarning('On aimerait tous ça… ✨');
+        return;
+      }
       const amort  = parseInt((document.getElementById('sim-amort') as HTMLSelectElement).value) || 25;
 
       // Advanced options
@@ -273,9 +303,24 @@ const { defaultRate = 3.79 } = Astro.props;
 
       const maxEl = document.getElementById('sim-max')!;
       if (pretBase <= 0) {
-        maxEl.textContent = 'Dettes trop élevées';
+        // Revenu insuffisant pour couvrir les charges (dettes + frais de propriété)
+        // par rapport aux ratios d'endettement maximaux.
+        maxEl.textContent = 'Revenu insuffisant';
         maxEl.style.fontSize = '1.8rem';
-        showWarning(null);
+        document.getElementById('sim-sub')!.textContent = '';
+        const aDesDettes = dettes > 0;
+        const aDesFrais = fraisProp > 0;
+        let detail: string;
+        if (aDesDettes && aDesFrais) {
+          detail = 'Vos charges mensuelles (dettes et frais de propriété) dépassent ce que votre revenu permet selon les ratios d\u2019endettement. Augmentez le revenu ou réduisez les dettes et frais.';
+        } else if (aDesDettes) {
+          detail = 'Vos dettes mensuelles dépassent ce que votre revenu permet selon les ratios d\u2019endettement. Augmentez le revenu ou réduisez les dettes.';
+        } else if (aDesFrais) {
+          detail = 'Les frais de propriété saisis dépassent ce que votre revenu permet selon les ratios d\u2019endettement. Réduisez les frais de propriété ou augmentez le revenu.';
+        } else {
+          detail = 'Le revenu saisi est trop faible pour permettre un emprunt selon les ratios d\u2019endettement.';
+        }
+        showWarning(detail);
         document.getElementById('sim-absolute-card')!.style.display = 'none';
         return;
       }

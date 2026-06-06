@@ -1,13 +1,13 @@
 ---
+import { VILLES } from '../data/droitsMutation';
 ---
 
 <section id="droits-mutation">
   <div class="section-inner">
     <div class="fade-up">
-      <div class="section-tag">Outil gratuit</div>
       <h2 class="section-title">Calculez vos <em>droits de mutation</em></h2>
       <p class="section-sub">
-        Estimez la taxe de bienvenue applicable à votre achat au Québec selon le prix de la propriété.
+        Estimez la taxe de bienvenue applicable à votre achat au Québec selon la municipalité et le prix de la propriété.
         Les taux s'appliquent par tranche, conformément à la loi provinciale.
       </p>
     </div>
@@ -15,27 +15,49 @@
     <div class="dm-wrapper">
       <form class="dm-form fade-up" id="dm-form" novalidate>
         <div class="form-group">
+          <label for="dm-ville">Municipalité</label>
+          <div class="dm-select-wrap">
+            <select id="dm-ville" class="rsim-input dm-select">
+              {VILLES.map(v => (
+                <option value={v.value}>{v.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
           <label for="dm-prix">Prix de la propriété ($)</label>
           <input
             type="text"
             id="dm-prix"
-            class="rsim-input"
+            class="rsim-input dm-input"
             placeholder="450 000"
             value="450 000"
             inputmode="numeric"
             autocomplete="off"
           />
         </div>
-        <p class="dm-note">
-          Les taux en vigueur au Québec sont appliqués automatiquement.
-        </p>
+
+        <div class="form-group">
+          <label for="dm-facteur">Facteur comparatif (%)</label>
+          <input
+            type="text"
+            id="dm-facteur"
+            class="rsim-input dm-input"
+            placeholder="100"
+            value="100"
+            inputmode="decimal"
+            autocomplete="off"
+          />
+          <small class="dm-field-note">Le rôle d'évaluation multiplié par ce facteur donne la base d'imposition. Laissez 100 si vous utilisez le prix d'achat.</small>
+        </div>
       </form>
 
       <div class="dm-results fade-up" style="transition-delay:.15s">
         <div class="result-card main">
           <div class="result-label">Droits de mutation estimés</div>
           <div class="result-value" id="dm-total">0 $</div>
-          <div class="result-detail">Taxe de bienvenue — estimation indicative</div>
+          <div class="result-detail" id="dm-ville-label">Taxe de bienvenue — estimation indicative</div>
         </div>
 
         <div class="dm-breakdown" id="dm-breakdown">
@@ -53,8 +75,7 @@
         </div>
 
         <div class="calc-disclaimer">
-          * Estimation indicative. Certaines municipalités appliquent une surtaxe sur les propriétés
-          de luxe. Consultez votre notaire pour le montant exact.
+          * Estimation indicative basée sur les barèmes 2026. Consultez votre notaire pour le montant exact.
         </div>
       </div>
     </div>
@@ -63,15 +84,9 @@
 
 <script>
   import { droitsMutation, formatMoney } from '../utils/mortgageCalc';
+  import { VILLES, TRANCHES_PROVINCIALES, type TrancheMunicipale, type VilleDroitsMutation } from '../data/droitsMutation';
 
-  const TRANCHES = [
-    { label: '0 $ – 62 900 $', seuil: 62_900, taux: 0.005 },
-    { label: '62 900 $ – 315 000 $', seuil: 315_000, taux: 0.01 },
-    { label: '315 000 $ – 500 000 $', seuil: 500_000, taux: 0.015 },
-    { label: '500 000 $ et plus', seuil: Infinity, taux: 0.02 },
-  ];
-
-  // --- Formatage français pour le champ prix ---
+  // --- Formatage français ---
   function parseVal(s: string): number {
     return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
   }
@@ -83,45 +98,94 @@
     const val = parseVal(el.value);
     if (val > 0) el.value = fmtThousands(val);
   }
+  function formatPct(taux: number): string {
+    return (taux * 100).toFixed(1).replace('.', ',') + '\u00A0%';
+  }
+  function formatRange(min: number, max: number): string {
+    if (!isFinite(max)) return formatMoney(min + 1) + ' et plus';
+    return formatMoney(min + 1) + '\u00A0\u2013\u00A0' + formatMoney(max);
+  }
+  function formatRangeZero(max: number): string {
+    return '0\u00A0$\u00A0\u2013\u00A0' + formatMoney(max);
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const prixEl = document.getElementById('dm-prix') as HTMLInputElement;
-    const totalEl = document.getElementById('dm-total')!;
-    const tbodyEl = document.getElementById('dm-table-body')!;
+    const villeEl  = document.getElementById('dm-ville') as HTMLSelectElement;
+    const prixEl   = document.getElementById('dm-prix') as HTMLInputElement;
+    const factEl   = document.getElementById('dm-facteur') as HTMLInputElement;
+    const totalEl  = document.getElementById('dm-total')!;
+    const labelEl  = document.getElementById('dm-ville-label')!;
+    const tbodyEl  = document.getElementById('dm-table-body')!;
 
-    function formatPct(taux: number): string {
-      return (taux * 100).toFixed(1).replace('.', ',') + ' %';
+    function getActiveVille(): VilleDroitsMutation | undefined {
+      return VILLES.find(v => v.value === villeEl.value);
     }
 
     function compute() {
-      const prix = parseVal(prixEl.value);
-      if (prix <= 0) {
+      const prixBrut = parseVal(prixEl.value);
+      const facteur  = parseVal(factEl.value) || 100;
+      const baseImposition = prixBrut * (facteur / 100);
+
+      const ville = getActiveVille();
+      if (ville) {
+        labelEl.textContent = ville.label + ' — estimation indicative';
+      } else {
+        labelEl.textContent = 'Taxe de bienvenue — estimation indicative';
+      }
+
+      if (baseImposition <= 0) {
         totalEl.textContent = '0 $';
         tbodyEl.innerHTML = '';
         return;
       }
 
-      totalEl.textContent = formatMoney(droitsMutation(prix));
+      // Build full tranche list (provincial 1-2 + municipal)
+      const municipal = ville?.tranches ?? VILLES[0]!.tranches;
+      const tranches: TrancheMunicipale[] = [...TRANCHES_PROVINCIALES, ...municipal];
 
+      // Compute total
+      totalEl.textContent = formatMoney(droitsMutation(baseImposition, municipal));
+
+      // Build detail rows
       let prev = 0;
+      let first = true;
+      let cumul = 0;
       let rows = '';
-      for (const t of TRANCHES) {
-        const base = Math.min(prix, t.seuil);
+      let activeDone = false;
+      for (const t of tranches) {
+        const base = Math.min(baseImposition, t.max);
         if (base <= prev) break;
         const montant = (base - prev) * t.taux;
-        rows += `<tr>
-          <td>${t.label}</td>
-          <td>${formatPct(t.taux)}</td>
-          <td>${formatMoney(montant)}</td>
+        cumul += montant;
+        const range = first
+          ? formatRangeZero(t.max)
+          : formatRange(prev, t.max);
+        // Highlight the tranche where the price lands
+        const isActive = !activeDone && baseImposition <= t.max;
+        if (isActive) activeDone = true;
+        rows += `<tr${isActive ? ' class="dm-active"' : ''}>
+          <td data-label="Tranche"><span class="dm-range">${range}</span></td>
+          <td data-label="Taux">${formatPct(t.taux)}</td>
+          <td data-label="Montant" class="dm-amount">${formatMoney(montant)}</td>
         </tr>`;
-        prev = t.seuil;
-        if (prix <= t.seuil) break;
+        prev = t.max;
+        first = false;
+        if (baseImposition <= t.max) break;
       }
+      // Total row
+      rows += `<tr class="dm-total-row">
+        <td data-label="Tranche"><strong>Total</strong></td>
+        <td data-label="Taux"></td>
+        <td data-label="Montant" class="dm-amount"><strong>${formatMoney(cumul)}</strong></td>
+      </tr>`;
       tbodyEl.innerHTML = rows;
     }
 
+    villeEl.addEventListener('change', compute);
     prixEl.addEventListener('blur', () => fmtInputEl(prixEl));
     prixEl.addEventListener('input', compute);
+    factEl.addEventListener('blur', () => fmtInputEl(factEl));
+    factEl.addEventListener('input', compute);
 
     compute();
   });
@@ -142,11 +206,60 @@
     gap: 1.2rem;
   }
 
-  .dm-note {
-    font-size: 0.78rem;
+  /* ---- Text inputs matching select style ---- */
+  .dm-input {
+    background: var(--white) !important;
+    border: 1.5px solid var(--border) !important;
+    border-radius: 12px;
+    padding: .85rem 1.1rem;
+    font-size: .95rem;
+    transition: border-color .2s;
+  }
+
+  .dm-input:hover {
+    border-color: var(--clay) !important;
+  }
+
+  .dm-input:focus {
+    outline: none;
+    border-color: var(--clay) !important;
+    background: var(--white) !important;
+  }
+
+  /* ---- Select wrapper with custom arrow ---- */
+  .dm-select-wrap {
+    position: relative;
+  }
+
+  .dm-select-wrap::after {
+    content: "▾";
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: var(--muted);
+    pointer-events: none;
+    line-height: 1;
+  }
+
+  .dm-select {
+    padding-right: 2.5rem !important;
+    cursor: pointer;
+    background: var(--white) !important;
+    border-color: var(--border) !important;
+  }
+
+  .dm-select:hover {
+    border-color: var(--clay) !important;
+  }
+
+  .dm-field-note {
+    font-size: 0.72rem;
     color: var(--muted);
     line-height: 1.5;
-    margin: 0;
+    margin-top: 0.3rem;
+    display: block;
   }
 
   .dm-results {
@@ -163,48 +276,205 @@
   }
 
   .dm-breakdown-title {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 700;
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     margin-bottom: 0.85rem;
   }
 
+  /* ---- Table ---- */
   .dm-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
   }
 
+  /* Override global thead tr {background:ink; color:white} */
+  .dm-table thead tr {
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .dm-table thead {
+    border-bottom: 1px solid var(--border);
+  }
+
   .dm-table th {
     text-align: left;
     font-weight: 600;
     color: var(--muted);
-    font-size: 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.4rem 0.6rem 0.55rem;
+    white-space: nowrap;
   }
 
-  .dm-table td {
-    padding: 0.45rem 0;
-    color: var(--ink);
-    border-bottom: 1px solid var(--border);
+  .dm-table th:first-child {
+    padding-left: 0;
   }
 
-  .dm-table tr:last-child td {
-    border-bottom: none;
-  }
-
-  .dm-table td:last-child,
-  .dm-table th:last-child {
+  .dm-table th:not(:first-child) {
     text-align: right;
   }
 
+  /* Fixed widths on Taux and Montant columns so Tranche doesn't overflow */
+  .dm-table th:nth-child(2),
+  .dm-table td:nth-child(2) {
+    width: 4.5rem;
+  }
+
+  .dm-table th:last-child,
+  .dm-table td:last-child {
+    width: 6rem;
+  }
+
+  /* ---- Body rows ---- */
+  .dm-table tbody tr {
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+
+  .dm-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .dm-table td {
+    padding: 0.6rem 0.6rem;
+    color: var(--ink);
+    vertical-align: baseline;
+  }
+
+  .dm-table td:first-child {
+    padding-left: 0;
+  }
+
+  .dm-table th:not(:first-child) {
+    text-align: right;
+  }
+
+  /* tbody rows are injected via JS (no astro-cid), must use :global */
+  :global(#dm-table td:not(:first-child)) {
+    text-align: right !important;
+  }
+
+  /* Zebra */
+  .dm-table tbody tr:nth-child(even):not(.dm-active):not(.dm-total-row) {
+    background: rgba(0,0,0,.018);
+  }
+
+  /* ---- Active tranche ---- */
+  .dm-table tbody tr.dm-active {
+    background: rgba(196,122,82,.07);
+  }
+
+  .dm-table tbody tr.dm-active td:first-child {
+    position: relative;
+    padding-left: 10px;
+  }
+
+  .dm-table tbody tr.dm-active td:first-child::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 65%;
+    border-radius: 2px;
+    background: var(--clay);
+  }
+
+  .dm-range {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dm-amount {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* ---- Total row ---- */
+  .dm-total-row td {
+    border-top: 2px solid var(--border);
+    padding-top: 0.8rem;
+    font-size: 0.92rem;
+    background: rgba(196,122,82,.06);
+  }
+
+  .dm-total-row td:first-child {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .dm-total-row td.dm-amount {
+    color: var(--clay);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  /* ---- Mobile : tableau empilé ---- */
   @media (max-width: 768px) {
     .dm-wrapper {
       grid-template-columns: 1fr;
       gap: 1.5rem;
+    }
+
+    .dm-table thead {
+      display: none;
+    }
+
+    .dm-table,
+    .dm-table tbody,
+    .dm-table tr,
+    .dm-table td {
+      display: block;
+    }
+
+    .dm-table tr {
+      padding: 0.7rem 0;
+    }
+
+    .dm-table td {
+      padding: 0.25rem 0;
+      text-align: left !important;
+      border: none;
+    }
+
+    .dm-table td::before {
+      content: attr(data-label);
+      display: inline-block;
+      width: 5.5rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .dm-table td.dm-amount {
+      font-size: 1rem;
+    }
+
+    /* Active indicator on mobile — barre en haut de la ligne */
+    .dm-table tbody tr.dm-active {
+      border-left: 3px solid var(--clay);
+      padding-left: 10px;
+    }
+
+    .dm-table tbody tr.dm-active td:first-child::before {
+      display: none;
+    }
+
+    /* Total row mobile */
+    .dm-total-row td {
+      background: rgba(196,122,82,.08);
+    }
+
+    .dm-total-row td.dm-amount {
+      font-size: 1.15rem;
     }
   }
 </style>

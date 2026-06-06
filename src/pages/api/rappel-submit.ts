@@ -202,8 +202,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (
     nom.length < 2 ||
-    !EMAIL_RE.test(courriel) ||
-    !TEL_RE.test(telephone) ||
+    (!EMAIL_RE.test(courriel) && !TEL_RE.test(telephone)) ||
     !TYPES_VALIDES.has(type) ||
     !consentement
   ) {

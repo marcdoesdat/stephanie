@@ -116,15 +116,6 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
         let lastY = window.scrollY;
         let ticking = false;
         const SCROLL_THRESHOLD = 8; // px minimum pour déclencher
-        const IDLE_DELAY = 8000; // ms sans scroll → réafficher le bouton
-        let idleTimer = null;
-
-        function resetIdleTimer() {
-          clearTimeout(idleTimer);
-          idleTimer = setTimeout(() => {
-            sticky.classList.remove('sticky-hidden');
-          }, IDLE_DELAY);
-        }
 
         function onScroll() {
           const y = window.scrollY;
@@ -149,11 +140,7 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
             });
             ticking = true;
           }
-          resetIdleTimer();
         }, { passive: true });
-
-        // Lance le timer dès le chargement : bouton caché par défaut, apparaît après 3 s sans scroll
-        resetIdleTimer();
 
         // --- État de conversion /outils/ : discret → plein gaz ---
         // Si l'utilisateur a déjà déverrouillé une simulation (localStorage) ou
@@ -259,8 +246,9 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
   /* Lien d'évitement vers le contenu principal — visible au focus clavier */
   .skip-link {
     position: absolute;
-    top: -40px;
+    top: 0.5rem;
     left: 0.5rem;
+    transform: translateY(calc(-100% - 1rem));
     z-index: 10000;
     padding: 0.6rem 1rem;
     background: var(--ink, #1a1a1a);
@@ -268,11 +256,11 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
     font-weight: 600;
     border-radius: 6px;
     text-decoration: none;
-    transition: top .15s ease-in;
+    transition: transform .15s ease-in;
   }
   .skip-link:focus,
   .skip-link:focus-visible {
-    top: 0.5rem;
+    transform: translateY(0);
     outline: 2px solid var(--clay, #c47a52);
     outline-offset: 2px;
   }

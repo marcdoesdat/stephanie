@@ -5,6 +5,7 @@ import MainLayout from '../../layouts/MainLayout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import MessengerBtn from '../../components/MessengerBtn.astro';
+import Contact from '../../components/Contact.astro';
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
@@ -53,7 +54,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <div class="sp-hero-grid">
           <div class="sp-hero-text">
             <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
-            <div class="sp-eyebrow">Nouveaux arrivants · Québec 2026</div>
 
             <h1 class="sp-h1">
               Bienvenue au Québec.<br />Et bientôt, <em>chez vous.</em>
@@ -114,7 +114,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ EMPATHIE ============ -->
     <section class="sp-empathy">
       <div class="sp-inner">
-        <div class="sp-empathy-tag">On va se le dire</div>
         <h2 class="sp-section-title">Pas d'historique de crédit ici ?<br /><em>Ça ne veut pas dire pas d'options.</em></h2>
         <p class="sp-empathy-text">
           Vous avez peut-être un excellent crédit dans votre pays d'origine, un emploi stable au Canada,
@@ -134,7 +133,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ ÉDUCATION EXPRESS ============ -->
     <section class="sp-education" id="approche">
       <div class="sp-inner">
-        <div class="sp-section-tag">Les 3 leviers pour acheter sans 5 ans d'historique</div>
         <h2 class="sp-section-title">Ce qui rend votre dossier <em>finançable dès maintenant</em>.</h2>
 
         <div class="sp-steps">
@@ -172,6 +170,10 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             </p>
           </article>
         </div>
+
+        <p class="sp-disclaimer">
+          Les conditions varient selon le prêteur et votre situation — consultez-moi pour trouver le programme adapté à votre profil.
+        </p>
       </div>
     </section>
 
@@ -180,7 +182,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <div class="sp-inner">
         <div class="sp-approach-grid">
           <div class="sp-approach-text">
-            <div class="sp-section-tag">L'approche {prenom}</div>
             <h2 class="sp-section-title sp-section-title--light">Je connais les programmes <em>auxquels les banques ne pensent pas à vous parler</em>.</h2>
             <p class="sp-approach-para">
               Quand vous vous présentez seul·e à une succursale, on vous oriente souvent vers le produit standard —
@@ -233,9 +234,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="sp-magnet">
       <div class="sp-inner">
         <div class="sp-magnet-card">
-          <div class="sp-magnet-eyebrow">Évaluation Newcomer — 60 secondes</div>
           <h2 class="sp-magnet-title">
-            Découvrez si vous pouvez acheter <em>cette année</em>.<br />Vérification d'admissibilité en 60 secondes.
+            Découvrez si vous pouvez acheter <em>cette année</em>.
           </h2>
           <p class="sp-magnet-sub">
             Quelques questions simples — statut au Canada (résident permanent, permis de travail),
@@ -245,16 +245,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <strong>Aucun engagement, aucun pointage de crédit.</strong>
           </p>
 
-          <a href="/?parcours=nouveaux-arrivants#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_na_magnet_cta">
-            <span>Vérifier mon admissibilité gratuitement</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </a>
-
           <ul class="sp-magnet-proof">
-            <li>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              60 secondes
-            </li>
             <li>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
               Aucun pointage de crédit
@@ -270,6 +261,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
   </main>
 
+  <Contact />
   <Footer />
 </MainLayout>
 

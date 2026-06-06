@@ -1,4 +1,8 @@
 ---
+import { loadSiteConfig } from '../config';
+const siteConfig = loadSiteConfig();
+const telHref = `tel:+1${siteConfig.telephone.replace(/\D/g, '')}`;
+
 interface Props {
   /** Meilleur taux fixe 5 ans live (Hypotheca) — sert de valeur par défaut au nouveau taux. */
   defaultRate?: number;
@@ -251,6 +255,9 @@ const nouveauTauxDefaut =
             <span class="rsim-sticky-mobile-label">Refinancement</span>
           </div>
           <span class="rsim-sticky-mobile-value" id="rsim-sticky-value">—</span>
+          <a href={telHref} class="rsim-sticky-tel" aria-label="Appeler Stéphanie Weyman">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.59 1.24h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6.27 6.27l1.14-1.14a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </a>
         </div>
 
         <!-- Verdict principal -->
@@ -306,7 +313,7 @@ const nouveauTauxDefaut =
 
         <!-- Point mort -->
         <div class="rsim-pointmort" id="rsim-pointmort">
-          <div class="rsim-pointmort-label">Point mort</div>
+          <div class="rsim-pointmort-label" id="rsim-pointmort-label">Point mort</div>
           <div class="rsim-pointmort-value" id="rsim-pointmort-value">—</div>
           <div class="rsim-pointmort-sub" id="rsim-pointmort-sub"></div>
           <div class="rsim-pointmort-bar" aria-hidden="true">
@@ -342,6 +349,18 @@ const nouveauTauxDefaut =
           <div class="rsim-net-label" id="rsim-net-label">Économie nette sur la période</div>
           <div class="rsim-net-value" id="rsim-net-value">—</div>
           <div class="rsim-net-sub" id="rsim-net-sub"></div>
+        </div>
+
+        <!-- CTA expert — discuter avec Stéphanie -->
+        <div class="rsim-cta-expert" id="rsim-cta-expert">
+          <div class="rsim-cta-expert-content">
+            <p class="rsim-cta-expert-msg" id="rsim-cta-expert-msg">Vos chiffres sont prêts.</p>
+            <p class="rsim-cta-expert-sub">Stéphanie peut étudier votre dossier gratuitement, sans engagement.</p>
+          </div>
+          <a href="#outils-contact" class="rsim-cta-expert-link" id="rsim-cta-expert-link">
+            Discuter avec Stéphanie
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
         </div>
 
         <!-- CTA -->
@@ -461,6 +480,7 @@ const nouveauTauxDefaut =
     const pmortValueEl   = document.getElementById('rsim-pointmort-value')!;
     const pmortSubEl     = document.getElementById('rsim-pointmort-sub')!;
     const pmortFillEl    = document.getElementById('rsim-pointmort-fill') as HTMLElement;
+    const pmortLabelEl   = document.getElementById('rsim-pointmort-label')!;
 
     const equiteEl            = document.getElementById('rsim-equite')!;
     const equiteMaxEl         = document.getElementById('rsim-equite-max')!;
@@ -480,6 +500,8 @@ const nouveauTauxDefaut =
     const netLabelEl = document.getElementById('rsim-net-label')!;
     const netValueEl = document.getElementById('rsim-net-value')!;
     const netSubEl   = document.getElementById('rsim-net-sub')!;
+    const ctaExpertMsg  = document.getElementById('rsim-cta-expert-msg')!;
+    const hiddenDonnees = document.getElementById('hidden-simulateur-donnees') as HTMLInputElement | null;
 
     // --- State ---
     let penaliteManuelle = false; // true when user manually edited the penalty field
@@ -784,8 +806,10 @@ const nouveauTauxDefaut =
       const horizonAns = Math.round(amortRestantAns * 10) / 10;
 
       // --- Payments (mensuel) ---
-      // Le total des dettes consolidées s'ajoute au nouveau solde (comme le dégagement d'équité).
-      const nouveauSolde = solde + montantAdd + dettes.montant;
+      // baseNouveauSolde : pret seul + degagement, sans dettes — sert pour l'effet taux pur.
+      const baseNouveauSolde = solde + montantAdd;
+      // nouveauSolde : capital reel du nouveau pret (inclut les dettes consolidees).
+      const nouveauSolde = baseNouveauSolde + dettes.montant;
       const pmtActuelMensuel = calcPaiement(solde, tauxActuel, amortRestantAns, 12);
       const pmtNouveauMensuel = calcPaiement(nouveauSolde, tauxNouveau, amortNouveauAns, 12);
 
@@ -796,18 +820,24 @@ const nouveauTauxDefaut =
       // Cash-flow libéré : paiements de dettes remplacés − coût ajouté à l'hypothèque.
       const cashflowDettes = dettes.paiementMensuel - coutHypoDettes;
 
-      // pmtNouveauMensuel (ligne 715) reste sur l'amort. CHOISI → tuiles réactives.
-      const pmtNouveauDureeEgale = calcPaiement(nouveauSolde, tauxNouveau, amortRestantAns, 12);
-      const effetTauxMensuel   = pmtActuelMensuel - pmtNouveauDureeEgale;   // >0 = baisse due au taux
-      const effetAmortMensuel  = pmtNouveauDureeEgale - pmtNouveauMensuel;  // >0 allongé, <0 raccourci
+      // Effet taux pur : compare baseNouveauSolde (sans dettes) au meme amort., taux seul change.
+      const pmtNouveauRateSeulement = calcPaiement(baseNouveauSolde, tauxNouveau, amortRestantAns, 12);
+      const effetTauxMensuel  = pmtActuelMensuel - pmtNouveauRateSeulement;        // >0 = baisse due au taux
+      // Effet amortissement : changement d'amort. sur baseNouveauSolde (isole de la consolidation).
+      const pmtNouveauBaseAmortNouveau = calcPaiement(baseNouveauSolde, tauxNouveau, amortNouveauAns, 12);
+      const effetAmortMensuel = pmtNouveauRateSeulement - pmtNouveauBaseAmortNouveau; // >0 allonge, <0 raccourci
 
+      // Interets sur base coherente (baseNouveauSolde, sans dettes) = comparaison taux seul.
       const interetActuel            = interetsPayesSurPeriode(solde, tauxActuel, amortRestantAns, horizonMois);
-      const interetNouveauDureeEgale = interetsPayesSurPeriode(nouveauSolde, tauxNouveau, amortRestantAns, horizonMois);
+      const interetNouveauDureeEgale = interetsPayesSurPeriode(baseNouveauSolde, tauxNouveau, amortRestantAns, horizonMois);
+      // Interets reels du nouveau pret (avec dettes, amort. choisi) = pour les tuiles comparatives.
       const interetNouveauReel       = interetsPayesSurPeriode(nouveauSolde, tauxNouveau, amortNouveauAns, horizonMois);
+      // Interets au meme amort. restant (pour l'economie due au choix d'amortissement).
+      const interetNouveauBaseAmortRestant = interetsPayesSurPeriode(nouveauSolde, tauxNouveau, amortRestantAns, horizonMois);
 
       const coutTotal     = penalite + frais;
-      const economieTaux  = interetActuel - interetNouveauDureeEgale;        // dû au taux seul
-      const economieAmort = interetNouveauDureeEgale - interetNouveauReel;   // dû au remb. accéléré
+      const economieTaux  = interetActuel - interetNouveauDureeEgale;              // du au taux seul (base coherente)
+      const economieAmort = interetNouveauBaseAmortRestant - interetNouveauReel;   // du au choix d'amort.
 
       // Économie sur les dettes consolidées : intérêts évités vs taux hypothécaire.
       // Chaque dette utilise son propre taux (défaut 19,99 % — carte de crédit).
@@ -822,8 +852,14 @@ const nouveauTauxDefaut =
         }
       }
 
-      // Point mort basé sur l'effet taux réel (garde contre les valeurs infimes).
-      const pointMortMois = effetTauxMensuel > 0.01 ? Math.ceil(coutTotal / effetTauxMensuel) : null;
+      // Point mort : toujours comparer à durée d'amortissement égale pour isoler l'effet taux.
+      // Sans dettes : effetTauxMensuel (baseNouveauSolde @ même amort.).
+      // Avec dettes : cashflow à durée égale = (pmt actuel + paiements dettes) − pmt nouveau @ même amort.
+      const pmtNouveauDureeEgale = calcPaiement(nouveauSolde, tauxNouveau, amortRestantAns, 12);
+      const cashflowDureeEgale = (pmtActuelMensuel + dettes.paiementMensuel) - pmtNouveauDureeEgale;
+      const pointMortMois = dettes.montant > 0
+        ? (cashflowDureeEgale > 0.01 ? Math.ceil(coutTotal / cashflowDureeEgale) : null)
+        : (effetTauxMensuel > 0.01 ? Math.ceil(coutTotal / effetTauxMensuel) : null);
 
       // VERDICT basé sur l'effet taux net (l'amortissement est un choix, pas un gain gratuit).
       const economieNetteTaux = economieTaux - coutTotal;
@@ -843,7 +879,7 @@ const nouveauTauxDefaut =
       verdictEl.className = 'rsim-verdict';
       const pointMortCourt = pointMortMois !== null && pointMortMois > 0 && pointMortMois <= 48;
       let verdictKey: 'oui' | 'evaluer' | 'non';
-      if (economieNetteTotale > 0 && (pointMortMois === null || pointMortCourt)) {
+      if (economieNetteTotale > 0 && (coutTotal === 0 || pointMortCourt)) {
         verdictKey = 'oui';
         verdictEl.classList.add('rsim-verdict--oui');
         verdictBadge.textContent = 'OUI';
@@ -875,7 +911,7 @@ const nouveauTauxDefaut =
       stickyBar.className = 'rsim-sticky-mobile rsim-sticky-mobile--' + verdictKey;
       stickyBadge.textContent = verdictBadge.textContent;
       if (effetTauxMensuel > 5) {
-        stickyValue.textContent = `−${formatMoney(Math.round(effetTauxMensuel))}/mois`;
+        stickyValue.textContent = `${formatMoney(Math.round(effetTauxMensuel))}/mois`;
       } else if (effetTauxMensuel < -5) {
         stickyValue.textContent = `+${formatMoney(Math.round(Math.abs(effetTauxMensuel)))}/mois`;
       } else {
@@ -888,7 +924,7 @@ const nouveauTauxDefaut =
       if (deltaVersementReel > 5) {
         heroEl.classList.add('rsim-hero--positive');
         heroEyebrow.textContent = 'Baisse du versement mensuel';
-        heroAmount.textContent = `−${formatMoney(Math.round(deltaVersementReel))}/mois`;
+        heroAmount.textContent = `${formatMoney(Math.round(deltaVersementReel))}/mois`;
       } else if (deltaVersementReel < -5) {
         heroEl.classList.add('rsim-hero--negative');
         heroEyebrow.textContent = 'Hausse du versement mensuel';
@@ -899,8 +935,9 @@ const nouveauTauxDefaut =
         heroAmount.textContent = '≈ 0 $';
       }
       heroSub.textContent =
-        `Dont ${effetTauxMensuel >= 0 ? '−' : '+'}${formatMoney(Math.round(Math.abs(effetTauxMensuel)))} d'effet taux `
-        + `et ${effetAmortMensuel >= 0 ? '−' : '+'}${formatMoney(Math.round(Math.abs(effetAmortMensuel)))} `
+        `Dont ${effetTauxMensuel >= 0 ? '' : '+'}${formatMoney(Math.round(Math.abs(effetTauxMensuel)))} d'effet taux`
+        + (dettes.montant > 0 ? ' (prêt seul)' : '')
+        + ` et ${effetAmortMensuel >= 0 ? '' : '+'}${formatMoney(Math.round(Math.abs(effetAmortMensuel)))} `
         + `d'amortissement ${effetAmortMensuel >= 0 ? 'allongé' : 'raccourci'}.`;
 
       // Bloc amortissement — explique l'écart durée égale vs amort. CHOISI (les deux sens).
@@ -932,11 +969,17 @@ const nouveauTauxDefaut =
 
       // Point mort
       pointMortEl.className = 'rsim-pointmort';
-      if (pointMortMois === null || effetTauxMensuel <= 0) {
-        pmortValueEl.textContent = '—';
-        pmortSubEl.textContent = coutTotal === 0
-          ? 'Aucun coût de refinancement — rentable immédiatement.'
-          : 'L\'effet taux ne génère pas d\'économie — le refinancement ne s\'autofinance pas par le taux seul.';
+      pmortLabelEl.textContent = dettes.montant > 0 ? 'Point mort (cashflow)' : 'Point mort';
+      if (pointMortMois === null) {
+        pmortValueEl.textContent = '-';
+        const aucunGain = dettes.montant > 0 ? cashflowDureeEgale <= 0 : effetTauxMensuel <= 0;
+        if (coutTotal === 0) {
+          pmortSubEl.textContent = 'Aucun coût de refinancement — rentable immédiatement.';
+        } else if (aucunGain) {
+          pmortSubEl.textContent = 'Aucun gain mensuel — les coûts ne sont pas récupérés sur cette période.';
+        } else {
+          pmortSubEl.textContent = 'L\u2019effet global ne récupère pas les coûts dans la période restante.';
+        }
         pmortFillEl.style.width = '0%';
         const axisMidEl = document.getElementById('rsim-pointmort-axis-mid')!;
         const axisMaxEl = document.getElementById('rsim-pointmort-axis-max')!;
@@ -961,12 +1004,12 @@ const nouveauTauxDefaut =
           pointMortEl.classList.add('rsim-pointmort--rouge');
           pmortSubEl.textContent = 'Long — évaluez si vous resterez dans la propriété assez longtemps.';
         }
-        const barMax = horizonMois;
+        const barMax = Math.min(horizonMois, 48);
         pmortFillEl.style.width = `${Math.min((pointMortMois / barMax) * 100, 100)}%`;
         const axisMid = document.getElementById('rsim-pointmort-axis-mid')!;
         const axisMax = document.getElementById('rsim-pointmort-axis-max')!;
         axisMid.textContent = formatMoisDuree(Math.round(barMax / 2));
-        axisMax.textContent = formatMoisDuree(barMax);
+        axisMax.textContent = barMax < horizonMois ? formatMoisDuree(barMax) + '+' : formatMoisDuree(barMax);
       }
 
       // Équité
@@ -1057,6 +1100,24 @@ const nouveauTauxDefaut =
         netEl.classList.add('rsim-net--negative');
         netValueEl.textContent = `−${formatMoney(Math.round(Math.abs(economieNetteTotale)))}`;
         netSubEl.textContent = `Les coûts (${formatMoney(Math.round(coutTotal))}) dépassent les économies d'intérêts (${formatMoney(Math.round(economieTaux))}) sur cette période.`;
+      }
+
+      // Mise à jour CTA expert et données cachées du formulaire contact
+      ctaExpertMsg.textContent = verdictKey === 'oui'
+        ? 'Les conditions sont favorables — passons à l\'action !'
+        : verdictKey === 'evaluer'
+        ? 'Rentable sur le long terme — parlons de votre horizon.'
+        : 'Stéphanie peut aussi explorer d\'autres pistes avec vous.';
+      if (hiddenDonnees) {
+        hiddenDonnees.value = [
+          'Simulateur de refinancement',
+          `Solde : ${formatMoney(solde)}`,
+          `Taux actuel : ${tauxActuel} % → Nouveau : ${tauxNouveau} %`,
+          `Versement : ${formatMoney(Math.round(pmtActuelMensuel))}/mois → ${formatMoney(Math.round(pmtNouveauMensuel))}/mois`,
+          `Économie nette : ${formatMoney(Math.round(economieNetteTotale))}`,
+          `Point mort : ${pointMortMois !== null ? formatMoisDuree(pointMortMois) : 'n/a'}`,
+          dettes.montant > 0 ? `Dettes consolidées : ${formatMoney(Math.round(dettes.montant))}` : '',
+        ].filter(Boolean).join(' | ');
       }
     }
 
@@ -2000,11 +2061,75 @@ const nouveauTauxDefaut =
     flex-shrink: 0;
   }
 
+  .rsim-sticky-tel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: var(--forest);
+    color: white;
+    transition: opacity .2s;
+    flex-shrink: 0;
+  }
+
+  .rsim-sticky-tel:hover { opacity: .8; }
+
+  /* CTA expert (bouton de contact dans les résultats) */
+  .rsim-cta-expert {
+    background: linear-gradient(135deg, rgba(196, 122, 82, .08), rgba(61, 90, 74, .06));
+    border: 1px solid rgba(196, 122, 82, .25);
+    border-radius: 18px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+  }
+
+  .rsim-cta-expert-msg {
+    font-family: "Lora", serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .rsim-cta-expert-sub {
+    font-size: .8rem;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .rsim-cta-expert-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    align-self: flex-start;
+    padding: .65rem 1.2rem;
+    background: var(--forest);
+    color: white;
+    border-radius: 12px;
+    font-size: .85rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .2s, transform .15s;
+  }
+
+  .rsim-cta-expert-link:hover {
+    background: var(--ink);
+    transform: translateY(-1px);
+  }
+
   /* Impression — n'imprimer que l'analyse */
   @media print {
     .rsim-form,
     .rsim-placeholder,
     .rsim-cta,
+    .rsim-cta-expert,
     .rsim-print-btn { display: none !important; }
 
     /* Réafficher le résultat de consolidation (déplacé dans le formulaire),

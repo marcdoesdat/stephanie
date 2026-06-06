@@ -110,24 +110,36 @@ export function prixMaxParMise(mise: number): number {
 
 /**
  * Quebec land transfer tax (droits de mutation / taxe de bienvenue).
- * Thresholds are indexed annually by the ISQ. Update each January.
- * 2026 values: 62 900 $ / 315 000 $ (source: Loi sur les droits sur les mutations immobilières).
- * The ≥ 500 000 $ tier at 2 % is a municipal option — applies to Repentigny and most QC cities.
+ *
+ * By default uses the provincial 4-tranche schedule (2026):
+ *   0 – 62 900 $ at 0.5 %, 62 900 – 315 000 $ at 1.0 %,
+ *   315 000 – 500 000 $ at 1.5 %, 500 000 $+ at 2.0 %.
+ *
+ * Pass `municipalTranches` to replace the third+ tranches with
+ * city-specific brackets.  The first two tranches are always the
+ * provincial ones.
  */
-export function droitsMutation(prix: number): number {
-  const tranches = [
-    { seuil: 62_900,  taux: 0.005 },
-    { seuil: 315_000, taux: 0.01 },
-    { seuil: 500_000, taux: 0.015 },
-    { seuil: Infinity, taux: 0.02 },
+export function droitsMutation(
+  prix: number,
+  municipalTranches?: { max: number; taux: number }[],
+): number {
+  const provincial = [
+    { max: 62_900,  taux: 0.005 },
+    { max: 315_000, taux: 0.01  },
   ];
+  const municipal = municipalTranches ?? [
+    { max: 500_000, taux: 0.015 },
+    { max: Infinity, taux: 0.02 },
+  ];
+  const tranches = [...provincial, ...municipal];
+
   let dm = 0;
   let prev = 0;
   for (const t of tranches) {
-    const base = Math.min(prix, t.seuil);
+    const base = Math.min(prix, t.max);
     if (base > prev) dm += (base - prev) * t.taux;
-    prev = t.seuil;
-    if (prix <= t.seuil) break;
+    prev = t.max;
+    if (prix <= t.max) break;
   }
   return dm;
 }

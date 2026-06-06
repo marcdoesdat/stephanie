@@ -5,6 +5,7 @@ import MainLayout from '../../layouts/MainLayout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import MessengerBtn from '../../components/MessengerBtn.astro';
+import Contact from '../../components/Contact.astro';
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
@@ -52,7 +53,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <div class="sp-hero-grid">
           <div class="sp-hero-text">
             <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
-            <div class="sp-eyebrow">Premier achat · Québec 2026</div>
 
             <h1 class="sp-h1">
               Votre première maison, sans <em>les nuits blanches</em>.
@@ -111,7 +111,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ EMPATHIE ============ -->
     <section class="sp-empathy">
       <div class="sp-inner">
-        <div class="sp-empathy-tag">On va se le dire</div>
         <h2 class="sp-section-title">Acheter une première maison, ça fait peur. <em>Et c'est normal.</em></h2>
         <p class="sp-empathy-text">
           Vous vous demandez si vos revenus passeront le test de résistance fédéral.
@@ -129,7 +128,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ ÉDUCATION EXPRESS ============ -->
     <section class="sp-education">
       <div class="sp-inner">
-        <div class="sp-section-tag">Les 3 étapes qui changent tout</div>
         <h2 class="sp-section-title">Ce qu'on regarde ensemble lors d'un <em>premier appel</em>.</h2>
 
         <div class="sp-steps">
@@ -174,7 +172,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <div class="sp-inner">
         <div class="sp-approach-grid">
           <div class="sp-approach-text">
-            <div class="sp-section-tag">L'approche {prenom}</div>
             <h2 class="sp-section-title sp-section-title--light">Une seule courtière, un seul dossier, <em>20+ prêteurs en concurrence pour vous.</em></h2>
             <p class="sp-approach-para">
               Je gère votre demande de A à Z&nbsp;: analyse de votre dossier, structuration des leviers RAP/CELIAPP,
@@ -225,7 +222,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="sp-magnet">
       <div class="sp-inner">
         <div class="sp-magnet-card">
-          <div class="sp-magnet-eyebrow">Évaluation gratuite — 60 secondes</div>
           <h2 class="sp-magnet-title">
             Découvrez votre <em>vrai</em> potentiel d'achat<br />— avant même de parler à une banque.
           </h2>
@@ -235,16 +231,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             de 15 minutes pour valider la stratégie. <strong>Aucun engagement, aucun pointage de crédit.</strong>
           </p>
 
-          <a href="/?parcours=premier-achat#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_premier_achat_magnet_cta">
-            <span>Démarrer mon évaluation gratuite</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </a>
-
           <ul class="sp-magnet-proof">
-            <li>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              60 secondes
-            </li>
             <li>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
               Aucun pointage de crédit
@@ -260,6 +247,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
   </main>
 
+  <Contact />
   <Footer />
 </MainLayout>
 

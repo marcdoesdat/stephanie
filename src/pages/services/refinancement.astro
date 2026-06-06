@@ -5,6 +5,7 @@ import MainLayout from '../../layouts/MainLayout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import MessengerBtn from '../../components/MessengerBtn.astro';
+import Contact from '../../components/Contact.astro';
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
@@ -53,7 +54,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <div class="sp-hero-grid">
           <div class="sp-hero-text">
             <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
-            <div class="sp-eyebrow">Refinancement · Québec 2026</div>
 
             <h1 class="sp-h1">
               Votre maison vaut une fortune.<br />Et si vous arrêtiez <em>de la regarder dormir</em> ?
@@ -113,7 +113,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ EMPATHIE / OPPORTUNITÉ ============ -->
     <section class="sp-empathy">
       <div class="sp-inner">
-        <div class="sp-empathy-tag">L'opportunité</div>
         <h2 class="sp-section-title">Vous payez 20 % d'intérêt sur vos cartes…<br /><em>pendant que votre maison prend de la valeur.</em></h2>
         <p class="sp-empathy-text">
           Au Québec, la valeur médiane des propriétés a bondi de plus de 40 % depuis 2020.
@@ -131,27 +130,33 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ ÉDUCATION EXPRESS — LES 3 LEVIERS ============ -->
     <section class="sp-education">
       <div class="sp-inner">
-        <div class="sp-section-tag">Les 3 leviers du refinancement</div>
         <h2 class="sp-section-title">Trois façons concrètes de faire travailler <em>l'argent qui dort dans vos murs</em>.</h2>
 
         <div class="sp-steps">
           <article class="sp-step">
             <div class="sp-step-num" aria-hidden="true">1</div>
-            <h3 class="sp-step-title">Consolidation de dettes : passer de 20 % à 5 %</h3>
+            <h3 class="sp-step-title">Consolidation de dettes : réduire votre coût mensuel d'intérêts</h3>
             <p class="sp-step-text">
-              30 000 $ de cartes et de marges à 19,99 %, c'est environ <strong>500 $ d'intérêts par mois</strong> — qui n'effacent rien.
-              Intégrés à votre hypothèque vers 5 %, c'est plutôt 125 $ d'intérêts. <strong>Près de 4 500 $ par année</strong> qui restent dans votre compte
-              au lieu de partir aux émetteurs de cartes. Et un seul paiement, allégé, à la place de cinq.
+              30 000 $ de cartes et de marges à 19,99 %, c'est environ 500 $ d'intérêts par mois.
+              Intégrés à votre hypothèque vers 5 %, c'est plutôt 125 $ — soit près de 4 500 $ par année
+              qui restent dans votre compte. Il faut cependant avoir suffisamment d'équité dans votre
+              propriété (le refinancement est limité à 80 % de sa valeur), et tenir compte d'une
+              éventuelle pénalité de bris de terme. Ce n'est pas la bonne solution pour tout le monde —
+              mais quand les conditions sont réunies, l'impact est immédiat.
             </p>
           </article>
 
           <article class="sp-step">
             <div class="sp-step-num" aria-hidden="true">2</div>
-            <h3 class="sp-step-title">Rénovations : investir dans le seul actif qui prend de la valeur</h3>
+            <h3 class="sp-step-title">Rénovations : financer vos travaux au taux hypothécaire</h3>
             <p class="sp-step-text">
-              Une cuisine refaite, un sous-sol fini, une thermopompe : ces rénovations stratégiques
-              augmentent la valeur de revente de votre propriété — souvent davantage que ce qu'elles coûtent.
-              Vous financez à taux hypothécaire (étalé sur 25–30 ans) ce qui, autrement, finirait sur une marge à 9 % ou pire.
+              Une cuisine refaite, un sous-sol fini, une thermopompe : certaines rénovations
+              stratégiques augmentent la valeur de votre propriété. Plutôt que de les financer sur
+              une marge à 9 % ou plus, il est possible de les intégrer à votre hypothèque au moment
+              de l'achat ou d'un refinancement — à taux hypothécaire, amorti sur 25 à 30 ans.
+              Des conditions s'appliquent : montants admissibles limités selon le prêteur, débours
+              en étapes avec inspection, et non disponible pour les locatifs et les chalets.
+              Je vous indique dès le départ ce qui est faisable dans votre situation.
             </p>
           </article>
 
@@ -159,9 +164,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <div class="sp-step-num" aria-hidden="true">3</div>
             <h3 class="sp-step-title">Achat locatif ou chalet : votre équité comme mise de fonds</h3>
             <p class="sp-step-text">
-              Au Québec en 2026, la mise de fonds minimale pour un immeuble à revenus ou un chalet
-              est de 20 %. Refinancer votre résidence principale peut générer cette mise de fonds <em>sans toucher à vos liquidités</em>.
-              C'est le levier le plus discret — et le plus puissant — pour bâtir un patrimoine immobilier.
+              Pour un immeuble locatif pur, la mise de fonds minimale est de 20 %. Pour un chalet,
+              elle est de 20 % en financement conventionnel — mais peut descendre à 5 % si la
+              propriété est admissible au financement assuré. Dans tous les cas, refinancer votre
+              résidence principale peut générer cette mise de fonds sans puiser dans vos liquidités :
+              c'est l'un des leviers les plus efficaces pour bâtir un patrimoine immobilier sans
+              immobiliser votre épargne.
             </p>
           </article>
         </div>
@@ -173,7 +181,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <div class="sp-inner">
         <div class="sp-approach-grid">
           <div class="sp-approach-text">
-            <div class="sp-section-tag">L'approche {prenom}</div>
             <h2 class="sp-section-title sp-section-title--light">Avant de signer quoi que ce soit, on calcule <em>si c'est vraiment payant</em>.</h2>
             <p class="sp-approach-para">
               Refinancer en plein milieu d'un terme déclenche une pénalité — parfois 3 mois d'intérêts,
@@ -226,9 +233,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="sp-magnet">
       <div class="sp-inner">
         <div class="sp-magnet-card">
-          <div class="sp-magnet-eyebrow">Test d'équité — 60 secondes</div>
           <h2 class="sp-magnet-title">
-            Testez le potentiel de votre maison <em>en 60 secondes</em>.<br />Découvrez combien vous pouvez débloquer.
+            Découvrez combien vous pouvez débloquer.
           </h2>
           <p class="sp-magnet-sub">
             Quatre questions simples — valeur estimée, solde hypothécaire actuel, prêteur, objectif —
@@ -237,16 +243,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <strong>Aucun engagement, aucun pointage de crédit.</strong>
           </p>
 
-          <a href="/?parcours=refinancement#contact" class="btn-cta btn-cta--block sp-magnet-cta" data-track="sp_refinancement_magnet_cta">
-            <span>Découvrir mon équité disponible</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </a>
-
           <ul class="sp-magnet-proof">
-            <li>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              60 secondes
-            </li>
             <li>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
               Aucun pointage de crédit
@@ -262,6 +259,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
   </main>
 
+  <Contact />
   <Footer />
 </MainLayout>
 
