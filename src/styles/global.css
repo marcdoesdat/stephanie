@@ -152,7 +152,7 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 /* SERVICES */
 #services{background:var(--sand)}
 .services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:4rem}
-.service-card{background:var(--white);border-radius:20px;padding:2.5rem 2rem;border:1px solid var(--border);transition:transform .2s,box-shadow .2s}
+.service-card{background:var(--white);border-radius:20px;padding:1.8rem 1.6rem;border:1px solid var(--border);transition:transform .2s,box-shadow .2s}
 .service-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
 .service-icon{width:52px;height:52px;border-radius:14px;background:rgba(196, 122, 82, 0.08);display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;color:var(--clay);transition:transform 0.3s ease}
 .service-card:hover .service-icon{transform:scale(1.08) rotate(-3deg)}
@@ -693,7 +693,7 @@ td:last-child{text-align:center}
 #faq{background:var(--sand)}
 
 /* ---------- Chips de catégories ---------- */
-.faq-categories{display:flex;flex-wrap:nowrap;justify-content:center;gap:.5rem;margin:1.5rem auto 0;max-width:700px}
+.faq-categories{display:flex;flex-wrap:nowrap;justify-content:center;gap:.5rem;margin:1.5rem auto 0;max-width:100%}
 .faq-cat-chip{padding:.5rem 1.1rem;border-radius:50px;border:1.5px solid var(--border);background:var(--white);color:var(--muted);font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:border-color .2s,background .2s,color .2s,box-shadow .15s}
 .faq-cat-chip:hover{border-color:var(--clay);color:var(--clay)}
 .faq-cat-chip:focus-visible{outline:2px solid var(--clay);outline-offset:2px}

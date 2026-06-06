@@ -201,10 +201,22 @@ const faqSchema = {
 <style>
   .faq-categories {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     gap: 0.5rem;
     margin-bottom: 2rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.5rem;
+  }
+  .faq-categories::-webkit-scrollbar {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .faq-categories {
+      justify-content: center;
+    }
   }
   .faq-cat-chip {
     padding: 0.5rem 1rem;
@@ -215,6 +227,8 @@ const faqSchema = {
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .faq-cat-chip[aria-selected="true"] {
     background: var(--clay);
@@ -224,21 +238,23 @@ const faqSchema = {
   .faq-list {
     display: flex;
     flex-direction: column;
+    gap: 1rem;
+  }
+  .faq-item {
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    transition: all 0.3s ease;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
   }
-  .faq-item {
-    border-bottom: 1px solid var(--border);
-    transition: background 0.2s ease;
-  }
-  .faq-item:last-child {
-    border-bottom: none;
+  .faq-item:hover {
+    border-color: var(--clay);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
   }
   .faq-item.open {
-    background: rgba(196, 122, 82, 0.04); /* Subtil fond terracotta quand ouvert */
+    border-color: var(--clay);
   }
   .faq-item h3 {
     margin: 0;
@@ -263,16 +279,22 @@ const faqSchema = {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--sand);
     color: var(--clay);
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
     flex-shrink: 0;
-    margin-left: 1rem;
+    margin-left: 1.5rem;
   }
-  /* Animation du + vers - en tournant (ou flèche bas/haut) */
+  .faq-item:hover .faq-icon {
+    background: rgba(196, 122, 82, 0.1);
+  }
   .faq-item.open .faq-icon {
-    transform: rotate(180deg);
+    background: var(--clay);
+    color: #fff;
+    transform: rotate(45deg);
   }
   .faq-a {
     display: grid;
