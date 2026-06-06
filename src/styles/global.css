@@ -1414,7 +1414,13 @@ footer strong{color:rgba(255,255,255,.85)}
   .hero-left h1{font-size:2.6rem}
   .hero-right{display:none}
   .apropos-grid{grid-template-columns:1fr;gap:2rem}
-  .apropos-img{display:none}
+  .apropos-img{
+    display: block;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+    border-radius: 50%;
+  }
   .services-grid{grid-template-columns:1fr}
   .calc-wrapper{grid-template-columns:1fr}
   .sim-wrapper{grid-template-columns:1fr}

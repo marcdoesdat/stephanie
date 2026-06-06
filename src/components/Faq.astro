@@ -138,7 +138,7 @@ const faqSchema = {
           id={`faq-cat-${cat.id}`}
           class="faq-cat-chip"
           role="tab"
-          aria-selected={cat.id === 'tous' ? 'true' : 'false'}
+          aria-selected={cat.id === 'general' ? 'true' : 'false'}
           aria-controls="faq-list"
           data-cat={cat.id}
         >{cat.label}</button>
@@ -153,6 +153,7 @@ const faqSchema = {
           data-cat={item.cat}
           data-text={`${item.q} ${item.a}`.toLowerCase()}
           id={`faq-${item.slug}`}
+          hidden={item.cat !== 'general' ? true : undefined}
         >
           <h3>
             <button
@@ -198,11 +199,51 @@ const faqSchema = {
 <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} is:inline />
 
 <style>
+  .faq-categories {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  .faq-cat-chip {
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .faq-cat-chip[aria-selected="true"] {
+    background: var(--clay);
+    color: #fff;
+    border-color: var(--clay);
+  }
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  }
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s ease;
+  }
+  .faq-item:last-child {
+    border-bottom: none;
+  }
+  .faq-item.open {
+    background: rgba(196, 122, 82, 0.04); /* Subtil fond terracotta quand ouvert */
+  }
   .faq-item h3 {
     margin: 0;
     padding: 0;
   }
-
   button.faq-q {
     width: 100%;
     background: transparent;
@@ -210,6 +251,63 @@ const faqSchema = {
     color: inherit;
     font-family: inherit;
     text-align: left;
+    padding: 1.15rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .faq-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: var(--clay);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 1rem;
+  }
+  /* Animation du + vers - en tournant (ou flèche bas/haut) */
+  .faq-item.open .faq-icon {
+    transform: rotate(180deg);
+  }
+  .faq-a {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+  }
+  .faq-item.open .faq-a {
+    grid-template-rows: 1fr;
+  }
+  .faq-a-inner {
+    overflow: hidden;
+    padding: 0 1.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .faq-item.open .faq-a-inner {
+    padding: 0 1.5rem 1.25rem 1.5rem;
+    opacity: 1;
+  }
+  .faq-a-inner p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.65;
+    font-size: 0.95rem;
+  }
+  .faq-a-inner p + p {
+    margin-top: 0.85rem;
+  }
+  .faq-a-inner a {
+    color: var(--clay);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .faq-a-inner a:hover {
+    text-decoration: underline;
   }
 </style>
 
@@ -219,7 +317,7 @@ const faqSchema = {
     const faqItems = document.querySelectorAll<HTMLElement>('.faq-item');
     const faqList = document.getElementById('faq-list');
 
-    let activeCat = 'tous';
+    let activeCat = 'general';
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

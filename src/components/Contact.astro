@@ -2,7 +2,7 @@
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.webp';
 import { loadSiteConfig } from '../config';
-import { Phone, Mail, MapPin, Building2, Contact as ContactIcon } from '@lucide/astro';
+import { Phone, Mail, MapPin, Building2, Contact as ContactIcon, Clock, Zap } from '@lucide/astro';
 const config = loadSiteConfig();
 const telephoneHref = `tel:${config.telephone.replace(/[^\d+]/g, '')}`;
 const courrielHref = `mailto:${config.courriel}`;
@@ -53,9 +53,20 @@ const prenomCourtiere = config.nom.split(' ')[0];
               <div class="contact-icon" aria-hidden="true"><Phone size={18} stroke-width={1.8} /></div>
               <a class="contact-link" href={telephoneHref}><strong>{config.telephone}</strong></a>
             </div>
+            
+            <div class="contact-item" style="background: rgba(196, 122, 82, 0.08); padding: 0.85rem 1rem; border-radius: 12px; margin: 0.25rem 0 0.5rem; align-items: flex-start;">
+              <div class="contact-icon" style="background: transparent; border: none; width: auto; height: auto; margin-top: 0.1rem;" aria-hidden="true"><Zap size={18} stroke-width={2} style="color: var(--clay)" /></div>
+              <span style="font-size: 0.85rem; line-height: 1.5; color: var(--ink);"><strong>Offre d'achat acceptée ?</strong><br/><span style="color: var(--muted);">Privilégiez le téléphone ou un texto pour une réponse prioritaire.</span></span>
+            </div>
+
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true"><Mail size={18} stroke-width={1.8} /></div>
               <a class="contact-link" href={courrielHref}><strong>{config.courriel}</strong></a>
+            </div>
+            
+            <div class="contact-item">
+              <div class="contact-icon" aria-hidden="true"><Clock size={18} stroke-width={1.8} /></div>
+              <span style="font-size: 0.85rem; line-height: 1.45;"><strong>Lundi au Vendredi</strong> : 9h00 - 17h00<br/><span style="color: var(--muted);">Soirs et week-ends sur rendez-vous</span></span>
             </div>
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true"><MapPin size={18} stroke-width={1.8} /></div>

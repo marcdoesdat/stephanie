@@ -101,7 +101,7 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
   <body data-calendly-url={config.calendly_url}>
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
     <slot />
-    <a href={config.calendly_url} data-calendly class="mobile-sticky-cta sticky-hidden" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">
+    <a href={config.calendly_url} data-calendly class="mobile-sticky-cta" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">
       <span class="sticky-label">Prendre rendez-vous</span>
     </a>
     <ConsentBanner />
