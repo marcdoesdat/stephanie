@@ -55,24 +55,7 @@ const prenom = config.nom.split(' ')[0];
             </li>
           </ul>
 
-          <div class="apropos-credentials">
-            <a
-              href={config.hypotheca_profile_url ?? 'https://hypotheca.ca/sweyman'}
-              target="_blank"
-              rel="noopener"
-              class="cred-link"
-            >
-              <img
-                src="/images/logo-hypotheca.svg"
-                alt="Hypotheca"
-                class="cred-logo"
-                loading="lazy"
-                width="140"
-                height="24"
-              />
-              <span>{config.nom}, courtière hypothécaire affiliée à {config.organisation}</span>
-            </a>
-          </div>
+
         </div>
       </div>
       
@@ -89,49 +72,5 @@ const prenom = config.nom.split(' ')[0];
     margin-bottom: 1.2rem;
   }
 
-  .apropos-credentials {
-    margin-top: 1.5rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem 1.5rem;
-  }
 
-  .cred-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    text-decoration: none;
-    color: var(--ink);
-    font-size: 0.82rem;
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-
-  .cred-link:hover,
-  .cred-link:focus-visible {
-    color: var(--clay);
-  }
-
-  .cred-logo {
-    height: 1.5rem;
-    width: auto;
-    flex-shrink: 0;
-  }
-
-  .cred-amf {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.78rem;
-    color: var(--muted);
-    font-weight: 500;
-  }
-
-  .cred-amf .val-icon {
-    color: var(--forest);
-    display: inline-flex;
-  }
 </style>

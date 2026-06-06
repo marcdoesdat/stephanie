@@ -9,7 +9,7 @@ const courrielHref = `mailto:${config.courriel}`;
 const prenomCourtiere = config.nom.split(' ')[0];
 ---
 
-<section id="contact">
+<section id="contact" data-prenom={prenomCourtiere}>
   <div class="section-inner">
 
     <!-- Calendly — prise de rendez-vous en ligne -->
@@ -140,7 +140,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
             class="quiz-trust-photo"
           />
           <div class="quiz-trust-text">
-            <strong>{prenomCourtiere} répond elle-même.</strong>
+            <strong>Je réponds moi-même.</strong>
             <span>Réponse dans les meilleurs délais.</span>
           </div>
         </div>
@@ -723,7 +723,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
     if (!rootEl) return;
     const root: HTMLElement = rootEl;
 
-    const PRENOM_COURTIERE = (root.querySelector('.quiz-trust-text strong')?.textContent || 'Stéphanie').replace(/ répond elle-même\.?/i, '').trim() || 'Stéphanie';
+    const PRENOM_COURTIERE = root.getAttribute('data-prenom') || 'Stéphanie';
 
     const form = root.querySelector<HTMLFormElement>('#netlify-contact-form');
     if (!form) return;

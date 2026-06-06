@@ -14,9 +14,11 @@ function fmtRate(val: number | null | undefined): string {
 <section id="hero">
   <div class="hero-inner">
     <div class="hero-left fade-up">
-      <div class="hero-badge">{config.region}</div>
-      
-      <h1>Acheter ou renouveler,<br /> <em>c'est stressant.</em><br /> Pas avec moi.</h1>
+      <h1>
+        <span class="sr-only">Courtière hypothécaire </span>
+        <span class="hero-badge">{config.region}</span><br />
+        Acheter ou renouveler,<br /> <em>c'est stressant.</em><br /> Pas avec moi.
+      </h1>
       
       <p>
         Je magasine parmi une panoplie de prêteurs à ta place et je t'explique tout — sans jargon,
@@ -93,6 +95,18 @@ function fmtRate(val: number | null | undefined): string {
 </section>
 
 <style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .hero-btns {
     display: flex;
     flex-wrap: wrap;

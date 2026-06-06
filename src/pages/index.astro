@@ -62,7 +62,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section id="outils-teaser">
       <div class="section-inner">
         <div class="fade-up">
-          <h2 class="section-title">Préparez votre projet avec mes outils</h2>
+          <h2 class="section-title">Préparez votre projet<br />avec mes <em>outils</em></h2>
           <p class="section-sub">
             Six outils clairs pour planifier votre financement : capacité d'emprunt, versement estimé,
             comparaison des taux, pénalité hypothécaire, simulation de refinancement et droits de mutation (taxe de bienvenue).
@@ -75,37 +75,37 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <div class="service-icon" aria-hidden="true"><House size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Simulateur d'emprunt</div>
             <p>Estimez votre capacité réelle selon vos revenus, dettes, mise de fonds et taux de qualification.</p>
-            <span class="outils-card-arrow" aria-hidden="true">→</span>
+            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
           </a>
           <a href="/outils#calculateur" class="outils-card" aria-label="Calculateur de versement — Calculez vos mensualités">
             <div class="service-icon" aria-hidden="true"><Calculator size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Calculateur de versement</div>
             <p>Calculez des mensualités précises avec le taux, l'amortissement et les frais qui comptent vraiment.</p>
-            <span class="outils-card-arrow" aria-hidden="true">→</span>
+            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
           </a>
           <a href="/outils#comparateur" class="outils-card" aria-label="Comparateur de taux — Comparez les taux affichés en succursale et les taux négociés par un courtier">
             <div class="service-icon" aria-hidden="true"><Scale size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Comparateur de taux</div>
-            <p>Comparez un taux affiché en succursale et un taux négocié par Stéphanie pour visualiser l'écart potentiel sur 5 ans.</p>
-            <span class="outils-card-arrow" aria-hidden="true">→</span>
+            <p>Comparez un taux affiché en succursale et mon taux négocié pour visualiser l'écart potentiel sur 5 ans.</p>
+            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
           </a>
           <a href="/outils#penalite" class="outils-card" aria-label="Calculateur de pénalité — Estimez vos frais de remboursement anticipé">
             <div class="service-icon" aria-hidden="true"><ClipboardList size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Calculateur de pénalité</div>
             <p>Estimez les frais de remboursement anticipé (IRD ou 3 mois d'intérêts) selon votre prêteur et votre contrat.</p>
-            <span class="outils-card-arrow" aria-hidden="true">→</span>
+            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
           </a>
           <a href="/outils#refinancement" class="outils-card" aria-label="Simulateur de refinancement — Évaluez l'impact d'un refinancement">
             <div class="service-icon" aria-hidden="true"><TrendingUp size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Simulateur de refinancement</div>
             <p>Évaluez l'impact d'un refinancement : liquidités dégagées, nouveau versement et comparaison avec votre situation actuelle.</p>
-            <span class="outils-card-arrow" aria-hidden="true">→</span>
+            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
           </a>
           <a href="/outils#droits-mutation" class="outils-card" aria-label="Calculateur de droits de mutation — Estimez votre taxe de bienvenue">
             <div class="service-icon" aria-hidden="true"><Landmark size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Droits de mutation</div>
             <p>Estimez la taxe de bienvenue applicable à votre propriété selon le prix d'achat, tranche par tranche.</p>
-            <span class="outils-card-arrow" aria-hidden="true">→</span>
+            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
           </a>
         </div>
       </div>
@@ -163,9 +163,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       flex: 1;
     }
     #outils-teaser .outils-card-arrow {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
       margin-top: 0.75rem;
-      font-size: 1.1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
       color: var(--clay, #c47a52);
       transition: transform 0.2s;
     }

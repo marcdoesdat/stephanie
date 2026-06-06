@@ -78,6 +78,9 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
 .fee-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:240px;background:var(--ink);color:white;font-size:.72rem;font-weight:400;line-height:1.55;padding:.65rem .8rem;border-radius:10px;z-index:50;text-align:left;pointer-events:none}
 .fee-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink)}
 .fee-tooltip-wrap.is-open .fee-tooltip{display:block}
+@media (min-width: 900px) {
+  .fee-tooltip-wrap:hover .fee-tooltip { display:block; }
+}
 
 /* CTA héro — utilisé aux moments stratégiques de décision (Hero, fin de Calculator/Simulator, submit final).
    Effet : ombre clay marquée, lift au hover, flèche animée. Ne pas étendre à plus d'endroits sans réfléchir
@@ -151,10 +154,11 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 .services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:4rem}
 .service-card{background:var(--white);border-radius:20px;padding:2.5rem 2rem;border:1px solid var(--border);transition:transform .2s,box-shadow .2s}
 .service-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
-.service-icon{width:52px;height:52px;border-radius:14px;background:var(--warm);display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;color:var(--clay)}
+.service-icon{width:52px;height:52px;border-radius:14px;background:rgba(196, 122, 82, 0.08);display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;color:var(--clay);transition:transform 0.3s ease}
+.service-card:hover .service-icon{transform:scale(1.08) rotate(-3deg)}
 .service-card h4{font-family:"Lora",serif;font-size:1.2rem;margin-bottom:.8rem;font-weight:600}
 .service-card p{font-size:.85rem;color:var(--muted);line-height:1.8}
-.service-card .learn{display:inline-flex;align-items:center;gap:.4rem;margin-top:1.2rem;font-size:.8rem;font-weight:600;color:var(--clay);text-decoration:none}
+.service-card .learn{display:inline-flex;align-items:center;gap:.4rem;margin-top:1.2rem;font-size:.88rem;font-weight:700;color:var(--clay);text-decoration:none}
 .service-card .learn::after{content:"→";transition:transform .2s}
 .service-card:hover .learn::after{transform:translateX(4px)}
 
@@ -671,6 +675,9 @@ td:last-child{text-align:center}
 .sam-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.72rem;font-weight:400;line-height:1.5;white-space:normal;width:240px;max-width:80vw;padding:.6rem .8rem;border-radius:8px;text-align:left;z-index:10;pointer-events:none}
 .sam-tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink)}
 .sam-tooltip.open{display:block}
+@media (min-width: 900px) {
+  .sam-info:hover .sam-tooltip { display:block; }
+}
 .sam-label{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--clay);margin-bottom:.3rem}
 .sam-val{font-family:"Lora",serif;font-size:2.4rem;font-weight:600;color:var(--ink);line-height:1;margin-bottom:.6rem}
 .sam-sub{font-size:.75rem;color:var(--muted);margin-bottom:.1rem}

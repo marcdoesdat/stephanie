@@ -12,15 +12,11 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
 
 <footer role="contentinfo">
   <div class="footer-identity">
-    <span class="footer-name">{config.nom}</span>{config.titre}<span class="footer-dot" aria-hidden="true"> · </span>{config.region}<br class="footer-br" />
-    {config.amf_cabinet && (
-      <Fragment>Cabinet&nbsp;: {config.organisation} (AMF n° {config.amf_cabinet})</Fragment>
-    )}
-    {!config.amf_cabinet && (
-      <Fragment>Cabinet&nbsp;: {config.organisation}</Fragment>
-    )}
-    <br class="footer-br" />
-    {config.adresse}
+    <span class="footer-name">{config.nom}</span>
+    <span class="footer-role">{config.titre} — {config.organisation}</span>
+    <span class="footer-details">
+      {config.amf_cabinet ? `Permis AMF n° ${config.amf_cabinet} · ` : ''}{config.region}
+    </span>
   </div>
 
   <div class="footer-tools" role="navigation" aria-label="Outils et ressources">
@@ -72,7 +68,11 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
   }
 
   .footer-identity {
-    line-height: 1.8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    line-height: 1.6;
     font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.7);
   }

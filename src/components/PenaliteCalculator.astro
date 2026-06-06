@@ -154,10 +154,6 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
         </div>
       </fieldset>
 
-      <div class="penalite-actions">
-        <button type="button" id="pen-reset" class="penalite-btn penalite-btn--secondary">Réinitialiser</button>
-        <button type="button" id="pen-share" class="penalite-btn penalite-btn--secondary">📋 Partager ce scénario</button>
-      </div>
     </form>
 
     <div class="penalite-results fade-up" id="penalite-results" style="transition-delay:.2s" aria-live="polite">
@@ -236,15 +232,16 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
 
         <div class="penalite-cta-section">
           <button type="button" id="pen-cta-btn" class="btn-cta btn-cta--block">
-            <span>Recevoir mon rapport complet par courriel</span>
+            <span>Recevoir mon rapport complet par courriel ou texto</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
 
           <div class="penalite-capture" id="pen-capture" style="display:none;">
-            <form name="penalite-lead" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" class="penalite-capture-form">
+            <form name="penalite-lead" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" class="penalite-capture-form" enctype="multipart/form-data">
               <input type="hidden" name="form-name" value="penalite-lead" />
+              <input type="file" name="screenshot" id="pen-screenshot" hidden />
               <p class="sr-only"><label>Ne remplissez pas ce champ <input name="bot-field" /></label></p>
-              <div class="penalite-capture-label">Recevoir ce rapport par courriel</div>
+              <div class="penalite-capture-label">Recevoir ce rapport par courriel ou texto</div>
               <p class="penalite-capture-note">{prenom} vous enverra personnellement votre rapport détaillé.</p>
 
               <details class="penalite-rapport-contenu">
@@ -275,6 +272,11 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
               <div id="pen-cap-msg" class="penalite-capture-msg" style="display:none;"></div>
             </form>
           </div>
+        </div>
+        
+        <div class="penalite-actions" style="margin-top: 1rem;">
+          <button type="button" id="pen-reset" class="penalite-btn">Réinitialiser</button>
+          <button type="button" id="pen-share" class="penalite-btn">📋 Partager ce scénario</button>
         </div>
       </div>
 
@@ -502,8 +504,8 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
 
     ctaBtn.addEventListener('click', () => {
       if (!dernierResultat || dernierResultat.penaliteTotale <= 0) return;
-      captureDiv.style.display = captureDiv.style.display === 'none' ? '' : 'none';
-      if (captureDiv.style.display !== 'none') captureDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      ctaBtn.style.display = 'none';
+      captureDiv.style.display = 'block';
     });
 
     document.getElementById('pen-reset')?.addEventListener('click', () => {
@@ -515,6 +517,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
         if (defauts[mois]) el.value = defauts[mois]!;
       });
       placeholder.style.display = ''; resultsContent.style.display = 'none'; captureDiv.style.display = 'none';
+      ctaBtn.style.display = '';
       document.getElementById('pen-sticky-mobile')!.style.display = 'none';
       dernierResultat = null; clearErrors();
       window.scrollTo({ top: (document.getElementById('penalite-calculator')?.offsetTop ?? 0) - 120, behavior: 'smooth' });
@@ -576,12 +579,54 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     fadeEls.forEach((el) => obs.observe(el));
     window.setTimeout(() => { fadeEls.forEach((el) => el.classList.add('visible')); }, 1000);
 
-    // Signaler la conversion au sticky CTA lors de la soumission du formulaire de capture
-    const captureForm = document.querySelector('.penalite-capture-form');
+    const captureForm = document.querySelector('.penalite-capture-form') as HTMLFormElement;
+    let penaliteScreenshotCaptured = false;
     if (captureForm) {
-      captureForm.addEventListener('submit', () => {
-        document.body.dataset.outilsConverted = 'true';
-        localStorage.setItem('penalite_email_sent', '1');
+      captureForm.addEventListener('submit', async (e) => {
+        if (penaliteScreenshotCaptured) {
+          document.body.dataset.outilsConverted = 'true';
+          localStorage.setItem('penalite_email_sent', '1');
+          return;
+        }
+
+        e.preventDefault();
+        const submitBtn = captureForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+        const prevText = submitBtn.textContent;
+        submitBtn.textContent = 'Capture...';
+        submitBtn.disabled = true;
+
+        const targetEl = document.querySelector('.section-inner') as HTMLElement;
+        const screenshotInput = document.getElementById('pen-screenshot') as HTMLInputElement;
+
+        if (targetEl && screenshotInput) {
+          try {
+            const { default: html2canvas } = await import('html2canvas');
+            const canvas = await html2canvas(targetEl, {
+              backgroundColor: '#fdfaf6',
+              scale: 1.5,
+              useCORS: true,
+              logging: false,
+            });
+            await new Promise<void>((resolve) => {
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  const file = new File([blob], 'penalite-screenshot.png', { type: 'image/png' });
+                  const dt = new DataTransfer();
+                  dt.items.add(file);
+                  screenshotInput.files = dt.files;
+                }
+                resolve();
+              }, 'image/png', 0.9);
+            });
+          } catch {
+            // Ne pas bloquer si la capture échoue
+          }
+        }
+
+        penaliteScreenshotCaptured = true;
+        submitBtn.textContent = prevText;
+        submitBtn.disabled = false;
+        captureForm.requestSubmit();
       });
     }
   });

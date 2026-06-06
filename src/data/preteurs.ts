@@ -225,8 +225,8 @@ const AUTRE_PRETEUR: Preteur = {
   methode_ird: 'taux_affiche',
   notes:
     'Par défaut, nous utilisons la méthode des taux affichés (la plus conservatrice). ' +
-    'Si votre prêteur utilise les taux réels, votre pénalité pourrait être ' +
-    'significativement plus basse. Vérifiez votre contrat ou contactez Stéphanie.',
+    'Pénalité basée sur des conditions spécifiques de votre contrat qui peuvent la rendre ' +
+    'significativement plus basse. Vérifiez votre contrat ou contactez-moi.',
 };
 
 // ---------------------------------------------------------------------------

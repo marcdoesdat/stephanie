@@ -65,6 +65,7 @@ interface PlacesApiReview {
   authorAttribution?: { displayName?: string };
   rating?: number;
   text?: { text?: string };
+  originalText?: { text?: string };
   relativePublishTimeDescription?: string;
 }
 
@@ -325,7 +326,7 @@ function formatApiResponse(
       (r): ReviewItem => ({
         author: anonymizeAuthor(r.authorAttribution?.displayName ?? 'Client'),
         rating: r.rating ?? 5,
-        text: truncateText(r.text?.text ?? ''),
+        text: truncateText(r.originalText?.text ?? r.text?.text ?? ''),
         relativeTime: translateRelativeTime(r.relativePublishTimeDescription),
       })
     );
