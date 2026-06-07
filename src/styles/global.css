@@ -58,8 +58,8 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
 .hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
 .hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:white;border:1px solid var(--border);padding:.4rem 1rem;border-radius:50px;font-size:.72rem;color:var(--muted);margin-bottom:1.8rem;font-weight:500}
 .hero-badge::before{content:"●";color:var(--forest);font-size:.5rem}
-.hero-left h1{font-family:"Lora",serif;font-size:3.6rem;font-weight:600;line-height:1.12;color:var(--ink);margin-bottom:1.5rem;letter-spacing:-.015em}
-.hero-left h1 em{font-style:italic;color:var(--clay)}
+.hero-left .hero-value-prop{font-family:"Lora",serif;font-size:3.8rem;font-weight:700;line-height:1.12;color:var(--ink);margin-bottom:1.5rem;letter-spacing:-.015em}
+.hero-left .hero-value-prop em{font-style:italic;color:var(--clay)}
 .hero-left p{font-size:1.05rem;color:var(--muted);line-height:1.8;max-width:480px;margin-bottom:2.5rem}
 .hero-btns{display:flex;gap:1rem;flex-wrap:wrap}
 .btn-primary{background:var(--clay);color:white;padding:.9rem 2rem;border-radius:50px;font-size:.9rem;font-weight:600;text-decoration:none;transition:background .2s,transform .15s;display:inline-block}
@@ -1418,7 +1418,7 @@ footer strong{color:rgba(255,255,255,.85)}
   section{padding:4rem 1.5rem}
   #hero{padding:6rem 1.5rem 3rem}
   .hero-inner{grid-template-columns:1fr;gap:2rem}
-  .hero-left h1{font-size:2.6rem}
+  .hero-left .hero-value-prop{font-size:2.8rem}
   .hero-right{display:none}
   .apropos-grid{grid-template-columns:1fr;gap:2rem}
   .apropos-img{
@@ -1438,7 +1438,7 @@ footer strong{color:rgba(255,255,255,.85)}
   .results-grid{grid-template-columns:1fr 1fr}
   .sim-cards{grid-template-columns:1fr 1fr}
   .form-row{grid-template-columns:1fr}
-  footer{padding:2rem 1.5rem}
+  footer{padding:2rem 1.5rem calc(2rem + 58px + env(safe-area-inset-bottom))}
   th,td{padding:.8rem 1rem!important}
   .taux-footer{flex-direction:column}
   .messenger-btn{bottom:calc(58px + 1rem);right:1rem;width:52px;height:52px}
