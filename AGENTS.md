@@ -119,7 +119,7 @@ Calcul complet des pénalités de remboursement anticipé hypothécaire.
 - **3 mois d'intérêt** — prêts variables et certaines banques
 - **IRD (Différentiel de taux d'intérêt)** — 3 variantes :
   - `taux_affiche` — Grandes banques (RBC, TD, BMO, CIBC, Scotia) : IRD basé sur taux affiché
-  - `taux_reel` — Prêteurs monolines (MCAP, First National…) : IRD basé sur taux réel
+  - `taux_reel` — Prêteurs virtuels  (MCAP, First National…) : IRD basé sur taux réel
   - `taux_obligataire` — Méthode hybride (Desjardins, Caisse pop)
 
 **Fonctions exportées :**

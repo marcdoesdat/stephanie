@@ -11,14 +11,26 @@ export interface Props {
   tauxMarcheDefaut: Record<string, string>;
   dateMaj: string | null;
   groupes: Record<string, Preteur[]>;
+  /** Affiche le titre et sous-titre dans le composant (désactiver si la page a déjà son propre header). */
+  showHeader?: boolean;
 }
 
-const { config, tauxMarcheDefaut, dateMaj, groupes } = Astro.props;
+const { config, tauxMarcheDefaut, dateMaj, groupes, showHeader = true } = Astro.props;
 const prenom = config.nom.split(' ')[0] ?? config.nom;
 ---
 
 <section id="penalite-calculator">
   <div class="section-inner">
+    {showHeader && (
+      <div class="fade-up" style="margin-bottom:2.5rem;grid-column:1 / -1;">
+        <h2 class="section-title">Calculez votre <em>pénalité hypothécaire</em></h2>
+        <p class="section-sub">
+          Estimez la pénalité de remboursement anticipé de votre prêt hypothécaire.
+          Découvrez l'écart entre la méthode des grandes banques (taux affichés) et celle
+          des prêteurs virtuels (taux réels). Gratuit, sans inscription, résultats instantanés.
+        </p>
+      </div>
+    )}
     <form class="penalite-form fade-up" id="penalite-form" novalidate>
       <fieldset class="penalite-fieldset">
         <legend class="penalite-legend">Votre prêteur</legend>
@@ -281,7 +293,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
       </div>
 
       <div class="penalite-disclaimer">
-        <strong>Avis important.</strong> Cette <strong>estimation</strong> est fournie à titre <strong>indicatif</strong> seulement. La pénalité réelle peut varier selon les clauses spécifiques de votre contrat, les rabais d'origine, les conditions du marché et la méthode exacte de calcul de votre institution. Pour connaître votre pénalité exacte, demandez un <strong>relevé écrit à votre prêteur</strong>. Pour une analyse personnalisée, communiquez avec {config.nom}, {config.titre} affiliée à {config.organisation}, certification AMF n° <strong>{config.amf}</strong>. Cet outil ne constitue pas un conseil financier, fiscal ou juridique.
+        <strong>Avis important.</strong> Cette <strong>estimation</strong> est fournie à titre <strong>indicatif</strong> seulement. La pénalité réelle peut varier selon les clauses spécifiques de votre contrat, les rabais d'origine, les conditions du marché et la méthode exacte de calcul de votre institution. Pour connaître votre pénalité exacte, demandez un <strong>relevé écrit à votre prêteur</strong>. Pour une analyse personnalisée, communiquez avec {config.nom}, {config.titre} affiliée à {config.organisation}. Cet outil ne constitue pas un conseil financier, fiscal ou juridique.
       </div>
     </div>
   </div>

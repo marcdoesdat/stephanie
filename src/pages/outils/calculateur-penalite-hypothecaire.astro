@@ -36,7 +36,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
 <MainLayout
   fullTitle="Calculateur de pénalité de remboursement anticipé hypothécaire — Estimation IRD | Stéphanie Weyman"
-  description="Estimez la pénalité pour briser votre hypothèque au Québec. Calcul IRD (taux affichés vs taux réels), 3 mois d'intérêts. Comparez grandes banques et prêteurs monolignes. Outil gratuit, sans inscription."
+  description="Estimez la pénalité pour briser votre hypothèque au Québec. Calcul IRD (taux affichés vs taux réels), 3 mois d'intérêts. Comparez grandes banques et prêteurs virtuels. Outil gratuit, sans inscription."
 >
   <Nav />
   <main id="main-content">
@@ -48,7 +48,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           <p class="section-sub">
             Estimez la pénalité de remboursement anticipé de votre prêt hypothécaire.
             Découvrez l'écart entre la méthode des grandes banques (taux affichés) et celle
-            des prêteurs monolignes (taux réels). Gratuit, sans inscription, résultats instantanés.
+            des prêteurs virtuels (taux réels). Gratuit, sans inscription, résultats instantanés.
           </p>
         </div>
       </div>
@@ -59,6 +59,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       tauxMarcheDefaut={tauxMarcheDefaut}
       dateMaj={dateMaj}
       groupes={groupes}
+      showHeader={false}
     />
 
     <section id="penalite-edito">
@@ -110,8 +111,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
               <p>À l'<strong>échéance du terme</strong>, vous pouvez changer de prêteur <strong>sans pénalité</strong> — seuls des frais administratifs mineurs (300-500 $) s'appliquent. Avant l'échéance, la pénalité s'applique.</p>
             </details>
             <details class="penalite-faq-item">
-              <summary>Quelle est la différence entre un prêteur monoligne et une grande banque ?</summary>
-              <p>Un <strong>prêteur monoligne</strong> (First National, MCAP, RFA) se spécialise dans les prêts hypothécaires. Ils utilisent le <strong>taux contractuel réel</strong> pour l'IRD, donnant des pénalités plus basses. Pas de succursales — vous passez par un courtier.</p>
+              <summary>Quelle est la différence entre un prêteur virtuel et une grande banque ?</summary>
+              <p>Un <strong>prêteur virtuel</strong> (First National, MCAP, RFA) se spécialise dans les prêts hypothécaires. Ils utilisent le <strong>taux contractuel réel</strong> pour l'IRD, donnant des pénalités plus basses. Pas de succursales — vous passez par un courtier.</p>
             </details>
             <details class="penalite-faq-item">
               <summary>Les prêts à taux variable ont-ils une pénalité IRD ?</summary>

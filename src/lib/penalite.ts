@@ -17,7 +17,7 @@ export type CategoriePreteur =
   | 'grande_banque'
   | 'banque_secondaire'
   | 'caisse'
-  | 'monoligne'
+  | 'virtuel'
   | 'virtuelle';
 
 /** Méthode de calcul de l'IRD utilisée par un prêteur */
@@ -373,7 +373,7 @@ export function calculerPenalite(
     default:
       tauxReference = input.tauxContractuel;
       methodeRetenue = 'taux_reel';
-      descriptionMethode = 'Méthode des taux réels/contractuels (prêteurs monolignes)';
+      descriptionMethode = 'Méthode des taux réels/contractuels (prêteurs virtuels)';
       break;
   }
 
@@ -445,7 +445,7 @@ export interface ComparaisonResult {
 
 /**
  * Compare la pénalité entre la méthode des taux affichés (grandes banques)
- * et la méthode des taux réels (prêteurs monolignes), toutes choses égales par ailleurs.
+ * et la méthode des taux réels (prêteurs virtuels), toutes choses égales par ailleurs.
  */
 export function comparerMethodes(
   input: PenaliteInput,

@@ -120,7 +120,7 @@ const BANQUES_VIRTUELLES: Preteur[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Prêteurs spécialisés (monolignes) — Méthode des taux RÉELS
+// Prêteurs spécialisés (virtuels) — Méthode des taux RÉELS
 // Ces prêteurs utilisent le taux contractuel comme référence,
 // ce qui produit des pénalités IRD nettement plus basses.
 // ---------------------------------------------------------------------------
@@ -129,7 +129,7 @@ const PRETEURS_SPECIALISES: Preteur[] = [
   {
     id: 'first-national',
     nom: 'First National',
-    categorie: 'monoligne',
+    categorie: 'virtuel',
     methode_ird: 'taux_reel',
     notes:
       'First National utilise le taux contractuel comme référence et le taux ' +
@@ -139,7 +139,7 @@ const PRETEURS_SPECIALISES: Preteur[] = [
   {
     id: 'mcap',
     nom: 'MCAP',
-    categorie: 'monoligne',
+    categorie: 'virtuel',
     methode_ird: 'taux_reel',
     notes:
       'MCAP utilise une méthode basée sur le taux contractuel. ' +
@@ -149,27 +149,27 @@ const PRETEURS_SPECIALISES: Preteur[] = [
   {
     id: 'rfa',
     nom: 'RFA — Real Estate Financière Amérique',
-    categorie: 'monoligne',
+    categorie: 'virtuel',
     methode_ird: 'taux_reel',
   },
   {
     id: 'strive',
     nom: 'Strive Capital',
-    categorie: 'monoligne',
+    categorie: 'virtuel',
     methode_ird: 'taux_reel',
-    notes: 'Prêteur monoligne émergent. Méthode basée sur le taux contractuel.',
+    notes: 'Prêteur virtuel émergent. Méthode basée sur le taux contractuel.',
   },
   {
     id: 'cmls',
     nom: 'CMLS',
-    categorie: 'monoligne',
+    categorie: 'virtuel',
     methode_ird: 'taux_reel',
-    notes: 'Prêteur monoligne. Méthode basée sur le taux contractuel.',
+    notes: 'Prêteur virtuel. Méthode basée sur le taux contractuel.',
   },
   {
     id: 'merix',
     nom: 'MERIX / Lendwise',
-    categorie: 'monoligne',
+    categorie: 'virtuel',
     methode_ird: 'taux_reel',
     notes:
       'MERIX (plateforme de prêt) et Lendwise (prêteur). ' +
@@ -272,13 +272,13 @@ export const LABELS_CATEGORIES: Record<CategoriePreteur, string> = {
   grande_banque: 'Grande banque',
   banque_secondaire: 'Banque secondaire',
   caisse: 'Caisse',
-  monoligne: 'Prêteur monoligne',
+  virtuel: 'Prêteur virtuel',
   virtuelle: 'Banque virtuelle',
 };
 
 /** Libellés des méthodes IRD (pour affichage UI) */
 export const LABELS_METHODE_IRD: Record<MethodeIRD, string> = {
   taux_affiche: 'Taux affichés (grandes banques)',
-  taux_reel: 'Taux réels / contractuels (monolignes)',
+  taux_reel: 'Taux réels / contractuels (virtuels)',
   taux_obligataire: 'Taux obligataire',
 };
