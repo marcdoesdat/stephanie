@@ -742,7 +742,7 @@ const nouveauTauxDefaut =
 
     function formatMoisDuree(mois: number): string {
       if (mois <= 0) return '—';
-      if (mois < 24) return `${mois} mois`;
+      if (mois < 12) return `${mois} mois`;
       const ans = Math.floor(mois / 12);
       const reste = mois % 12;
       if (reste === 0) return `${ans} an${ans > 1 ? 's' : ''}`;
@@ -880,7 +880,7 @@ const nouveauTauxDefaut =
 
       // --- Verdict principal ---
       verdictEl.className = 'rsim-verdict';
-      const pointMortCourt = pointMortMois !== null && pointMortMois > 0 && pointMortMois <= 48;
+      const pointMortCourt = pointMortMois !== null && pointMortMois > 0 && pointMortMois <= 60;
       let verdictKey: 'oui' | 'evaluer' | 'non';
       if (economieNetteTotale > 0 && (coutTotal === 0 || pointMortCourt)) {
         verdictKey = 'oui';
@@ -1000,14 +1000,14 @@ const nouveauTauxDefaut =
         if (pointMortMois < 24) {
           pointMortEl.classList.add('rsim-pointmort--vert');
           pmortSubEl.textContent = 'Excellent — les coûts sont récupérés rapidement.';
-        } else if (pointMortMois < 48) {
+        } else if (pointMortMois < 60) {
           pointMortEl.classList.add('rsim-pointmort--orange');
           pmortSubEl.textContent = 'Acceptable — pensez à votre horizon de propriété.';
         } else {
           pointMortEl.classList.add('rsim-pointmort--rouge');
           pmortSubEl.textContent = 'Long — évaluez si vous resterez dans la propriété assez longtemps.';
         }
-        const barMax = Math.min(horizonMois, 48);
+        const barMax = Math.min(horizonMois, 60);
         pmortFillEl.style.width = `${Math.min((pointMortMois / barMax) * 100, 100)}%`;
         const axisMid = document.getElementById('rsim-pointmort-axis-mid')!;
         const axisMax = document.getElementById('rsim-pointmort-axis-max')!;

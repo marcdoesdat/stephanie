@@ -328,7 +328,7 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 }
 #comparateur .comp-rate-input-wrap:focus-within{border-color:var(--clay);background:white}
 #comparateur .comp-rate-input-wrap--hero{border-color:rgba(61,90,74,.35);background:rgba(61,90,74,.06)}
-#comparateur .comp-rate-input-wrap--hero:focus-within{border-color:var(--forest);background:white}
+#comparateur .comp-rate-input-wrap--hero:focus-within{border-color:var(--forest);background:rgba(61,90,74,.06)}
 #comparateur .comp-rate-input{
   flex:1;min-width:0;background:transparent;border:none;
   padding:.7rem .4rem .7rem 1rem;
@@ -371,8 +371,10 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 #comparateur .comp-pill.active{
   background:var(--forest);color:white;border-color:transparent;
 }
-#comparateur .comp-pill.active:hover{background:var(--forest)}
-#comparateur .comp-pill.active:active{background:var(--forest)}
+#comparateur .comp-pill.active:hover,
+#comparateur .comp-pill.active:focus,
+#comparateur .comp-pill.active:focus-visible,
+#comparateur .comp-pill.active:active{background:var(--forest);color:white;border-color:transparent;}
 #comparateur .comp-pill-sub{
   font-size:.6rem;font-weight:500;
   letter-spacing:.04em;text-transform:uppercase;opacity:.7;
@@ -1517,7 +1519,10 @@ footer strong{color:rgba(255,255,255,.85)}
   border-bottom-color:var(--forest);
   background:transparent;
 }
-.outils-tab.comp-pill[aria-selected="true"]:hover{
+.outils-tab.comp-pill[aria-selected="true"]:hover,
+.outils-tab.comp-pill.active:hover,
+.outils-tab.comp-pill[aria-selected="true"]:focus,
+.outils-tab.comp-pill.active:focus{
   background:rgba(0,0,0,.03);
 }
 .outils-tab .outils-tab-label{font-size:.88rem}
@@ -1605,6 +1610,12 @@ footer strong{color:rgba(255,255,255,.85)}
     border-color:var(--forest);
     border-radius:10px;
     box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  .outils-tab.comp-pill[aria-selected="true"]:hover,
+  .outils-tab.comp-pill.active:hover,
+  .outils-tab.comp-pill[aria-selected="true"]:focus,
+  .outils-tab.comp-pill.active:focus{
+    background:var(--forest);color:white;border-color:var(--forest);
   }
   .outils-tab.comp-pill[aria-selected="true"] .comp-pill-sub{color:rgba(255,255,255,.7)}
   .outils-tab--coming-soon{
