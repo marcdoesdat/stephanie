@@ -1491,6 +1491,7 @@ footer strong{color:rgba(255,255,255,.85)}
 .outils-tab.comp-pill{
   flex:0 0 auto;
   appearance:none;-webkit-appearance:none;
+  -webkit-tap-highlight-color:transparent;
   background:transparent;
   border:none;
   border-bottom:3px solid transparent;

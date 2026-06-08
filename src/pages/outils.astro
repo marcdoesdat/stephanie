@@ -318,7 +318,13 @@ const tabs = [
     });
 
     const initial = tabIdFromHash();
-    if (initial) activate(initial);
+    if (initial) {
+      activate(initial);
+    } else {
+      // Add .active on the first tab so iOS Safari repaints the selected state
+      // (aria-selected from SSR HTML alone doesn't always trigger a repaint on first paint)
+      tabs[0]?.classList.add('active');
+    }
 
     // Fade-up fallback (même logique que la page d'accueil)
     const animClasses = ['.fade-up', '.fade-left', '.fade-right', '.scale-in', '.stagger-children'];
