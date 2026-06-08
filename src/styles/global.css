@@ -1499,7 +1499,7 @@ footer strong{color:rgba(255,255,255,.85)}
   font-family:"DM Sans",sans-serif;
   font-size:.88rem;font-weight:500;
   cursor:pointer;
-  transition:color .18s,border-color .18s,background .18s;
+  transition:color .18s,border-color .18s;
   display:flex;flex-direction:column;align-items:center;gap:.1rem;
   line-height:1.2;
   white-space:nowrap;
@@ -1549,7 +1549,7 @@ footer strong{color:rgba(255,255,255,.85)}
     min-width:0;
     border-bottom:3px solid transparent;
     border-bottom-color:transparent;
-    transition:background .18s,color .18s,border-color .18s;
+    transition:color .18s,border-color .18s;
     color:var(--ink);
   }
   .outils-tab .comp-pill-sub{display:none}
@@ -1593,7 +1593,7 @@ footer strong{color:rgba(255,255,255,.85)}
     white-space:normal;
     text-align:center;
     min-height:3.6rem;
-    transition:background .18s,color .18s,border-color .18s,box-shadow .18s;
+    transition:color .18s,border-color .18s,box-shadow .18s;
   }
   .outils-tab.comp-pill:hover{
     background:var(--warm);

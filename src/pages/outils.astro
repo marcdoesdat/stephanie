@@ -263,6 +263,21 @@ const tabs = [
       document.querySelectorAll<HTMLElement>('.outils-panel')
     );
 
+    const isMobile = () => window.innerWidth <= 860;
+
+    function setTabStyle(tab: HTMLButtonElement, active: boolean) {
+      if (active && isMobile()) {
+        // Force inline !important to bypass Chrome/Android focus + transition interference
+        tab.style.setProperty('background', 'var(--forest)', 'important');
+        tab.style.setProperty('color', 'white', 'important');
+        tab.style.setProperty('border-color', 'var(--forest)', 'important');
+      } else {
+        tab.style.removeProperty('background');
+        tab.style.removeProperty('color');
+        tab.style.removeProperty('border-color');
+      }
+    }
+
     function activate(tabId: string, focus = false, updateHash = true) {
       const targetTab = tabs.find((t) => t.dataset.tab === tabId);
       if (!targetTab) return;
@@ -272,6 +287,7 @@ const tabs = [
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
         tab.setAttribute('tabindex', active ? '0' : '-1');
         tab.classList.toggle('active', active);
+        setTabStyle(tab, active);
       });
       panels.forEach((panel) => {
         panel.hidden = panel.dataset.panel !== tabId;
