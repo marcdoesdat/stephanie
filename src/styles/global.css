@@ -1559,6 +1559,10 @@ footer strong{color:rgba(255,255,255,.85)}
     border-radius:8px;
     border-bottom-color:transparent;
   }
+  .outils-tab.comp-pill[aria-selected="true"]:focus,
+  .outils-tab.comp-pill[aria-selected="true"]:active,
+  .outils-tab.comp-pill.active:focus,
+  .outils-tab.comp-pill.active:active{background:var(--forest);color:white}
   .outils-tab .outils-tab-label{font-size:.8rem}
 }
 
@@ -1606,6 +1610,12 @@ footer strong{color:rgba(255,255,255,.85)}
     border-color:var(--forest);
     border-radius:10px;
     box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  .outils-tab.comp-pill[aria-selected="true"]:focus,
+  .outils-tab.comp-pill[aria-selected="true"]:active,
+  .outils-tab.comp-pill.active:focus,
+  .outils-tab.comp-pill.active:active{
+    background:var(--forest);color:white;border-color:var(--forest);
   }
   .outils-tab.comp-pill[aria-selected="true"] .comp-pill-sub{color:rgba(255,255,255,.7)}
   .outils-tab--coming-soon{

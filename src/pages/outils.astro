@@ -263,7 +263,7 @@ const tabs = [
       document.querySelectorAll<HTMLElement>('.outils-panel')
     );
 
-    function activate(tabId: string, focus = false) {
+    function activate(tabId: string, focus = false, updateHash = true) {
       const targetTab = tabs.find((t) => t.dataset.tab === tabId);
       if (!targetTab) return;
 
@@ -279,9 +279,11 @@ const tabs = [
 
       if (focus) targetTab.focus();
 
-      const newHash = `#${tabId}`;
-      if (window.location.hash !== newHash) {
-        history.replaceState(null, '', `${window.location.pathname}${newHash}`);
+      if (updateHash) {
+        const newHash = `#${tabId}`;
+        if (window.location.hash !== newHash) {
+          history.replaceState(null, '', `${window.location.pathname}${newHash}`);
+        }
       }
     }
 
@@ -318,13 +320,10 @@ const tabs = [
     });
 
     const initial = tabIdFromHash();
-    if (initial) {
-      activate(initial);
-    } else {
-      // Add .active on the first tab so iOS Safari repaints the selected state
-      // (aria-selected from SSR HTML alone doesn't always trigger a repaint on first paint)
-      tabs[0]?.classList.add('active');
-    }
+    const defaultTab = tabs[0]?.dataset.tab;
+    // Always call activate() so JS sets .active and refreshes visual state
+    // (avoids iOS Safari rendering stale aria-selected attribute from SSR)
+    activate(initial ?? defaultTab ?? 'simulateur', false, !!initial);
 
     // Fade-up fallback (même logique que la page d'accueil)
     const animClasses = ['.fade-up', '.fade-left', '.fade-right', '.scale-in', '.stagger-children'];
