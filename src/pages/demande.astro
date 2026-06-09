@@ -387,14 +387,6 @@ const prenom = config.nom.split(' ')[0];
             <p class="demande-note demande-note--next">Pour la suite, {prenom} vous contactera personnellement pour obtenir les documents nécessaires (talons de paie, avis de cotisation, relevés bancaires, etc.).</p>
           </form>
 
-          <!-- Formulaire statique invisible pour la détection Netlify Forms au build -->
-          <form name="demande" data-netlify="true" data-netlify-honeypot="company" hidden>
-            <input type="hidden" name="form-name" value="demande" />
-            <input type="text" name="nom" />
-            <input type="text" name="courriel" />
-            <input type="text" name="telephone" />
-          </form>
-
           <!-- Message d'état -->
           <p id="demande-status" class="demande-status" role="status" aria-live="polite" hidden></p>
 
@@ -810,10 +802,16 @@ const prenom = config.nom.split(' ')[0];
       if (label) label.textContent = 'Envoi en cours…';
       setStatus('sending', 'Envoi de votre demande…');
 
+      var formData = new FormData(form);
+      var params = new URLSearchParams();
+      formData.forEach(function (value, key) {
+        params.append(key, typeof value === 'string' ? value : '');
+      });
+
       fetch('/demande', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(new FormData(form)).toString()
+        body: params.toString()
       })
         .then(function () {
           form.reset();
