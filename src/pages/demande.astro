@@ -33,7 +33,7 @@ const prenom = config.nom.split(' ')[0];
         </div>
 
         <div class="demande-card fade-up">
-          <form id="demande-form" name="demande" method="POST" data-netlify="true" data-netlify-honeypot="company" novalidate>
+          <form id="demande-form" name="demande" method="POST" action="/demande" data-netlify="true" data-netlify-honeypot="company" novalidate>
             <input type="hidden" name="form-name" value="demande" />
             <!-- Honeypot anti-spam -->
             <div class="demande-hp" aria-hidden="true">
@@ -384,6 +384,15 @@ const prenom = config.nom.split(' ')[0];
             </button>
 
             <p class="demande-note">Gratuit · Confidentiel · Réponse dans les meilleurs délais</p>
+            <p class="demande-note demande-note--next">Pour la suite, {prenom} vous contactera personnellement pour obtenir les documents nécessaires (talons de paie, avis de cotisation, relevés bancaires, etc.).</p>
+          </form>
+
+          <!-- Formulaire statique invisible pour la détection Netlify Forms au build -->
+          <form name="demande" data-netlify="true" data-netlify-honeypot="company" hidden>
+            <input type="hidden" name="form-name" value="demande" />
+            <input type="text" name="nom" />
+            <input type="text" name="courriel" />
+            <input type="text" name="telephone" />
           </form>
 
           <!-- Message d'état -->
