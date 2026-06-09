@@ -1,0 +1,827 @@
+---
+export const prerender = true;
+
+import MainLayout from '../layouts/MainLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import MessengerBtn from '../components/MessengerBtn.astro';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+---
+
+<MainLayout
+  title="Demande de financement hypothécaire"
+  description="Nouvel achat ou refinancement — remplissez ce formulaire et Stéphanie Weyman, courtière hypothécaire, analysera votre dossier gratuitement. Diagnostic personnalisé, sans engagement."
+  noindex={true}
+>
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+    <section class="demande-section">
+      <div class="section-inner demande-inner">
+
+        <div class="demande-intro fade-up">
+          <div class="section-tag">Nouvel achat · Refinancement</div>
+          <h1 class="section-title">Votre projet <em>commence ici</em></h1>
+          <p class="section-sub">
+            Chaque champ est une pièce du casse-tête. Plus vous m'en donnez, plus je peux vous revenir avec une réponse précise — et vite.
+            Tout est <strong>strictement confidentiel</strong>. Aucune enquête de crédit n'est lancée sans votre consentement écrit.
+          </p>
+        </div>
+
+        <div class="demande-card fade-up">
+          <form id="demande-form" name="demande" method="POST" data-netlify="true" data-netlify-honeypot="company" novalidate>
+            <input type="hidden" name="form-name" value="demande" />
+            <!-- Honeypot anti-spam -->
+            <div class="demande-hp" aria-hidden="true">
+              <label>Ne pas remplir <input type="text" name="company" tabindex="-1" autocomplete="off" /></label>
+            </div>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 1 : Identité et situation personnelle                    -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num">1</span> Identité et situation personnelle</legend>
+              <p class="demande-legend-sub">Stéphanie doit d'abord savoir à qui elle a affaire — pour des raisons légales et pour préparer l'enquête de crédit.</p>
+
+              <div class="demande-field">
+                <label for="demande-nom">Nom complet <span class="demande-req">*</span></label>
+                <input type="text" id="demande-nom" name="nom" required autocomplete="name" placeholder="Marie Tremblay" />
+              </div>
+
+              <div class="demande-field">
+                <label for="demande-naissance">Date de naissance <span class="demande-req">*</span></label>
+                <input type="date" id="demande-naissance" name="naissance" required autocomplete="bday" />
+              </div>
+
+              <div class="demande-field">
+                <label for="demande-adresse">Adresse actuelle <span class="demande-req">*</span></label>
+                <input type="text" id="demande-adresse" name="adresse" required autocomplete="street-address" placeholder="123 rue Principale, app. 4" />
+              </div>
+
+              <div class="demande-row demande-row--3col">
+                <div class="demande-field">
+                  <label for="demande-ville">Ville <span class="demande-req">*</span></label>
+                  <input type="text" id="demande-ville" name="ville" required autocomplete="address-level2" placeholder="Repentigny" />
+                </div>
+                <div class="demande-field">
+                  <label for="demande-code-postal">Code postal <span class="demande-req">*</span></label>
+                  <input type="text" id="demande-code-postal" name="code_postal" required autocomplete="postal-code" placeholder="J5Y 1A1" maxlength="7" />
+                </div>
+                <div class="demande-field">
+                  <label for="demande-province">Province</label>
+                  <input type="text" id="demande-province" name="province" value="Québec" readonly class="demande-readonly" />
+                </div>
+              </div>
+
+              <div class="demande-field">
+                <label>Habitez-vous à cette adresse depuis plus de 3 ans ? <span class="demande-req">*</span></label>
+                <div class="demande-radio-group">
+                  <label class="demande-radio-label"><input type="radio" name="adresse_3ans" value="oui" required /> Oui</label>
+                  <label class="demande-radio-label"><input type="radio" name="adresse_3ans" value="non" /> Non</label>
+                </div>
+              </div>
+
+              <div class="demande-field" id="demande-adresse-prev-group" style="display:none;">
+                <label for="demande-adresse-prev">Adresse précédente</label>
+                <input type="text" id="demande-adresse-prev" name="adresse_precedente" autocomplete="street-address" placeholder="Adresse complète où vous habitiez avant" />
+              </div>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-nas">Numéro d'assurance sociale (NAS) <span class="demande-opt">(recommandé)</span></label>
+                  <input type="text" id="demande-nas" name="nas" inputmode="numeric" placeholder="000 000 000" maxlength="11" />
+                  <small class="demande-field-hint">Évite qu'une enquête de crédit soit confondue avec une autre personne portant le même nom.</small>
+                </div>
+                <div class="demande-field">
+                  <label for="demande-etat-civil">État civil <span class="demande-req">*</span></label>
+                  <select id="demande-etat-civil" name="etat_civil" required>
+                    <option value="" disabled selected>Choisir…</option>
+                    <option value="celibataire">Célibataire</option>
+                    <option value="marie">Marié·e</option>
+                    <option value="conjoint_fait">Conjoint·e de fait</option>
+                    <option value="divorce">Divorcé·e</option>
+                    <option value="veuf">Veuf·ve</option>
+                  </select>
+                  <small class="demande-field-hint">Au Québec, l'état civil a un impact sur le patrimoine familial et la structure du titre de propriété.</small>
+                </div>
+              </div>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-tel">Téléphone <span class="demande-req">*</span></label>
+                  <input type="tel" id="demande-tel" name="telephone" required autocomplete="tel" placeholder="514 000-0000" />
+                </div>
+                <div class="demande-field">
+                  <label for="demande-courriel">Courriel <span class="demande-req">*</span></label>
+                  <input type="email" id="demande-courriel" name="courriel" required autocomplete="email" placeholder="marie@exemple.com" />
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 2 : Emploi et revenus                                    -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num">2</span> Emploi et revenus</legend>
+              <p class="demande-legend-sub">Les prêteurs veulent s'assurer de la stabilité de vos revenus. Ces informations déterminent votre capacité d'emprunt.</p>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-statut-emploi">Statut d'emploi <span class="demande-req">*</span></label>
+                  <select id="demande-statut-emploi" name="statut_emploi" required>
+                    <option value="" disabled selected>Choisir…</option>
+                    <option value="salarie">Salarié·e (T4)</option>
+                    <option value="travailleur_autonome">Travailleur·e autonome</option>
+                    <option value="commission">À commission</option>
+                    <option value="contractuel">Contractuel·le</option>
+                    <option value="sans_emploi">Sans emploi actuellement</option>
+                  </select>
+                </div>
+                <div class="demande-field">
+                  <label for="demande-anciennete">Ancienneté chez l'employeur actuel <span class="demande-req">*</span></label>
+                  <select id="demande-anciennete" name="anciennete" required>
+                    <option value="" disabled selected>Choisir…</option>
+                    <option value="moins_6mois">Moins de 6 mois</option>
+                    <option value="6mois_1an">6 mois à 1 an</option>
+                    <option value="1a_2ans">1 à 2 ans</option>
+                    <option value="2a_5ans">2 à 5 ans</option>
+                    <option value="5ans_plus">Plus de 5 ans</option>
+                    <option value="travailleur_autonome">Travailleur autonome (précisez années ci-dessous)</option>
+                  </select>
+                  <small class="demande-field-hint">Les prêteurs aiment voir au moins 2 ans de stabilité, surtout pour les travailleurs autonomes.</small>
+                </div>
+              </div>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-revenu-base">Revenu annuel brut de base ($) <span class="demande-req">*</span></label>
+                  <input type="text" id="demande-revenu-base" name="revenu_base" required inputmode="numeric" placeholder="75 000" />
+                </div>
+                <div class="demande-field">
+                  <label for="demande-revenu-extra">Bonus / commissions / heures supp. annuels ($) <span class="demande-opt">(si applicable)</span></label>
+                  <input type="text" id="demande-revenu-extra" name="revenu_extra" inputmode="numeric" placeholder="10 000" />
+                </div>
+              </div>
+
+              <div class="demande-field">
+                <label for="demande-autres-revenus">Vous avez d'autres revenus ? Décrivez-les ici <span class="demande-opt">(facultatif)</span></label>
+                <textarea id="demande-autres-revenus" name="autres_revenus" rows="2" placeholder="Ex. revenus de location, pensions, dividendes, pourboires non déclarés ci-dessus, travail à temps partiel…"></textarea>
+                <small class="demande-field-hint">Toute source de revenu supplémentaire peut augmenter votre capacité d'emprunt.</small>
+              </div>
+
+              <div class="demande-field">
+                <label>Quels documents avez-vous déjà en main ?</label>
+                <div class="demande-checklist">
+                  <label class="demande-check-label"><input type="checkbox" name="docs_disponibles" value="talons_paie" /> Talons de paie récents (2 derniers)</label>
+                  <label class="demande-check-label"><input type="checkbox" name="docs_disponibles" value="lettre_emploi" /> Lettre d'emploi récente</label>
+                  <label class="demande-check-label"><input type="checkbox" name="docs_disponibles" value="t4" /> T4 / Relevé 1 (2 dernières années)</label>
+                  <label class="demande-check-label"><input type="checkbox" name="docs_disponibles" value="avis_cotisation" /> Avis de cotisation fédéral et provincial (2 dernières années)</label>
+                  <label class="demande-check-label"><input type="checkbox" name="docs_disponibles" value="aucun" /> Aucun pour le moment — j'en discuterai avec Stéphanie</label>
+                </div>
+                <small class="demande-field-hint">Les avis de cotisation sont cruciaux pour prouver qu'il n'y a pas d'impôts impayés et pour valider les revenus des travailleurs autonomes.</small>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 3 : Mise de fonds                                        -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num">3</span> Mise de fonds</legend>
+              <p class="demande-legend-sub">Au Canada, Stéphanie doit prouver la provenance de chaque dollar investi. Précisez l'origine de vos fonds.</p>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-mise-montant">Montant total disponible ($) <span class="demande-req">*</span></label>
+                  <input type="text" id="demande-mise-montant" name="mise_montant" required inputmode="numeric" placeholder="45 000" />
+                </div>
+                <div class="demande-field">
+                  <label for="demande-prix-vise">Prix de la propriété visée ($) <span class="demande-opt">(si connu)</span></label>
+                  <input type="text" id="demande-prix-vise" name="prix_vise" inputmode="numeric" placeholder="450 000" />
+                </div>
+              </div>
+
+              <div class="demande-field">
+                <label for="demande-source-fonds">Source principale des fonds <span class="demande-req">*</span></label>
+                <select id="demande-source-fonds" name="source_fonds" required>
+                  <option value="" disabled selected>Choisir…</option>
+                  <option value="epargne">Épargne personnelle (compte chèque/épargne)</option>
+                  <option value="reer_rap">REER — Régime d'accession à la propriété (RAP)</option>
+                  <option value="celiapp">CELIAPP</option>
+                  <option value="don">Don d'un proche (parents, famille)</option>
+                  <option value="vente">Vente d'une propriété actuelle</option>
+                  <option value="refinancement">Refinancement d'une autre propriété</option>
+                  <option value="heritage">Héritage</option>
+                  <option value="combinaison">Combinaison de plusieurs sources</option>
+                </select>
+              </div>
+
+              <div class="demande-field">
+                <label>Les fonds sont-ils dans votre compte bancaire depuis plus de 90 jours ? <span class="demande-req">*</span></label>
+                <div class="demande-radio-group">
+                  <label class="demande-radio-label"><input type="radio" name="fonds_90jours" value="oui" required /> Oui — les relevés bancaires le prouveront</label>
+                  <label class="demande-radio-label"><input type="radio" name="fonds_90jours" value="non" /> Non — ils proviennent d'un dépôt récent</label>
+                  <label class="demande-radio-label"><input type="radio" name="fonds_90jours" value="partiel" /> En partie seulement</label>
+                </div>
+                <small class="demande-field-hint">Stéphanie aura besoin des relevés bancaires des <strong>90 derniers jours</strong> pour prouver la provenance des fonds. Si l'argent vient d'un don, une lettre de don signée sera exigée.</small>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 4 : Passif — Dettes                                      -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num">4</span> Passif — Dettes actuelles</legend>
+              <p class="demande-legend-sub">Pour calculer votre capacité d'emprunt, Stéphanie doit connaître vos obligations mensuelles. Aucune enquête de crédit n'est lancée sans votre accord écrit.</p>
+
+              <div class="demande-field">
+                <label for="demande-paiement-dettes">Paiements mensuels totaux de dettes ($) <span class="demande-opt">(estimation)</span></label>
+                <input type="text" id="demande-paiement-dettes" name="paiement_dettes" inputmode="numeric" placeholder="Ex. 850 — incluant auto, cartes, prêts, etc." />
+                <small class="demande-field-hint">Additionnez vos paiements mensuels : prêt auto, cartes de crédit (paiement minimum), marges, prêts étudiants, pensions alimentaires.</small>
+              </div>
+
+              <div class="demande-field">
+                <label>Quels types de dettes avez-vous ?</label>
+                <div class="demande-checklist">
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="cartes_credit" /> Cartes de crédit / marges personnelles</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pret_auto" /> Prêt automobile ou location</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pret_etudiant" /> Prêt étudiant</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pret_personnel" /> Prêt personnel</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pension_alimentaire" /> Pension alimentaire à payer</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="hypotheque_autre" /> Hypothèque sur une autre propriété</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="aucune_dette" /> Aucune dette</label>
+                </div>
+              </div>
+
+              <div class="demande-field demande-field--consent">
+                <label class="demande-check-label demande-check-label--box" for="demande-consent-credit">
+                  <input type="checkbox" id="demande-consent-credit" name="consentement_credit" value="oui" />
+                  <span>Je comprends qu'une <strong>enquête de crédit</strong> (Equifax ou TransUnion) sera requise pour obtenir un financement ferme. Stéphanie me fera signer un formulaire de consentement écrit avant toute enquête. <span class="demande-req">*</span></span>
+                </label>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 5 : Préférences de financement                           -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num">5</span> Préférences de financement</legend>
+              <p class="demande-legend-sub">Pour vous recommander le bon produit, Stéphanie doit comprendre votre tolérance au risque et vos projets.</p>
+
+              <div class="demande-field">
+                <label>Taux fixe ou variable ? <span class="demande-req">*</span></label>
+                <div class="demande-radio-group">
+                  <label class="demande-radio-label"><input type="radio" name="pref_taux" value="fixe" required /> <strong>Taux fixe</strong> — la sécurité d'un paiement qui ne bouge jamais</label>
+                  <label class="demande-radio-label"><input type="radio" name="pref_taux" value="variable" /> <strong>Taux variable</strong> — prêt à assumer des fluctuations pour potentiellement économiser</label>
+                  <label class="demande-radio-label"><input type="radio" name="pref_taux" value="indecis" /> Je ne sais pas — j'aimerais en discuter avec Stéphanie</label>
+                </div>
+              </div>
+
+              <div class="demande-field">
+                <label for="demande-duree-terme">Durée du terme recherchée</label>
+                <select id="demande-duree-terme" name="duree_terme">
+                  <option value="" disabled selected>Choisir…</option>
+                  <option value="1a_3ans">Court terme (1 à 3 ans)</option>
+                  <option value="5ans">Standard (5 ans)</option>
+                  <option value="indecis">Je ne sais pas — j'aimerais en discuter</option>
+                </select>
+              </div>
+
+              <div class="demande-field">
+                <label>Paiements anticipés importants prévus ?</label>
+                <div class="demande-radio-group">
+                  <label class="demande-radio-label"><input type="radio" name="paiements_anticipes" value="oui" /> Oui — je prévois faire des paiements forfaitaires chaque année</label>
+                  <label class="demande-radio-label"><input type="radio" name="paiements_anticipes" value="peut_etre" /> Peut-être — j'aimerais avoir cette flexibilité</label>
+                  <label class="demande-radio-label"><input type="radio" name="paiements_anticipes" value="non" /> Non — je vais suivre l'échéancier standard</label>
+                </div>
+              </div>
+
+              <div class="demande-field">
+                <label>Prévoyez-vous vendre la propriété à court terme (moins de 3 ans) ?</label>
+                <div class="demande-radio-group">
+                  <label class="demande-radio-label"><input type="radio" name="vente_court_terme" value="oui" /> Oui — cela pourrait arriver</label>
+                  <label class="demande-radio-label"><input type="radio" name="vente_court_terme" value="non" /> Non — je compte y rester</label>
+                </div>
+                <small class="demande-field-hint">Si oui, Stéphanie en tiendra compte pour minimiser la pénalité de bris de contrat.</small>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 6 : Propriété visée (si applicable)                      -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num">6</span> La propriété visée</legend>
+              <p class="demande-legend-sub">Si vous avez déjà une propriété en vue, ces informations permettent à Stéphanie d'accélérer le processus.</p>
+
+              <div class="demande-field">
+                <label>Avez-vous une promesse d'achat acceptée ? <span class="demande-req">*</span></label>
+                <div class="demande-radio-group">
+                  <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="oui" required /> Oui — j'ai une promesse d'achat acceptée</label>
+                  <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="non" /> Non — je magasine encore</label>
+                </div>
+              </div>
+
+              <div id="demande-promesse-oui" style="display:none;">
+                <div class="demande-callout">
+                  <strong>⚠️ Urgent — documents requis</strong>
+                  <p>Stéphanie aura besoin rapidement de : la fiche descriptive (Centris/SIA), la déclaration du vendeur, le compte de taxes municipales et scolaires, et la promesse d'achat signée. Vous pourrez les transmettre après l'appel.</p>
+                </div>
+
+                <div class="demande-field">
+                  <label for="demande-date-possession">Date de possession prévue</label>
+                  <input type="date" id="demande-date-possession" name="date_possession" />
+                </div>
+              </div>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-type-propriete">Type de propriété</label>
+                  <select id="demande-type-propriete" name="type_propriete">
+                    <option value="" disabled selected>Choisir…</option>
+                    <option value="maison">Maison unifamiliale</option>
+                    <option value="condo">Condo / copropriété</option>
+                    <option value="plex">Plex (duplex, triplex…)</option>
+                    <option value="maison_mobile">Maison mobile</option>
+                    <option value="terrain">Terrain</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                <div class="demande-field">
+                  <label for="demande-usage">Usage de la propriété</label>
+                  <select id="demande-usage" name="usage_propriete">
+                    <option value="" disabled selected>Choisir…</option>
+                    <option value="principale">Résidence principale</option>
+                    <option value="secondaire">Résidence secondaire / chalet</option>
+                    <option value="revenus">Immeuble à revenus</option>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- Message libre + Consentement final                               -->
+            <!-- ================================================================ -->
+            <div class="demande-field">
+              <label for="demande-message">Précisions ou questions pour Stéphanie <span class="demande-opt">(facultatif)</span></label>
+              <textarea id="demande-message" name="message" rows="4" placeholder="Toute information supplémentaire qui pourrait aider Stéphanie à préparer votre dossier…"></textarea>
+            </div>
+
+            <label class="demande-consent" for="demande-consent-final">
+              <input type="checkbox" id="demande-consent-final" name="consentement" value="oui" required />
+              <span>
+                J'accepte que {prenom} utilise les renseignements ci-dessus pour analyser mon dossier et me recontacter.
+                Ces informations sont <strong>strictement confidentielles</strong> et utilisées uniquement dans le cadre de ma demande de financement — voir la
+                <a href="/confidentialite">politique de confidentialité</a>. Aucune enquête de crédit ne sera lancée sans mon consentement écrit. <span class="demande-req">*</span>
+              </span>
+            </label>
+
+            <button type="submit" class="btn-cta btn-cta--block" id="demande-submit">
+              <span class="demande-submit-label">Envoyer ma demande</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+
+            <p class="demande-note">Gratuit · Confidentiel · Réponse dans les meilleurs délais</p>
+          </form>
+
+          <!-- Message d'état -->
+          <p id="demande-status" class="demande-status" role="status" aria-live="polite" hidden></p>
+
+          <!-- Message de succès -->
+          <div id="demande-success" class="demande-success" hidden>
+            <span class="demande-success-check" aria-hidden="true">✅</span>
+            <strong>Votre demande est envoyée&nbsp;!</strong>
+            <p>{prenom} analysera votre dossier et vous contactera personnellement dans les meilleurs délais.</p>
+            <a href="/" class="btn-secondary" style="margin-top:1.5rem;display:inline-flex;align-items:center;gap:.5rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              Retour à l'accueil
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<style>
+  .demande-section { background: var(--sand); padding: 7rem 1.5rem 5rem; }
+  .demande-inner { max-width: 780px; margin: 0 auto; }
+
+  .demande-intro { text-align: center; margin-bottom: 2.5rem; }
+  .demande-intro .section-tag { margin-bottom: 1rem; }
+  .demande-intro .section-sub { margin: 1rem auto 0; }
+
+  .demande-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.5rem, 4vw, 2.75rem);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Honeypot */
+  .demande-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* --- FIELDSETS & SECTIONS --- */
+  .demande-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0 0 2.5rem 0;
+  }
+  .demande-fieldset:last-of-type { margin-bottom: 2rem; }
+
+  .demande-legend {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    font-family: "Lora", serif;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: .35rem;
+    padding: 0;
+    float: none;
+    width: 100%;
+  }
+  .demande-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--clay);
+    color: white;
+    font-family: "DM Sans", sans-serif;
+    font-size: .95rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .demande-legend-sub {
+    font-size: .85rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 1.35rem;
+  }
+
+  /* --- FIELDS --- */
+  .demande-field { margin-bottom: 1.25rem; }
+  .demande-field--consent { margin-top: .5rem; }
+  .demande-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.1rem;
+  }
+  .demande-row--3col { grid-template-columns: 2fr 1fr 1fr; }
+
+  .demande-field label {
+    display: block;
+    font-size: .82rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+    color: var(--ink);
+    margin-bottom: .45rem;
+  }
+  .demande-req { color: var(--clay); }
+  .demande-opt { text-transform: none; font-weight: 400; letter-spacing: 0; color: var(--muted); font-size: .75rem; }
+  .demande-field-hint {
+    display: block;
+    font-size: .72rem;
+    color: var(--muted);
+    margin-top: .35rem;
+    line-height: 1.5;
+  }
+
+  .demande-field input[type="text"],
+  .demande-field input[type="email"],
+  .demande-field input[type="tel"],
+  .demande-field input[type="date"],
+  .demande-field select,
+  .demande-field textarea {
+    width: 100%;
+    padding: .85rem 1.1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: "DM Sans", sans-serif;
+    font-size: .95rem;
+    transition: border-color .2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .demande-field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  .demande-field input:focus,
+  .demande-field select:focus,
+  .demande-field textarea:focus { outline: none; border-color: var(--clay); box-shadow: 0 0 0 3px rgba(196,122,82,.12); }
+  .demande-field input::placeholder,
+  .demande-field textarea::placeholder { color: #b8a99a; }
+  .demande-field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a5f50' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; }
+  .demande-field input[aria-invalid="true"],
+  .demande-field select[aria-invalid="true"] { border-color: var(--clay-dk); }
+  .demande-readonly {
+    background: var(--warm) !important;
+    color: var(--muted);
+    cursor: default;
+  }
+
+  /* --- RADIO GROUPS --- */
+  .demande-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+  }
+  .demande-radio-label {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    font-size: .88rem;
+    line-height: 1.5;
+    color: var(--ink);
+    cursor: pointer;
+    padding: .55rem .8rem;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid transparent;
+    transition: background .15s, border-color .15s;
+  }
+  .demande-radio-label:has(input:checked) {
+    background: var(--warm);
+    border-color: var(--clay);
+  }
+  .demande-radio-label:hover { background: var(--sand); }
+  .demande-radio-label input[type="radio"] {
+    accent-color: var(--clay);
+    width: 1rem;
+    height: 1rem;
+    margin-top: .1rem;
+    flex-shrink: 0;
+  }
+
+  /* --- CHECKLISTS --- */
+  .demande-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+  .demande-check-label {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    font-size: .85rem;
+    line-height: 1.45;
+    color: var(--ink);
+    cursor: pointer;
+    padding: .35rem 0;
+  }
+  .demande-check-label input[type="checkbox"] {
+    accent-color: var(--clay);
+    width: 1rem;
+    height: 1rem;
+    margin-top: .1rem;
+    flex-shrink: 0;
+  }
+  .demande-check-label--box {
+    padding: .75rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--sand);
+    font-size: .82rem;
+  }
+  .demande-check-label--box:has(input:checked) {
+    border-color: var(--clay);
+    background: var(--warm);
+  }
+
+  /* --- CALLOUT --- */
+  .demande-callout {
+    background: #fef3e4;
+    border: 1px solid var(--clay);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.25rem;
+  }
+  .demande-callout strong {
+    display: block;
+    font-size: .88rem;
+    color: var(--clay-dk);
+    margin-bottom: .35rem;
+  }
+  .demande-callout p {
+    font-size: .8rem;
+    color: var(--muted);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* --- CONSENT --- */
+  .demande-consent {
+    display: flex;
+    gap: .6rem;
+    align-items: flex-start;
+    margin: 1rem 0 1.5rem;
+    font-size: .82rem;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .demande-consent input[type="checkbox"] {
+    margin-top: .15rem;
+    flex: 0 0 auto;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--clay);
+  }
+  .demande-consent a { color: var(--clay); text-decoration: underline; }
+
+  #demande-submit[disabled] { opacity: .65; cursor: not-allowed; }
+
+  .demande-note {
+    text-align: center;
+    font-size: .76rem;
+    color: var(--muted);
+    margin-top: 1rem;
+  }
+
+  /* --- STATUS & SUCCESS --- */
+  .demande-status {
+    margin-top: 1.25rem;
+    padding: .85rem 1.1rem;
+    border-radius: var(--radius-sm);
+    font-size: .88rem;
+    line-height: 1.5;
+  }
+  .demande-status[data-state="error"] {
+    background: #fbeae3;
+    border: 1px solid var(--clay-dk);
+    color: var(--clay-dk);
+  }
+  .demande-status[data-state="sending"] {
+    background: var(--warm);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .demande-success {
+    text-align: center;
+    padding: 1rem 0;
+  }
+  .demande-success-check { font-size: 2.2rem; display: block; margin-bottom: .5rem; }
+  .demande-success strong {
+    font-family: "Lora", serif;
+    font-size: 1.4rem;
+    color: var(--forest);
+    display: block;
+    margin-bottom: .5rem;
+  }
+  .demande-success p { color: var(--muted); line-height: 1.7; font-size: .95rem; }
+
+  @media (max-width: 700px) {
+    .demande-row,
+    .demande-row--3col { grid-template-columns: 1fr; gap: 0; }
+    .demande-row .demande-field,
+    .demande-row--3col .demande-field { margin-bottom: 1.25rem; }
+    .demande-legend { font-size: 1.15rem; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var form = document.getElementById('demande-form');
+    if (!form) return;
+
+    var btn = document.getElementById('demande-submit');
+    var label = form.querySelector('.demande-submit-label');
+    var statusEl = document.getElementById('demande-status');
+    var successEl = document.getElementById('demande-success');
+    var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var TEL_RE = /\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d/;
+
+    // --- Adresse < 3 ans → afficher adresse précédente ---
+    var radiosAdresse = form.querySelectorAll('input[name="adresse_3ans"]');
+    var adressePrevGroup = document.getElementById('demande-adresse-prev-group');
+    radiosAdresse.forEach(function (r) {
+      r.addEventListener('change', function () {
+        if (adressePrevGroup) {
+          adressePrevGroup.style.display = r.value === 'non' ? '' : 'none';
+        }
+      });
+    });
+
+    // --- Promesse d'achat → afficher callout + date possession ---
+    var radiosPromesse = form.querySelectorAll('input[name="promesse_achat"]');
+    var promesseOui = document.getElementById('demande-promesse-oui');
+    radiosPromesse.forEach(function (r) {
+      r.addEventListener('change', function () {
+        if (promesseOui) {
+          promesseOui.style.display = r.value === 'oui' ? '' : 'none';
+        }
+      });
+    });
+
+    // --- Statut ---
+    function setStatus(state, msg) {
+      if (!statusEl) return;
+      if (!state) { statusEl.hidden = true; statusEl.removeAttribute('data-state'); statusEl.textContent = ''; return; }
+      statusEl.hidden = false;
+      statusEl.setAttribute('data-state', state);
+      statusEl.textContent = msg;
+    }
+
+    function fieldInvalid(el, invalid) {
+      if (!el) return;
+      if (invalid) el.setAttribute('aria-invalid', 'true');
+      else el.removeAttribute('aria-invalid');
+    }
+
+    // --- Validation ---
+    function getField(name) { return form.querySelector('[name="' + name + '"]'); }
+    function val(name) { var el = getField(name); return el ? el.value.trim() : ''; }
+    function radioVal(name) { var checked = form.querySelector('input[name="' + name + '"]:checked'); return checked ? checked.value : ''; }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Clear previous errors
+      form.querySelectorAll('[aria-invalid]').forEach(function (el) { el.removeAttribute('aria-invalid'); });
+
+      var errors = [];
+      function req(name, label) { if (!val(name)) { var el = getField(name); fieldInvalid(el, true); errors.push(label); } }
+
+      // Section 1
+      req('nom', 'Nom complet');
+      req('naissance', 'Date de naissance');
+      req('adresse', 'Adresse actuelle');
+      req('ville', 'Ville');
+      req('code_postal', 'Code postal');
+      if (!radioVal('adresse_3ans')) { errors.push('Adresse — 3 ans'); }
+      if (!val('etat_civil') && !radioVal('etat_civil')) { var ec = getField('etat_civil'); fieldInvalid(ec, true); errors.push('État civil'); }
+      if (!TEL_RE.test(val('telephone'))) { var tel = getField('telephone'); fieldInvalid(tel, true); errors.push('Téléphone valide'); }
+      if (!EMAIL_RE.test(val('courriel'))) { var em = getField('courriel'); fieldInvalid(em, true); errors.push('Courriel valide'); }
+
+      // Section 2
+      if (!val('statut_emploi')) { var se = getField('statut_emploi'); fieldInvalid(se, true); errors.push('Statut d\'emploi'); }
+      if (!val('anciennete')) { var anc = getField('anciennete'); fieldInvalid(anc, true); errors.push('Ancienneté'); }
+      req('revenu_base', 'Revenu annuel brut');
+
+      // Section 3
+      req('mise_montant', 'Montant de mise de fonds');
+      if (!val('source_fonds')) { var sf = getField('source_fonds'); fieldInvalid(sf, true); errors.push('Source des fonds'); }
+      if (!radioVal('fonds_90jours')) { errors.push('Fonds — 90 jours'); }
+
+      // Section 5
+      if (!radioVal('pref_taux')) { errors.push('Préférence taux fixe/variable'); }
+
+      // Section 6
+      if (!radioVal('promesse_achat')) { errors.push('Promesse d\'achat'); }
+
+      // Final consent
+      var consentFinal = document.getElementById('demande-consent-final');
+      if (consentFinal && !consentFinal.checked) { errors.push('Consentement final'); }
+
+      if (errors.length > 0) {
+        setStatus('error', 'Veuillez remplir les champs requis : ' + errors.slice(0, 5).join(', ') + (errors.length > 5 ? '…' : ''));
+        var firstError = form.querySelector('[aria-invalid]');
+        if (firstError && firstError.focus) firstError.focus();
+        if (firstError && firstError.scrollIntoView) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      if (!btn) return;
+      btn.disabled = true;
+      if (label) label.textContent = 'Envoi en cours…';
+      setStatus('sending', 'Envoi de votre demande…');
+
+      fetch('/demande', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(new FormData(form)).toString()
+      })
+        .then(function () {
+          form.reset();
+          form.hidden = true;
+          setStatus(null);
+          if (successEl) {
+            successEl.hidden = false;
+            var firstFocusable = successEl.querySelector('a, button, [tabindex]');
+            if (firstFocusable && firstFocusable.focus) firstFocusable.focus();
+            successEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        })
+        .catch(function () {
+          if (btn) btn.disabled = false;
+          if (label) label.textContent = 'Envoyer ma demande';
+          setStatus('error', "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
+        });
+    });
+  })();
+</script>
