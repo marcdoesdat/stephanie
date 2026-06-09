@@ -127,7 +127,7 @@ export const VILLES: VilleDroitsMutation[] = [
   {
     value: 'chateauguay', label: 'Châteauguay',
     tranches: [
-      { max: 615_620, taux: 0.015 },
+      { max: 615_600, taux: 0.015 },
       { max: Infinity, taux: 0.03 },
     ],
     annee: 2026,
