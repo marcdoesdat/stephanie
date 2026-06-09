@@ -41,10 +41,59 @@ const prenom = config.nom.split(' ')[0];
             </div>
 
             <!-- ================================================================ -->
-            <!-- SECTION 1 : Identité et situation personnelle                    -->
+            <!-- SECTION 1 : Type de demande                                      -->
             <!-- ================================================================ -->
             <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">1</span> Identité et situation personnelle</legend>
+              <legend class="demande-legend"><span class="demande-step-num">1</span> Type de demande</legend>
+              <p class="demande-legend-sub">Nouvel achat ou refinancement ? Le formulaire s'adaptera selon votre réponse.</p>
+
+              <div class="demande-field">
+                <label>Vous souhaitez : <span class="demande-req">*</span></label>
+                <div class="demande-radio-group">
+                  <label class="demande-radio-label"><input type="radio" name="type_demande" value="achat" required /> <strong>Nouvel achat</strong> — acheter une propriété</label>
+                  <label class="demande-radio-label"><input type="radio" name="type_demande" value="refinancement" /> <strong>Refinancement</strong> — refinancer ou renouveler mon prêt actuel</label>
+                </div>
+              </div>
+
+              <div id="demande-refi-block" style="display:none;">
+                <div class="demande-row">
+                  <div class="demande-field">
+                    <label for="demande-refi-solde">Solde hypothécaire actuel ($) <span class="demande-req">*</span></label>
+                    <input type="text" id="demande-refi-solde" name="refi_solde" inputmode="numeric" placeholder="250 000" />
+                  </div>
+                  <div class="demande-field">
+                    <label for="demande-refi-valeur">Valeur estimée de la propriété ($) <span class="demande-req">*</span></label>
+                    <input type="text" id="demande-refi-valeur" name="refi_valeur" inputmode="numeric" placeholder="450 000" />
+                  </div>
+                </div>
+                <div class="demande-row">
+                  <div class="demande-field">
+                    <label for="demande-refi-preteur">Prêteur actuel</label>
+                    <input type="text" id="demande-refi-preteur" name="refi_preteur" placeholder="Ex. Desjardins, BMO, RBC…" />
+                  </div>
+                  <div class="demande-field">
+                    <label for="demande-refi-echeance">Date d'échéance du terme</label>
+                    <input type="month" id="demande-refi-echeance" name="refi_echeance" />
+                  </div>
+                </div>
+                <div class="demande-field">
+                  <label>But du refinancement</label>
+                  <div class="demande-checklist">
+                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="consolidation" /> Consolidation de dettes</label>
+                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="renos" /> Rénovations</label>
+                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="equite" /> Libération d'équité (projet, investissement)</label>
+                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="meilleur_taux" /> Meilleur taux ou conditions</label>
+                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="autre" /> Autre</label>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 2 : Identité et situation personnelle                    -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num">2</span> Identité et situation personnelle</legend>
               <p class="demande-legend-sub">Stéphanie doit d'abord savoir à qui elle a affaire — pour des raisons légales et pour préparer l'enquête de crédit.</p>
 
               <div class="demande-field">
@@ -92,9 +141,15 @@ const prenom = config.nom.split(' ')[0];
 
               <div class="demande-row">
                 <div class="demande-field">
-                  <label for="demande-nas">Numéro d'assurance sociale (NAS) <span class="demande-opt">(recommandé)</span></label>
-                  <input type="text" id="demande-nas" name="nas" inputmode="numeric" placeholder="000 000 000" maxlength="11" />
-                  <small class="demande-field-hint">Évite qu'une enquête de crédit soit confondue avec une autre personne portant le même nom.</small>
+                  <label for="demande-statut-residence">Statut de résidence <span class="demande-req">*</span></label>
+                  <select id="demande-statut-residence" name="statut_residence" required>
+                    <option value="" disabled selected>Choisir…</option>
+                    <option value="citoyen">Citoyen·ne canadien·ne</option>
+                    <option value="resident_permanent">Résident·e permanent·e</option>
+                    <option value="permis_travail">Permis de travail</option>
+                    <option value="autre_statut">Autre</option>
+                  </select>
+                  <small class="demande-field-hint">Détermine les programmes admissibles et la mise de fonds minimale.</small>
                 </div>
                 <div class="demande-field">
                   <label for="demande-etat-civil">État civil <span class="demande-req">*</span></label>
@@ -106,8 +161,11 @@ const prenom = config.nom.split(' ')[0];
                     <option value="divorce">Divorcé·e</option>
                     <option value="veuf">Veuf·ve</option>
                   </select>
-                  <small class="demande-field-hint">Au Québec, l'état civil a un impact sur le patrimoine familial et la structure du titre de propriété.</small>
                 </div>
+              </div>
+
+              <div class="demande-field demande-field--nas-note">
+                <p class="demande-nas-info">🔒 <strong>Numéro d'assurance sociale (NAS)</strong> — sera demandé de façon sécurisée lors de l'appel. Aucune donnée sensible ne transite par ce formulaire.</p>
               </div>
 
               <div class="demande-row">
@@ -123,11 +181,113 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 2 : Emploi et revenus                                    -->
+            <!-- SECTION 3 : Co-emprunteur                                        -->
             <!-- ================================================================ -->
             <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">2</span> Emploi et revenus</legend>
+              <legend class="demande-legend"><span class="demande-step-num">3</span> Co-emprunteur</legend>
+              <p class="demande-legend-sub">La majorité des achats se font à deux. Si vous achetez ou refinancez avec quelqu'un, remplissez cette section.</p>
+
+              <div class="demande-field">
+                <label>Vous achetez / refinancez : <span class="demande-req">*</span></label>
+                <div class="demande-radio-group">
+                  <label class="demande-radio-label"><input type="radio" name="co_emprunteur" value="seul" required /> Seul·e</label>
+                  <label class="demande-radio-label"><input type="radio" name="co_emprunteur" value="deux" /> À deux</label>
+                </div>
+              </div>
+
+              <div id="demande-co-block" style="display:none;">
+                <p class="demande-legend-sub" style="margin-top:.5rem;">Informations du co-emprunteur</p>
+
+                <div class="demande-row">
+                  <div class="demande-field">
+                    <label for="demande-co-nom">Nom complet du co-emprunteur <span class="demande-req">*</span></label>
+                    <input type="text" id="demande-co-nom" name="co_nom" autocomplete="name" placeholder="Jean Tremblay" />
+                  </div>
+                  <div class="demande-field">
+                    <label for="demande-co-naissance">Date de naissance <span class="demande-req">*</span></label>
+                    <input type="date" id="demande-co-naissance" name="co_naissance" autocomplete="bday" />
+                  </div>
+                </div>
+
+                <div class="demande-row">
+                  <div class="demande-field">
+                    <label for="demande-co-statut-emploi">Statut d'emploi</label>
+                    <select id="demande-co-statut-emploi" name="co_statut_emploi">
+                      <option value="" disabled selected>Choisir…</option>
+                      <option value="salarie">Salarié·e (T4)</option>
+                      <option value="travailleur_autonome">Travailleur·e autonome</option>
+                      <option value="commission">À commission</option>
+                      <option value="contractuel">Contractuel·le</option>
+                      <option value="sans_emploi">Sans emploi actuellement</option>
+                    </select>
+                  </div>
+                  <div class="demande-field">
+                    <label for="demande-co-revenu">Revenu annuel brut ($)</label>
+                    <input type="text" id="demande-co-revenu" name="co_revenu" inputmode="numeric" placeholder="65 000" />
+                  </div>
+                </div>
+                <p class="demande-nas-info" style="font-size:.72rem;">🔒 NAS du co-emprunteur — demandé de façon sécurisée lors de l'appel.</p>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 4 : Situation actuelle                                   -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num">4</span> Situation actuelle</legend>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label>Vous êtes actuellement : <span class="demande-req">*</span></label>
+                  <div class="demande-radio-group">
+                    <label class="demande-radio-label"><input type="radio" name="situation_logement" value="locataire" required /> Locataire</label>
+                    <label class="demande-radio-label"><input type="radio" name="situation_logement" value="proprietaire" /> Propriétaire</label>
+                    <label class="demande-radio-label"><input type="radio" name="situation_logement" value="famille" /> Habite chez la famille / ami</label>
+                  </div>
+                </div>
+                <div class="demande-field">
+                  <label for="demande-paiement-actuel">Loyer ou paiement hypothécaire actuel ($/mois)</label>
+                  <input type="text" id="demande-paiement-actuel" name="paiement_actuel" inputmode="numeric" placeholder="1 200" />
+                </div>
+              </div>
+
+              <div id="demande-proprio-block" style="display:none;">
+                <div class="demande-field">
+                  <label>Prévoyez-vous vendre votre propriété actuelle ?</label>
+                  <div class="demande-radio-group">
+                    <label class="demande-radio-label"><input type="radio" name="vente_propriete" value="oui" /> Oui — achat-vente simultané</label>
+                    <label class="demande-radio-label"><input type="radio" name="vente_propriete" value="non" /> Non — je la conserve</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="demande-field">
+                <label>Êtes-vous premier acheteur ?</label>
+                <div class="demande-radio-group">
+                  <label class="demande-radio-label"><input type="radio" name="premier_acheteur" value="oui" /> Oui — première propriété</label>
+                  <label class="demande-radio-label"><input type="radio" name="premier_acheteur" value="non" /> Non — j'ai déjà été propriétaire</label>
+                </div>
+                <small class="demande-field-hint">Détermine l'admissibilité au RAP, CELIAPP, crédit d'impôt et exemptions de droits de mutation.</small>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 5 : Emploi et revenus                                    -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num">5</span> Emploi et revenus</legend>
               <p class="demande-legend-sub">Les prêteurs veulent s'assurer de la stabilité de vos revenus. Ces informations déterminent votre capacité d'emprunt.</p>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-employeur">Employeur <span class="demande-req">*</span></label>
+                  <input type="text" id="demande-employeur" name="employeur" required autocomplete="organization" placeholder="Ex. Desjardins, Shopify…" />
+                </div>
+                <div class="demande-field">
+                  <label for="demande-titre-poste">Titre du poste <span class="demande-req">*</span></label>
+                  <input type="text" id="demande-titre-poste" name="titre_poste" required autocomplete="organization-title" placeholder="Ex. Analyste financier…" />
+                </div>
+              </div>
 
               <div class="demande-row">
                 <div class="demande-field">
@@ -187,11 +347,39 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 3 : Mise de fonds                                        -->
+            <!-- SECTION 6 : Crédit                                               -->
             <!-- ================================================================ -->
             <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">3</span> Mise de fonds</legend>
-              <p class="demande-legend-sub">Au Canada, Stéphanie doit prouver la provenance de chaque dollar investi. Précisez l'origine de vos fonds.</p>
+              <legend class="demande-legend"><span class="demande-step-num">6</span> Votre crédit</legend>
+              <p class="demande-legend-sub">Cette information détermine vers quel type de prêteur orienter votre dossier (A ou B). Aucune enquête formelle n'est lancée maintenant.</p>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label>Comment évaluez-vous votre crédit ? <span class="demande-req">*</span></label>
+                  <div class="demande-radio-group">
+                    <label class="demande-radio-label"><input type="radio" name="auto_evaluation_credit" value="excellent" required /> Excellent — toujours payé à temps</label>
+                    <label class="demande-radio-label"><input type="radio" name="auto_evaluation_credit" value="bon" /> Bon — quelques retards mineurs</label>
+                    <label class="demande-radio-label"><input type="radio" name="auto_evaluation_credit" value="a_reconstruire" /> À reconstruire — retards fréquents</label>
+                    <label class="demande-radio-label"><input type="radio" name="auto_evaluation_credit" value="ne_sais_pas" /> Je ne sais pas</label>
+                  </div>
+                </div>
+                <div class="demande-field">
+                  <label>Avez-vous déjà eu une faillite ou une proposition de consommateur ?</label>
+                  <div class="demande-radio-group">
+                    <label class="demande-radio-label"><input type="radio" name="faillite_passee" value="non" /> Non</label>
+                    <label class="demande-radio-label"><input type="radio" name="faillite_passee" value="oui_liberee" /> Oui — libérée</label>
+                    <label class="demande-radio-label"><input type="radio" name="faillite_passee" value="oui_active" /> Oui — en cours</label>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- SECTION 7 : Mise de fonds                                        -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset" id="demande-mise-fonds-section">
+              <legend class="demande-legend"><span class="demande-step-num">7</span> Mise de fonds</legend>
+              <p class="demande-legend-sub">Au Canada, Stéphanie doit prouver la provenance de chaque dollar investi.</p>
 
               <div class="demande-row">
                 <div class="demande-field">
@@ -228,47 +416,63 @@ const prenom = config.nom.split(' ')[0];
                 </div>
                 <small class="demande-field-hint">Stéphanie aura besoin des relevés bancaires des <strong>90 derniers jours</strong> pour prouver la provenance des fonds. Si l'argent vient d'un don, une lettre de don signée sera exigée.</small>
               </div>
+
+              <div class="demande-field">
+                <label for="demande-mise-precisions">Précisions sur votre mise de fonds <span class="demande-opt">(facultatif)</span></label>
+                <textarea id="demande-mise-precisions" name="mise_precisions" rows="2" placeholder="Ex. don familial de 20 000 $, REER décaissé le mois dernier, vente prévue en juillet…"></textarea>
+              </div>
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 4 : Passif — Dettes                                      -->
+            <!-- SECTION 8 : Dettes et obligations                                -->
             <!-- ================================================================ -->
             <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">4</span> Passif — Dettes actuelles</legend>
-              <p class="demande-legend-sub">Pour calculer votre capacité d'emprunt, Stéphanie doit connaître vos obligations mensuelles. Aucune enquête de crédit n'est lancée sans votre accord écrit.</p>
+              <legend class="demande-legend"><span class="demande-step-num">8</span> Dettes et obligations</legend>
+              <p class="demande-legend-sub">Pour calculer votre capacité d'emprunt, Stéphanie doit connaître vos obligations mensuelles.</p>
 
               <div class="demande-field">
                 <label for="demande-paiement-dettes">Paiements mensuels totaux de dettes ($) <span class="demande-opt">(estimation)</span></label>
-                <input type="text" id="demande-paiement-dettes" name="paiement_dettes" inputmode="numeric" placeholder="Ex. 850 — incluant auto, cartes, prêts, etc." />
-                <small class="demande-field-hint">Additionnez vos paiements mensuels : prêt auto, cartes de crédit (paiement minimum), marges, prêts étudiants, pensions alimentaires.</small>
+                <input type="text" id="demande-paiement-dettes" name="paiement_dettes" inputmode="numeric" placeholder="Ex. 850 — auto, cartes, prêts, etc." />
               </div>
 
               <div class="demande-field">
-                <label>Quels types de dettes avez-vous ?</label>
+                <label>Types de dettes</label>
                 <div class="demande-checklist">
-                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="cartes_credit" /> Cartes de crédit / marges personnelles</label>
-                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pret_auto" /> Prêt automobile ou location</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="cartes_credit" /> Cartes de crédit / marges</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pret_auto" /> Prêt ou location auto</label>
                   <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pret_etudiant" /> Prêt étudiant</label>
                   <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pret_personnel" /> Prêt personnel</label>
-                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pension_alimentaire" /> Pension alimentaire à payer</label>
-                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="hypotheque_autre" /> Hypothèque sur une autre propriété</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="pension_alimentaire" /> Pension alimentaire</label>
+                  <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="hypotheque_autre" /> Hypothèque autre propriété</label>
                   <label class="demande-check-label"><input type="checkbox" name="types_dettes" value="aucune_dette" /> Aucune dette</label>
                 </div>
               </div>
 
-              <div class="demande-field demande-field--consent">
-                <label class="demande-check-label demande-check-label--box" for="demande-consent-credit">
-                  <input type="checkbox" id="demande-consent-credit" name="consentement_credit" value="oui" />
-                  <span>Je comprends qu'une <strong>enquête de crédit</strong> (Equifax ou TransUnion) sera requise pour obtenir un financement ferme. Stéphanie me fera signer un formulaire de consentement écrit avant toute enquête. <span class="demande-req">*</span></span>
-                </label>
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-personnes-charge">Personnes à charge</label>
+                  <select id="demande-personnes-charge" name="personnes_charge">
+                    <option value="" disabled selected>Choisir…</option>
+                    <option value="0">Aucune</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3 ou plus</option>
+                  </select>
+                </div>
+                <div class="demande-field demande-field--consent">
+                  <label class="demande-check-label demande-check-label--box" for="demande-consent-credit">
+                    <input type="checkbox" id="demande-consent-credit" name="consentement_credit" value="oui" />
+                    <span>Je comprends qu'une <strong>enquête de crédit</strong> sera requise. Stéphanie me fera signer un consentement écrit avant. <span class="demande-req">*</span></span>
+                  </label>
+                </div>
               </div>
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 5 : Préférences de financement                           -->
+            <!-- SECTION 9 : Préférences de financement                           -->
             <!-- ================================================================ -->
             <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">5</span> Préférences de financement</legend>
+              <legend class="demande-legend"><span class="demande-step-num">9</span> Préférences de financement</legend>
               <p class="demande-legend-sub">Pour vous recommander le bon produit, Stéphanie doit comprendre votre tolérance au risque et vos projets.</p>
 
               <div class="demande-field">
@@ -310,24 +514,28 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 6 : Propriété visée (si applicable)                      -->
+            <!-- SECTION 10 : Propriété visée                                     -->
             <!-- ================================================================ -->
             <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">6</span> La propriété visée</legend>
-              <p class="demande-legend-sub">Si vous avez déjà une propriété en vue, ces informations permettent à Stéphanie d'accélérer le processus.</p>
+              <legend class="demande-legend"><span class="demande-step-num">10</span> La propriété visée</legend>
 
               <div class="demande-field">
-                <label>Avez-vous une promesse d'achat acceptée ? <span class="demande-req">*</span></label>
+                <label>Promesse d'achat acceptée ? <span class="demande-req">*</span></label>
                 <div class="demande-radio-group">
-                  <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="oui" required /> Oui — j'ai une promesse d'achat acceptée</label>
-                  <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="non" /> Non — je magasine encore</label>
+                  <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="oui" required /> Oui</label>
+                  <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="non" /> Non — je magasine</label>
                 </div>
               </div>
 
               <div id="demande-promesse-oui" style="display:none;">
                 <div class="demande-callout">
                   <strong>⚠️ Urgent — documents requis</strong>
-                  <p>Stéphanie aura besoin rapidement de : la fiche descriptive (Centris/SIA), la déclaration du vendeur, le compte de taxes municipales et scolaires, et la promesse d'achat signée. Vous pourrez les transmettre après l'appel.</p>
+                  <p>Stéphanie aura besoin de : fiche descriptive (Centris/SIA), déclaration du vendeur, taxes municipales/scolaires, et promesse d'achat signée.</p>
+                </div>
+
+                <div class="demande-field">
+                  <label for="demande-adresse-propriete">Adresse de la propriété visée</label>
+                  <input type="text" id="demande-adresse-propriete" name="adresse_propriete" autocomplete="street-address" placeholder="123 rue Principale, Repentigny" />
                 </div>
 
                 <div class="demande-field">
@@ -350,7 +558,7 @@ const prenom = config.nom.split(' ')[0];
                   </select>
                 </div>
                 <div class="demande-field">
-                  <label for="demande-usage">Usage de la propriété</label>
+                  <label for="demande-usage">Usage</label>
                   <select id="demande-usage" name="usage_propriete">
                     <option value="" disabled selected>Choisir…</option>
                     <option value="principale">Résidence principale</option>
@@ -358,6 +566,65 @@ const prenom = config.nom.split(' ')[0];
                     <option value="revenus">Immeuble à revenus</option>
                   </select>
                 </div>
+              </div>
+
+              <div id="demande-condo-block" style="display:none;">
+                <div class="demande-field">
+                  <label for="demande-frais-condo">Frais de copropriété ($/mois)</label>
+                  <input type="text" id="demande-frais-condo" name="frais_condo" inputmode="numeric" placeholder="300" />
+                  <small class="demande-field-hint">50 % de ce montant est inclus dans les ratios d'endettement.</small>
+                </div>
+              </div>
+
+              <div id="demande-plex-block" style="display:none;">
+                <div class="demande-field">
+                  <label for="demande-revenus-locatifs">Revenus locatifs estimés ($/mois)</label>
+                  <input type="text" id="demande-revenus-locatifs" name="revenus_locatifs" inputmode="numeric" placeholder="1 500" />
+                  <small class="demande-field-hint">Les prêteurs considèrent généralement 50 à 80 % des revenus locatifs dans les ratios.</small>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- Préférences de contact + Source                                  -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset">
+              <legend class="demande-legend"><span class="demande-step-num" style="background:var(--forest);">✓</span> Dernières questions</legend>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-pref-contact">Préférence de contact</label>
+                  <select id="demande-pref-contact" name="pref_contact">
+                    <option value="" disabled selected>Choisir…</option>
+                    <option value="telephone">Téléphone</option>
+                    <option value="texto">Texto</option>
+                    <option value="courriel">Courriel</option>
+                    <option value="indifferent">Peu importe</option>
+                  </select>
+                </div>
+                <div class="demande-field">
+                  <label for="demande-moment-contact">Meilleur moment</label>
+                  <select id="demande-moment-contact" name="moment_contact">
+                    <option value="" disabled selected>Choisir…</option>
+                    <option value="jour">En journée (9 h – 17 h)</option>
+                    <option value="soir">En soirée (17 h – 20 h)</option>
+                    <option value="weekend">Week-end</option>
+                    <option value="flexible">Flexible</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="demande-field">
+                <label for="demande-source">Comment avez-vous connu Stéphanie ?</label>
+                <select id="demande-source" name="source">
+                  <option value="" disabled selected>Choisir…</option>
+                  <option value="google">Recherche Google</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="bouche_oreille">Bouche-à-oreille / recommandation</option>
+                  <option value="hypotheca">Hypotheca</option>
+                  <option value="centris">Centris / fiche descriptive</option>
+                  <option value="autre_source">Autre</option>
+                </select>
               </div>
             </fieldset>
 
@@ -508,6 +775,7 @@ const prenom = config.nom.split(' ')[0];
   .demande-field input[type="email"],
   .demande-field input[type="tel"],
   .demande-field input[type="date"],
+  .demande-field input[type="month"],
   .demande-field select,
   .demande-field textarea {
     width: 100%;
@@ -535,6 +803,15 @@ const prenom = config.nom.split(' ')[0];
     background: var(--warm) !important;
     color: var(--muted);
     cursor: default;
+  }
+
+  .demande-nas-info {
+    font-size: .78rem;
+    color: var(--muted);
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: .65rem 1rem;
+    line-height: 1.55;
   }
 
   /* --- RADIO GROUPS --- */
@@ -707,27 +984,44 @@ const prenom = config.nom.split(' ')[0];
     var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     var TEL_RE = /\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d/;
 
-    // --- Adresse < 3 ans → afficher adresse précédente ---
-    var radiosAdresse = form.querySelectorAll('input[name="adresse_3ans"]');
-    var adressePrevGroup = document.getElementById('demande-adresse-prev-group');
-    radiosAdresse.forEach(function (r) {
-      r.addEventListener('change', function () {
-        if (adressePrevGroup) {
-          adressePrevGroup.style.display = r.value === 'non' ? '' : 'none';
-        }
-      });
-    });
+    // --- Conditional blocks ---
+    function toggleBlock(radioName, blockId, showValue) {
+      var radios = form.querySelectorAll('input[name="' + radioName + '"]');
+      var block = document.getElementById(blockId);
+      if (!block) return;
+      function update() {
+        var checked = form.querySelector('input[name="' + radioName + '"]:checked');
+        block.style.display = (checked && checked.value === showValue) ? '' : 'none';
+      }
+      radios.forEach(function (r) { r.addEventListener('change', update); });
+      update();
+    }
 
-    // --- Promesse d'achat → afficher callout + date possession ---
-    var radiosPromesse = form.querySelectorAll('input[name="promesse_achat"]');
-    var promesseOui = document.getElementById('demande-promesse-oui');
-    radiosPromesse.forEach(function (r) {
-      r.addEventListener('change', function () {
-        if (promesseOui) {
-          promesseOui.style.display = r.value === 'oui' ? '' : 'none';
-        }
+    // Type de demande → refi block
+    toggleBlock('type_demande', 'demande-refi-block', 'refinancement');
+
+    // Co-emprunteur
+    toggleBlock('co_emprunteur', 'demande-co-block', 'deux');
+
+    // Situation logement → proprio block
+    toggleBlock('situation_logement', 'demande-proprio-block', 'proprietaire');
+
+    // Promesse d'achat
+    toggleBlock('promesse_achat', 'demande-promesse-oui', 'oui');
+
+    // Adresse < 3 ans → adresse précédente
+    toggleBlock('adresse_3ans', 'demande-adresse-prev-group', 'non');
+
+    // Type de propriété → condo / plex blocks
+    var typePropriete = document.getElementById('demande-type-propriete');
+    var condoBlock = document.getElementById('demande-condo-block');
+    var plexBlock = document.getElementById('demande-plex-block');
+    if (typePropriete) {
+      typePropriete.addEventListener('change', function () {
+        if (condoBlock) condoBlock.style.display = typePropriete.value === 'condo' ? '' : 'none';
+        if (plexBlock) plexBlock.style.display = typePropriete.value === 'plex' ? '' : 'none';
       });
-    });
+    }
 
     // --- Statut ---
     function setStatus(state, msg) {
@@ -758,31 +1052,56 @@ const prenom = config.nom.split(' ')[0];
       var errors = [];
       function req(name, label) { if (!val(name)) { var el = getField(name); fieldInvalid(el, true); errors.push(label); } }
 
-      // Section 1
+      // Section 1 — Type de demande
+      if (!radioVal('type_demande')) { errors.push('Type de demande'); }
+      if (radioVal('type_demande') === 'refinancement') {
+        req('refi_solde', 'Solde hypothécaire');
+        req('refi_valeur', 'Valeur estimée');
+      }
+
+      // Section 2 — Identité
       req('nom', 'Nom complet');
       req('naissance', 'Date de naissance');
-      req('adresse', 'Adresse actuelle');
+      req('adresse', 'Adresse');
       req('ville', 'Ville');
       req('code_postal', 'Code postal');
       if (!radioVal('adresse_3ans')) { errors.push('Adresse — 3 ans'); }
-      if (!val('etat_civil') && !radioVal('etat_civil')) { var ec = getField('etat_civil'); fieldInvalid(ec, true); errors.push('État civil'); }
+      if (!val('statut_residence')) { var sr = getField('statut_residence'); fieldInvalid(sr, true); errors.push('Statut de résidence'); }
+      if (!val('etat_civil')) { var ec = getField('etat_civil'); fieldInvalid(ec, true); errors.push('État civil'); }
       if (!TEL_RE.test(val('telephone'))) { var tel = getField('telephone'); fieldInvalid(tel, true); errors.push('Téléphone valide'); }
       if (!EMAIL_RE.test(val('courriel'))) { var em = getField('courriel'); fieldInvalid(em, true); errors.push('Courriel valide'); }
 
-      // Section 2
+      // Section 3 — Co-emprunteur
+      if (!radioVal('co_emprunteur')) { errors.push('Co-emprunteur'); }
+      if (radioVal('co_emprunteur') === 'deux') {
+        req('co_nom', 'Nom co-emprunteur');
+        req('co_naissance', 'Date naissance co-emprunteur');
+      }
+
+      // Section 4 — Situation actuelle
+      if (!radioVal('situation_logement')) { errors.push('Situation logement'); }
+
+      // Section 5 — Emploi
+      req('employeur', 'Employeur');
+      req('titre_poste', 'Titre du poste');
       if (!val('statut_emploi')) { var se = getField('statut_emploi'); fieldInvalid(se, true); errors.push('Statut d\'emploi'); }
       if (!val('anciennete')) { var anc = getField('anciennete'); fieldInvalid(anc, true); errors.push('Ancienneté'); }
       req('revenu_base', 'Revenu annuel brut');
 
-      // Section 3
-      req('mise_montant', 'Montant de mise de fonds');
-      if (!val('source_fonds')) { var sf = getField('source_fonds'); fieldInvalid(sf, true); errors.push('Source des fonds'); }
-      if (!radioVal('fonds_90jours')) { errors.push('Fonds — 90 jours'); }
+      // Section 6 — Crédit
+      if (!radioVal('auto_evaluation_credit')) { errors.push('Auto-évaluation crédit'); }
 
-      // Section 5
-      if (!radioVal('pref_taux')) { errors.push('Préférence taux fixe/variable'); }
+      // Section 7 — Mise de fonds (sauf si refinancement)
+      if (radioVal('type_demande') !== 'refinancement') {
+        req('mise_montant', 'Mise de fonds');
+        if (!val('source_fonds')) { var sf = getField('source_fonds'); fieldInvalid(sf, true); errors.push('Source des fonds'); }
+        if (!radioVal('fonds_90jours')) { errors.push('Fonds — 90 jours'); }
+      }
 
-      // Section 6
+      // Section 9 — Préférences
+      if (!radioVal('pref_taux')) { errors.push('Préférence taux'); }
+
+      // Section 10 — Propriété
       if (!radioVal('promesse_achat')) { errors.push('Promesse d\'achat'); }
 
       // Final consent
