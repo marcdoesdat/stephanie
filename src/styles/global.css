@@ -662,6 +662,7 @@ td:last-child{text-align:center}
 .sim-card .sc-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem}
 .sim-card .sc-val{font-family:"Lora",serif;font-size:1.4rem;font-weight:600;color:var(--clay)}
 .sim-note{font-size:.7rem;color:var(--muted);line-height:1.7;margin-top:1rem;padding:1rem;background:var(--sand);border-radius:12px}
+.taux-easter-note{font-size:.74rem;color:var(--clay);font-style:italic;margin-top:.3rem;line-height:1.5}
 .sim-warning,.calc-warning{background:#fef3cd;color:#856404;border:1px solid #ffc107;border-radius:12px;padding:.8rem 1rem;font-size:.8rem;line-height:1.5;margin-bottom:1rem}
 
 /* Frais de propriété — simulateur (light theme) */
