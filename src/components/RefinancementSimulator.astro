@@ -405,6 +405,16 @@ const nouveauTauxDefaut =
 <script>
   import { calcPaiement, formatMoney, tauxPeriodique } from '../utils/mortgageCalc';
 
+  function saveSimulationResult(type: string, resultat: string) {
+    try {
+      sessionStorage.setItem('simulation-resultat', JSON.stringify({
+        type,
+        resultat,
+        date: new Date().toISOString()
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const DEBOUNCE_MS = 150;
     let debounceTimer: number | undefined;
@@ -1087,6 +1097,17 @@ const nouveauTauxDefaut =
       } else {
         consoEl.style.display = 'none';
       }
+
+      // Sauvegarder dans sessionStorage pour le formulaire « On en parle »
+      const verdictLabels: Record<string, string> = { oui: 'Favorable', evaluer: 'À évaluer', non: 'Non favorable' };
+      saveSimulationResult('refinancement',
+        `Simulateur de refinancement — Verdict : ${verdictLabels[verdictKey] ?? verdictKey}, ` +
+        `Économie mensuelle : ${deltaVersementReel > 0 ? '' : '+'}${formatMoney(Math.round(deltaVersementReel))}/mois, ` +
+        `Taux actuel : ${tauxActuel.toFixed(2).replace('.', ',')} % → Nouveau taux : ${tauxNouveau.toFixed(2).replace('.', ',')} %, ` +
+        `Solde : ${formatMoney(Math.round(solde))}, ` +
+        `Économie nette ${horizonLabel} : ${formatMoney(Math.round(economieNetteTotale))}` +
+        (dettes.montant > 0 ? `, Dettes consolidées : ${formatMoney(Math.round(dettes.montant))}` : '')
+      );
 
       // Économie nette
       netEl.className = 'rsim-net';

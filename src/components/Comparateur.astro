@@ -270,6 +270,16 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
 <script>
   import { calcPaiement, formatMoney } from '../utils/mortgageCalc';
 
+  function saveSimulationResult(type: string, resultat: string) {
+    try {
+      sessionStorage.setItem('simulation-resultat', JSON.stringify({
+        type,
+        resultat,
+        date: new Date().toISOString()
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
   type Freq = 'mensuel' | 'bi-acc' | 'hebdo-acc';
 
   function freqLabel(freq: Freq): { unit: string; periodsPerYear: number } {
@@ -380,6 +390,17 @@ const fetchedDateLabel = formatDateFR(fetchedAt);
           (el as HTMLElement).hidden = (el as HTMLElement).dataset.compState !== compState;
         });
       }
+
+      // Sauvegarder dans sessionStorage pour le formulaire « On en parle »
+      const etatLabels: Record<string, string> = { win: 'Stéphanie gagnante', tie: 'Taux comparable', lose: 'Succursale moins chère' };
+      saveSimulationResult('comparateur',
+        `Comparateur de taux — Montant : ${formatMoney(amount)}, ` +
+        `Taux succursale : ${bankRate.toFixed(2).replace('.', ',')} %, ` +
+        `Taux négocié : ${brokerRate.toFixed(2).replace('.', ',')} %, ` +
+        `Économie mensuelle : ${formatMoney(monthlySavings)}, ` +
+        `Économie sur ${termeAns} an${termeAns > 1 ? 's' : ''} : ${formatMoney(totalSavings)}, ` +
+        `Verdict : ${etatLabels[compState] ?? compState}`
+      );
     }
 
     function setAmount(v: number) {

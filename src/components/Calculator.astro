@@ -172,6 +172,16 @@ const { defaultRate = 4.99 } = Astro.props;
 <script>
   import { calculateSCHL, formatMoney, calcPaiement, miseMinimale } from '../utils/mortgageCalc';
 
+  function saveSimulationResult(type: string, resultat: string) {
+    try {
+      sessionStorage.setItem('simulation-resultat', JSON.stringify({
+        type,
+        resultat,
+        date: new Date().toISOString()
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('calc-form');
     if (!form) return;
@@ -454,6 +464,18 @@ const { defaultRate = 4.99 } = Astro.props;
       });
       lienAmortEl.href = `/amortissement?${params.toString()}`;
       lienAmortEl.style.display = '';
+
+      // Sauvegarder dans sessionStorage pour le formulaire « On en parle »
+      saveSimulationResult('calculateur',
+        `Calculateur de versement — Prix : ${formatMoney(prix)}, ` +
+        `Mise de fonds : ${formatMoney(mise)} (${(mise / prix * 100).toFixed(1)} %), ` +
+        `Taux : ${taux.toFixed(2).replace('.', ',')} %, ` +
+        `Amortissement : ${amort} ans, ` +
+        `${labelTexte} : ${formatMoney(paiementFinal)}, ` +
+        `Prêt total : ${formatMoney(pretTotal)}` +
+        (schl > 0 ? `, Prime SCHL : ${formatMoney(schl)}` : '') +
+        (hasAvanced ? `, Coût mensuel total : ${formatMoney(coutMensuel)}` : '')
+      );
     }
 
     function scheduleCalculation() {

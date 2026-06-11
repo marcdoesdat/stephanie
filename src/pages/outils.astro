@@ -243,6 +243,7 @@ const tabs = [
                 <span>Envoyer ma demande</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
+              <p class="outils-contact-simulation-note"><em>Tes résultats de simulation seront joints à ta demande pour que Stéphanie puisse te répondre avec du concret.</em></p>
               <p class="outils-contact-note">En envoyant ce formulaire, vous acceptez d'être recontacté·e au sujet de votre demande. Vos données ne sont jamais partagées — voir la <a href="/confidentialite">politique de confidentialité</a>.</p>
             </div>
           </form>
@@ -343,6 +344,27 @@ const tabs = [
     window.setTimeout(() => {
       animEls.forEach((el) => el.classList.add('visible'));
     }, 1200);
+
+    // --- Pré-remplissage du message depuis sessionStorage ---
+    const messageTextarea = document.getElementById('outils-message') as HTMLTextAreaElement;
+    function prefillMessageFromSession() {
+      if (!messageTextarea) return;
+      try {
+        const raw = sessionStorage.getItem('simulation-resultat');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data && data.resultat && data.type) {
+          const dateLisible = data.date
+            ? new Date(data.date).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : '';
+          messageTextarea.value = `[Résultats de simulation — ${dateLisible}]
+${data.resultat}
+
+`;
+        }
+      } catch (e) { /* ignore */ }
+    }
+    prefillMessageFromSession();
 
     // --- Capture d'écran + données calculateur au submit ---
     const contactForm = document.querySelector<HTMLFormElement>('.outils-contact-form');
@@ -545,6 +567,15 @@ const tabs = [
       font-weight: 600;
       text-decoration: underline;
       text-underline-offset: 2px;
+    }
+    .outils-contact-simulation-note {
+      font-size: .75rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: .3rem;
+      margin-bottom: .15rem;
+      line-height: 1.5;
+      font-style: italic;
     }
     .outils-contact-input {
       width: 100%;

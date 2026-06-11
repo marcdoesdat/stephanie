@@ -86,6 +86,16 @@ import { VILLES } from '../data/droitsMutation';
   import { droitsMutation, formatMoney } from '../utils/mortgageCalc';
   import { VILLES, TRANCHES_PROVINCIALES, type TrancheMunicipale, type VilleDroitsMutation } from '../data/droitsMutation';
 
+  function saveSimulationResult(type: string, resultat: string) {
+    try {
+      sessionStorage.setItem('simulation-resultat', JSON.stringify({
+        type,
+        resultat,
+        date: new Date().toISOString()
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
   // --- Formatage français ---
   function parseVal(s: string): number {
     return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
@@ -179,6 +189,15 @@ import { VILLES } from '../data/droitsMutation';
         <td data-label="Montant" class="dm-amount"><strong>${formatMoney(cumul)}</strong></td>
       </tr>`;
       tbodyEl.innerHTML = rows;
+
+      // Sauvegarder dans sessionStorage pour le formulaire « On en parle »
+      const villeActive = getActiveVille();
+      saveSimulationResult('droits-mutation',
+        `Droits de mutation — Municipalité : ${villeActive?.label ?? 'Québec (barème provincial)'}, ` +
+        `Prix : ${formatMoney(prixBrut)}, ` +
+        (facteur !== 100 ? `Facteur comparatif : ${facteur.toFixed(1).replace('.', ',')} %, ` : '') +
+        `Droits estimés : ${formatMoney(cumul)}`
+      );
     }
 
     villeEl.addEventListener('change', compute);

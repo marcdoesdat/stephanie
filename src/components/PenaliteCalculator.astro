@@ -303,6 +303,16 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
   import { calculerPenalite, comparerMethodes, validerInputs, formatArgent, formaterDate, type PenaliteInput, type MethodeIRD, type TypeTaux } from '../lib/penalite';
   import { tousLesPreteurs } from '../data/preteurs';
 
+  function saveSimulationResult(type: string, resultat: string) {
+    try {
+      sessionStorage.setItem('simulation-resultat', JSON.stringify({
+        type,
+        resultat,
+        date: new Date().toISOString()
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const INPUT_DEBOUNCE_MS = 200;
     let debounceTimer: number | undefined;
@@ -512,6 +522,19 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
 
       // Rend la pénalité disponible pour le simulateur de refinancement
       sessionStorage.setItem('penalite-resultat', String(Math.round(result.penaliteTotale)));
+
+      // Sauvegarder dans sessionStorage pour le formulaire « On en parle »
+      const preteurNom = preteurSelect.selectedOptions[0]?.textContent ?? 'Inconnu';
+      saveSimulationResult('penalite',
+        `Calculateur de pénalité — Pénalité estimée : ${formatArgent(Math.round(result.penaliteTotale))}, ` +
+        `Prêteur : ${preteurNom}, ` +
+        `Solde : ${formatArgent(Math.round(input.solde))}, ` +
+        `Taux : ${input.tauxContractuel.toFixed(2).replace('.', ',')} %, ` +
+        `Type : ${input.typeTaux === 'fixe' ? 'Fixe' : 'Variable'}, ` +
+        `Méthode IRD : ${result.methodeRetenue}, ` +
+        `Mois restants : ${result.moisRestants}, ` +
+        `Fin du terme : ${formaterDate(result.dateFinTerme)}`
+      );
     }
 
     ctaBtn.addEventListener('click', () => {

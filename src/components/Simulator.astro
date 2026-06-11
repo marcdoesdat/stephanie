@@ -141,6 +141,16 @@ const { defaultRate = 3.79 } = Astro.props;
     formatMoney,
   } from '../utils/mortgageCalc';
 
+  function saveSimulationResult(type: string, resultat: string) {
+    try {
+      sessionStorage.setItem('simulation-resultat', JSON.stringify({
+        type,
+        resultat,
+        date: new Date().toISOString()
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const INPUT_DEBOUNCE_MS = 120;
     let simDebounceTimer: number | undefined;
@@ -407,6 +417,19 @@ const { defaultRate = 3.79 } = Astro.props;
         }
       } else {
         absCard.style.display = 'none';
+      }
+
+      // Sauvegarder dans sessionStorage pour le formulaire « On en parle »
+      if (pretBase > 0 && prixMax > 0) {
+        saveSimulationResult('simulateur',
+          `Simulateur d'emprunt — Prix max : ${fmt(prixMax)}, ` +
+          `Revenu annuel : ${fmt(revenu)}, ` +
+          `Mise de fonds : ${fmt(mise)} (${(mise / prixMax * 100).toFixed(1)} %), ` +
+          `Taux : ${taux.toFixed(2).replace('.', ',')} %, ` +
+          `Versement : ${fmt(pmtReel)}/mois, ` +
+          `Prêt ${typeLabel} : ${fmt(pretTotal)}, ` +
+          `Ratio ABD : ${abd.toFixed(1)} %, Ratio ATD : ${atd.toFixed(1)} %`
+        );
       }
     }
 
