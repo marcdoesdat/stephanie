@@ -1125,6 +1125,7 @@ const nouveauTauxDefaut =
     }
 
     function scheduleRecalc() {
+      markInteraction();
       clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(doCalculation, DEBOUNCE_MS);
     }
@@ -1144,10 +1145,14 @@ const nouveauTauxDefaut =
     );
     // années + amort + pénalité ont leurs propres écouteurs ci-dessus
 
+    // Ne montre la barre sticky mobile qu'après interaction utilisateur
+    let userInteracted = false;
+    function markInteraction() { userInteracted = true; }
+
     // Mobile sticky verdict bar
     function handleMobileSticky() {
       const isMobile = window.matchMedia('(max-width: 768px)').matches;
-      if (isMobile) {
+      if (isMobile && userInteracted) {
         stickyBar.classList.add('js-visible');
         sectionEl.classList.add('rsim-bar-visible');
         verdictEl.classList.add('js-hidden-mobile');

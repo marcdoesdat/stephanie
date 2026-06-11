@@ -220,14 +220,14 @@ const tabs = [
             </div>
 
             <div class="outils-contact-fields">
-              <label class="outils-contact-label" for="outils-prenom">Nom et prénom</label>
+              <label class="outils-contact-label" for="outils-prenom">Nom et prénom <span class="cform-required" aria-hidden="true">*</span></label>
               <input type="text" id="outils-prenom" name="prenom" placeholder="Marie Tremblay" required autocomplete="given-name" class="outils-contact-input" />
 
-              <label class="outils-contact-label" for="outils-email">Courriel</label>
-              <input type="email" id="outils-email" name="email" placeholder="marie@exemple.com" autocomplete="email" class="outils-contact-input" />
+              <label class="outils-contact-label" for="outils-email">Courriel <span class="cform-required" aria-hidden="true">*</span></label>
+              <input type="email" id="outils-email" name="email" placeholder="marie@exemple.com" required autocomplete="email" class="outils-contact-input" />
 
-              <label class="outils-contact-label" for="outils-tel">Téléphone</label>
-              <input type="tel" id="outils-tel" name="telephone" placeholder="514 000-0000" inputmode="tel" autocomplete="tel" class="outils-contact-input" />
+              <label class="outils-contact-label" for="outils-tel">Téléphone <span class="cform-required" aria-hidden="true">*</span></label>
+              <input type="tel" id="outils-tel" name="telephone" placeholder="514 000-0000" required inputmode="tel" autocomplete="tel" class="outils-contact-input" />
 
               <label class="outils-contact-label" for="outils-message">Message <span class="cform-optional">(facultatif)</span></label>
               <textarea id="outils-message" name="message" placeholder="Dites-nous en quelques mots votre projet ou votre question…" rows="2" class="outils-contact-input"></textarea>
@@ -368,12 +368,40 @@ const tabs = [
 
     let screenshotCaptured = false;
 
+    // Validation des champs obligatoires
+    function validateRequiredFields(form: HTMLFormElement): boolean {
+      const requiredFields = form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[required]');
+      let valid = true;
+      requiredFields.forEach((field) => {
+        const value = field.value.trim();
+        if (!value) {
+          field.classList.add('cform-error');
+          valid = false;
+        } else {
+          field.classList.remove('cform-error');
+        }
+      });
+      if (!valid) {
+        const firstError = form.querySelector<HTMLElement>('.cform-error');
+        firstError?.focus();
+      }
+      return valid;
+    }
+
+    // Clear error styling on input
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('.outils-contact-form [required]').forEach((el) => {
+      el.addEventListener('input', () => el.classList.remove('cform-error'));
+    });
+
     contactForm?.addEventListener('submit', async (e) => {
       if (screenshotCaptured) {
         screenshotCaptured = false;
         return; // laisser le submit natif se poursuivre
       }
       e.preventDefault();
+
+      // Valider les champs obligatoires avant la capture
+      if (!validateRequiredFields(contactForm!)) return;
 
       // Texte résumé
       updateSimulateurDonnees();

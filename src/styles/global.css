@@ -1053,6 +1053,10 @@ td:last-child{text-align:center}
   font-size:.68rem;font-weight:600;letter-spacing:.03em;
   text-transform:none;color:var(--clay);margin-left:.3rem;
 }
+.cform-error{
+  border-color:#d93025 !important;
+  background:#fff5f5 !important;
+}
 .quiz-field input,.quiz-field textarea{
   width:100%;padding:.78rem 1rem;
   background:var(--sand);
