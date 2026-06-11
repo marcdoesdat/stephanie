@@ -229,6 +229,25 @@ const tabs = [
               <label class="outils-contact-label" for="outils-tel">Téléphone <span class="cform-required" aria-hidden="true">*</span></label>
               <input type="tel" id="outils-tel" name="telephone" placeholder="514 000-0000" required inputmode="tel" autocomplete="tel" class="outils-contact-input" />
 
+              <fieldset class="outils-contact-pref-fieldset">
+                <legend class="outils-contact-label">Préférence de communication</legend>
+                <div class="outils-contact-pref-group" role="radiogroup" aria-label="Préférence de communication">
+                  <button type="button" class="outils-contact-pref-pill active" data-pref="courriel" role="radio" aria-checked="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    Courriel
+                  </button>
+                  <button type="button" class="outils-contact-pref-pill" data-pref="appel" role="radio" aria-checked="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    Appel
+                  </button>
+                  <button type="button" class="outils-contact-pref-pill" data-pref="texto" role="radio" aria-checked="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Texto
+                  </button>
+                </div>
+                <input type="hidden" name="pref-communication" id="outils-pref-communication" value="courriel" />
+              </fieldset>
+
               <label class="outils-contact-label" for="outils-message">Message <span class="cform-optional">(facultatif)</span></label>
               <textarea id="outils-message" name="message" placeholder="Dites-nous en quelques mots votre projet ou votre question…" rows="2" class="outils-contact-input"></textarea>
 
@@ -284,6 +303,9 @@ const tabs = [
       if (window.location.hash !== newHash) {
         history.replaceState(null, '', `${window.location.pathname}${newHash}`);
       }
+
+      // Mettre à jour le champ message avec les résultats du calculateur actif
+      prefillMessageFromSession();
     }
 
     function tabIdFromHash(): string | null {
@@ -345,10 +367,36 @@ const tabs = [
       animEls.forEach((el) => el.classList.add('visible'));
     }, 1200);
 
-    // --- Pré-remplissage du message depuis sessionStorage ---
+    // --- Boutons préférence de communication ---
+    const prefPills = Array.from(document.querySelectorAll<HTMLButtonElement>('.outils-contact-pref-pill'));
+    const prefHidden = document.getElementById('outils-pref-communication') as HTMLInputElement;
+    prefPills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        prefPills.forEach((p) => {
+          p.classList.remove('active');
+          p.setAttribute('aria-checked', 'false');
+        });
+        pill.classList.add('active');
+        pill.setAttribute('aria-checked', 'true');
+        if (prefHidden) prefHidden.value = pill.dataset.pref ?? 'courriel';
+      });
+    });
+
+    // --- Pré-remplissage dynamique du message depuis sessionStorage ---
     const messageTextarea = document.getElementById('outils-message') as HTMLTextAreaElement;
+    let messageEditedParUtilisateur = false;
+
+    // Détecter si l'utilisateur a modifié le message manuellement
+    if (messageTextarea) {
+      messageTextarea.addEventListener('input', () => {
+        messageEditedParUtilisateur = true;
+      });
+    }
+
     function prefillMessageFromSession() {
       if (!messageTextarea) return;
+      // Ne pas écraser les modifications manuelles de l'utilisateur
+      if (messageEditedParUtilisateur) return;
       try {
         const raw = sessionStorage.getItem('simulation-resultat');
         if (!raw) return;
@@ -357,10 +405,16 @@ const tabs = [
           const dateLisible = data.date
             ? new Date(data.date).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
             : '';
-          messageTextarea.value = `[Résultats de simulation — ${dateLisible}]
-${data.resultat}
-
-`;
+          const typeLabels: Record<string, string> = {
+            'calculateur': 'Calculateur de versement',
+            'simulateur': "Simulateur d'emprunt",
+            'comparateur': 'Comparateur de taux',
+            'penalite': 'Calculateur de pénalité',
+            'refinancement': 'Simulateur de refinancement',
+            'droits-mutation': 'Droits de mutation',
+          };
+          const typeLisible = typeLabels[data.type] ?? data.type;
+          messageTextarea.value = `[${typeLisible} — ${dateLisible}]\n${data.resultat}\n\n`;
         }
       } catch (e) { /* ignore */ }
     }
@@ -576,6 +630,50 @@ ${data.resultat}
       margin-bottom: .15rem;
       line-height: 1.5;
       font-style: italic;
+    }
+    /* --- Préférence de communication --- */
+    .outils-contact-pref-fieldset {
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+    .outils-contact-pref-group {
+      display: flex;
+      gap: .5rem;
+    }
+    .outils-contact-pref-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .65rem 1rem;
+      font-family: "DM Sans", sans-serif;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: var(--sand);
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .outils-contact-pref-pill svg {
+      flex-shrink: 0;
+    }
+    .outils-contact-pref-pill:hover {
+      border-color: var(--clay);
+      background: var(--warm);
+      color: var(--ink);
+    }
+    .outils-contact-pref-pill.active {
+      background: var(--clay);
+      color: white;
+      border-color: transparent;
+    }
+    .outils-contact-pref-pill.active:hover,
+    .outils-contact-pref-pill.active:focus-visible {
+      background: var(--forest);
+      color: white;
     }
     .outils-contact-input {
       width: 100%;
