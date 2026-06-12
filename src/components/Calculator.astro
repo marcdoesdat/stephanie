@@ -174,11 +174,13 @@ const { defaultRate = 4.99 } = Astro.props;
 
   function saveSimulationResult(type: string, resultat: string) {
     try {
-      sessionStorage.setItem('simulation-resultat', JSON.stringify({
+      const payload = JSON.stringify({
         type,
         resultat,
         date: new Date().toISOString()
-      }));
+      });
+      sessionStorage.setItem('simulation-resultat:' + type, payload);
+      sessionStorage.setItem('simulation-resultat', payload);
     } catch (e) { /* ignore */ }
   }
 

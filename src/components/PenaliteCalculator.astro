@@ -249,7 +249,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
           </button>
 
           <div class="penalite-capture" id="pen-capture" style="display:none;">
-            <form name="penalite-lead" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" class="penalite-capture-form" enctype="multipart/form-data">
+            <form name="penalite-lead" method="POST" action="/merci" data-netlify="true" data-netlify-honeypot="bot-field" class="penalite-capture-form" enctype="multipart/form-data">
               <input type="hidden" name="form-name" value="penalite-lead" />
               <input type="file" name="screenshot" id="pen-screenshot" hidden />
               <p class="sr-only"><label>Ne remplissez pas ce champ <input name="bot-field" /></label></p>
@@ -305,11 +305,13 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
 
   function saveSimulationResult(type: string, resultat: string) {
     try {
-      sessionStorage.setItem('simulation-resultat', JSON.stringify({
+      const payload = JSON.stringify({
         type,
         resultat,
         date: new Date().toISOString()
-      }));
+      });
+      sessionStorage.setItem('simulation-resultat:' + type, payload);
+      sessionStorage.setItem('simulation-resultat', payload);
     } catch (e) { /* ignore */ }
   }
 

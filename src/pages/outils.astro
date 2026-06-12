@@ -204,6 +204,7 @@ const tabs = [
           <form
             name="contact-outils"
             method="POST"
+            action="/merci"
             enctype="multipart/form-data"
             data-netlify="true"
             data-netlify-honeypot="bot-field"
@@ -221,7 +222,7 @@ const tabs = [
 
             <div class="outils-contact-fields">
               <label class="outils-contact-label" for="outils-prenom">Nom et prénom <span class="cform-required" aria-hidden="true">*</span></label>
-              <input type="text" id="outils-prenom" name="prenom" placeholder="Marie Tremblay" required autocomplete="given-name" class="outils-contact-input" />
+              <input type="text" id="outils-prenom" name="prenom" placeholder="Marie Tremblay" required autocomplete="name" class="outils-contact-input" />
 
               <label class="outils-contact-label" for="outils-email">Courriel <span class="cform-required" aria-hidden="true">*</span></label>
               <input type="email" id="outils-email" name="email" placeholder="marie@exemple.com" required autocomplete="email" class="outils-contact-input" />
@@ -232,15 +233,15 @@ const tabs = [
               <fieldset class="outils-contact-pref-fieldset">
                 <legend class="outils-contact-label">Préférence de communication</legend>
                 <div class="outils-contact-pref-group" role="radiogroup" aria-label="Préférence de communication">
-                  <button type="button" class="outils-contact-pref-pill active" data-pref="courriel" role="radio" aria-checked="true">
+                  <button type="button" class="outils-contact-pref-pill active" data-pref="courriel" role="radio" aria-checked="true" tabindex="0">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                     Courriel
                   </button>
-                  <button type="button" class="outils-contact-pref-pill" data-pref="appel" role="radio" aria-checked="false">
+                  <button type="button" class="outils-contact-pref-pill" data-pref="appel" role="radio" aria-checked="false" tabindex="-1">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     Appel
                   </button>
-                  <button type="button" class="outils-contact-pref-pill" data-pref="texto" role="radio" aria-checked="false">
+                  <button type="button" class="outils-contact-pref-pill" data-pref="texto" role="radio" aria-checked="false" tabindex="-1">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     Texto
                   </button>
@@ -259,7 +260,7 @@ const tabs = [
               </div>
 
               <button type="submit" class="btn-cta btn-cta--block">
-                <span>Envoyer ma demande</span>
+                <span>Valider mes chiffres avec {prenom}</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
               <p class="outils-contact-simulation-note"><em>Tes résultats de simulation seront joints à ta demande pour que Stéphanie puisse te répondre avec du concret.</em></p>
@@ -282,6 +283,32 @@ const tabs = [
     const panels = Array.from(
       document.querySelectorAll<HTMLElement>('.outils-panel')
     );
+
+    // Déclaré tôt : activate() (appelée dès le chargement si l'URL a un hash)
+    // invoque prefillMessageFromSession() qui dépend de ces éléments.
+    const messageTextarea = document.getElementById('outils-message') as HTMLTextAreaElement;
+    let messageEditedParUtilisateur = false;
+
+    // Ajuste la hauteur du textarea à son contenu (utile en mobile où la poignée
+    // de redimensionnement n'est pas accessible, et pour afficher le résumé injecté).
+    function autoGrowMessage() {
+      if (!messageTextarea) return;
+      messageTextarea.style.height = 'auto';
+      messageTextarea.style.height = Math.min(messageTextarea.scrollHeight, 420) + 'px';
+    }
+
+    // Détecter si l'utilisateur a modifié le message manuellement
+    if (messageTextarea) {
+      messageTextarea.addEventListener('input', () => {
+        messageEditedParUtilisateur = true;
+        autoGrowMessage();
+      });
+    }
+
+    function activeTabId(): string | null {
+      const t = tabs.find((tab) => tab.getAttribute('aria-selected') === 'true');
+      return t?.dataset.tab ?? null;
+    }
 
     function activate(tabId: string, focus = false) {
       const targetTab = tabs.find((t) => t.dataset.tab === tabId);
@@ -367,43 +394,60 @@ const tabs = [
       animEls.forEach((el) => el.classList.add('visible'));
     }, 1200);
 
-    // --- Boutons préférence de communication ---
+    // --- Boutons préférence de communication (pattern ARIA radio) ---
     const prefPills = Array.from(document.querySelectorAll<HTMLButtonElement>('.outils-contact-pref-pill'));
     const prefHidden = document.getElementById('outils-pref-communication') as HTMLInputElement;
+
+    function selectPref(pill: HTMLButtonElement, focus = false) {
+      prefPills.forEach((p) => {
+        const active = p === pill;
+        p.classList.toggle('active', active);
+        p.setAttribute('aria-checked', active ? 'true' : 'false');
+        p.setAttribute('tabindex', active ? '0' : '-1');
+      });
+      if (prefHidden) prefHidden.value = pill.dataset.pref ?? 'courriel';
+      if (focus) pill.focus();
+    }
+
     prefPills.forEach((pill) => {
-      pill.addEventListener('click', () => {
-        prefPills.forEach((p) => {
-          p.classList.remove('active');
-          p.setAttribute('aria-checked', 'false');
-        });
-        pill.classList.add('active');
-        pill.setAttribute('aria-checked', 'true');
-        if (prefHidden) prefHidden.value = pill.dataset.pref ?? 'courriel';
+      pill.addEventListener('click', () => selectPref(pill));
+      pill.addEventListener('keydown', (e) => {
+        const key = (e as KeyboardEvent).key;
+        if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'ArrowUp' && key !== 'ArrowDown' && key !== 'Home' && key !== 'End') return;
+        e.preventDefault();
+        const current = prefPills.indexOf(pill);
+        let next = current;
+        if (key === 'ArrowRight' || key === 'ArrowDown') next = (current + 1) % prefPills.length;
+        else if (key === 'ArrowLeft' || key === 'ArrowUp') next = (current - 1 + prefPills.length) % prefPills.length;
+        else if (key === 'Home') next = 0;
+        else if (key === 'End') next = prefPills.length - 1;
+        const target = prefPills[next];
+        if (target) selectPref(target, true);
       });
     });
 
     // --- Pré-remplissage dynamique du message depuis sessionStorage ---
-    const messageTextarea = document.getElementById('outils-message') as HTMLTextAreaElement;
-    let messageEditedParUtilisateur = false;
-
-    // Détecter si l'utilisateur a modifié le message manuellement
-    if (messageTextarea) {
-      messageTextarea.addEventListener('input', () => {
-        messageEditedParUtilisateur = true;
-      });
-    }
-
+    // (messageTextarea, messageEditedParUtilisateur, autoGrowMessage et activeTabId
+    //  sont déclarés plus haut — avant l'appel initial à activate() — pour éviter
+    //  une « temporal dead zone » au chargement d'une URL avec hash.)
     function prefillMessageFromSession() {
       if (!messageTextarea) return;
       // Ne pas écraser les modifications manuelles de l'utilisateur
       if (messageEditedParUtilisateur) return;
       try {
-        const raw = sessionStorage.getItem('simulation-resultat');
-        if (!raw) return;
+        // On lit le résumé de l'outil actuellement affiché (clé par type),
+        // pour que le message corresponde toujours au calculateur à l'écran.
+        const id = activeTabId();
+        const raw = id ? sessionStorage.getItem('simulation-resultat:' + id) : null;
+        if (!raw) {
+          messageTextarea.value = '';
+          autoGrowMessage();
+          return;
+        }
         const data = JSON.parse(raw);
         if (data && data.resultat && data.type) {
           const dateLisible = data.date
-            ? new Date(data.date).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            ? new Date(data.date).toLocaleString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
             : '';
           const typeLabels: Record<string, string> = {
             'calculateur': 'Calculateur de versement',
@@ -414,11 +458,30 @@ const tabs = [
             'droits-mutation': 'Droits de mutation',
           };
           const typeLisible = typeLabels[data.type] ?? data.type;
-          messageTextarea.value = `[${typeLisible} — ${dateLisible}]\n${data.resultat}\n\n`;
+          // Le résumé commence déjà par le nom de l'outil (« Outil — détails ») :
+          // on retire ce préfixe pour ne pas le dupliquer avec l'en-tête.
+          const details = String(data.resultat).replace(/^.*?\s—\s/, '');
+          const enTete = dateLisible ? `[${typeLisible} — ${dateLisible}]` : `[${typeLisible}]`;
+          messageTextarea.value = `${enTete}\n${details}\n\n`;
+          autoGrowMessage();
         }
       } catch (e) { /* ignore */ }
     }
     prefillMessageFromSession();
+
+    // Rafraîchir le résumé quand l'utilisateur atteint le formulaire (parcours
+    // « un seul calculateur » : sessionStorage est écrit après le chargement,
+    // sans changement d'onglet pour redéclencher le préremplissage).
+    const contactSection = document.getElementById('outils-contact');
+    if (contactSection && 'IntersectionObserver' in window) {
+      const msgObs = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) prefillMessageFromSession();
+        });
+      }, { threshold: 0.2 });
+      msgObs.observe(contactSection);
+    }
+    messageTextarea?.addEventListener('focus', prefillMessageFromSession);
 
     // --- Capture d'écran + données calculateur au submit ---
     const contactForm = document.querySelector<HTMLFormElement>('.outils-contact-form');
@@ -443,14 +506,21 @@ const tabs = [
     }
 
     let screenshotCaptured = false;
+    const submitBtn = contactForm?.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const submitLabel = submitBtn?.querySelector('span');
 
-    // Validation des champs obligatoires
+    // Validation des champs obligatoires (présence + format email/téléphone)
     function validateRequiredFields(form: HTMLFormElement): boolean {
       const requiredFields = form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[required]');
       let valid = true;
       requiredFields.forEach((field) => {
         const value = field.value.trim();
-        if (!value) {
+        let badFormat = false;
+        if (value && field instanceof HTMLInputElement) {
+          if (field.type === 'email') badFormat = !field.checkValidity();
+          else if (field.type === 'tel') badFormat = (value.match(/\d/g) || []).length < 10;
+        }
+        if (!value || badFormat) {
           field.classList.add('cform-error');
           valid = false;
         } else {
@@ -478,6 +548,10 @@ const tabs = [
 
       // Valider les champs obligatoires avant la capture
       if (!validateRequiredFields(contactForm!)) return;
+
+      // Verrouiller le bouton pour éviter une double soumission pendant la capture
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitLabel) submitLabel.textContent = 'Envoi en cours…';
 
       // Texte résumé
       updateSimulateurDonnees();
@@ -637,15 +711,23 @@ const tabs = [
       padding: 0;
       margin: 0;
     }
+    .outils-contact-pref-fieldset legend.outils-contact-label {
+      margin-bottom: .55rem;
+      padding: 0;
+    }
     .outils-contact-pref-group {
       display: flex;
+      flex-wrap: wrap;
       gap: .5rem;
     }
     .outils-contact-pref-pill {
       display: inline-flex;
+      flex: 1 1 0;
+      min-width: max-content;
       align-items: center;
+      justify-content: center;
       gap: .4rem;
-      padding: .65rem 1rem;
+      padding: .65rem .85rem;
       font-family: "DM Sans", sans-serif;
       font-size: .82rem;
       font-weight: 600;

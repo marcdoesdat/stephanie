@@ -10,7 +10,15 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "WebFetch(domain:docs.astro.build)",
-      "PowerShell(npm run *)"
+      "PowerShell(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4321/outils)",
+      "Bash(curl -s http://localhost:4321/outils)",
+      "Bash(grep -o 'outils-contact-pref-fieldset.\\\\{0,400\\\\}')",
+      "Bash(npm install *)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(node repro-message.mjs)",
+      "Bash(node shot.mjs)",
+      "Bash(curl -s \"http://localhost:4321/src/pages/outils.astro?astro&type=script&index=0&lang.ts\")"
     ]
   }
 }
