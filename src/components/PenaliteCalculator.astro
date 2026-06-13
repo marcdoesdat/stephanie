@@ -713,9 +713,9 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
   .penalite-toggle.active .penalite-toggle-sub{color:rgba(255,255,255,.7);}
 
   .penalite-actions{display:flex;gap:.75rem;}
-  .penalite-btn{flex:1;appearance:none;-webkit-appearance:none;padding:.75rem 1rem;border-radius:12px;font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s;border:1.5px solid var(--border);background:var(--sand);color:var(--ink);}
-  .penalite-btn:hover{background:var(--warm);border-color:var(--clay);}
-  .penalite-btn:active{background:var(--warm);}
+  .penalite-btn{flex:1;appearance:none;-webkit-appearance:none;padding:.75rem 1rem;border-radius:12px;font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s,transform .15s,box-shadow .15s;border:2px solid var(--border);background:var(--sand);color:var(--ink);box-shadow:3px 3px 0 var(--clay);}
+  .penalite-btn:hover{background:var(--warm);border-color:var(--clay);transform:translate(2px,2px);box-shadow:1px 1px 0 var(--clay);}
+  .penalite-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--clay);}
   .penalite-btn--secondary{flex:0;}
 
   .penalite-results{position:sticky;top:100px;}
@@ -789,9 +789,10 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
   .penalite-capture-consent{display:flex;gap:.65rem;align-items:flex-start;font-size:.75rem;color:var(--muted);line-height:1.5;cursor:pointer;}
   .penalite-capture-consent input{margin-top:.15rem;flex-shrink:0;accent-color:var(--clay);}
   .penalite-capture-consent a{color:var(--clay);}
-  .penalite-capture-submit{width:100%;padding:.8rem;margin-top:1rem;border:none;border-radius:12px;background:var(--clay);color:white;font-family:"DM Sans",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:background .2s;}
-  .penalite-capture-submit:hover{background:var(--clay-dk);}
-  .penalite-capture-submit:disabled{opacity:.6;cursor:not-allowed;}
+  .penalite-capture-submit{width:100%;padding:.8rem;margin-top:1rem;border:2px solid var(--clay);border-radius:12px;background:var(--clay);color:white;font-family:"DM Sans",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;box-shadow:4px 4px 0 var(--ink);transition:background .2s,transform .15s,box-shadow .15s;}
+  .penalite-capture-submit:hover{background:var(--clay-dk);border-color:var(--clay-dk);transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink);}
+  .penalite-capture-submit:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--ink);}
+  .penalite-capture-submit:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:2px 2px 0 var(--ink);}
   .penalite-capture-msg{margin-top:.75rem;font-size:.8rem;text-align:center;}
 
   .penalite-disclaimer{margin-top:2rem;padding:1.25rem 1.5rem;background:#fff9e6;border:1px solid rgba(196,122,82,.25);border-radius:14px;font-size:.75rem;color:var(--muted);line-height:1.7;}

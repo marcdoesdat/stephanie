@@ -1951,17 +1951,19 @@ const nouveauTauxDefaut =
     margin: .25rem auto 0;
     padding: .55rem 1rem;
     background: transparent;
-    border: 1.5px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 10px;
     font-family: "DM Sans", sans-serif;
     font-size: .8rem;
     font-weight: 600;
     color: var(--muted);
     cursor: pointer;
-    transition: border-color .2s, color .2s;
+    box-shadow: 3px 3px 0 var(--clay);
+    transition: border-color .2s, color .2s, transform .15s, box-shadow .15s;
   }
 
-  .rsim-print-btn:hover { border-color: var(--clay); color: var(--ink); }
+  .rsim-print-btn:hover { border-color: var(--clay); color: var(--ink); transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--clay); }
+  .rsim-print-btn:active { transform: translate(3px,3px); box-shadow: 0 0 0 var(--clay); }
 
   /* Disclaimer */
   .rsim-disclaimer {
@@ -2147,12 +2149,20 @@ const nouveauTauxDefaut =
     font-size: .85rem;
     font-weight: 700;
     text-decoration: none;
-    transition: background .2s, transform .15s;
+    border: 2px solid var(--forest);
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: background .2s, transform .15s, box-shadow .15s;
   }
 
   .rsim-cta-expert-link:hover {
     background: var(--ink);
-    transform: translateY(-1px);
+    border-color: var(--ink);
+    transform: translate(2px,2px);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .rsim-cta-expert-link:active {
+    transform: translate(4px,4px);
+    box-shadow: 1px 1px 0 var(--ink);
   }
 
   /* Impression — n'imprimer que l'analyse */

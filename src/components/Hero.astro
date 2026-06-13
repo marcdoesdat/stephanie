@@ -131,13 +131,18 @@ function fmtRate(val: number | null | undefined): string {
     background: var(--ink);
     color: #fff;
     text-decoration: none;
-    box-shadow: 0 4px 14px rgba(31, 30, 28, 0.15);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    border: 2px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--clay);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
   }
   .hero-btns .btn-tools:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(31, 30, 28, 0.25);
+    transform: translate(2px, 2px);
+    box-shadow: 3px 3px 0 var(--clay);
     background: #000;
+  }
+  .hero-btns .btn-tools:active {
+    transform: translate(4px, 4px);
+    box-shadow: 1px 1px 0 var(--clay);
   }
 
   .hero-badge::before {

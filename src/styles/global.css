@@ -37,8 +37,9 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
 .nav-links a{display:block;font-size:clamp(.8rem,.18vw + .7rem,.9rem);font-weight:500;color:var(--muted);text-decoration:none;letter-spacing:.02em;transition:color .2s,transform .2s;white-space:nowrap}
 .nav-links a:hover,
 .nav-links a:focus-visible{color:var(--ink);transform:translateY(-1px);}
-.nav-cta{display:inline-flex!important;align-items:center;justify-content:center;background:var(--clay);color:white!important;padding:.62rem clamp(.95rem,1.4vw,1.4rem);border-radius:50px;transition:background .2s,transform .2s!important;white-space:nowrap;line-height:1;text-align:center}
-.nav-cta:hover{background:var(--clay-dk)!important;transform:translateY(-1px)}
+.nav-cta{display:inline-flex!important;align-items:center;justify-content:center;background:var(--clay);color:white!important;padding:.62rem clamp(.95rem,1.4vw,1.4rem);border-radius:50px;border:2px solid var(--clay);box-shadow:3px 3px 0 var(--ink);transition:background .2s,transform .15s,box-shadow .15s!important;white-space:nowrap;line-height:1;text-align:center}
+.nav-cta:hover{background:var(--clay-dk)!important;border-color:var(--clay-dk)!important;transform:translate(2px,2px)!important;box-shadow:1px 1px 0 var(--ink)!important}
+.nav-cta:active{transform:translate(3px,3px)!important;box-shadow:0 0 0 var(--ink)!important}
 .hamburger{display:none;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;background:none;border:none;padding:12px;min-width:44px;min-height:44px}
 .hamburger span{display:block;width:22px;height:2px;background:var(--ink);border-radius:2px;transition:.3s}
 
@@ -62,12 +63,14 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
 .hero-left .hero-value-prop em{font-style:italic;color:var(--clay)}
 .hero-left p{font-size:1.05rem;color:var(--muted);line-height:1.8;max-width:480px;margin-bottom:2.5rem}
 .hero-btns{display:flex;gap:1rem;flex-wrap:wrap}
-.btn-primary{background:var(--clay);color:white;padding:.9rem 2rem;border-radius:50px;font-size:.9rem;font-weight:600;text-decoration:none;transition:background .2s,transform .15s;display:inline-block}
-.btn-primary:hover{background:var(--clay-dk);transform:translateY(-1px)}
+.btn-primary{background:var(--clay);color:white;padding:.9rem 2rem;border-radius:50px;font-size:.9rem;font-weight:600;text-decoration:none;border:2px solid var(--clay);box-shadow:4px 4px 0 var(--ink);transition:background .2s,transform .15s,box-shadow .15s;display:inline-block}
+.btn-primary:hover{background:var(--clay-dk);border-color:var(--clay-dk);transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.btn-primary:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--ink)}
 .btn-primary:focus-visible{outline:3px solid var(--clay);outline-offset:3px}
 .btn-primary--sm{font-size:.82rem;padding:.7rem 1.6rem}
-.btn-secondary{background:transparent;color:var(--ink);padding:.9rem 2rem;border-radius:50px;border:1.5px solid var(--border);font-size:.9rem;font-weight:500;text-decoration:none;transition:border-color .2s,transform .15s;display:inline-block}
-.btn-secondary:hover{border-color:var(--clay);transform:translateY(-1px)}
+.btn-secondary{background:transparent;color:var(--ink);padding:.9rem 2rem;border-radius:50px;border:2px solid var(--border);font-size:.9rem;font-weight:500;text-decoration:none;box-shadow:4px 4px 0 var(--clay);transition:border-color .2s,transform .15s,box-shadow .15s;display:inline-block}
+.btn-secondary:hover{border-color:var(--clay);transform:translate(2px,2px);box-shadow:2px 2px 0 var(--clay)}
+.btn-secondary:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--clay)}
 .btn-secondary:focus-visible{outline:3px solid var(--clay);outline-offset:3px}
 .btn-secondary--sm{font-size:.85rem;padding:.7rem 1.6rem}
 .btn-secondary--icon{display:inline-flex;align-items:center;gap:.5rem}
@@ -83,30 +86,34 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
 }
 
 /* CTA héro — utilisé aux moments stratégiques de décision (Hero, fin de Calculator/Simulator, submit final).
-   Effet : ombre clay marquée, lift au hover, flèche animée. Ne pas étendre à plus d'endroits sans réfléchir
-   à la hiérarchie : trop de "gros CTA" tue le gros CTA. */
+   Effet : hard drop shadow chunky, s'enfonce au hover/active. */
 .btn-cta{
   display:inline-flex;align-items:center;justify-content:center;gap:.55rem;
   background:var(--clay);color:white;
   padding:1.05rem 1.6rem;border-radius:14px;
   font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:600;letter-spacing:-.005em;
-  text-decoration:none;border:none;cursor:pointer;
-  box-shadow:var(--shadow-clay);
-  transition:background .2s,transform .15s,box-shadow .2s;
+  text-decoration:none;border:2px solid var(--clay);cursor:pointer;
+  box-shadow:4px 4px 0 var(--ink);
+  transition:background .2s,transform .15s,box-shadow .15s;
 }
 .btn-cta:hover{
   background:var(--clay-dk);
-  transform:translateY(-2px);
-  box-shadow:var(--shadow-clay-hover);
+  border-color:var(--clay-dk);
+  transform:translate(2px,2px);
+  box-shadow:2px 2px 0 var(--ink);
+}
+.btn-cta:active{
+  transform:translate(4px,4px);
+  box-shadow:1px 1px 0 var(--ink);
 }
 .btn-cta:focus-visible{outline:3px solid var(--clay);outline-offset:3px}
-.btn-cta:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:0 4px 12px rgba(196,122,82,.25)}
+.btn-cta:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:2px 2px 0 var(--ink)}
 .btn-cta svg{transition:transform .2s;flex-shrink:0}
 .btn-cta:hover svg{transform:translateX(3px)}
 .btn-cta--block{display:flex;width:100%}
 @media (prefers-reduced-motion: reduce){
   .btn-cta,.btn-cta svg{transition:none}
-  .btn-cta:hover{transform:none}
+  .btn-cta:hover,.btn-cta:active{transform:none}
 }
 .hero-stats{display:flex;gap:2.5rem;margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid var(--border);justify-content:center;text-align:center}
 .stat-num{font-family:"Lora",serif;font-size:2.75rem;font-weight:600;color:var(--clay);line-height:1}
@@ -122,9 +129,9 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
 section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 .section-inner{max-width:1100px;margin:0 auto}
 .section-tag{display:inline-block;font-size:.68rem;color:var(--clay);font-weight:600;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid var(--clay)}
-.section-title{font-family:"Lora",serif;font-size:2.6rem;font-weight:600;line-height:1.2;margin-bottom:1rem;color:var(--ink);letter-spacing:-.01em}
+.section-title{font-family:"Lora",serif;font-size:clamp(2.4rem, 5vw, 3.2rem);font-weight:600;line-height:1.15;margin-bottom:1rem;color:var(--ink);letter-spacing:-.02em}
 .section-title em{font-style:italic;color:var(--clay)}
-.section-sub{font-size:1rem;color:var(--muted);max-width:560px;line-height:1.8}
+.section-sub{font-size:1.05rem;color:var(--muted);max-width:580px;line-height:1.8}
 
 #outils-teaser{background:var(--warm);padding-bottom:2rem}
 #outils-teaser .outils-teaser-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:1.5rem;margin-top:2.5rem;align-items:stretch}
@@ -559,8 +566,9 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 .result-card--closing .result-detail{font-size:.7rem;color:rgba(255,255,255,.4);margin-top:.4rem;line-height:1.5}
 
 /* CTA principal — calculateur */
-.calc-cta-btn{display:block;text-align:center;background:var(--clay);color:white;font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:600;padding:1.1rem 1.5rem;border-radius:14px;text-decoration:none;transition:background .2s,transform .15s,box-shadow .2s;box-shadow:var(--shadow-clay)}
-.calc-cta-btn:hover{background:var(--clay-dk);transform:translateY(-2px);box-shadow:var(--shadow-clay-hover)}
+.calc-cta-btn{display:block;text-align:center;background:var(--clay);color:white;font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:600;padding:1.1rem 1.5rem;border-radius:14px;text-decoration:none;border:2px solid var(--clay);box-shadow:4px 4px 0 var(--ink);transition:background .2s,transform .15s,box-shadow .15s}
+.calc-cta-btn:hover{background:var(--clay-dk);border-color:var(--clay-dk);transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.calc-cta-btn:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--ink)}
 
 /* Email capture */
 .email-capture{background:var(--sand);border:1px solid var(--border);border-radius:14px;padding:1.35rem 1.4rem;margin-top:.25rem}
@@ -687,8 +695,9 @@ td:last-child{text-align:center}
 .sam-mise{font-family:"Lora",serif;font-size:1.3rem;font-weight:600;color:var(--clay)}
 
 /* CTA principal — simulateur */
-.sim-cta-btn{display:block;text-align:center;background:var(--clay);color:white;font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:600;padding:1.15rem 1.5rem;border-radius:14px;text-decoration:none;transition:background .2s,transform .15s,box-shadow .2s;box-shadow:var(--shadow-clay);margin-top:.5rem}
-.sim-cta-btn:hover{background:var(--clay-dk);transform:translateY(-2px);box-shadow:var(--shadow-clay-hover)}
+.sim-cta-btn{display:block;text-align:center;background:var(--clay);color:white;font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:600;padding:1.15rem 1.5rem;border-radius:14px;text-decoration:none;border:2px solid var(--clay);box-shadow:4px 4px 0 var(--ink);transition:background .2s,transform .15s,box-shadow .15s;margin-top:.5rem}
+.sim-cta-btn:hover{background:var(--clay-dk);border-color:var(--clay-dk);transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.sim-cta-btn:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--ink)}
 
 /* ======================================================
    FAQ — refonte avec recherche, catégories, accordéon fluide
@@ -1619,6 +1628,22 @@ footer strong{color:rgba(255,255,255,.85)}
   .outils-tab.comp-pill[aria-selected="true"],
   .outils-tab.comp-pill.active{
     background:var(--forest);color:white;
+    border-color:var(--forest);
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  .outils-tab.comp-pill[aria-selected="true"]:hover,
+  .outils-tab.comp-pill.active:hover,
+  .outils-tab.comp-pill[aria-selected="true"]:focus,
+  .outils-tab.comp-pill.active:focus{
+    background:var(--forest);color:white;border-color:var(--forest);
+  }
+  .outils-tab.comp-pill[aria-selected="true"] .comp-pill-sub{color:rgba(255,255,255,.7)}
+  .outils-tab--coming-soon{
+    border-style:dashed;
+    background:var(--sand);
+  }
+}
     border-color:var(--forest);
     border-radius:10px;
     box-shadow:0 2px 8px rgba(0,0,0,.15);

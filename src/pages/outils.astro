@@ -505,7 +505,6 @@ const tabs = [
       simulateurInput.value = `Outil utilisé : ${label}\n\n${lines.join('\n')}`;
     }
 
-    let screenshotCaptured = false;
     const submitBtn = contactForm?.querySelector<HTMLButtonElement>('button[type="submit"]');
     const submitLabel = submitBtn?.querySelector('span');
 
@@ -540,10 +539,6 @@ const tabs = [
     });
 
     contactForm?.addEventListener('submit', async (e) => {
-      if (screenshotCaptured) {
-        screenshotCaptured = false;
-        return; // laisser le submit natif se poursuivre
-      }
       e.preventDefault();
 
       // Valider les champs obligatoires avant la capture
@@ -583,8 +578,8 @@ const tabs = [
         }
       }
 
-      screenshotCaptured = true;
-      contactForm.requestSubmit();
+      // Soumettre le formulaire → Netlify le traite et redirige vers /merci
+      contactForm!.submit();
     });
   </script>
 

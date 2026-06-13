@@ -67,16 +67,15 @@ const services: ServiceItem[] = [
       </p>
     </div>
 
-    <div class="services-grid stagger-children">
-      {services.map((service, index) => (
+    <div class="services-grid stagger-children" id="services-grid">
+      {services.map((service) => (
         <a
           href={service.href ?? '#contact'}
-          class="service-card fade-up"
-          style={`transition-delay: ${(index % 3) * 0.1}s`}
+          class="service-card"
           aria-label={`${service.cta} — ${service.title}`}
         >
           <div class="service-icon" aria-hidden="true">
-            <service.icon size={22} stroke-width={1.8} />
+            <service.icon size={28} stroke-width={1.8} />
           </div>
 
           <h3>{service.title}</h3>
@@ -93,51 +92,59 @@ const services: ServiceItem[] = [
 </section>
 
 <style>
-  /* La carte est désormais un <a>. On neutralise les styles de lien hérités
-     pour conserver exactement le look d'origine de .service-card (global.css). */
-  .services-grid .service-card {
+  .service-card {
     display: flex;
     flex-direction: column;
     text-decoration: none;
     color: inherit;
     cursor: pointer;
-    box-shadow: var(--shadow-xs);
-    transition: transform 0.25s, box-shadow 0.25s;
   }
-  .services-grid .service-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 36px rgba(0,0,0,.10);
+  .service-card:focus-visible {
+    outline: 3px solid var(--clay);
+    outline-offset: 4px;
   }
-  .services-grid .service-card,
-  .services-grid .service-card:hover,
-  .services-grid .service-card:focus,
-  .services-grid .service-card:visited {
-    text-decoration: none;
-    color: inherit;
-  }
-  .services-grid .service-card * {
+  .service-card * {
     text-decoration: none;
   }
-
-  .services-grid .service-card h3 {
+  /* Remplacement du radial-gradient par un suivi souris fluide */
+  .service-card::before {
+    background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 0%), rgba(196, 122, 82, 0.08), transparent 40%);
+  }
+  .service-card h3 {
     font-family: "Lora", serif;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     margin-bottom: 0.8rem;
     font-weight: 600;
     color: var(--ink);
   }
-
-  /* Le CTA pousse au bas de la carte pour aligner toutes les flèches sur la même ligne,
-     même si les descriptions ont des longueurs différentes. */
-  .services-grid .service-card .learn {
+  .service-card .learn {
     margin-top: auto;
     padding-top: 1.2rem;
     color: var(--clay);
   }
-
-  /* Focus clavier visible — accessibilité */
-  .services-grid .service-card:focus-visible {
-    outline: 3px solid var(--clay);
-    outline-offset: 4px;
+  
+  @media (max-width: 900px) {
+    .services-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
+
+<script>
+  (function() {
+    const grid = document.getElementById('services-grid');
+    if (!grid) return;
+    const cards = grid.querySelectorAll('.service-card');
+
+    // Glow tracking mouse
+    grid.addEventListener('mousemove', (e) => {
+      for(const card of cards) {
+        const rect = (card as HTMLElement).getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+        (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+      }
+    });
+  })();
+</script>

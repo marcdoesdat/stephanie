@@ -17,6 +17,15 @@ const prenom = config.nom.split(' ')[0] ?? 'Stéphanie';
 >
   <Nav />
 
+  <!-- Google Ads conversion tracking -->
+  <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=AW-18126348856"></script>
+  <script is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-18126348856');
+  </script>
+
   <main id="main-content" class="merci-page">
     <section class="section-inner merci-inner">
       <div class="merci-card">
