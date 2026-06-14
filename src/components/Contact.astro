@@ -2,9 +2,10 @@
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.webp';
 import { loadSiteConfig } from '../config';
-import { Phone, Mail, MapPin, Building2, Contact as ContactIcon, Clock, Zap } from '@lucide/astro';
+import { Mail, MapPin, Building2, Contact as ContactIcon, Clock, Zap } from '@lucide/astro';
+import PhoneLink from './PhoneLink.astro';
 const config = loadSiteConfig();
-const telephoneHref = `tel:${config.telephone.replace(/[^\d+]/g, '')}`;
+const telephoneHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
 const courrielHref = `mailto:${config.courriel}`;
 const prenomCourtiere = config.nom.split(' ')[0];
 ---
@@ -50,8 +51,15 @@ const prenomCourtiere = config.nom.split(' ')[0];
           </p>
           <div class="contact-details">
             <div class="contact-item">
-              <div class="contact-icon" aria-hidden="true"><Phone size={18} stroke-width={1.8} /></div>
-              <a class="contact-link" href={telephoneHref}><strong>{config.telephone}</strong></a>
+              <div class="contact-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.55a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+              <PhoneLink
+                variant="text"
+                trackId="tel_click_contact"
+                class="contact-link"
+                aria-label={`Appeler ${config.nom}`}
+              />
             </div>
             
             <div class="contact-item" style="background: rgba(196, 122, 82, 0.08); padding: 0.85rem 1rem; border-radius: 12px; margin: 0.25rem 0 0.5rem; align-items: flex-start;">
