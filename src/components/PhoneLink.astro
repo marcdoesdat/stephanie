@@ -1,0 +1,304 @@
+---
+import { Phone } from '@lucide/astro';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+const telHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
+
+interface Props {
+  variant?: 'icon' | 'text';
+  trackId?: string;
+  class?: string;
+  'aria-label'?: string;
+}
+
+const {
+  variant = 'text',
+  trackId = 'tel_click',
+  class: className,
+  'aria-label': ariaLabel = `Appeler ${config.nom}`,
+} = Astro.props;
+---
+
+<span
+  class="phone-wrap"
+  data-phone-wrap
+  data-track-id={trackId}
+  data-tel={config.telephone}
+  data-calendly-url={config.calendly_url}
+>
+  <a
+    href={telHref}
+    class:list={['phone-trigger', `phone-trigger--${variant}`, className]}
+    aria-label={ariaLabel}
+    data-phone-trigger
+  >
+    {variant === 'icon' && <Phone size={20} stroke-width={2} aria-hidden="true" />}
+    {variant === 'text' && <strong>{config.telephone}</strong>}
+  </a>
+
+  <div
+    class="phone-popover"
+    role="dialog"
+    aria-label={`Appeler ${config.nom}`}
+    aria-modal="true"
+    data-phone-popover
+  >
+    <p class="phone-popover-number">{config.telephone}</p>
+    <button class="phone-popover-copy" type="button" data-phone-copy>
+      Copier le numéro
+    </button>
+    {config.calendly_url && (
+      <a
+        href={config.calendly_url}
+        target="_blank"
+        rel="noopener"
+        class="phone-popover-calendly"
+        data-track="tel_calendly"
+      >
+        ou réservez en ligne →
+      </a>
+    )}
+  </div>
+</span>
+
+<style>
+  .phone-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* ── Popover ─────────────────────────────────────── */
+  .phone-popover {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 300;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 1.25rem 1.5rem;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    /* Closed */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-6px) scale(0.97);
+    transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+  }
+
+  .phone-popover.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .phone-popover {
+      transform: none;
+      transition: opacity 0.01ms, visibility 0.01ms;
+    }
+  }
+
+  /* ── Popover content ─────────────────────────────── */
+  .phone-popover-number {
+    font-family: 'Lora', serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+    text-align: center;
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .phone-popover-copy {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 1rem;
+    background: var(--clay);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .phone-popover-copy:hover {
+    background: var(--clay-dk);
+  }
+
+  .phone-popover-copy.copied {
+    background: var(--forest);
+  }
+
+  .phone-popover-copy:focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: 2px;
+  }
+
+  .phone-popover-calendly {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+    text-decoration: none;
+    line-height: 1.4;
+  }
+
+  .phone-popover-calendly:hover {
+    color: var(--forest);
+    text-decoration: underline;
+  }
+
+  .phone-popover-calendly:focus-visible {
+    outline: 2px solid var(--forest);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+</style>
+
+<script>
+  (function () {
+    function track(name: string) {
+      // @ts-ignore
+      if (typeof window.umami?.track === 'function') window.umami.track(name);
+      // @ts-ignore
+      if (typeof window.gtag === 'function') window.gtag('event', name);
+    }
+
+    // true = mobile/tactile : hover: none ET pointer: coarse
+    const isMobile = () =>
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+    function trapFocus(el: HTMLElement): () => void {
+      const focusable = Array.from(
+        el.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      function handler(e: KeyboardEvent) {
+        if (e.key !== 'Tab') return;
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last?.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first?.focus();
+          }
+        }
+      }
+
+      el.addEventListener('keydown', handler);
+      return () => el.removeEventListener('keydown', handler);
+    }
+
+    function initWrap(wrap: HTMLElement) {
+      const trigger = wrap.querySelector<HTMLAnchorElement>('[data-phone-trigger]');
+      const popover = wrap.querySelector<HTMLElement>('[data-phone-popover]');
+      const copyBtn = wrap.querySelector<HTMLButtonElement>('[data-phone-copy]');
+      const trackId = wrap.dataset.trackId ?? 'tel_click';
+      const tel = wrap.dataset.tel ?? '';
+
+      if (!trigger || !popover) return;
+
+      // Desktop ARIA
+      trigger.setAttribute('aria-haspopup', 'dialog');
+      trigger.setAttribute('aria-expanded', 'false');
+
+      let removeTrap: (() => void) | null = null;
+      let copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+      trigger.addEventListener('click', (e) => {
+        if (isMobile()) {
+          track(trackId);
+          return; // tel: link works natively
+        }
+        e.preventDefault();
+        track(trackId);
+        popover.classList.contains('is-open') ? close() : open();
+      });
+
+      function open() {
+        trigger!.setAttribute('aria-expanded', 'true');
+        popover!.classList.add('is-open');
+        removeTrap = trapFocus(popover!);
+        const firstFocusable = popover!.querySelector<HTMLElement>('button, [href]');
+        setTimeout(() => firstFocusable?.focus({ preventScroll: true }), 20);
+        document.addEventListener('click', onOutsideClick, true);
+        document.addEventListener('keydown', onEscape);
+      }
+
+      function close() {
+        trigger!.setAttribute('aria-expanded', 'false');
+        popover!.classList.remove('is-open');
+        removeTrap?.();
+        removeTrap = null;
+        document.removeEventListener('click', onOutsideClick, true);
+        document.removeEventListener('keydown', onEscape);
+        trigger!.focus({ preventScroll: true });
+      }
+
+      function onOutsideClick(e: MouseEvent) {
+        if (!wrap.contains(e.target as Node)) close();
+      }
+
+      function onEscape(e: KeyboardEvent) {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          close();
+        }
+      }
+
+      copyBtn?.addEventListener('click', () => {
+        navigator.clipboard
+          .writeText(tel)
+          .then(() => {
+            track('tel_copy');
+            if (copyBtn) {
+              copyBtn.textContent = 'Copié ✓';
+              copyBtn.classList.add('copied');
+              if (copyTimer) clearTimeout(copyTimer);
+              copyTimer = setTimeout(() => {
+                copyBtn.textContent = 'Copier le numéro';
+                copyBtn.classList.remove('copied');
+              }, 2000);
+            }
+          })
+          .catch(() => {
+            // clipboard API non dispo — fallback silencieux
+          });
+      });
+    }
+
+    function init() {
+      // Sur mobile : on n'intercepte rien, le lien tel: fonctionne nativement.
+      if (isMobile()) return;
+
+      document.querySelectorAll<HTMLElement>('[data-phone-wrap]').forEach(initWrap);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>

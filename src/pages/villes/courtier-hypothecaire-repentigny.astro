@@ -9,10 +9,10 @@ import MessengerBtn from '../../components/MessengerBtn.astro';
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
+import PhoneLink from '../../components/PhoneLink.astro';
 
 const config = loadSiteConfig();
 const prenom = config.nom.split(' ')[0];
-const telHref = `tel:${config.telephone.replace(/[^\d+]/g, '')}`;
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-repentigny`;
 const STEPHANIE_IMAGE = `${config.site_url}/_astro/stephanie.Cm30Blgc.jpg`;
@@ -180,9 +180,9 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
                 <span>Obtenir ma pré-approbation gratuite</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </a>
-              <a href={telHref} class="rep-cta-secondary" aria-label={`Appeler ${prenom} au ${config.telephone}`}>
-                ou appelez le <strong>{config.telephone}</strong>
-              </a>
+              <span class="rep-cta-secondary">
+                ou appelez le <PhoneLink variant="text" trackId="tel_click_repentigny" aria-label={`Appeler ${prenom} au ${config.telephone}`} />
+              </span>
             </div>
           </div>
 
@@ -538,7 +538,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     text-decoration: none;
     font-size: 0.95rem;
   }
-  .rep-cta-secondary strong {
+  /* Le strong est rendu dans PhoneLink (scope différent) — :global obligatoire */
+  .rep-cta-secondary :global(strong) {
     color: var(--clay, #c47a52);
     text-decoration: underline;
   }
@@ -842,6 +843,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     }
     .rep-cta-secondary {
       text-align: center;
+      display: block;
     }
   }
 </style>
