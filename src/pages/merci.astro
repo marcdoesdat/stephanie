@@ -17,14 +17,9 @@ const prenom = config.nom.split(' ')[0] ?? 'Stéphanie';
 >
   <Nav />
 
-  <!-- Google Ads conversion tracking -->
-  <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=AW-18126348856"></script>
-  <script is:inline>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'AW-18126348856');
-  </script>
+  <!-- Conversion Google Ads (AW-18126348856) : le tag global est chargé après consentement par
+       /js/consent.js → /js/gtag-init.js, qui le configure aussi sur cette page. Pas de tag dédié ici. -->
+
 
   <main id="main-content" class="merci-page">
     <section class="section-inner merci-inner">

@@ -51,11 +51,11 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
     ></script>
 
     <!-- Calendly : la feuille de styles est dépourvue de cookies, donc chargée sans consentement.
-         Les scripts Google Analytics + Calendly sont chargés conditionnellement par /js/consent.js
+         Les scripts Google Ads + Calendly sont chargés conditionnellement par /js/consent.js
          après acceptation explicite (conformité Loi 25). -->
     <link rel="stylesheet" href="https://assets.calendly.com/assets/external/widget.css" />
 
-    <!-- Bannière de consentement Loi 25 : gère le chargement conditionnel de GA + Calendly -->
+    <!-- Bannière de consentement Loi 25 : gère le chargement conditionnel de Google Ads + Calendly -->
     <script is:inline defer src="/js/consent.js"></script>
 
     <!-- Critical CSS : fondations above-the-fold (variables, reset, nav, hero).

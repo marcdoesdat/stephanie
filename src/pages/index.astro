@@ -59,6 +59,14 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   <main id="main-content">
     <Hero baseRate={hypothecaVariable} />
 
+    <Services />
+
+    <Testimonials reviews={googleReviews} />
+
+    <TauxSection hypothecaRates={hypothecaRates} />
+
+    <About />
+
     <section id="outils-teaser">
       <div class="section-inner">
         <div class="fade-up">
@@ -111,8 +119,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       </div>
     </section>
 
-    <Services />
-
     <section id="rappel-renouvellement" aria-label="Demande de rappel pour renouvellement">
       <div class="section-inner">
         <div class="fade-up">
@@ -125,9 +131,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       </div>
     </section>
 
-    <TauxSection hypothecaRates={hypothecaRates} />
-    <About />
-    <Testimonials reviews={googleReviews} />
     <Faq />
     <Contact />
   </main>
