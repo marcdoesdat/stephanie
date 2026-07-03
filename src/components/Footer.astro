@@ -57,6 +57,10 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
     <span class="footer-sep">|</span>
     <a href={config.hypotheca_profile_url ?? 'https://hypotheca.ca/sweyman'} target="_blank" rel="noopener noreferrer">Profil Hypotheca</a>
   </div>
+
+  <div class="footer-nexvio">
+    Propulsé par <a href="https://nexvio.ca/" target="_blank" rel="noopener noreferrer">Solutions Nexvio</a>
+  </div>
 </footer>
 
 <style>
@@ -125,6 +129,31 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
   .footer-legal-links a:focus-visible {
     color: #fff;
     text-decoration: underline;
+  }
+
+  .footer-nexvio {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+
+  .footer-nexvio a {
+    color: #4A9EFF;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+
+  .footer-nexvio a:hover,
+  .footer-nexvio a:focus-visible {
+    color: #7AB8FF;
   }
 
   .footer-sep {

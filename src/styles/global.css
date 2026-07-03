@@ -51,7 +51,7 @@ nav.scrolled{box-shadow:var(--shadow-sm)}
 
 /* Décale l'ancrage des sections sous la navbar fixe */
 #main-content section[id],
-#main-content [id]{scroll-margin-top:80px}
+#main-content [id]{scroll-margin-top:60px}
 
 /* HERO */
 #hero{min-height:100vh;background:var(--sand);display:flex;align-items:center;padding:8rem 4rem 4rem;position:relative;overflow:hidden}
@@ -1623,22 +1623,6 @@ footer strong{color:rgba(255,255,255,.85)}
   .outils-tab.comp-pill[aria-selected="true"],
   .outils-tab.comp-pill.active{
     background:var(--forest);color:white;
-    border-color:var(--forest);
-    border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,.15);
-  }
-  .outils-tab.comp-pill[aria-selected="true"]:hover,
-  .outils-tab.comp-pill.active:hover,
-  .outils-tab.comp-pill[aria-selected="true"]:focus,
-  .outils-tab.comp-pill.active:focus{
-    background:var(--forest);color:white;border-color:var(--forest);
-  }
-  .outils-tab.comp-pill[aria-selected="true"] .comp-pill-sub{color:rgba(255,255,255,.7)}
-  .outils-tab--coming-soon{
-    border-style:dashed;
-    background:var(--sand);
-  }
-}
     border-color:var(--forest);
     border-radius:10px;
     box-shadow:0 2px 8px rgba(0,0,0,.15);

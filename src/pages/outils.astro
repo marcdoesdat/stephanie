@@ -227,29 +227,52 @@ const tabs = [
               <label class="outils-contact-label" for="outils-email">Courriel <span class="cform-required" aria-hidden="true">*</span></label>
               <input type="email" id="outils-email" name="email" placeholder="marie@exemple.com" required autocomplete="email" class="outils-contact-input" />
 
-              <label class="outils-contact-label" for="outils-tel">Téléphone <span class="cform-required" aria-hidden="true">*</span></label>
-              <input type="tel" id="outils-tel" name="telephone" placeholder="514 000-0000" required inputmode="tel" autocomplete="tel" class="outils-contact-input" />
+              <label class="outils-contact-label" for="outils-tel">Téléphone <span class="cform-required" id="outils-tel-required" aria-hidden="true">*</span></label>
+              <input type="tel" id="outils-tel" name="telephone" placeholder="514 000-0000" inputmode="tel" autocomplete="tel" class="outils-contact-input" />
 
               <fieldset class="outils-contact-pref-fieldset">
                 <legend class="outils-contact-label">Préférence de communication</legend>
-                <div class="outils-contact-pref-group" role="radiogroup" aria-label="Préférence de communication">
-                  <button type="button" class="outils-contact-pref-pill active" data-pref="courriel" role="radio" aria-checked="true" tabindex="0">
+                <div class="outils-contact-pref-group">
+                  <input type="radio" name="pref-communication" id="pref-courriel" value="courriel" checked />
+                  <label for="pref-courriel" class="outils-contact-pref-pill">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                     Courriel
-                  </button>
-                  <button type="button" class="outils-contact-pref-pill" data-pref="appel" role="radio" aria-checked="false" tabindex="-1">
+                  </label>
+                  <input type="radio" name="pref-communication" id="pref-appel" value="appel" />
+                  <label for="pref-appel" class="outils-contact-pref-pill">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     Appel
-                  </button>
-                  <button type="button" class="outils-contact-pref-pill" data-pref="texto" role="radio" aria-checked="false" tabindex="-1">
+                  </label>
+                  <input type="radio" name="pref-communication" id="pref-texto" value="texto" />
+                  <label for="pref-texto" class="outils-contact-pref-pill">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     Texto
-                  </button>
+                  </label>
                 </div>
-                <input type="hidden" name="pref-communication" id="outils-pref-communication" value="courriel" />
               </fieldset>
 
               <label class="outils-contact-label" for="outils-message">Message <span class="cform-optional">(facultatif)</span></label>
+
+              <!-- Carte récapitulative de simulation (read-only, dismissible) -->
+              <div class="outils-simulation-card" id="outils-simulation-card" hidden>
+                <div class="outils-simulation-card-header">
+                  <span class="outils-simulation-card-icon" aria-hidden="true">📎</span>
+                  <span class="outils-simulation-card-title">Vos résultats sont joints</span>
+                  <button type="button" class="outils-simulation-card-close" id="outils-simulation-card-close" aria-label="Retirer la simulation de ma demande">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+                <dl class="outils-simulation-card-dl" id="outils-simulation-card-dl"></dl>
+                <p class="outils-simulation-card-hint">Ces données seront envoyées avec votre message pour une réponse plus précise.</p>
+              </div>
+              <!-- Undo : affiché après retrait de la carte (données gardées en mémoire) -->
+              <div class="outils-simulation-undo" id="outils-simulation-undo" hidden>
+                <span class="outils-simulation-undo-text">Simulation retirée.</span>
+                <button type="button" class="outils-simulation-undo-btn" id="outils-simulation-undo-btn">Rejoindre à nouveau</button>
+              </div>
+              <!-- Données techniques complètes (ratios inclus) → cachées du client -->
+              <input type="hidden" name="simulation-brute" id="hidden-simulation-brute" />
+
               <textarea id="outils-message" name="message" placeholder="Dites-nous en quelques mots votre projet ou votre question…" rows="2" class="outils-contact-input"></textarea>
 
               <div class="outils-contact-consents">
@@ -263,7 +286,6 @@ const tabs = [
                 <span>Valider mes chiffres avec {prenom}</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
-              <p class="outils-contact-simulation-note"><em>Tes résultats de simulation seront joints à ta demande pour que Stéphanie puisse te répondre avec du concret.</em></p>
               <p class="outils-contact-note">En envoyant ce formulaire, vous acceptez d'être recontacté·e au sujet de votre demande. Vos données ne sont jamais partagées — voir la <a href="/confidentialite">politique de confidentialité</a>.</p>
             </div>
           </form>
@@ -287,22 +309,21 @@ const tabs = [
     // Déclaré tôt : activate() (appelée dès le chargement si l'URL a un hash)
     // invoque prefillMessageFromSession() qui dépend de ces éléments.
     const messageTextarea = document.getElementById('outils-message') as HTMLTextAreaElement;
-    let messageEditedParUtilisateur = false;
+    // Données de simulation sauvegardées en mémoire pour le undo (déclaré tôt
+    // pour éviter une TDZ — prefillMessageFromSession() est appelée par activate()).
+    let savedSimulationRaw: string | null = null;
 
     // Ajuste la hauteur du textarea à son contenu (utile en mobile où la poignée
-    // de redimensionnement n'est pas accessible, et pour afficher le résumé injecté).
+    // de redimensionnement n'est pas accessible).
     function autoGrowMessage() {
       if (!messageTextarea) return;
       messageTextarea.style.height = 'auto';
       messageTextarea.style.height = Math.min(messageTextarea.scrollHeight, 420) + 'px';
     }
 
-    // Détecter si l'utilisateur a modifié le message manuellement
+    // Auto-grow au fil de la frappe
     if (messageTextarea) {
-      messageTextarea.addEventListener('input', () => {
-        messageEditedParUtilisateur = true;
-        autoGrowMessage();
-      });
+      messageTextarea.addEventListener('input', autoGrowMessage);
     }
 
     function activeTabId(): string | null {
@@ -394,76 +415,149 @@ const tabs = [
       animEls.forEach((el) => el.classList.add('visible'));
     }, 1200);
 
-    // --- Boutons préférence de communication (pattern ARIA radio) ---
-    const prefPills = Array.from(document.querySelectorAll<HTMLButtonElement>('.outils-contact-pref-pill'));
-    const prefHidden = document.getElementById('outils-pref-communication') as HTMLInputElement;
+    // --- Préférence de communication (radios natifs) ---
+    const telInput = document.getElementById('outils-tel') as HTMLInputElement;
+    const telRequiredAsterisk = document.getElementById('outils-tel-required');
+    const prefRadios = document.querySelectorAll<HTMLInputElement>('input[name="pref-communication"]');
 
-    function selectPref(pill: HTMLButtonElement, focus = false) {
-      prefPills.forEach((p) => {
-        const active = p === pill;
-        p.classList.toggle('active', active);
-        p.setAttribute('aria-checked', active ? 'true' : 'false');
-        p.setAttribute('tabindex', active ? '0' : '-1');
-      });
-      if (prefHidden) prefHidden.value = pill.dataset.pref ?? 'courriel';
-      if (focus) pill.focus();
+    function updateTelRequired() {
+      const checked = Array.from(prefRadios).find((r) => r.checked);
+      const pref = checked?.value ?? 'courriel';
+      const telRequis = pref === 'appel' || pref === 'texto';
+      if (telInput) {
+        if (telRequis) {
+          telInput.setAttribute('required', '');
+        } else {
+          telInput.removeAttribute('required');
+          telInput.classList.remove('cform-error');
+        }
+      }
+      if (telRequiredAsterisk) {
+        telRequiredAsterisk.hidden = !telRequis;
+      }
     }
 
-    prefPills.forEach((pill) => {
-      pill.addEventListener('click', () => selectPref(pill));
-      pill.addEventListener('keydown', (e) => {
-        const key = (e as KeyboardEvent).key;
-        if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'ArrowUp' && key !== 'ArrowDown' && key !== 'Home' && key !== 'End') return;
-        e.preventDefault();
-        const current = prefPills.indexOf(pill);
-        let next = current;
-        if (key === 'ArrowRight' || key === 'ArrowDown') next = (current + 1) % prefPills.length;
-        else if (key === 'ArrowLeft' || key === 'ArrowUp') next = (current - 1 + prefPills.length) % prefPills.length;
-        else if (key === 'Home') next = 0;
-        else if (key === 'End') next = prefPills.length - 1;
-        const target = prefPills[next];
-        if (target) selectPref(target, true);
-      });
+    prefRadios.forEach((radio) => {
+      radio.addEventListener('change', updateTelRequired);
     });
 
-    // --- Pré-remplissage dynamique du message depuis sessionStorage ---
-    // (messageTextarea, messageEditedParUtilisateur, autoGrowMessage et activeTabId
-    //  sont déclarés plus haut — avant l'appel initial à activate() — pour éviter
-    //  une « temporal dead zone » au chargement d'une URL avec hash.)
+    // --- Pré-remplissage : carte récapitulative (plus de dump dans le textarea) ---
+    const simulationCard = document.getElementById('outils-simulation-card') as HTMLElement;
+    const simulationCardDl = document.getElementById('outils-simulation-card-dl') as HTMLElement;
+    const simulationCardClose = document.getElementById('outils-simulation-card-close') as HTMLButtonElement;
+    const simulationUndo = document.getElementById('outils-simulation-undo') as HTMLElement;
+    const simulationUndoBtn = document.getElementById('outils-simulation-undo-btn') as HTMLButtonElement;
+    const simulationBruteInput = document.getElementById('hidden-simulation-brute') as HTMLInputElement;
+
+    // Paires clé→valeur à afficher dans la carte, dans l'ordre.
+    // Les clés absentes de cette liste sont masquées au client (ex. ratios ABD/ATD)
+    // mais conservées dans le champ hidden.
+    const CLIENT_KEYS: string[] = [
+      'Prix max', 'Prix', 'Montant', 'Prêt', 'Prêt assuré', 'Prêt conventionnel',
+      'Revenu annuel', 'Mise de fonds', 'Taux', 'Taux succursale', 'Taux négocié',
+      'Versement', 'Paiement mensuel', 'Économie mensuelle', 'Verdict',
+      'Pénalité estimée', 'Prêteur', 'Droits estimés', 'Municipalité',
+    ];
+
+    const TYPE_LABELS: Record<string, string> = {
+      'calculateur': 'Calculateur de versement',
+      'simulateur': "Simulateur d'emprunt",
+      'comparateur': 'Comparateur de taux',
+      'penalite': 'Calculateur de pénalité',
+      'refinancement': 'Simulateur de refinancement',
+      'droits-mutation': 'Droits de mutation',
+    };
+
+    function buildSimulationCard(raw: string) {
+      if (!simulationCard || !simulationCardDl || !simulationBruteInput) return;
+
+      // Stocker TOUTES les données techniques dans le champ hidden (ratios inclus)
+      simulationBruteInput.value = raw;
+
+      // Parser le résultat : "Clé : valeur, Clé : valeur, …"
+      const pairs: { key: string; value: string }[] = [];
+      const parts = raw.split(/, (?=[A-ZÀ-Ý])/);
+      for (const part of parts) {
+        const colonIdx = part.indexOf(' : ');
+        if (colonIdx === -1) continue;
+        const key = part.slice(0, colonIdx).trim();
+        const value = part.slice(colonIdx + 3).trim();
+        pairs.push({ key, value });
+      }
+
+      // Filtrer pour n'afficher que les clés pertinentes au client
+      const visible = pairs.filter((p) => CLIENT_KEYS.some((k) => p.key === k || p.key.startsWith(k + ' ')));
+
+      if (visible.length === 0) {
+        simulationCard.hidden = true;
+        return;
+      }
+
+      simulationCardDl.innerHTML = visible
+        .map((p) => `<div><dt>${escapeHtml(p.key)}</dt><dd>${escapeHtml(p.value)}</dd></div>`)
+        .join('');
+
+      simulationCard.hidden = false;
+      if (simulationUndo) simulationUndo.hidden = true;
+      savedSimulationRaw = null; // plus en mode « retirée »
+    }
+
+    function escapeHtml(s: string): string {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Retirer la carte : vide le hidden field, sauvegarde en mémoire, affiche l'undo
+    function dismissSimulationCard() {
+      if (!simulationCard || !simulationBruteInput) return;
+      // Sauvegarder en mémoire avant de vider le champ
+      if (simulationBruteInput.value) {
+        savedSimulationRaw = simulationBruteInput.value;
+      }
+      simulationBruteInput.value = '';
+      simulationCard.hidden = true;
+      if (simulationCardDl) simulationCardDl.innerHTML = '';
+      if (simulationUndo) {
+        simulationUndo.hidden = false;
+        // Déplacer le focus sur « Rejoindre à nouveau » pour éviter de perdre
+        // le focus clavier sur un élément qui n'est plus visible
+        if (simulationUndoBtn) simulationUndoBtn.focus();
+      }
+    }
+
+    // Restaurer la carte depuis la mémoire
+    function undoSilulationCard() {
+      if (!savedSimulationRaw) return;
+      buildSimulationCard(savedSimulationRaw);
+    }
+
+    simulationCardClose?.addEventListener('click', dismissSimulationCard);
+    simulationUndoBtn?.addEventListener('click', undoSilulationCard);
+
+    // Remplacer l'ancienne fonction : elle peuple maintenant la carte, pas le textarea
     function prefillMessageFromSession() {
-      if (!messageTextarea) return;
-      // Ne pas écraser les modifications manuelles de l'utilisateur
-      if (messageEditedParUtilisateur) return;
+      // Si l'utilisateur a retiré la carte manuellement (undo visible), ne pas écraser
+      if (savedSimulationRaw !== null) return;
       try {
-        // On lit le résumé de l'outil actuellement affiché (clé par type),
-        // pour que le message corresponde toujours au calculateur à l'écran.
         const id = activeTabId();
         const raw = id ? sessionStorage.getItem('simulation-resultat:' + id) : null;
         if (!raw) {
-          messageTextarea.value = '';
-          autoGrowMessage();
+          // Aucune donnée : masquer la carte sans afficher l'undo
+          if (simulationCard) simulationCard.hidden = true;
+          if (simulationCardDl) simulationCardDl.innerHTML = '';
+          if (simulationBruteInput) simulationBruteInput.value = '';
+          if (simulationUndo) simulationUndo.hidden = true;
+          savedSimulationRaw = null;
           return;
         }
         const data = JSON.parse(raw);
         if (data && data.resultat && data.type) {
+          const typeLisible = TYPE_LABELS[data.type] ?? data.type;
           const dateLisible = data.date
             ? new Date(data.date).toLocaleString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
             : '';
-          const typeLabels: Record<string, string> = {
-            'calculateur': 'Calculateur de versement',
-            'simulateur': "Simulateur d'emprunt",
-            'comparateur': 'Comparateur de taux',
-            'penalite': 'Calculateur de pénalité',
-            'refinancement': 'Simulateur de refinancement',
-            'droits-mutation': 'Droits de mutation',
-          };
-          const typeLisible = typeLabels[data.type] ?? data.type;
-          // Le résumé commence déjà par le nom de l'outil (« Outil — détails ») :
-          // on retire ce préfixe pour ne pas le dupliquer avec l'en-tête.
           const details = String(data.resultat).replace(/^.*?\s—\s/, '');
-          const enTete = dateLisible ? `[${typeLisible} — ${dateLisible}]` : `[${typeLisible}]`;
-          messageTextarea.value = `${enTete}\n${details}\n\n`;
-          autoGrowMessage();
+          const header = dateLisible ? `${typeLisible} — ${dateLisible}` : typeLisible;
+          buildSimulationCard(`${header} : ${details}`);
         }
       } catch (e) { /* ignore */ }
     }
@@ -700,6 +794,119 @@ const tabs = [
       line-height: 1.5;
       font-style: italic;
     }
+    /* --- Carte récapitulative de simulation --- */
+    .outils-simulation-card {
+      background: linear-gradient(135deg, #f0f7f4 0%, #e8f0ec 100%);
+      border: 1.5px solid #b8d4c4;
+      border-radius: 14px;
+      padding: 1rem 1.15rem;
+      margin-bottom: .15rem;
+      animation: cardSlideIn .25s ease;
+    }
+    @keyframes cardSlideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .outils-simulation-card[hidden] { display: none; }
+    .outils-simulation-card-header {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      margin-bottom: .7rem;
+    }
+    .outils-simulation-card-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .outils-simulation-card-title {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--forest);
+      flex: 1;
+      letter-spacing: .02em;
+    }
+    .outils-simulation-card-close {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s, color .15s;
+      padding: 0;
+    }
+    .outils-simulation-card-close:hover {
+      background: rgba(0,0,0,.08);
+      color: var(--ink);
+    }
+    .outils-simulation-card-dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: .3rem 1rem;
+      font-size: .8rem;
+    }
+    .outils-simulation-card-dl > div {
+      display: contents;
+    }
+    .outils-simulation-card-dl dt {
+      color: var(--muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .outils-simulation-card-dl dt::after {
+      content: ' :';
+    }
+    .outils-simulation-card-dl dd {
+      margin: 0;
+      font-weight: 600;
+      color: var(--ink);
+      text-align: right;
+    }
+    .outils-simulation-card-hint {
+      margin: .65rem 0 0;
+      font-size: .68rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    /* --- Undo après retrait de la carte --- */
+    .outils-simulation-undo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      padding: .7rem 1rem;
+      margin-bottom: .15rem;
+      background: var(--sand);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      font-size: .78rem;
+      color: var(--muted);
+      animation: cardSlideIn .25s ease;
+    }
+    .outils-simulation-undo[hidden] { display: none; }
+    .outils-simulation-undo-btn {
+      background: none;
+      border: none;
+      color: var(--clay);
+      font-family: "DM Sans", sans-serif;
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      padding: .2rem .3rem;
+      border-radius: 4px;
+      transition: color .15s;
+    }
+    .outils-simulation-undo-btn:hover,
+    .outils-simulation-undo-btn:focus-visible {
+      color: var(--clay-dk);
+    }
     /* --- Préférence de communication --- */
     .outils-contact-pref-fieldset {
       border: none;
@@ -714,6 +921,17 @@ const tabs = [
       display: flex;
       flex-wrap: wrap;
       gap: .5rem;
+    }
+    .outils-contact-pref-group input[type="radio"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
     .outils-contact-pref-pill {
       display: inline-flex;
@@ -742,15 +960,19 @@ const tabs = [
       background: var(--warm);
       color: var(--ink);
     }
-    .outils-contact-pref-pill.active {
+    .outils-contact-pref-group input[type="radio"]:checked + label {
       background: var(--clay);
       color: white;
       border-color: transparent;
     }
-    .outils-contact-pref-pill.active:hover,
-    .outils-contact-pref-pill.active:focus-visible {
+    .outils-contact-pref-group input[type="radio"]:checked + label:hover,
+    .outils-contact-pref-group input[type="radio"]:focus-visible + label {
       background: var(--forest);
       color: white;
+    }
+    .outils-contact-pref-group input[type="radio"]:focus-visible + label {
+      outline: 3px solid var(--clay);
+      outline-offset: 2px;
     }
     .outils-contact-input {
       width: 100%;
