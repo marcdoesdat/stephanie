@@ -168,7 +168,7 @@ Toutes les coordonnées de la courtière — modifié directement par la cliente
   "telephone": "514-949-7627",
   "courriel": "sweyman@hypotheca.ca",
   "site_url": "https://stephanieweyman.ca",
-  "calendly_url": "https://calendly.com/petiteweyman/premiererencontre",
+  "calendly_url": "https://outlook.office.com/book/rdv-StephanieWeyman@hypotheca.ca/",
   "google_place_id": "ChIJnde-9JoJSgYR6DgI66_nUl4"
 }
 ```

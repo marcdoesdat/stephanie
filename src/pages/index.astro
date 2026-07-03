@@ -10,7 +10,6 @@ import Testimonials from '../components/Testimonials.astro';
 import Contact from '../components/Contact.astro';
 import Footer from '../components/Footer.astro';
 import MessengerBtn from '../components/MessengerBtn.astro';
-import RappelCTA from '../components/RappelCTA.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
 import { getReviews } from '../services/reviewsService';
 import { loadSiteConfig } from '../config';
@@ -115,18 +114,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <p>Estimez la taxe de bienvenue applicable à votre propriété selon le prix d'achat, tranche par tranche.</p>
             <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
           </a>
-        </div>
-      </div>
-    </section>
-
-    <section id="rappel-renouvellement" aria-label="Demande de rappel pour renouvellement">
-      <div class="section-inner">
-        <div class="fade-up">
-          <RappelCTA
-            titre="Ton renouvellement est encore loin ? Tant mieux."
-            texte="C'est justement quand on n'y pense pas que les banques en profitent : le papier de renouvellement arrive par la poste, on signe sans magasiner, pis on paie plus cher pendant des années. Laisse-moi tes coordonnées une seule fois. Je te recontacte 4 à 6 mois avant ton échéance — le moment idéal pour magasiner. D'ici là, t'as rien à faire."
-            cta="Être rappelé·e au bon moment"
-          />
         </div>
       </div>
     </section>

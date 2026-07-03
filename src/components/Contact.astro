@@ -13,32 +13,27 @@ const prenomCourtiere = config.nom.split(' ')[0];
 <section id="contact" data-prenom={prenomCourtiere}>
   <div class="section-inner">
 
-    <!-- Calendly — prise de rendez-vous en ligne -->
-    {config.calendly_url && (
-      <div class="contact-calendly fade-up">
-        <h2 class="section-title">Réservez un <em>appel</em> avec {prenomCourtiere}</h2>
-        <p class="section-sub">
-          Choisissez le créneau qui vous convient — {prenomCourtiere} vous appelle au moment prévu. Gratuit, sans engagement.
-        </p>
-        <div class="calendly-card">
-          <div class="calendly-cta-wrap">
-            <ul class="calendly-perks" role="list">
-              <li><span aria-hidden="true">📞</span> Appel téléphonique de 15 à 30 min</li>
-              <li><span aria-hidden="true">🗓️</span> Choisissez votre créneau — soirs et week-ends disponibles</li>
-              <li><span aria-hidden="true">🎯</span> Gratuit, sans engagement</li>
-            </ul>
-            <a href={config.calendly_url} target="_blank" rel="noopener" class="btn-cta calendly-cta-btn" data-calendly aria-label={`Réserver un appel avec ${prenomCourtiere}`}>
-              <span>Choisir mon créneau</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </a>
-            <p class="calendly-cta-note">La fenêtre Calendly s'ouvre dans une nouvelle fenêtre — fermez-la à tout moment.</p>
-          </div>
-        </div>
-        <p class="contact-calendly-alt">
-          Vous préférez écrire ? <a href="#contact-form-anchor">Utilisez le formulaire ci-dessous →</a>
-        </p>
+    <!-- Microsoft Bookings — prise de rendez-vous en ligne -->
+    <div class="contact-calendly fade-up">
+      <h2 class="section-title">Réservez un <em>appel</em> avec {prenomCourtiere}</h2>
+      <p class="section-sub">
+        Choisissez le créneau qui vous convient — {prenomCourtiere} vous appelle au moment prévu. Gratuit, sans engagement.
+      </p>
+      <div class="booking-iframe-wrapper">
+        <iframe
+          src="https://outlook.office.com/book/rdv-StephanieWeyman@hypotheca.ca/?ismsaljsauthenabled"
+          width="100%"
+          height="600"
+          scrolling="yes"
+          style="border:0;border-radius:16px;"
+          title="Réservation en ligne — Stéphanie Weyman"
+          loading="lazy"
+        ></iframe>
       </div>
-    )}
+      <p class="contact-calendly-alt">
+        Vous préférez écrire ? <a href="#contact-form-anchor">Utilisez le formulaire ci-dessous →</a>
+      </p>
+    </div>
 
     <div class="contact-grid" id="contact-form-anchor">
 

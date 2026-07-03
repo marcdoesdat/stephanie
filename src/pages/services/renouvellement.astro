@@ -6,6 +6,7 @@ import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import MessengerBtn from '../../components/MessengerBtn.astro';
 import Contact from '../../components/Contact.astro';
+import RappelCTA from '../../components/RappelCTA.astro';
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
@@ -46,8 +47,31 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
   <main id="main-content">
 
+    <!-- ============ OUVERTURE / SEGMENTATION ============ -->
+    <section class="sp-ouverture" aria-label="Segmentation">
+      <div class="sp-inner">
+        <div class="sp-segmentation">
+          <p class="sp-segmentation-title">Quand arrive votre renouvellement ?</p>
+          <div class="sp-segmentation-actions">
+            <a href="#imminent" class="btn-cta sp-cta-primary">Dans moins de 6 mois ↓</a>
+            <button type="button" id="btn-lointain" class="btn-secondary sp-cta-secondary" aria-expanded="false" aria-controls="lointain">Plus tard</button>
+          </div>
+        </div>
+
+        <div id="lointain-wrapper" class="sp-early-bird-wrapper">
+          <div id="lointain" class="sp-early-bird">
+            <RappelCTA
+              titre="Ton renouvellement est encore loin ? Tant mieux."
+              texte="C'est justement quand on n'y pense pas que les banques en profitent : le papier de renouvellement arrive par la poste, on signe sans magasiner, pis on paie plus cher pendant des années. Laisse-moi tes coordonnées une seule fois. Je te recontacte 4 à 6 mois avant ton échéance — le moment idéal pour magasiner. D'ici là, t'as rien à faire."
+              cta="Être rappelé·e au bon moment"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ HERO ============ -->
-    <section class="sp-hero">
+    <section class="sp-hero" id="imminent">
       <div class="sp-inner">
         <div class="sp-hero-grid">
           <div class="sp-hero-text">
@@ -135,10 +159,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <div class="sp-step-num" aria-hidden="true">1</div>
             <h3 class="sp-step-title">Magasiner 4 à 6 mois avant l'échéance — pas la veille</h3>
             <p class="sp-step-text">
-              La plupart des prêteurs garantissent un taux jusqu'à 120 jours avant le renouvellement.
-              Ça veut dire qu'on peut bloquer un meilleur taux <em>aujourd'hui</em>, et continuer à surveiller le marché
-              jusqu'à la date de renouvellement. Si les taux baissent, on rebloque. S'ils montent, vous êtes protégé·e.
-              Attendre la lettre de votre banque, c'est négocier sans aucun levier.
+              La majorité des prêteurs de notre réseau permettent de garantir un taux jusqu'à 120 jours avant la transaction. Si les taux baissent, certains permettent d'ajuster — les conditions varient selon le prêteur. Attendre la lettre de votre banque, c'est négocier sans aucun levier.
             </p>
           </article>
 
@@ -255,7 +276,85 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   <Footer />
 </MainLayout>
 
+<style>
+  .sp-ouverture {
+    padding-top: 6rem;
+    padding-bottom: 2rem;
+    background: var(--sand, #Fdfbf7); /* Doux pour l'ouverture */
+    border-bottom: 1px solid var(--border, #e5e0d8);
+  }
+  /* Le hero n'est plus la 1re section ici : on retire le sur-padding
+     qui servait à dégager la navbar, sinon trou mort sous l'ouverture. */
+  .sp-ouverture + .sp-hero {
+    padding-top: 4rem;
+  }
+  @media (max-width: 720px) {
+    .sp-ouverture {
+      padding-top: 5rem;
+      padding-bottom: 1.5rem;
+    }
+    .sp-ouverture + .sp-hero {
+      padding-top: 2.5rem;
+    }
+  }
+  .sp-segmentation {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .sp-segmentation-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--ink, #2d2a26);
+    margin: 0 0 1.5rem;
+  }
+  .sp-segmentation-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  /* Tuile « renouvellement lointain » repliée par défaut, révélée au clic sur « Plus tard » */
+  .sp-early-bird-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.35s ease;
+  }
+  .sp-early-bird-wrapper.is-open {
+    grid-template-rows: 1fr;
+  }
+  .sp-early-bird {
+    max-width: 800px;
+    margin: 0 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .sp-early-bird-wrapper.is-open .sp-early-bird {
+    margin-top: 0.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sp-early-bird-wrapper {
+      transition: none;
+    }
+  }
+
+  /* Smooth scroll for anchors */
+  html {
+    scroll-behavior: smooth;
+  }
+</style>
+
 <script>
+  // Disclosure « Plus tard » : révèle la tuile renouvellement lointain
+  const btnLointain = document.getElementById('btn-lointain');
+  const wrapperLointain = document.getElementById('lointain-wrapper');
+  if (btnLointain && wrapperLointain) {
+    btnLointain.addEventListener('click', () => {
+      const open = wrapperLointain.classList.toggle('is-open');
+      btnLointain.setAttribute('aria-expanded', String(open));
+    });
+  }
+
   document.querySelectorAll<HTMLAnchorElement>('[data-track]').forEach((el) => {
     el.addEventListener('click', () => {
       const name = el.dataset.track;

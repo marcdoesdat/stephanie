@@ -167,7 +167,7 @@ src/
     TauxSection.astro  Tableau des taux hypothécaires (scrappe hypotheca.ca)
     Calculator.astro   Calculateur de paiement mensuel
     Faq.astro          Questions fréquentes
-    Rdv.astro          Section Rendez-vous / Calendly
+    Rdv.astro          Section Rendez-vous / Microsoft Bookings
     Testimonials.astro Témoignages clients
     Contact.astro      Formulaire de contact
     Footer.astro       Pied de page
@@ -193,11 +193,9 @@ Ouvre `src/components/Faq.astro` et modifie les questions/réponses entre les ba
 ### Changer la photo
 Remplace le fichier `src/assets/stephanie.jpg` par une nouvelle photo en gardant exactement le même nom de fichier.
 
-### Activer Calendly
-1. Crée un compte gratuit sur [calendly.com](https://calendly.com)
-2. Configure tes disponibilités
-3. Copie ton lien Calendly (ex : `https://calendly.com/stephanie-weyman`)
-4. Dans `src/config/siteConfig.json`, ajoute `"calendly_url": "https://calendly.com/ton-lien"` dans le fichier JSON
-5. Dans `src/components/Rdv.astro`, remplace le bloc `<div class="calendly-placeholder">` par le widget Calendly (Marc peut faire ça en 5 min)
+### Prise de rendez-vous (Microsoft Bookings)
+1. La réservation est intégrée via un iframe Outlook Bookings.
+2. Dans `src/config/siteConfig.json`, le champ `"calendly_url"` contient l'URL de la page de réservation Outlook.
+3. L'iframe est affiché dans `src/components/Contact.astro`.
 
  

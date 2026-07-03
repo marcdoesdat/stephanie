@@ -23,19 +23,9 @@
     loadScript('/js/gtag-init.js');
   }
 
-  function loadCalendly() {
-    if (window.__calendly_loaded) return;
-    window.__calendly_loaded = true;
-    var widget = loadScript('https://assets.calendly.com/assets/external/widget.js');
-    widget.onload = function () {
-      loadScript('/js/calendly-init.js');
-    };
-  }
-
   function applyConsent(state) {
     if (state === 'accepted') {
       loadAds();
-      loadCalendly();
     }
   }
 

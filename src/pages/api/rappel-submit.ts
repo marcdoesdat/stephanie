@@ -73,7 +73,7 @@ interface RappelPayload {
 }
 
 // Regex courriel volontairement permissive mais sûre (pas de validation exhaustive).
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[^\s@]+@(?:[^\s@.]+\.)+[a-z]{2,}$/i;
 // Téléphone : au moins 10 chiffres (séparateurs et indicatif tolérés).
 const TEL_RE = /(?:\D*\d){10,}/;
 const ECHEANCE_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -88,6 +88,7 @@ const MOIS_FR = [
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
+    .replace(/\\/g, '&#92;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')

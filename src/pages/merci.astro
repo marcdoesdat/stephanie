@@ -32,11 +32,9 @@ const prenom = config.nom.split(' ')[0] ?? 'Stéphanie';
         </p>
 
         <div class="merci-actions">
-          {config.calendly_url && (
-            <a href={config.calendly_url} target="_blank" rel="noopener" class="btn-cta">
-              <span>Réserver un appel tout de suite</span>
-            </a>
-          )}
+          <a href={config.calendly_url} target="_blank" rel="noopener" class="btn-cta">
+            <span>Réserver un appel tout de suite</span>
+          </a>
           {config.messenger_url && (
             <a href={config.messenger_url} target="_blank" rel="noopener noreferrer" class="merci-secondary">
               💬 Écrire sur Messenger

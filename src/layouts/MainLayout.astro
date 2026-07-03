@@ -50,12 +50,7 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       data-domains={config.site_url.replace(/^https?:\/\//, '')}
     ></script>
 
-    <!-- Calendly : la feuille de styles est dépourvue de cookies, donc chargée sans consentement.
-         Les scripts Google Ads + Calendly sont chargés conditionnellement par /js/consent.js
-         après acceptation explicite (conformité Loi 25). -->
-    <link rel="stylesheet" href="https://assets.calendly.com/assets/external/widget.css" />
-
-    <!-- Bannière de consentement Loi 25 : gère le chargement conditionnel de Google Ads + Calendly -->
+    <!-- Bannière de consentement Loi 25 : gère le chargement conditionnel de Google Ads -->
     <script is:inline defer src="/js/consent.js"></script>
 
     <!-- Critical CSS : fondations above-the-fold (variables, reset, nav, hero).
@@ -98,10 +93,10 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       @media(max-width:900px){nav{padding:0 1.5rem}#hero{padding:6rem 1.5rem 3rem;min-height:auto}.hero-inner{grid-template-columns:1fr;gap:2rem}.hero-left .hero-value-prop{font-size:2.8rem}.hero-right{display:none}}
     </style>
   </head>
-  <body data-calendly-url={config.calendly_url}>
+  <body>
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
     <slot />
-    <a href={config.calendly_url} data-calendly class="mobile-sticky-cta" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">
+    <a href={config.calendly_url} class="mobile-sticky-cta" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">
       <span class="sticky-label">Prendre rendez-vous</span>
     </a>
     <ConsentBanner />
