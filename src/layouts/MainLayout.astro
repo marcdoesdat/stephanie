@@ -31,14 +31,14 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap"
       media="print"
       onload="this.media='all'"
     />
     <noscript>
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap"
       />
     </noscript>
 
@@ -54,16 +54,18 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
     <script is:inline defer src="/js/consent.js"></script>
 
     <!-- Critical CSS : fondations above-the-fold (variables, reset, nav, hero).
-         Le chargement asynchrone de la CSS complète est géré par Astro. -->
-    <style>
+         is:inline est OBLIGATOIRE : sans lui, Astro scope ces sélecteurs (qui visent
+         des éléments d'autres composants) et aucune règle ne s'applique.
+         Garder les valeurs synchronisées avec global.css. -->
+    <style is:inline>
       :root{--sand:#f7f2eb;--warm:#f0e8da;--clay:#c47a52;--clay-dk:#a85f38;--forest:#3d5a4a;--ink:#1f1e1c;--muted:#6a5f50;--border:#e3d9cc;--white:#fdfaf6;--shadow-sm:0 4px 16px rgba(0,0,0,.06);--shadow-clay:0 8px 24px rgba(196,122,82,.4);--radius-sm:12px;--radius-md:20px}
       *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
       [hidden]{display:none!important}
       html{scroll-behavior:smooth}body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);font-size:16px;line-height:1.65;overflow-x:clip;-webkit-font-smoothing:antialiased}
       @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
       .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
-      .skip-link{position:absolute;top:-40px;left:.5rem;z-index:10000;padding:.6rem 1rem;background:var(--ink);color:#fff;font-weight:600;border-radius:6px;text-decoration:none;transition:top .15s}
-      .skip-link:focus,.skip-link:focus-visible{top:.5rem;outline:2px solid var(--clay);outline-offset:2px}
+      .skip-link{position:absolute;top:.5rem;left:.5rem;transform:translateY(calc(-100% - 1rem));z-index:10000;padding:.6rem 1rem;background:var(--ink);color:#fff;font-weight:600;border-radius:6px;text-decoration:none;transition:transform .15s ease-in}
+      .skip-link:focus,.skip-link:focus-visible{transform:translateY(0);outline:2px solid var(--clay);outline-offset:2px}
       nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,250,246,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 clamp(1rem,3vw,4rem);display:flex;align-items:center;justify-content:space-between;min-height:68px}
       nav.scrolled{box-shadow:var(--shadow-sm)}
       .nav-logo{font-family:"Lora",serif;font-size:1.15rem;font-weight:600;color:var(--ink);text-decoration:none}
@@ -71,26 +73,26 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       .nav-links{display:flex;gap:clamp(1rem,1.8vw,2.5rem);list-style:none;align-items:center;flex-wrap:wrap;min-width:0}
       .nav-links a{font-size:clamp(.8rem,.18vw + .7rem,.9rem);font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap}
       .nav-cta{display:inline-flex!important;align-items:center;justify-content:center;background:var(--clay);color:#fff!important;padding:.62rem clamp(.95rem,1.4vw,1.4rem);border-radius:50px;white-space:nowrap;line-height:1;text-decoration:none;border:2px solid var(--clay);box-shadow:3px 3px 0 var(--ink)}
-      .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
+      .hamburger{display:none;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;background:none;border:none;padding:12px;min-width:44px;min-height:44px}
       .hamburger span{display:block;width:22px;height:2px;background:var(--ink);border-radius:2px}
       #hero{min-height:100vh;background:var(--sand);display:flex;align-items:center;padding:8rem 4rem 4rem;position:relative;overflow:hidden}
       .hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
       .hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:#fff;border:1px solid var(--border);padding:.4rem 1rem;border-radius:50px;font-size:.72rem;color:var(--muted);margin-bottom:1.8rem;font-weight:500}
-      .hero-left .hero-value-prop{font-family:"Lora",serif;font-size:3.8rem;font-weight:700;line-height:1.12;color:var(--ink);margin-bottom:1.5rem}
+      .hero-left .hero-value-prop{font-family:"Lora",serif;font-size:3.8rem;font-weight:700;line-height:1.12;color:var(--ink);margin-bottom:1.5rem;letter-spacing:-.015em}
       .hero-left .hero-value-prop em{font-style:italic;color:var(--clay)}
       .hero-left p{font-size:1.05rem;color:var(--muted);line-height:1.8;max-width:480px;margin-bottom:2.5rem}
-      .btn-cta{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;background:var(--clay);color:#fff;padding:1.05rem 1.6rem;border-radius:14px;font-weight:700;text-decoration:none;border:2px solid var(--clay);box-shadow:4px 4px 0 var(--ink)}
+      .btn-cta{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;background:var(--clay);color:#fff;padding:1.05rem 1.6rem;border-radius:14px;font-weight:600;text-decoration:none;border:2px solid var(--clay);box-shadow:4px 4px 0 var(--ink)}
       .btn-secondary{background:transparent;color:var(--ink);padding:.9rem 2rem;border-radius:50px;border:2px solid var(--border);font-size:.9rem;font-weight:500;text-decoration:none;box-shadow:4px 4px 0 var(--clay)}
       .hero-right{position:relative} .photo-frame{width:100%;aspect-ratio:4/5;border-radius:30% 70% 70% 30%/30% 30% 70% 70%;overflow:hidden;border:3px solid var(--border)}
       .photo-frame img{width:100%;height:100%;object-fit:cover;object-position:center top}
       .photo-container{will-change:transform}
-      .hero-stats{display:flex;gap:2rem;margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border);justify-content:center;text-align:center}
-      .stat-num{font-family:"Lora",serif;font-size:2rem;font-weight:700;color:var(--clay);line-height:1}
-      .stat-label{font-size:.75rem;color:var(--muted);margin-top:.2rem}
+      .hero-stats{display:flex;gap:2.5rem;margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid var(--border);justify-content:center;text-align:center}
+      .stat-num{font-family:"Lora",serif;font-size:2.75rem;font-weight:600;color:var(--clay);line-height:1}
+      .stat-label{font-size:.85rem;color:var(--muted);margin-top:.35rem}
       .card-sm{font-size:.75rem;color:var(--muted)}.card-val{font-family:"Lora",serif;font-size:1.1rem;font-weight:600;color:var(--forest)}
       @media(max-width:1280px){.nav-links{gap:.85rem}.nav-links a{font-size:.74rem}.nav-cta{padding:.5rem 1rem}}
       @media(max-width:1180px){.nav-links{display:none}.hamburger{display:flex}}
-      @media(max-width:900px){nav{padding:0 1.5rem}#hero{padding:6rem 1.5rem 3rem;min-height:auto}.hero-inner{grid-template-columns:1fr;gap:2rem}.hero-left .hero-value-prop{font-size:2.8rem}.hero-right{display:none}}
+      @media(max-width:900px){nav{padding:0 1.5rem}#hero{padding:6rem 1.5rem 3rem}.hero-inner{grid-template-columns:1fr;gap:2rem}.hero-left .hero-value-prop{font-size:2.8rem}.hero-right{display:none}}
     </style>
   </head>
   <body>
@@ -209,56 +211,9 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
 </html>
 
 <style is:global>
-  /* --- RÉGLAGES GLOBAUX --- */
-  
-  html {
-    scroll-behavior: smooth;
-    /* Empêche le décalage horizontal sur mobile */
-    overflow-x: hidden;
-  }
-  
-  body {
-    margin: 0;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    /* Couleur de fond par défaut pour éviter le flash blanc en mode sombre */
-    background-color: var(--white, #ffffff);
-  }
-
-  /* Classe utilitaire pour cacher des éléments visuellement mais les garder pour les lecteurs d'écran */
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
-  }
-
-  /* Lien d'évitement vers le contenu principal — visible au focus clavier */
-  .skip-link {
-    position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
-    transform: translateY(calc(-100% - 1rem));
-    z-index: 10000;
-    padding: 0.6rem 1rem;
-    background: var(--ink, #1a1a1a);
-    color: #fff;
-    font-weight: 600;
-    border-radius: 6px;
-    text-decoration: none;
-    transition: transform .15s ease-in;
-  }
-  .skip-link:focus,
-  .skip-link:focus-visible {
-    transform: translateY(0);
-    outline: 2px solid var(--clay, #c47a52);
-    outline-offset: 2px;
-  }
+  /* --- RÉGLAGES GLOBAUX ---
+     Les fondations (reset, html/body, .sr-only, .skip-link) vivent dans
+     global.css (+ copie critical inline dans <head>). Ne pas les redéfinir ici. */
 
   /* Focus visible pour l'accessibilité au clavier */
   :focus-visible {

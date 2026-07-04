@@ -5,154 +5,244 @@ const config = loadSiteConfig();
 
 // Définit l'année actuelle dynamiquement
 const currentYear = new Date().getFullYear();
-
-// Nettoie l'URL pour l'affichage visuel (ex: "https://stephanieweyman.ca" devient "stephanieweyman.ca")
-const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 ---
 
 <footer role="contentinfo">
-  <div class="footer-identity">
-    <span class="footer-name">{config.nom}</span>
-    <span class="footer-role">{config.titre} — {config.organisation}</span>
-    <span class="footer-details">
-      {config.amf_cabinet ? `Permis AMF n° ${config.amf_cabinet} · ` : ''}{config.region}
-    </span>
+  <!-- ===== IDENTITÉ + NAP ===== -->
+  <div class="footer-head">
+    <div class="footer-head-line">
+      <strong class="footer-name">{config.nom}</strong>
+      <span>— {config.titre} · Certificat AMF {config.amf}</span>
+    </div>
+    <div class="footer-head-line">{config.organisation} — Cabinet en courtage hypothécaire</div>
+    <div class="footer-head-line footer-head-nap">
+      <span>{config.adresse}</span>
+      <span class="footer-sep">·</span>
+      <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>
+      <span class="footer-sep">·</span>
+      <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
+    </div>
   </div>
 
-  <div class="footer-tools" role="navigation" aria-label="Outils et ressources">
-    <a href="/outils#simulateur">Simulateur d'emprunt</a>
-    <span class="footer-sep">|</span>
-    <a href="/outils#calculateur">Calculateur de versement</a>
-    <span class="footer-sep">|</span>
-    <a href="/outils#comparateur">Comparateur de taux</a>
-    <span class="footer-sep">|</span>
-    <a href="/outils/calculateur-penalite-hypothecaire">Calculateur de pénalité</a>
-    <span class="footer-sep">|</span>
-    <a href="/rappel">Rappel renouvellement&nbsp;/&nbsp;refinancement</a>
+  <!-- ===== GRILLE DE LIENS ===== -->
+  <div class="footer-grid" role="navigation" aria-label="Navigation du pied de page">
+
+    <div class="footer-col">
+      <strong class="footer-col-title">Outils</strong>
+      <a href="/outils#simulateur">Simulateur d'emprunt</a>
+      <a href="/outils#calculateur">Calculateur de versement</a>
+      <a href="/outils#comparateur">Comparateur de taux</a>
+      <a href="/outils/calculateur-penalite-hypothecaire">Calculateur de pénalité</a>
+      <a href="/rappel">Rappel</a>
+      <a href="/outils">Tous les outils</a>
+    </div>
+
+    <div class="footer-col">
+      <strong class="footer-col-title">Zones desservies</strong>
+      <a href="/villes/courtier-hypothecaire-repentigny">Repentigny</a>
+      <a href="/villes/courtier-hypothecaire-terrebonne">Terrebonne</a>
+      <a href="/villes/courtier-hypothecaire-mascouche">Mascouche</a>
+      <span class="footer-col-note">Aussi : L'Assomption, Lavaltrie, Charlemagne, Montréal</span>
+      <span class="footer-col-note">Lanaudière et la couronne nord</span>
+    </div>
+
+    <div class="footer-col">
+      <strong class="footer-col-title">Services</strong>
+      <a href="/services/premier-achat">Premier achat</a>
+      <a href="/services/renouvellement">Renouvellement</a>
+      <a href="/services/refinancement">Refinancement</a>
+      <a href="/services/travailleur-autonome">Travailleur autonome</a>
+      <a href="/services/dossier-refuse">Dossier refusé</a>
+      <a href="/services/nouveaux-arrivants">Nouveaux arrivants</a>
+    </div>
+
+    <div class="footer-col">
+      <strong class="footer-col-title">Liens</strong>
+      <a href="/partenaires">Partenaires</a>
+      <a href="/#faq">FAQ</a>
+      <a href={config.hypotheca_profile_url ?? 'https://hypotheca.ca/sweyman'} target="_blank" rel="noopener noreferrer">Profil Hypotheca</a>
+      <a href="https://hypotheca.ca/politique-du-cabinet" target="_blank" rel="noopener noreferrer">Politique du cabinet</a>
+    </div>
+
   </div>
 
-  <div class="footer-copy">© {currentYear} {config.nom}<span class="footer-dot" aria-hidden="true"> · </span><a href={config.site_url} target="_blank" rel="noopener noreferrer">{displayUrl}</a><span class="footer-dot" aria-hidden="true"> · </span>Tous droits réservés</div>
+  <!-- ===== AVIS + COPYRIGHT + LÉGAL ===== -->
+  <div class="footer-bottom">
+    <a class="footer-reviews" href="https://search.google.com/local/reviews?placeid=ChIJnde-9JoJSgYR6DgI66_nUl4" target="_blank" rel="noopener noreferrer">
+      ⭐ Voir les avis Google
+    </a>
+    <div class="footer-bottom-row">
+      <span>© {currentYear} {config.nom}</span>
+      <span class="footer-sep">·</span>
+      <a href="/confidentialite">Confidentialité</a>
+      <span class="footer-sep">·</span>
+      <a href="/conditions">Conditions d'utilisation</a>
+      <span class="footer-sep">·</span>
+      <a href="#" data-consent-manage>Gérer mes cookies</a>
+    </div>
+  </div>
 
+  <!-- ===== DISCLAIMER ===== -->
   <div class="footer-disclaimer">
-    <strong class="disclaimer-title">
-      Clause de non-responsabilité — Taux et informations financières
-    </strong>
-    <br /><br />
-
-    Les taux et estimations affichés sur ce site sont fournis à titre <strong>indicatif uniquement</strong>. 
-    Ils ne constituent en aucun cas une offre de financement, une promesse de taux ni un engagement de la part de {config.nom}, de {config.organisation} ou de tout prêteur partenaire. 
-    Le taux hypothécaire réel dépend de votre profil de crédit, de vos revenus, de la valeur de la propriété et des conditions du marché. 
-    <br /><br />
+    <strong>Clause de non-responsabilité — Taux et informations financières.</strong>
+    Les taux et estimations affichés sur ce site sont fournis à titre <strong>indicatif uniquement</strong>.
+    Ils ne constituent en aucun cas une offre de financement, une promesse de taux ni un engagement de la part de {config.nom}, de {config.organisation} ou de tout prêteur partenaire.
+    Le taux hypothécaire réel dépend de votre profil de crédit, de vos revenus, de la valeur de la propriété et des conditions du marché.
     {config.nom}, courtière hypothécaire inscrite auprès de l'<strong>Autorité des marchés financiers (AMF) du Québec</strong>, décline toute responsabilité pour les décisions financières prises sur la base des informations présentées sur ce site.
   </div>
 
-  <div class="footer-legal-links">
-    <a href="/confidentialite">Confidentialité</a>
-    <span class="footer-sep">|</span>
-    <a href="/conditions">Conditions d'utilisation</a>
-    <span class="footer-sep">|</span>
-    <a href="#" data-consent-manage>Gérer mes cookies</a>
-    <span class="footer-sep">|</span>
-    <a href="https://hypotheca.ca/politique-du-cabinet" target="_blank" rel="noopener noreferrer">Politique du cabinet &amp; traitement des plaintes</a>
-    <span class="footer-sep">|</span>
-    <a href={config.hypotheca_profile_url ?? 'https://hypotheca.ca/sweyman'} target="_blank" rel="noopener noreferrer">Profil Hypotheca</a>
-  </div>
-
+  <!-- ===== NEXVIO ===== -->
   <div class="footer-nexvio">
     Propulsé par <a href="https://nexvio.ca/" target="_blank" rel="noopener noreferrer">Solutions Nexvio</a>
   </div>
 </footer>
 
 <style>
-  .disclaimer-title {
-    color: rgba(255, 255, 255, 0.7);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-size: 0.7rem;
-  }
-
-  .footer-identity {
+  /* ===== IDENTITÉ + NAP ===== */
+  .footer-head {
+    text-align: center;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 0.15rem;
-    line-height: 1.6;
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.7);
   }
-
-  .footer-copy {
-    margin-top: 1rem;
+  .footer-head-line {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.4;
   }
-
-  .footer-tools {
-    margin-top: 1.75rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.4rem 0.8rem;
-    font-size: 0.72rem;
+  .footer-head-line:first-child {
+    font-size: 0.88rem;
   }
-
-  .footer-tools a {
-    color: rgba(255, 255, 255, 0.75);
+  .footer-name {
+    font-family: 'Lora', serif;
+    font-size: 1.15rem;
+    color: #fff;
+    font-weight: 700;
+  }
+  .footer-head-nap {
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .footer-head-nap a {
+    color: inherit;
     text-decoration: none;
     transition: color 0.2s;
   }
-
-  .footer-tools a:hover,
-  .footer-tools a:focus-visible {
+  .footer-head-nap a:hover {
     color: #fff;
-    text-decoration: underline;
   }
 
-  .footer-legal-links {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.4rem 0.8rem;
-    font-size: 0.7rem;
-  }
-
-  .footer-legal-links a {
-    color: rgba(255, 255, 255, 0.75);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .footer-legal-links a:hover,
-  .footer-legal-links a:focus-visible {
-    color: #fff;
-    text-decoration: underline;
-  }
-
-  .footer-nexvio {
+  /* ===== GRILLE DE LIENS ===== */
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
     margin-top: 1.5rem;
     padding-top: 1.25rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.45);
-    letter-spacing: 0.02em;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: left;
+  }
+  .footer-col {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .footer-col-title {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 0.15rem;
+  }
+  .footer-col a {
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-col a:hover,
+  .footer-col a:focus-visible {
+    color: #fff;
+    text-decoration: underline;
+  }
+  .footer-col-note {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.3);
+    line-height: 1.4;
+    margin-top: 0.15rem;
   }
 
+  /* ===== AVIS + COPYRIGHT + LÉGAL ===== */
+  .footer-bottom {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .footer-bottom-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.2rem 0.5rem;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .footer-bottom-row a {
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-bottom-row a:hover {
+    color: #fff;
+    text-decoration: underline;
+  }
+  .footer-reviews {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    transition: color 0.2s;
+    margin: 0 auto;
+  }
+  .footer-reviews:hover {
+    color: #fff;
+  }
+
+  /* ===== DISCLAIMER ===== */
+  .footer-disclaimer {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.68rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.3);
+    text-align: left;
+  }
+  .footer-disclaimer strong {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  /* ===== NEXVIO ===== */
+  .footer-nexvio {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.3);
+    text-align: center;
+  }
   .footer-nexvio a {
     color: #4A9EFF;
     text-decoration: none;
     font-weight: 600;
     transition: color 0.2s;
   }
-
-  .footer-nexvio a:hover,
-  .footer-nexvio a:focus-visible {
+  .footer-nexvio a:hover {
     color: #7AB8FF;
   }
 
@@ -160,39 +250,27 @@ const displayUrl = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''
     color: rgba(255, 255, 255, 0.2);
   }
 
-  @media (max-width: 900px) {
-    .footer-disclaimer {
-      text-align: left;
-    }
-    .footer-legal-links {
-      flex-direction: column;
-      align-items: center;
-      gap: 0.6rem;
-    }
-    .footer-sep {
-      display: none;
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 800px) {
+    .footer-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
-  /* Sur mobile étroit (<480px), masquer les · et empiler les lignes */
   @media (max-width: 480px) {
-    .footer-dot {
-      display: none;
+    .footer-grid {
+      grid-template-columns: 1fr;
+      text-align: center;
     }
-    .footer-br {
-      display: none;
+    .footer-col {
+      align-items: center;
     }
-    .footer-identity {
-      display: flex;
+    .footer-head-nap {
       flex-direction: column;
       align-items: center;
-      gap: 0.15rem;
     }
-    .footer-copy {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.1rem;
+    .footer-sep {
+      display: none;
     }
   }
 </style>

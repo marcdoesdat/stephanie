@@ -28,8 +28,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 ---
 
 <MainLayout
-  fullTitle="Courtière hypothécaire Repentigny – Stéphanie Weyman"
-  description="Pré-approbation hypothécaire à Repentigny. Achat, renouvellement, refinancement, travailleurs autonomes. Réponse rapide – Stéphanie Weyman, AMF."
+  fullTitle="Stéphanie Weyman – Courtière hypothécaire | Lanaudière & Rive-Nord"
+  description="Pré-approbation hypothécaire dans Lanaudière et sur la Rive-Nord. Achat, renouvellement, refinancement, travailleurs autonomes. Réponse rapide – Stéphanie Weyman, AMF."
 >
   <!-- JSON-LD : AggregateRating (émis seulement si les avis sont live/cache, pas fallback) -->
   {googleReviews.source !== 'fallback' && (
@@ -37,6 +37,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <script type="application/ld+json" is:inline set:html={JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'FinancialService',
+        '@id': `${config.site_url}#business`,
         'name': `${config.nom} — ${config.titre}`,
         'telephone': '+1' + config.telephone.replace(/\D/g, '').replace(/^1/, ''),
         'email': config.courriel,

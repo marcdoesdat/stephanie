@@ -14,13 +14,14 @@ function fmtRate(val: number | null | undefined): string {
 <section id="hero">
   <div class="hero-inner">
     <div class="hero-left fade-up">
-      <h1 class="hero-badge">
+      <div class="hero-badge" aria-hidden="true">
         Courtière hypothécaire à {config.region}
-      </h1>
-      
-      <p class="hero-value-prop">
+      </div>
+
+      <h1 class="hero-value-prop">
+        <span class="sr-only">Courtière hypothécaire à {config.region} — </span>
         Acheter ou renouveler,<br /> <em>c'est stressant.</em><br /> Pas avec moi.
-      </p>
+      </h1>
       
       <p>
         Je magasine parmi une panoplie de prêteurs à ta place et je t'explique tout — sans jargon,

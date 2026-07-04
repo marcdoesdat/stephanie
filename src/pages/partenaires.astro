@@ -1,0 +1,706 @@
+---
+export const prerender = true;
+
+import Layout from '../layouts/MainLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../assets/stephanie.webp';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+
+Astro.response.headers.set('Cache-Control', 's-maxage=86400, stale-while-revalidate=3600');
+---
+
+<Layout
+  title="Partenaires — Stéphanie Weyman"
+  description={`Collaborez avec ${config.nom}, courtière hypothécaire. Référez vos clients en toute confiance — suivi rigoureux, protection de votre relation client.`}
+>
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ HÉRO ============ -->
+    <section class="part-hero">
+      <div class="part-inner">
+        <h1 class="part-h1">Vos clients méritent un financement à la hauteur de votre service.</h1>
+        <p class="part-sub">
+          Vous avez bâti une relation de confiance avec votre client. Quand vient le temps
+          de financer son projet, vous voulez quelqu'un qui protège cette relation — pas
+          quelqu'un qui la met à risque.
+        </p>
+        <div class="part-hero-ctas">
+          <a href="#part-form" class="btn-cta">Référer un client</a>
+          <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`} class="part-hero-tel">
+            {config.telephone}
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ POUR QUI ============ -->
+    <section class="part-for">
+      <div class="part-inner">
+        <h2 class="part-h2">Une référence, un contexte différent.</h2>
+        <p class="part-section-sub">Chaque professionnel réfère pour ses propres raisons. Voici comment je vous aide, selon votre réalité.</p>
+
+        <div class="part-segments">
+          <div class="part-segment">
+            <span class="part-segment-icon" aria-hidden="true">🏠</span>
+            <h3>Courtiers immobiliers</h3>
+            <p>
+              Vos offres tombent parce que le financement traîne ? Une préapprobation solide
+              avant les visites, des dossiers qui closent aux dates prévues, et un interlocuteur
+              unique qui vous tient informé à chaque étape. Vous avez travaillé trop fort pour
+              perdre une vente sur un détail de financement.
+            </p>
+          </div>
+
+          <div class="part-segment">
+            <span class="part-segment-icon" aria-hidden="true">📊</span>
+            <h3>Planificateurs financiers et conseillers</h3>
+            <p>
+              Le financement hypothécaire est un levier dans une stratégie de patrimoine globale.
+              Je vous aide à optimiser le renouvellement, le refinancement pour libérer des
+              liquidités, ou la structuration de la dette de vos clients. On parle le même
+              langage — chiffres, scénarios, analyse — et on travaille ensemble pour que la
+              solution hypothécaire serve le plan, pas l'inverse.
+            </p>
+          </div>
+
+          <div class="part-segment">
+            <span class="part-segment-icon" aria-hidden="true">⚖️</span>
+            <h3>Notaires</h3>
+            <p>
+              Un dossier de financement qui traîne, c'est une signature qui dérape. Je communique
+              avec vous de façon proactive pour que tout soit prêt à temps — conditions de prêt
+              respectées, documents complets, échéancier clair. Moins de surprises le jour de la
+              signature, plus de dossiers qui roulent.
+            </p>
+          </div>
+
+          <div class="part-segment">
+            <span class="part-segment-icon" aria-hidden="true">🧾</span>
+            <h3>Comptables</h3>
+            <p>
+              Travailleurs autonomes, revenus non standards, optimisation fiscale qui réduit le
+              revenu imposable : c'est exactement le type de dossier où une courtière fait toute
+              la différence face à une banque. Je connais les prêteurs qui comprennent les états
+              financiers et les avis de cotisation — vos clients obtiennent le financement que
+              leur dossier mérite, même quand il sort du moule.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LA PROMESSE ============ -->
+    <section class="part-promise">
+      <div class="part-inner">
+        <h2 class="part-h2">Votre client reste votre client.</h2>
+        <p class="part-section-sub">Ce qui vous inquiète quand vous référez, je le comprends. Voici comment je protège votre relation.</p>
+
+        <div class="part-promise-grid">
+          <div class="part-promise-item">
+            <span class="part-promise-check" aria-hidden="true">✓</span>
+            <div>
+              <strong>Aucune sollicitation croisée.</strong>
+              <p>Votre client est le vôtre. Je ne lui proposerai jamais d'autres services que le financement que vous m'avez confié — pas d'assurance, pas d'investissement, pas de référence vers un autre professionnel.</p>
+            </div>
+          </div>
+          <div class="part-promise-item">
+            <span class="part-promise-check" aria-hidden="true">✓</span>
+            <div>
+              <strong>Suivi systématique.</strong>
+              <p>Vous savez où en est le dossier. Je vous tiens informé des étapes clés : prêt approuvé, conditions remplies, date de déboursé confirmée. Pas de silence radio.</p>
+            </div>
+          </div>
+          <div class="part-promise-item">
+            <span class="part-promise-check" aria-hidden="true">✓</span>
+            <div>
+              <strong>Réponse rapide.</strong>
+              <p>Un client référé est une priorité. J'accuse réception dans les meilleurs délais et je prends en charge le dossier immédiatement — votre client ne reste pas dans le vide.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROCESSUS ============ -->
+    <section class="part-process">
+      <div class="part-inner">
+        <h2 class="part-h2">Comment ça fonctionne</h2>
+
+        <ol class="part-steps">
+          <li class="part-step">
+            <div class="part-step-num" aria-hidden="true">1</div>
+            <h3 class="part-step-title">Vous me référez votre client</h3>
+            <p class="part-step-text">Via le formulaire ci-dessous, ou par téléphone au {config.telephone}. Je prends contact avec votre client dans les meilleurs délais.</p>
+          </li>
+          <li class="part-step">
+            <div class="part-step-num" aria-hidden="true">2</div>
+            <h3 class="part-step-title">Je prends en charge le financement</h3>
+            <p class="part-step-text">Analyse du dossier, magasinage des taux, montage de la demande. Je vous tiens informé à chaque jalon important. Vous gardez le lien avec votre client.</p>
+          </li>
+          <li class="part-step">
+            <div class="part-step-num" aria-hidden="true">3</div>
+            <h3 class="part-step-title">Le client signe, vous gardez la relation</h3>
+            <p class="part-step-text">Financement approuvé, dossier clos. Votre client est satisfait — et vous avez renforcé votre crédibilité en lui offrant une ressource fiable.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ CRÉDIBILITÉ ============ -->
+    <section class="part-cred">
+      <div class="part-inner">
+        <div class="part-cred-grid">
+          <div class="part-cred-photo">
+            <Image
+              src={stephaniePhoto}
+              alt={`${config.nom}, courtière hypothécaire`}
+              width={160}
+              height={200}
+              loading="lazy"
+              class="part-photo"
+            />
+            <div class="part-photo-caption">
+              <strong>{config.nom}</strong>
+              <span>{config.titre} · {config.organisation}</span>
+              <span>Certificat AMF n° {config.amf}</span>
+            </div>
+          </div>
+          <div class="part-cred-text">
+            <h2 class="part-h2">Une professionnelle à qui vous pouvez référer en confiance.</h2>
+            <ul class="part-cred-list">
+              <li>Certificat AMF n° {config.amf} — courtage hypothécaire réglementé au Québec</li>
+              <li>Réseau Hypotheca — accès à plus de 20 prêteurs (banques, caisses, prêteurs alternatifs)</li>
+              <li>Dossiers complexes bienvenus : travailleurs autonomes, nouveaux arrivants, crédit à reconstruire</li>
+              <li>Service en français, flexible — soirs et fins de semaine disponibles</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FORMULAIRE DE RÉFÉRENCE ============ -->
+    <section class="part-form-section" id="part-form">
+      <div class="part-inner part-inner--narrow">
+        <h2 class="part-h2 part-h2--center">Référez un client</h2>
+        <p class="part-section-sub part-section-sub--center">
+          Formulaire court. Votre client sera contacté dans les meilleurs délais.
+        </p>
+
+        <form
+          name="partenaires-reference"
+          method="POST"
+          action="/merci"
+          data-netlify="true"
+          data-netlify-honeypot="bot-field"
+          class="part-form"
+          novalidate
+        >
+          <input type="hidden" name="form-name" value="partenaires-reference" />
+          <div style="display:none" aria-hidden="true">
+            <label>Ne pas remplir : <input name="bot-field" tabindex="-1" /></label>
+          </div>
+
+          <div class="part-form-grid">
+            <div class="part-form-group">
+              <label for="part-nom" class="part-label">Votre nom <span aria-hidden="true">*</span></label>
+              <input type="text" id="part-nom" name="nom-partenaire" placeholder="Votre nom et prénom" required autocomplete="name" class="part-input" />
+            </div>
+            <div class="part-form-group">
+              <label for="part-profession" class="part-label">Votre profession <span aria-hidden="true">*</span></label>
+              <select id="part-profession" name="profession" required class="part-input">
+                <option value="">Sélectionnez…</option>
+                <option value="courtier-immobilier">Courtier immobilier</option>
+                <option value="planificateur-financier">Planificateur financier / Conseiller</option>
+                <option value="notaire">Notaire</option>
+                <option value="comptable">Comptable</option>
+                <option value="autre">Autre profession</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="part-form-group">
+            <label for="part-contact" class="part-label">Votre courriel ou téléphone <span aria-hidden="true">*</span></label>
+            <input type="text" id="part-contact" name="contact-partenaire" placeholder="Courriel ou numéro de téléphone pour vous joindre" required class="part-input" />
+            <span class="part-field-hint">Pour vous remercier et vous tenir informé de l'avancement du dossier.</span>
+          </div>
+
+          <div class="part-form-grid">
+            <div class="part-form-group">
+              <label for="part-client" class="part-label">Nom du client référé <span aria-hidden="true">*</span></label>
+              <input type="text" id="part-client" name="client-nom" placeholder="Nom et prénom du client" required class="part-input" />
+            </div>
+            <div class="part-form-group">
+              <label for="part-client-tel" class="part-label">Téléphone du client <span aria-hidden="true">*</span></label>
+              <input type="tel" id="part-client-tel" name="client-telephone" placeholder="514 000-0000" required inputmode="tel" class="part-input" />
+            </div>
+          </div>
+
+          <div class="part-form-group">
+            <label for="part-projet" class="part-label">Type de projet</label>
+            <select id="part-projet" name="type-projet" class="part-input">
+              <option value="">Sélectionnez…</option>
+              <option value="achat">Achat</option>
+              <option value="renouvellement">Renouvellement</option>
+              <option value="refinancement">Refinancement</option>
+              <option value="preapprobation">Pré-approbation</option>
+              <option value="autre">Autre / à déterminer</option>
+            </select>
+          </div>
+
+          <div class="part-form-group">
+            <label for="part-notes" class="part-label">Détails ou contexte <span class="part-optional">(facultatif)</span></label>
+            <textarea id="part-notes" name="notes" placeholder="Toute information utile sur le dossier…" rows="3" class="part-input"></textarea>
+          </div>
+
+          <div class="part-consent">
+            <label class="part-consent-label">
+              <input type="checkbox" name="consentement-client" required class="part-consent-check" />
+              <span>Je confirme que mon client a consenti à ce que ses coordonnées soient transmises à {config.nom} pour une consultation hypothécaire sans frais.</span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn-cta btn-cta--block">
+            <span>Envoyer la référence</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT DIRECT ============ -->
+    <section class="part-contact">
+      <div class="part-inner part-inner--narrow">
+        <div class="part-contact-card">
+          <h2 class="part-contact-title">Vous préférez qu'on se parle d'abord ?</h2>
+          <p>Un courtier pressé veut appeler, pas remplir un formulaire. Je vous comprends.</p>
+          <div class="part-contact-actions">
+            <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`} class="btn-cta">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.55a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              {config.telephone}
+            </a>
+            <a href={`mailto:${config.courriel}`} class="btn-secondary btn-secondary--icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              {config.courriel}
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .part-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  .part-inner--narrow {
+    max-width: 640px;
+  }
+
+  .part-h1 {
+    font-family: 'Lora', serif;
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    line-height: 1.15;
+    margin: 0 0 1rem;
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .part-h2 {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    line-height: 1.25;
+    margin: 0 0 1rem;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .part-h2--center { text-align: center; }
+  .part-sub {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: var(--muted);
+    max-width: 640px;
+  }
+  .part-section-sub {
+    font-size: 0.98rem;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 600px;
+    margin-bottom: 2rem;
+  }
+  .part-section-sub--center {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  /* ===== HÉRO ===== */
+  .part-hero {
+    padding: 7rem 0 4rem;
+    background: linear-gradient(180deg, var(--sand) 0%, var(--white) 100%);
+  }
+  .part-hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem;
+    margin-top: 2rem;
+  }
+  .part-hero-tel {
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 1.05rem;
+  }
+
+  /* ===== POUR QUI ===== */
+  .part-for {
+    padding: 4rem 0;
+    background: var(--white);
+  }
+  .part-segments {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  .part-segment {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem;
+    transition: box-shadow 0.2s;
+  }
+  .part-segment:hover {
+    box-shadow: var(--shadow-md);
+  }
+  .part-segment-icon {
+    font-size: 1.6rem;
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+  .part-segment h3 {
+    font-family: 'Lora', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+    color: var(--ink);
+  }
+  .part-segment p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ===== PROMESSE ===== */
+  .part-promise {
+    padding: 4rem 0;
+    background: var(--sand);
+  }
+  .part-promise-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .part-promise-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .part-promise-check {
+    color: var(--forest);
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+  .part-promise-item strong {
+    display: block;
+    font-size: 0.98rem;
+    color: var(--ink);
+    margin-bottom: 0.15rem;
+  }
+  .part-promise-item p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  /* ===== PROCESSUS ===== */
+  .part-process {
+    padding: 4rem 0;
+    background: var(--white);
+  }
+  .part-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    counter-reset: part-step;
+  }
+  .part-step {
+    background: var(--sand);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem;
+  }
+  .part-step-num {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: var(--clay);
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+  }
+  .part-step-title {
+    font-family: 'Lora', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+    color: var(--ink);
+  }
+  .part-step-text {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* ===== CRÉDIBILITÉ ===== */
+  .part-cred {
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #3d5a4a 0%, #2e4538 100%);
+    color: rgba(255,255,255,0.9);
+  }
+  .part-cred .part-h2 {
+    color: #fff;
+    font-size: 1.5rem;
+  }
+  .part-cred-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+  .part-cred-photo {
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .part-photo {
+    border-radius: 16px;
+    width: 160px;
+    height: 200px;
+    object-fit: cover;
+    object-position: center top;
+    border: 3px solid rgba(255,255,255,0.2);
+  }
+  .part-photo-caption {
+    margin-top: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 0.8rem;
+  }
+  .part-photo-caption strong {
+    font-family: 'Lora', serif;
+    font-size: 1rem;
+    color: #fff;
+  }
+  .part-photo-caption span {
+    color: rgba(255,255,255,0.65);
+  }
+  .part-cred-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .part-cred-list li {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    padding-left: 1.2rem;
+    position: relative;
+    color: rgba(255,255,255,0.85);
+  }
+  .part-cred-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--clay);
+    font-weight: 700;
+  }
+
+  /* ===== FORMULAIRE ===== */
+  .part-form-section {
+    padding: 4rem 0;
+    background: var(--sand);
+  }
+  .part-form {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .part-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .part-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .part-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .part-label span { color: var(--clay); }
+  .part-optional {
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    text-transform: none;
+    color: var(--muted);
+    margin-left: 0.2rem;
+  }
+  .part-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    color: var(--ink);
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.92rem;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .part-input:focus {
+    outline: none;
+    border-color: var(--clay);
+    background: var(--white);
+  }
+  .part-field-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+    line-height: 1.4;
+  }
+  textarea.part-input {
+    resize: vertical;
+    min-height: 80px;
+  }
+  .part-consent {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .part-consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+  .part-consent-check {
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+    accent-color: var(--clay);
+  }
+
+  /* ===== CONTACT DIRECT ===== */
+  .part-contact {
+    padding: 3rem 0 5rem;
+    background: var(--sand);
+  }
+  .part-contact-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+  }
+  .part-contact-title {
+    font-family: 'Lora', serif;
+    font-size: 1.4rem;
+    margin: 0 0 0.5rem;
+    color: var(--ink);
+  }
+  .part-contact-card > p {
+    color: var(--muted);
+    margin: 0 0 1.5rem;
+    font-size: 0.95rem;
+  }
+  .part-contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 800px) {
+    .part-segments {
+      grid-template-columns: 1fr;
+    }
+    .part-steps {
+      grid-template-columns: 1fr;
+    }
+    .part-cred-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    .part-cred-photo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-align: left;
+    }
+    .part-photo {
+      width: 100px;
+      height: 125px;
+    }
+    .part-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .part-hero-ctas {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .part-form {
+      padding: 1.25rem;
+    }
+  }
+</style>

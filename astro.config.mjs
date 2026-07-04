@@ -7,6 +7,9 @@ export default defineConfig({
   site: 'https://stephanieweyman.ca',
   adapter: netlify(),
   integrations: [
-    sitemap()
+    sitemap({
+      // Exclut les pages noindex du sitemap (sinon signaux contradictoires)
+      filter: (page) => !page.endsWith('/demande/') && !page.endsWith('/merci/'),
+    })
   ],
 });

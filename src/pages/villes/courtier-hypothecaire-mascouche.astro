@@ -14,21 +14,21 @@ import PhoneLink from '../../components/PhoneLink.astro';
 const config = loadSiteConfig();
 const prenom = config.nom.split(' ')[0];
 
-const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-repentigny`;
+const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-mascouche`;
 const STEPHANIE_IMAGE = `${config.site_url}/_astro/stephanie.Cm30Blgc.jpg`;
 
 const faq = [
   {
-    q: "Combien coûte un courtier hypothécaire à Repentigny ?",
-    a: `Le service de courtage hypothécaire est <strong>entièrement gratuit pour vous</strong>. Je suis rémunérée par le prêteur qui finance votre dossier, au moment du déboursé. Aucun frais caché, aucune facture, aucun engagement tant qu'on n'a pas trouvé une solution qui vous convient.`
+    q: "Combien coûte un courtier hypothécaire à Mascouche ?",
+    a: `Rien pour vous : mon service est <strong>gratuit</strong>. C'est le prêteur qui finance votre dossier qui me rémunère, au moment du déboursé. Vous ne recevez aucune facture et vous ne vous engagez à rien tant qu'on n'a pas trouvé la bonne solution.`
   },
   {
-    q: "Quelle mise de fonds minimum pour acheter à Repentigny ?",
-    a: `Au Canada, la mise de fonds minimale est de <strong>5 %</strong> sur la première tranche de 500 000 $, puis <strong>10 %</strong> entre 500 000 $ et 1,5 M$. Sous 20 % de mise de fonds, une prime d'assurance SCHL s'ajoute au prêt. Certaines conditions s'appliquent selon votre dossier — on regarde ensemble ce qui est réaliste pour vous.`
+    q: "Quelle mise de fonds pour acheter une maison à Mascouche ?",
+    a: `La règle canadienne s'applique : <strong>5 %</strong> de mise de fonds minimale sur la première tranche de 500 000 $, puis <strong>10 %</strong> entre 500 000 $ et 1,5 M$. Avec moins de 20 % de mise de fonds, une prime d'assurance SCHL s'ajoute à votre prêt. On calcule ensemble le scénario le plus avantageux selon votre situation.`
   },
   {
-    q: "Quel est le prix médian d'une maison à Repentigny ?",
-    a: `Les prix varient beaucoup selon le quartier (Le Gardeur, vieux Repentigny, Repentigny-Centre) et le type de propriété. Plutôt que de citer un chiffre qui se périme rapidement, je vous propose une consultation gratuite où on analyse votre capacité d'emprunt en fonction du marché actuel et de votre situation personnelle.`
+    q: "Quel est le prix médian d'une maison à Mascouche ?",
+    a: `Les prix varient beaucoup selon le secteur (vieux Mascouche, Mascouche Heights, secteur du Golf) et le type de propriété. Plutôt que de citer un chiffre qui se périme rapidement, je vous propose une consultation gratuite où on analyse votre capacité d'emprunt en fonction du marché actuel et de votre situation personnelle.`
   },
   {
     q: "Comment fonctionne le stress test fédéral au Québec ?",
@@ -39,7 +39,7 @@ const faq = [
     a: `Pour un dossier complet (documents fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. Une pré-approbation est valide jusqu'à 120 jours, ce qui vous laisse le temps de magasiner sereinement. Je vous recontacte dès que possible après votre demande.`
   },
   {
-    q: "Puis-je obtenir une hypothèque comme travailleur autonome à Repentigny ?",
+    q: "Puis-je obtenir une hypothèque comme travailleur autonome à Mascouche ?",
     a: `Absolument. Les travailleurs autonomes et travailleuses autonomes représentent une grande partie de ma clientèle. J'ai accès à des prêteurs qui acceptent les revenus de travail autonome documentés par les <strong>avis de cotisation</strong> des deux dernières années — ou des solutions alternatives quand le dossier est plus complexe. Certaines conditions s'appliquent.`
   },
   {
@@ -70,10 +70,10 @@ const schemaLocalBusiness = {
     "addressCountry": "CA"
   },
   "areaServed": [
-    { "@type": "City", "name": "Repentigny" },
-    { "@type": "City", "name": "Le Gardeur" },
-    { "@type": "City", "name": "Charlemagne" },
-    { "@type": "City", "name": "L'Assomption" }
+    { "@type": "City", "name": "Mascouche" },
+    { "@type": "City", "name": "Mascouche Heights" },
+    { "@type": "City", "name": "Terrebonne" },
+    { "@type": "City", "name": "Repentigny" }
   ],
   "priceRange": "Free"
 };
@@ -89,7 +89,6 @@ const schemaPerson = {
   "identifier": `AMF ${config.amf}`
 };
 
-// Le FAQPage est généré à partir du tableau `faq` ci-dessus.
 const schemaFAQ = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -98,19 +97,17 @@ const schemaFAQ = {
     "name": item.q,
     "acceptedAnswer": {
       "@type": "Answer",
-      // On retire le HTML pour la version texte du schema.
       "text": item.a.replace(/<[^>]+>/g, '')
     }
   }))
 };
 
-// Cache CDN — page éditoriale, change rarement.
 Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
 ---
 
 <MainLayout
-  fullTitle="Courtière hypothécaire à Repentigny – Stéphanie Weyman"
-  description="Courtière hypothécaire à Repentigny. Pré-approbation, achat, renouvellement, refinancement. Accès à 20+ prêteurs. Service gratuit. Réponse rapide."
+  fullTitle="Courtière hypothécaire à Mascouche – Stéphanie Weyman"
+  description="Courtière hypothécaire à Mascouche. Pré-approbation, achat, renouvellement, refinancement. Accès à 20+ prêteurs. Service gratuit. Réponse rapide."
 >
   <Fragment slot="head">
     <link rel="canonical" href={PAGE_URL} />
@@ -129,8 +126,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <div class="rep-inner">
         <div class="rep-hero-grid">
           <div class="rep-hero-text">
-            <div class="rep-eyebrow">Repentigny · Lanaudière</div>
-            <h1 class="rep-h1">Courtière hypothécaire à Repentigny</h1>
+            <div class="rep-eyebrow">Mascouche · Lanaudière</div>
+            <h1 class="rep-h1">Courtière hypothécaire à Mascouche</h1>
             <p class="rep-subtitle">
               Pré-approbation rapide. Accès à 20+ prêteurs. 0&nbsp;$ sans frais de courtage<span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>.
             </p>
@@ -152,7 +149,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </a>
               <span class="rep-cta-secondary">
-                ou appelez le <PhoneLink variant="text" trackId="tel_click_repentigny" aria-label={`Appeler ${prenom} au ${config.telephone}`} />
+                ou appelez le <PhoneLink variant="text" trackId="tel_click_mascouche" aria-label={`Appeler ${prenom} au ${config.telephone}`} />
               </span>
             </div>
           </div>
@@ -160,7 +157,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           <aside class="rep-hero-photo" aria-label="Votre courtière">
             <Image
               src={stephaniePhoto}
-              alt={`${config.nom}, courtière hypothécaire à Repentigny`}
+              alt={`${config.nom}, courtière hypothécaire à Mascouche`}
               width={320}
               height={400}
               loading="eager"
@@ -179,13 +176,13 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ SECTION 2 — POUR QUI ============ -->
     <section class="rep-services">
       <div class="rep-inner">
-        <div class="rep-section-tag">Pour qui je travaille à Repentigny</div>
+        <div class="rep-section-tag">Pour qui je travaille à Mascouche</div>
         <h2 class="rep-section-title">Six parcours, une seule personne pour vous accompagner.</h2>
 
         <div class="rep-cards-grid">
           <a href="/services/premier-achat" class="rep-card">
             <span class="rep-card-icon" aria-hidden="true">🏠</span>
-            <h3 class="rep-card-title">Premier achat à Repentigny</h3>
+            <h3 class="rep-card-title">Premier achat à Mascouche</h3>
             <p class="rep-card-text">Pré-approbation, RAP, CELIAPP, mise de fonds optimale.</p>
             <span class="rep-card-cta">En savoir plus →</span>
           </a>
@@ -227,36 +224,36 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Repentigny en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer à Mascouche en 2026</h2>
 
         <p>
-          Repentigny est une ville recherchée pour son équilibre rare entre tranquillité résidentielle
-          et proximité de Montréal. Coincée entre le fleuve Saint-Laurent et l'autoroute 40, elle
-          attire chaque année une cohorte importante de <strong>premiers acheteurs</strong> et de
-          familles qui veulent plus d'espace sans s'éloigner du centre-ville. Les secteurs du
-          <strong> vieux Repentigny</strong> et de <strong>Repentigny-Centre</strong> regroupent
-          beaucoup d'unifamiliales détachées, tandis que <strong>Le Gardeur</strong> mélange bungalows
-          des années 70 et nouveaux développements. Chaque quartier a sa réalité de marché — et donc
-          sa propre stratégie hypothécaire.
+          Mascouche attire de plus en plus de jeunes familles et de <strong>premiers acheteurs</strong> :
+          des prix encore plus accessibles que dans la première couronne montréalaise, des espaces verts
+          partout, et un accès direct au centre-ville en moins d'une heure grâce à l'<strong>autoroute 25</strong>
+          et la <strong>ligne de train de banlieue Mascouche</strong>. Pour les travailleurs hybrides qui
+          veulent plus d'espace sans couper le lien avec Montréal, c'est un choix stratégique.
         </p>
 
         <p>
-          La demande pour les unifamiliales reste forte, ce qui rend une <strong>pré-approbation</strong>
-          presque incontournable avant de visiter quoi que ce soit. Sans elle, vous risquez de tomber
-          en amour avec une propriété qui dépasse votre vraie capacité d'emprunt — ou de voir une offre
-          partir au profit d'un acheteur déjà pré-approuvé. Le calcul de cette capacité tient compte
-          du <strong>stress test fédéral</strong>, des règles de mise de fonds minimale, et, sous 20 %
-          de mise, de la <strong>prime SCHL</strong> qui s'ajoute au prêt.
+          Le marché mascouchois est diversifié : <strong>maisons unifamiliales</strong> dans le vieux
+          Mascouche, <strong>constructions récentes</strong> dans Mascouche Heights et autour du
+          <strong>club de golf Le Versant</strong>, et de plus en plus de <strong>condos</strong> pour
+          les jeunes actifs. Avec cette variété, une <strong>préapprobation</strong> solide est ton
+          meilleur atout pour négocier — elle te donne la crédibilité d'un acheteur sérieux et t'évite
+          de tomber en amour avec une propriété hors de portée.
         </p>
 
         <p>
-          Je dessers Repentigny et toutes les villes en proximité immédiate : <strong>Charlemagne,
-          L'Assomption, Mascouche</strong>, <a href="/villes/courtier-hypothecaire-terrebonne">Terrebonne</a>, et plus largement Lanaudière et la couronne
-          nord-est de Montréal. L'accès au train de banlieue (ligne Mascouche) et à l'autoroute 40
-          rend toute cette zone particulièrement intéressante pour les acheteurs qui travaillent à
-          Montréal mais cherchent un mode de vie plus posé. Quand le taux directeur de la Banque du
-          Canada bouge, la fenêtre pour magasiner son hypothèque se rétrécit — d'où l'intérêt de
-          travailler avec une courtière qui suit le marché en continu.
+          Je dessers Mascouche et toutes les villes à proximité : <strong>Terrebonne, Repentigny,
+          L'Assomption, Lavaltrie</strong>, et plus largement Lanaudière et la couronne nord de
+          Montréal. Quand le taux directeur de la Banque du Canada bouge, la fenêtre pour magasiner
+          son hypothèque se rétrécit — d'où l'intérêt de travailler avec une courtière qui suit le
+          marché en continu.
+        </p>
+
+        <p>
+          <strong>Ton projet est à Mascouche ?</strong>
+          <a href="#contact" class="rep-inline-cta">On jase de ton projet →</a>
         </p>
       </div>
     </section>
@@ -325,7 +322,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ SECTION 6 — FAQ ============ -->
     <section class="rep-faq">
       <div class="rep-inner rep-inner--narrow">
-        <div class="rep-section-tag">FAQ — Repentigny</div>
+        <div class="rep-section-tag">FAQ — Mascouche</div>
         <h2 class="rep-section-title">Les questions qu'on me pose le plus souvent.</h2>
 
         <div class="rep-faq-list">
@@ -342,11 +339,11 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       </div>
     </section>
 
-    <!-- ============ SECTION 8 — CTA FINAL + FORMULAIRE ============ -->
+    <!-- ============ SECTION 7 — CTA FINAL + FORMULAIRE ============ -->
     <section class="rep-final-cta">
       <div class="rep-inner">
         <div class="rep-final-header">
-          <h2 class="rep-section-title rep-section-title--center">Prêt à obtenir votre pré-approbation à Repentigny ?</h2>
+          <h2 class="rep-section-title rep-section-title--center">Prêt à obtenir votre pré-approbation à Mascouche ?</h2>
           <p class="rep-final-sub">Aucun engagement. Aucun frais. Réponse dans les meilleurs délais.</p>
         </div>
       </div>
@@ -360,7 +357,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
 <style>
   /* ===========================================================
-     Page Repentigny — styles scopés
+     Page Mascouche — styles scopés
      S'appuie sur les variables globales définies dans global.css
      (--ink, --clay, --forest, --cream, --white, --border, etc.)
      =========================================================== */
@@ -480,7 +477,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     text-decoration: none;
     font-size: 0.95rem;
   }
-  /* Le strong est rendu dans PhoneLink (scope différent) — :global obligatoire */
   .rep-cta-secondary :global(strong) {
     color: var(--clay, #c47a52);
     text-decoration: underline;
@@ -524,7 +520,6 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   }
 
   /* ============ CARTES SERVICES ============ */
-  /* Grille fixe 3×2 sur desktop, 2 colonnes en tablette, 1 en mobile */
   .rep-cards-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -585,6 +580,15 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     line-height: 1.7;
     color: var(--ink, #1a1a1a);
     margin: 0 0 1.2rem;
+  }
+  .rep-inline-cta {
+    color: var(--clay, #c47a52);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .rep-inline-cta:hover {
+    text-decoration: underline;
   }
 
   /* ============ TABLEAU COMPARATIF ============ */

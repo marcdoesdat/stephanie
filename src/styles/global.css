@@ -17,8 +17,8 @@
   --radius-md:20px;
   --radius-lg:24px;
 }
-html{scroll-behavior:smooth}
-body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);font-size:16px;line-height:1.65;overflow-x:clip}
+html{scroll-behavior:smooth;overflow-x:clip}
+body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);font-size:16px;line-height:1.65;overflow-x:clip;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important;scroll-behavior:auto!important}
@@ -26,6 +26,11 @@ body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);f
 
 /* Screen reader only */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
+
+/* Lien d'évitement vers le contenu principal — visible au focus clavier.
+   (Définition canonique ; copie critical inline dans MainLayout <head>.) */
+.skip-link{position:absolute;top:.5rem;left:.5rem;transform:translateY(calc(-100% - 1rem));z-index:10000;padding:.6rem 1rem;background:var(--ink);color:#fff;font-weight:600;border-radius:6px;text-decoration:none;transition:transform .15s ease-in}
+.skip-link:focus,.skip-link:focus-visible{transform:translateY(0);outline:2px solid var(--clay);outline-offset:2px}
 
 /* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,250,246,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 clamp(1rem,3vw,4rem);display:flex;align-items:center;justify-content:space-between;min-height:68px;transition:box-shadow .3s}
@@ -207,7 +212,6 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 .amort-link{display:block;text-align:center;color:var(--clay);font-size:.88rem;font-weight:600;text-decoration:none;padding:.9rem 1.2rem;background:var(--white);border:1px solid var(--border);border-radius:14px;transition:background .2s,color .2s}
 .amort-link:hover{background:var(--sand);color:var(--clay-dk)}
 
-/* Paramètres du prêt — toujours visibles */
 /* Paramètres du prêt — toujours visibles */
 .adv-options{margin-bottom:1.5rem}
 .adv-section-label{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem}
@@ -577,7 +581,7 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 .email-capture-field-label{display:block;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem}
 .email-capture-note-sub{font-size:.68rem;color:var(--muted);line-height:1.5;margin:.5rem 0 0;text-align:center}
 .email-capture-note-sub a{color:var(--clay);font-weight:600;text-decoration:underline;text-underline-offset:2px}
-.email-capture-row{display:flex;gap:.65rem}
+.email-capture-row{display:flex;gap:.65rem;align-items:stretch}
 .email-capture-row + .email-capture-row{margin-top:.65rem}
 .email-capture-input{flex:1;min-width:0;padding:.78rem 1rem;background:var(--white);border:1.5px solid var(--border);border-radius:10px;color:var(--ink);font-family:"DM Sans",sans-serif;font-size:.88rem}
 .email-capture-input:focus{outline:none;border-color:var(--clay)}
@@ -586,7 +590,6 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 .email-capture-btn:hover{background:var(--clay-dk)}
 .email-capture-msg{font-size:.75rem;margin-top:.5rem;line-height:1.5;color:var(--muted)}
 
-.email-capture-row{align-items:stretch}
 .email-capture-input,.email-capture-btn{min-height:44px}
 
 @media (max-width: 900px){
@@ -647,7 +650,6 @@ td:last-child{text-align:center}
   .td-hypotheca{font-size:.85rem}
   .td-affiche{font-size:.72rem}
   .badge-pop{font-size:.5rem;padding:.15rem .45rem;letter-spacing:.04em;margin-right:.3rem}
-  .taux-footer{flex-direction:column}
 }
 
 /* SIMULATEUR */
@@ -1422,11 +1424,13 @@ footer strong{color:rgba(255,255,255,.85)}
 .js-enabled .stagger-children.visible > *:nth-child(9){transition-delay:.58s}
 
 /* RESPONSIVE */
-@media(max-width:900px){
-  nav{padding:0 1.5rem}
+/* Bascule nav → hamburger : alignée sur Nav.astro et le critical CSS (1180px) */
+@media(max-width:1180px){
   .nav-links{display:none}
   .hamburger{display:flex}
-  section{padding:4rem 1.5rem}
+}
+@media(max-width:900px){
+  nav{padding:0 1.5rem}
   #hero{padding:6rem 1.5rem 3rem}
   .hero-inner{grid-template-columns:1fr;gap:2rem}
   .hero-left .hero-value-prop{font-size:2.8rem}
