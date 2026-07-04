@@ -50,12 +50,57 @@ const tabs = [
   { id: 'refinancement', label: 'Simulateur de refinancement', sub: '+ consolidation' },
   { id: 'droits-mutation', label: 'Droits de mutation', sub: 'Taxe de bienvenue' },
 ];
+
+// FAQ sur les calculateurs — affichée en bas de page et balisée en FAQPage.
+const outilsFaq = [
+  {
+    q: "Les résultats des calculateurs sont-ils fiables ?",
+    a: `Les calculs utilisent les <strong>formules hypothécaires canadiennes</strong> (capitalisation semi-annuelle, règles de mise de fonds minimale, prime SCHL). Les résultats sont des <strong>estimations indicatives</strong> : votre montant réel dépend de votre dossier de crédit, de vos revenus vérifiés et du prêteur. Pour un chiffre engageant, il faut une pré-approbation.`
+  },
+  {
+    q: "Quels taux sont utilisés dans les calculateurs ?",
+    a: `Les taux par défaut proviennent des <strong>taux affichés par Hypotheca</strong>, mis à jour plusieurs fois par jour. Vous pouvez les remplacer par n'importe quel taux dans chaque outil pour tester vos propres scénarios.`
+  },
+  {
+    q: "Quelle est la différence entre une simulation et une pré-approbation ?",
+    a: `La simulation donne un <strong>ordre de grandeur instantané</strong>, sans vérification. La pré-approbation est un <strong>engagement écrit d'un prêteur</strong> : dossier vérifié, montant confirmé et taux protégé jusqu'à 120 jours. C'est elle qui compte au moment de faire une offre d'achat.`
+  },
+  {
+    q: "Le test de résistance (stress test) est-il pris en compte ?",
+    a: `Oui. Le simulateur d'emprunt qualifie votre capacité au <strong>taux de qualification fédéral</strong> — le plus élevé entre votre taux + 2 % et 5,25 % — comme le ferait un prêteur. Votre capacité affichée reflète donc la règle réelle, pas un calcul optimiste.`
+  },
+  {
+    q: "La prime SCHL est-elle incluse dans les calculs ?",
+    a: `Oui. Dès que la mise de fonds est inférieure à 20 %, la <strong>prime d'assurance SCHL</strong> est calculée automatiquement et ajoutée au prêt dans le simulateur et le calculateur de versement.`
+  },
+  {
+    q: "Dois-je m'inscrire ou fournir mes coordonnées pour utiliser les outils ?",
+    a: `Non. Les six outils sont <strong>gratuits et sans inscription</strong> : les calculs s'exécutent directement dans votre navigateur. Vous ne laissez vos coordonnées que si vous choisissez d'envoyer vos résultats à Stéphanie.`
+  }
+];
+
+const outilsFaqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": outilsFaq.map((item) => ({
+    "@type": "Question",
+    "name": item.q,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": item.a.replace(/<[^>]+>/g, '')
+    }
+  }))
+};
 ---
 
 <MainLayout
   fullTitle="Calculateur hypothécaire Québec – Capacité d'emprunt, versements, comparateur de taux et pénalité IRD | Stéphanie Weyman"
   description="Outils hypothécaires gratuits au Québec : simulateur de capacité d'emprunt, calculateur de versements, comparateur banque vs courtier, calculateur de pénalité IRD et simulateur de refinancement. Taux Hypotheca en temps réel, sans inscription."
 >
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(outilsFaqSchema)} is:inline />
+  </Fragment>
+
   <Nav />
   <main id="main-content">
     <section id="outils-intro">
@@ -170,6 +215,27 @@ const tabs = [
           hidden
         >
           <DroitsMutationCalculator />
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ sur les calculateurs (contenu visible = balisage FAQPage dans <head>) -->
+    <section id="outils-faq">
+      <div class="section-inner" style="max-width:820px">
+        <div class="outils-faq-header">
+          <span class="section-tag">FAQ — Calculateurs</span>
+          <h2 class="outils-faq-title">Questions fréquentes sur les outils</h2>
+        </div>
+        <div class="outils-faq-list">
+          {outilsFaq.map((item, i) => (
+            <details class="outils-faq-item" name="outils-faq" open={i === 0}>
+              <summary>
+                <span>{item.q}</span>
+                <span class="outils-faq-icon" aria-hidden="true">+</span>
+              </summary>
+              <div class="outils-faq-answer" set:html={item.a} />
+            </details>
+          ))}
         </div>
       </div>
     </section>
@@ -696,6 +762,75 @@ const tabs = [
     .outil-standalone-link a:hover {
       background: var(--white);
       border-color: var(--clay);
+    }
+
+    /* ---------- FAQ calculateurs ---------- */
+    #outils-faq {
+      padding-top: 2.5rem;
+      padding-bottom: 1rem;
+      background: var(--sand);
+    }
+    .outils-faq-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .outils-faq-title {
+      font-family: "Lora", serif;
+      font-size: clamp(1.4rem, 3vw, 1.9rem);
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0.5rem 0 0;
+      letter-spacing: -0.01em;
+    }
+    .outils-faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .outils-faq-item {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .outils-faq-item summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 1.05rem 1.3rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .outils-faq-item summary::-webkit-details-marker {
+      display: none;
+    }
+    .outils-faq-item summary:focus-visible {
+      outline: 2px solid var(--clay);
+      outline-offset: -3px;
+      border-radius: 12px;
+    }
+    .outils-faq-icon {
+      color: var(--clay);
+      font-size: 1.3rem;
+      line-height: 1;
+      transition: transform 0.2s ease;
+      flex: 0 0 auto;
+    }
+    .outils-faq-item[open] .outils-faq-icon {
+      transform: rotate(45deg);
+    }
+    .outils-faq-answer {
+      padding: 0 1.3rem 1.2rem;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+    .outils-faq-answer :global(strong) {
+      color: var(--ink);
     }
 
     /* ---------- Mini contact bas de page ---------- */

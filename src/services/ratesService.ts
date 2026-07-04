@@ -59,7 +59,7 @@ export interface HypothecaRates {
 }
 
 /* ------------------------------------------------------------------ */
-/*  6-hour cache — Netlify Blobs (prod) / file-based (dev)            */
+/*  24-hour cache — Netlify Blobs (prod) / file-based (dev)           */
 /* ------------------------------------------------------------------ */
 
 const BLOB_STORE = 'rates';
@@ -67,8 +67,16 @@ const BLOB_KEY = 'hypotheca-rates';
 
 const CACHE_DIR = path.resolve('.cache');
 const CACHE_FILE = path.join(CACHE_DIR, 'hypotheca-rates.json');
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+// 24 h : les taux bougent peu d'un jour à l'autre et hypotheca.ca rate-limite
+// agressivement (429) — un TTL court multiplie les fetchs inutiles.
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const CACHE_STALE_MAX_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+// Cooldown après un échec de fetch : on sert le cache périmé (stale) sans
+// retenter l'upstream pendant ce délai, pour ne pas marteler hypotheca.ca
+// à chaque rendu SSR quand on est rate-limité.
+const FETCH_FAILURE_COOLDOWN_MS = 15 * 60 * 1000; // 15 min
+let _nextFetchAllowedAt = 0;
 
 // Use Netlify Blobs when running on the Netlify platform (production or `netlify dev`).
 // Falls back to the local file cache for plain `astro dev` / `astro preview` runs.
@@ -472,14 +480,16 @@ let _inflightPromise: Promise<HypothecaRates | null> | null = null;
  * Fetches live mortgage rates from hypotheca.ca, decodes the obfuscated
  * `occ("…")` values, and returns a structured rates object.
  *
- * Uses Netlify Blobs (prod) or file cache (dev) with a 6-hour TTL.
+ * Uses Netlify Blobs (prod) or file cache (dev) with a 24-hour TTL.
  * Returns `null` when rates are unavailable — no fake fallback data.
  *
  * Concurrent calls are coalesced into a single upstream fetch to avoid
  * triggering rate-limiting (HTTP 429) on hypotheca.ca after cold starts.
+ * After a failed refresh, upstream is left alone for 15 min (cooldown) and
+ * the stale cache (< 30 days) is served instead.
  */
 export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
-  // 1. Return cached rates if still valid (< 6 h old)
+  // 1. Return cached rates if still valid (< 24 h old)
   const cached = await readCache();
   if (cached) return cached;
 
@@ -492,6 +502,15 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
   const staleCache = await readCacheAny();
   const fetchedAt = new Date().toISOString();
 
+  // 3. Cooldown actif après un échec récent : servir le stale sans toucher l'upstream
+  if (Date.now() < _nextFetchAllowedAt) {
+    debug('Fetch cooldown actif — cache périmé servi sans requête upstream');
+    if (staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.rates.source === 'live') {
+      return staleCache.rates;
+    }
+    return null;
+  }
+
   const doFetch = async (): Promise<HypothecaRates | null> => {
     try {
       const html = await fetchRatesHtml();
@@ -500,6 +519,7 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
 
       if (rows.length === 0) {
         console.warn('[ratesService] No rows parsed from HTML');
+        _nextFetchAllowedAt = Date.now() + FETCH_FAILURE_COOLDOWN_MS;
         // Return stale cache if available, otherwise null
         if (staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.rates.source === 'live') {
           debug(`Using stale cache (age: ${Math.round(staleCache.ageMs / 60_000)} min)`);
@@ -515,9 +535,11 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
       // Cache live results
       const result = buildFull(rows, flat, 'live', fetchedAt);
       await writeCache(result);
+      _nextFetchAllowedAt = 0; // succès → plus de cooldown
       return result;
     } catch (err) {
       console.warn('[ratesService] Failed to fetch Hypotheca rates:', err);
+      _nextFetchAllowedAt = Date.now() + FETCH_FAILURE_COOLDOWN_MS;
 
       if (
         staleCache &&

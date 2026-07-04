@@ -2,7 +2,7 @@
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.webp';
 import { loadSiteConfig } from '../config';
-import { Mail, MapPin, Building2, Contact as ContactIcon, Clock, Zap } from '@lucide/astro';
+import { Mail, MapPin, Contact as ContactIcon, Clock, Zap } from '@lucide/astro';
 import PhoneLink from './PhoneLink.astro';
 const config = loadSiteConfig();
 const telephoneHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
@@ -17,46 +17,64 @@ const prenomCourtiere = config.nom.split(' ')[0];
 
       <!-- ======== COLONNE GAUCHE : Présentation & confiance ======== -->
       <div class="fade-up">
-        <h2 class="section-title">Parlons de <br />votre <em>projet</em></h2>
+        <h2 class="section-title">Parlons de <br />ton <em>projet</em></h2>
         <div class="contact-info">
           <p>
-            Gratuit. Sans engagement. À votre heure — en personne, par téléphone ou en appel vidéo.
+            Gratuit. Sans engagement. À ton heure — en personne, par téléphone ou en appel vidéo.
           </p>
           <div class="contact-details">
+            <!-- 1. Bookings — friction minimale -->
+            <div class="contact-item">
+              <div class="contact-icon" aria-hidden="true">📅</div>
+              <a class="contact-link" href={config.calendly_url} target="_blank" rel="noopener">
+                <strong>Réserve un appel de 15 min</strong><br/>
+                <span style="font-size:0.82rem;color:var(--muted);">Choisis ton moment</span>
+              </a>
+            </div>
+
+            <!-- 2. Téléphone + urgent -->
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.55a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
               </div>
-              <PhoneLink
-                variant="text"
-                trackId="tel_click_contact"
-                class="contact-link"
-                aria-label={`Appeler ${config.nom}`}
-              />
-            </div>
-            
-            <div class="contact-item" style="background: rgba(196, 122, 82, 0.08); padding: 0.85rem 1rem; border-radius: 12px; margin: 0.25rem 0 0.5rem; align-items: flex-start;">
-              <div class="contact-icon" style="background: transparent; border: none; width: auto; height: auto; margin-top: 0.1rem;" aria-hidden="true"><Zap size={18} stroke-width={2} style="color: var(--clay)" /></div>
-              <span style="font-size: 0.85rem; line-height: 1.5; color: var(--ink);"><strong>Offre d'achat acceptée ?</strong><br/><span style="color: var(--muted);">Privilégiez le téléphone ou un texto pour une réponse prioritaire.</span></span>
+              <div>
+                <PhoneLink
+                  variant="text"
+                  trackId="tel_click_contact"
+                  class="contact-link"
+                  aria-label={`Appeler ${config.nom}`}
+                />
+                <span style="display:block;font-size:0.8rem;color:var(--muted);">Appelle ou texte</span>
+              </div>
             </div>
 
+            <div class="contact-item" style="background: rgba(196, 122, 82, 0.08); padding: 0.85rem 1rem; border-radius: 12px; margin: 0.25rem 0 0.5rem; align-items: flex-start;">
+              <div class="contact-icon" style="background: transparent; border: none; width: auto; height: auto; margin-top: 0.1rem;" aria-hidden="true"><Zap size={18} stroke-width={2} style="color: var(--clay)" /></div>
+              <span style="font-size: 0.85rem; line-height: 1.5; color: var(--ink);"><strong>Offre d'achat acceptée ?</strong><br/><span style="color: var(--muted);">Appelle-moi ou texte-moi pour une réponse prioritaire.</span></span>
+            </div>
+
+            <!-- 3. Courriel -->
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true"><Mail size={18} stroke-width={1.8} /></div>
               <a class="contact-link" href={courrielHref}><strong>{config.courriel}</strong></a>
             </div>
-            
+
+            <!-- 4. Heures -->
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true"><Clock size={18} stroke-width={1.8} /></div>
               <span style="font-size: 0.85rem; line-height: 1.45;"><strong>Lundi au Vendredi</strong> : 9h00 - 20h00<br/><span style="color: var(--muted);">Week-ends sur rendez-vous</span></span>
             </div>
+
+            <!-- 5. Zone -->
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true"><MapPin size={18} stroke-width={1.8} /></div>
               <span>{config.region}</span>
             </div>
-            <div class="contact-item">
-              <div class="contact-icon" aria-hidden="true"><Building2 size={18} stroke-width={1.8} /></div>
-              <span>{config.organisation}</span>
-            </div>
+
+            <!-- Séparateur visuel -->
+            <div style="border-top:1px solid var(--border);margin:0.5rem 0;"></div>
+
+            <!-- 6. Secondaire : contacts + réseaux -->
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true"><ContactIcon size={18} stroke-width={1.8} /></div>
               <a

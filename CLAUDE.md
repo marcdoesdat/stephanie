@@ -83,9 +83,9 @@ src/
 ## Services (fetch + cache)
 
 ### `src/services/ratesService.ts`
-Scrape les taux depuis hypotheca.ca, cache 6h via Netlify Blobs (fichier en dev).
+Scrape les taux depuis hypotheca.ca, cache 24h via Netlify Blobs (fichier en dev). Après un échec de fetch (ex. 429), cooldown de 15 min pendant lequel le cache périmé (< 30 jours) est servi sans retenter l'upstream.
 
-**Flux :** `hypotheca.ca` → parse HTML → Netlify Blob (store `rates`, TTL 6h) → pages SSR → CDN (`s-maxage=21600, stale-while-revalidate=3600`)
+**Flux :** `hypotheca.ca` → parse HTML → Netlify Blob (store `rates`, TTL 24h) → pages SSR → CDN (`s-maxage=21600, stale-while-revalidate=3600`)
 
 **Règles critiques :**
 - **Jamais de faux taux en fallback.** Si fetch échoue et qu'aucun cache stale < 30 jours n'existe, retourner `null` et afficher un lien vers hypotheca.ca.

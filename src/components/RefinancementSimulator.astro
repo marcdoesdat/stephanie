@@ -962,10 +962,10 @@ const nouveauTauxDefaut =
         amortWarning.style.display = '';
         if (effetAmortMensuel > 0) {
           amortWarnText.textContent = `Avec l'amortissement de ${Math.round(amortNouveauAns)} ans, votre versement réel est ${formatMoney(Math.round(pmtNouveauMensuel))}/mois (${formatMoney(Math.round(effetAmortMensuel))}/mois de moins) — c'est l'allongement, pas le taux. Intérêts totaux : ${formatMoney(Math.round(interetNouveauReel))}.`;
-          amortAvertEl.textContent = `⚠ Amortissement prolongé de ${deltaMois} mois vs le restant actuel`;
+          amortAvertEl.textContent = `⚠️ Amortissement prolongé de ${deltaMois} mois vs le restant actuel`;
         } else {
           amortWarnText.textContent = `Avec l'amortissement de ${Math.round(amortNouveauAns)} ans, votre versement réel grimpe à ${formatMoney(Math.round(pmtNouveauMensuel))}/mois (+${formatMoney(Math.round(-effetAmortMensuel))}/mois) : vous remboursez plus vite. L'économie d'intérêts qui en découle (${formatMoney(Math.round(economieAmort))}) vient du remboursement accéléré, pas du taux.`;
-          amortAvertEl.textContent = `⚠ Amortissement raccourci de ${Math.abs(deltaMois)} mois vs le restant actuel`;
+          amortAvertEl.textContent = `⚠️ Amortissement raccourci de ${Math.abs(deltaMois)} mois vs le restant actuel`;
         }
         amortAvertEl.style.display = '';
       } else {
@@ -1046,7 +1046,7 @@ const nouveauTauxDefaut =
           const surplus = Math.round(nouveauSolde - valeur * 0.80);
           ltvAlertEl.style.display = '';
           ltvAlertText.textContent =
-            `⚠ Le nouveau solde (${formatMoney(Math.round(nouveauSolde))}) représente ${Math.round(ltv * 100)} % de la valeur. `
+            `⚠️ Le nouveau solde (${formatMoney(Math.round(nouveauSolde))}) représente ${Math.round(ltv * 100)} % de la valeur. `
             + `Le refinancement conventionnel est limité à 80 % (max ${formatMoney(Math.max(0, Math.round(valeur * 0.80)))}). `
             + `Réduisez le dégagement et/ou les dettes consolidées d'environ ${formatMoney(Math.max(0, surplus))}.`;
         } else {
@@ -1059,7 +1059,7 @@ const nouveauTauxDefaut =
         equiteAddRow.style.display = 'none';
         ltvAlertEl.style.display = '';
         ltvAlertText.textContent =
-          `⚠ Vous avez demandé un dégagement d'équité ou une consolidation de dettes, `
+          `⚠️ Vous avez demandé un dégagement d'équité ou une consolidation de dettes, `
           + `mais la valeur de la propriété n'est pas renseignée. `
           + `Entrez la valeur actuelle pour vérifier que le nouveau prêt respecte le ratio maximal de 80 %.`;
       } else {

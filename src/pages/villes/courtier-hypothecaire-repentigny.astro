@@ -328,15 +328,34 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <div class="rep-section-tag">FAQ — Repentigny</div>
         <h2 class="rep-section-title">Les questions qu'on me pose le plus souvent.</h2>
 
-        <div class="rep-faq-list">
+        <div class="faq-list">
           {faq.map((item, i) => (
-            <details class="rep-faq-item" name="rep-faq" open={i === 0}>
-              <summary>
-                <span>{item.q}</span>
-                <span class="rep-faq-icon" aria-hidden="true">+</span>
-              </summary>
-              <div class="rep-faq-answer" set:html={item.a} />
-            </details>
+            <div class={`faq-item${i === 0 ? ' open' : ''}`} id={`faq-ville-${i}`}>
+              <h3>
+                <button
+                  class="faq-q"
+                  id={`faq-question-ville-${i}`}
+                  aria-expanded={i === 0 ? 'true' : 'false'}
+                  aria-controls={`faq-answer-ville-${i}`}
+                >
+                  <span class="faq-q-text">{item.q}</span>
+                  <span class="faq-icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </span>
+                </button>
+              </h3>
+              <div
+                class="faq-a"
+                role="region"
+                id={`faq-answer-ville-${i}`}
+                aria-labelledby={`faq-question-ville-${i}`}
+                aria-hidden={i === 0 ? 'false' : 'true'}
+              >
+                <div class="faq-a-inner" set:html={item.a} />
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -714,50 +733,87 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   }
 
   /* ============ FAQ ============ */
-  .rep-faq-list {
+  .faq-list {
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
+    gap: 0.75rem;
   }
-  .rep-faq-item {
+  .faq-item {
     background: var(--white, #fff);
-    border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
-    border-radius: 10px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    transition: all 0.3s ease;
     overflow: hidden;
   }
-  .rep-faq-item summary {
-    list-style: none;
+  .faq-item:hover {
+    border-color: var(--clay);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+  }
+  .faq-item.open {
+    border-color: var(--clay);
+  }
+  .faq-item h3 {
+    margin: 0;
+    padding: 0;
+  }
+  button.faq-q {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    padding: 1.15rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     cursor: pointer;
-    padding: 1.05rem 1.3rem;
     font-weight: 600;
-    font-size: 1rem;
-    color: var(--ink, #1a1a1a);
+    font-size: 1.05rem;
+  }
+  .faq-icon {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--sand);
+    color: var(--clay);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 1.5rem;
   }
-  .rep-faq-item summary::-webkit-details-marker {
-    display: none;
+  .faq-item:hover .faq-icon {
+    background: rgba(196, 122, 82, 0.1);
   }
-  .rep-faq-icon {
-    color: var(--clay, #c47a52);
-    font-size: 1.3rem;
-    line-height: 1;
-    transition: transform 0.2s ease;
-    flex: 0 0 auto;
-  }
-  .rep-faq-item[open] .rep-faq-icon {
+  .faq-item.open .faq-icon {
+    background: var(--clay);
+    color: #fff;
     transform: rotate(45deg);
   }
-  .rep-faq-answer {
-    padding: 0 1.3rem 1.2rem;
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: var(--ink-soft, #4a4a4a);
+  .faq-a {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
   }
-  .rep-faq-answer :global(strong) {
-    color: var(--ink, #1a1a1a);
+  .faq-item.open .faq-a {
+    grid-template-rows: 1fr;
+  }
+  .faq-a-inner {
+    overflow: hidden;
+    padding: 0 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+  .faq-item.open .faq-a-inner {
+    padding: 0 1.5rem 1.25rem 1.5rem;
+  }
+  .faq-a-inner :global(strong) {
+    color: var(--ink);
   }
 
   /* ============ CTA FINAL ============ */
@@ -806,3 +862,39 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     }
   }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    document.querySelectorAll('.faq-q').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        if (!item) return;
+
+        const isOpen = item.classList.contains('open');
+
+        document.querySelectorAll('.faq-item.open').forEach((openItem) => {
+          openItem.classList.remove('open');
+          const ob = openItem.querySelector('.faq-q');
+          const oa = openItem.querySelector('.faq-a');
+          if (ob) ob.setAttribute('aria-expanded', 'false');
+          if (oa) oa.setAttribute('aria-hidden', 'true');
+        });
+
+        if (!isOpen) {
+          item.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+          const ans = item.querySelector('.faq-a');
+          if (ans) ans.setAttribute('aria-hidden', 'false');
+
+          if (!reduceMotion) {
+            setTimeout(() => {
+              item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 150);
+          }
+        }
+      });
+    });
+  });
+</script>
