@@ -1,6 +1,6 @@
 (function () {
   var STORAGE_KEY = 'sw_consent_v1';
-  var ADS_ID = 'AW-18126348856';
+  var GTAG_ID = 'AW-18126348856';
 
   var banner = document.getElementById('consent-banner');
   if (!banner) return;
@@ -16,16 +16,16 @@
     return s;
   }
 
-  function loadAds() {
-    if (window.__ads_loaded) return;
-    window.__ads_loaded = true;
-    loadScript('https://www.googletagmanager.com/gtag/js?id=' + ADS_ID);
+  function loadGtag() {
+    if (window.__gtag_loaded) return;
+    window.__gtag_loaded = true;
+    loadScript('https://www.googletagmanager.com/gtag/js?id=' + GTAG_ID);
     loadScript('/js/gtag-init.js');
   }
 
   function applyConsent(state) {
     if (state === 'accepted') {
-      loadAds();
+      loadGtag();
     }
   }
 

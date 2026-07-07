@@ -50,7 +50,7 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       data-domains={config.site_url.replace(/^https?:\/\//, '')}
     ></script>
 
-    <!-- Bannière de consentement Loi 25 : gère le chargement conditionnel de Google Ads -->
+    <!-- Bannière de consentement Loi 25 : gère le chargement conditionnel de Google Ads / Google Analytics (GA4) -->
     <script is:inline defer src="/js/consent.js"></script>
 
     <!-- Critical CSS : fondations above-the-fold (variables, reset, nav, hero).
