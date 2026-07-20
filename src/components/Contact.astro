@@ -854,7 +854,12 @@ const prenomCourtiere = config.nom.split(' ')[0];
 
         if (group) {
           (state as unknown as Record<string, string>)[group] = value;
-          if (fields[group]) fields[group].value = value;
+          // Le champ envoyé à Netlify inclut la question posée (ex. "q1" et "q2" sont
+          // partagés entre plusieurs parcours — sans ça, le courriel de notification
+          // affiche juste "q1: <réponse>" au lieu du contexte de la question).
+          const stepEl = card.closest<HTMLElement>('.quiz-step');
+          const questionText = stepEl?.querySelector<HTMLElement>('.quiz-q')?.textContent?.trim() || '';
+          if (fields[group]) fields[group].value = questionText ? `${questionText} → ${value}` : value;
           // Compat champ "situation"
           if (group === 'parcours' && fields.situation) fields.situation.value = value;
         }
@@ -974,7 +979,10 @@ const prenomCourtiere = config.nom.split(' ')[0];
         form.style.display = 'none';
         const escapeWrap = root.querySelector<HTMLElement>('.quiz-escape');
         if (escapeWrap) escapeWrap.style.display = 'none';
-        if (successEl) successEl.style.display = 'block';
+        if (successEl) {
+          successEl.style.display = 'block';
+          successEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       } catch {
         if (errEl) {
           errEl.textContent = "Une erreur de connexion est survenue. Veuillez vérifier votre réseau et réessayer.";
