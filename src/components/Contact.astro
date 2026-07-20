@@ -569,6 +569,9 @@ const prenomCourtiere = config.nom.split(' ')[0];
           <a href={config.messenger_url} target="_blank" rel="noopener noreferrer" style="color:var(--forest);font-weight:600;">
             💬 Ou écrire sur Messenger maintenant →
           </a>
+          <div style="margin-top:1.1rem;">
+            <button type="button" class="quiz-escape-link" id="quiz-restart-btn">↺ Faire une nouvelle demande</button>
+          </div>
         </div>
 
         <noscript>
@@ -732,8 +735,11 @@ const prenomCourtiere = config.nom.split(' ')[0];
     const backBtn = root.querySelector<HTMLButtonElement>('[data-quiz-back]');
     const valueEl = root.querySelector<HTMLElement>('[data-quiz-value]');
     const escapeBtn = root.querySelector<HTMLButtonElement>('[data-quiz-escape]');
+    const escapeWrap = root.querySelector<HTMLElement>('.quiz-escape');
     const successEl = document.getElementById('form-success');
     const errEl = document.getElementById('form-error');
+    const restartBtn = document.getElementById('quiz-restart-btn');
+    const submitBtnDefaultHtml = document.getElementById('contact-submit-btn')?.innerHTML ?? '';
 
     const fields: Record<string, HTMLInputElement> = {};
     root.querySelectorAll<HTMLInputElement>('[data-quiz-field]').forEach((input) => {
@@ -965,7 +971,11 @@ const prenomCourtiere = config.nom.split(' ')[0];
       const formData = new FormData(form);
       const params = new URLSearchParams();
       formData.forEach((value, key) => {
-        params.append(key, typeof value === 'string' ? value : value.name);
+        const strValue = typeof value === 'string' ? value : value.name;
+        // Omet les champs facultatifs laissés vides (ex. pa_timing/pa_revenus/pa_mise
+        // hors du parcours Premier achat dédié) pour ne pas polluer le courriel de notification.
+        if (strValue === '' && key !== 'form-name' && key !== 'bot-field') return;
+        params.append(key, strValue);
       });
 
       try {
@@ -977,7 +987,6 @@ const prenomCourtiere = config.nom.split(' ')[0];
         if (!response.ok) throw new Error('Erreur serveur Netlify');
         clearPersist();
         form.style.display = 'none';
-        const escapeWrap = root.querySelector<HTMLElement>('.quiz-escape');
         if (escapeWrap) escapeWrap.style.display = 'none';
         if (successEl) {
           successEl.style.display = 'block';
@@ -992,6 +1001,52 @@ const prenomCourtiere = config.nom.split(' ')[0];
         btn.disabled = false;
       }
     });
+
+    // --- Recommencer (depuis l'écran de confirmation) ---
+    // Permet au client de soumettre une nouvelle demande sans recharger la page.
+    function resetQuiz() {
+      if (!form) return;
+      form.reset();
+      Object.values(fields).forEach((input) => { input.value = ''; });
+
+      state.parcours = '';
+      state.q1 = '';
+      state.q2 = '';
+      state.delai = '';
+      state.prefcontact = 'Téléphone';
+      state.pa_timing = '';
+      state.pa_revenus = '';
+      state.pa_mise = '';
+      if (fields.prefcontact) fields.prefcontact.value = state.prefcontact;
+
+      root.querySelectorAll<HTMLButtonElement>('.quiz-card.selected').forEach((c) => c.classList.remove('selected'));
+      root.querySelectorAll<HTMLButtonElement>('.quiz-pref').forEach((b) => {
+        const isDefault = b.dataset.pref === state.prefcontact;
+        b.classList.toggle('active', isDefault);
+        b.setAttribute('aria-pressed', String(isDefault));
+      });
+      updateTelRequirement(state.prefcontact);
+
+      history.length = 0;
+      history.push(1);
+      clearPersist();
+
+      if (errEl) errEl.style.display = 'none';
+      if (successEl) successEl.style.display = 'none';
+      if (escapeWrap) escapeWrap.style.display = '';
+      form.style.display = '';
+
+      const submitBtn = document.getElementById('contact-submit-btn') as HTMLButtonElement | null;
+      if (submitBtn) {
+        submitBtn.innerHTML = submitBtnDefaultHtml;
+        submitBtn.disabled = false;
+      }
+
+      showStep(1, false);
+      root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    restartBtn?.addEventListener('click', resetQuiz);
 
     // --- Pré-sélection via paramètre URL (?parcours=premier-achat etc.) ---
     // Permet à une sous-page service d'envoyer le visiteur directement à l'étape 2.
