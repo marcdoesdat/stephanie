@@ -20,6 +20,33 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
 <!doctype html>
 <html lang="fr-CA">
   <head>
+    <!-- Google Consent Mode v2 — DOIT précéder GTM.
+         Défaut : tout refusé (Loi 25). Si le visiteur a déjà accepté lors d'une
+         visite précédente (localStorage sw_consent_v1, géré par /js/consent.js),
+         le défaut passe à « granted » avant même que GTM ne démarre.
+         Les clics Accepter/Refuser envoient ensuite un consent update (consent.js). -->
+    <script is:inline>
+      (function () {
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+
+        var granted = false;
+        try {
+          var raw = localStorage.getItem('sw_consent_v1');
+          if (raw) granted = JSON.parse(raw).state === 'accepted';
+        } catch (e) {}
+
+        var v = granted ? 'granted' : 'denied';
+        window.gtag('consent', 'default', {
+          ad_storage: v,
+          ad_user_data: v,
+          ad_personalization: v,
+          analytics_storage: v
+        });
+        if (!granted) window.gtag('set', 'ads_data_redaction', true);
+      })();
+    </script>
+
     <!-- Google Tag Manager -->
     <script is:inline>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -104,10 +131,9 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
     </style>
   </head>
   <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P9NJL58S"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
+    <!-- Pas d'iframe GTM <noscript> : sans JavaScript, ni la bannière de
+         consentement ni le Consent Mode ne fonctionnent — tracker ces
+         visiteurs serait par définition sans consentement (Loi 25). -->
 
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
     <slot />
