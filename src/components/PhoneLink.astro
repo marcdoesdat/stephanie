@@ -49,10 +49,9 @@ const {
     </button>
     {config.calendly_url && (
       <a
-        href={config.calendly_url}
-        target="_blank"
-        rel="noopener"
+        href="/rendez-vous"
         class="phone-popover-calendly"
+        data-umami-event="cta_booking_phone_popover"
       >
         ou réservez en ligne →
       </a>

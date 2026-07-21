@@ -137,7 +137,7 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
 
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
     <slot />
-    <a href={config.calendly_url} class="mobile-sticky-cta" target="_blank" rel="noopener" aria-label="Prendre rendez-vous">
+    <a href="/rendez-vous" class="mobile-sticky-cta" data-umami-event="cta_booking_sticky" aria-label="Prendre rendez-vous">
       <span class="sticky-label">Prendre rendez-vous</span>
     </a>
     <ConsentBanner />
