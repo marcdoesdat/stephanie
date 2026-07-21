@@ -2,13 +2,22 @@
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.webp';
 import { loadSiteConfig } from '../config';
+import type { GoogleReviews } from '../services/reviewsService';
+
+interface Props {
+  baseRate?: number | null;
+  reviews?: GoogleReviews | null;
+}
 
 const config = loadSiteConfig();
-const { baseRate = null } = Astro.props;
+const { baseRate = null, reviews = null } = Astro.props;
 function fmtRate(val: number | null | undefined): string {
   if (val == null) return '—';
   return val.toFixed(2).replace('.', ',') + ' %*';
 }
+
+// Note Google réelle (ex. « 4,9 ») — remplace le « 5/5 » codé en dur
+const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null;
 ---
 
 <section id="hero">
@@ -98,10 +107,17 @@ function fmtRate(val: number | null | undefined): string {
           <div class="ribbon-card ribbon-card--logo">
             <img src="/images/hypotheca-couleur.svg" alt="Hypotheca" width="76" height="76" style="display:block;" loading="lazy" />
           </div>
-          <div class="ribbon-card">
-            <span class="card-sm">Satisfaction</span>
-            <span class="card-val">⭐ 5&nbsp;/&nbsp;5</span>
-          </div>
+          {ratingLabel ? (
+            <a class="ribbon-card ribbon-card--reviews" href="#temoignages" aria-label={`${ratingLabel} sur 5 — voir les ${reviews!.totalReviews} avis Google`}>
+              <span class="card-sm">{reviews!.totalReviews} avis Google</span>
+              <span class="card-val">⭐ {ratingLabel}&nbsp;/&nbsp;5</span>
+            </a>
+          ) : (
+            <div class="ribbon-card">
+              <span class="card-sm">Satisfaction</span>
+              <span class="card-val">⭐ 5&nbsp;/&nbsp;5</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -294,6 +310,18 @@ function fmtRate(val: number | null | undefined): string {
   .ribbon-card--logo {
     flex: 0 0 auto;
     padding: 0.15rem 0.5rem;
+  }
+
+  /* Carte avis : cliquable vers #temoignages, sans changer l'apparence du ruban */
+  a.ribbon-card--reviews {
+    text-decoration: none;
+    color: inherit;
+    border-radius: 12px;
+    transition: background 0.2s;
+  }
+  a.ribbon-card--reviews:hover,
+  a.ribbon-card--reviews:focus-visible {
+    background: rgba(196, 122, 82, 0.1);
   }
 
   @media (max-width: 900px) {
