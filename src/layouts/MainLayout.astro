@@ -158,7 +158,6 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
         function checkConverted() {
           if (
             document.body.dataset.outilsConverted === 'true' ||
-            localStorage.getItem('sim_unlocked') === '1' ||
             localStorage.getItem('calc_email_sent') === '1' ||
             localStorage.getItem('penalite_email_sent') === '1'
           ) {
