@@ -32,7 +32,7 @@ const prenom = config.nom.split(' ')[0] ?? 'Stéphanie';
         </p>
 
         <div class="merci-actions">
-          <a href={config.calendly_url} target="_blank" rel="noopener" class="btn-cta">
+          <a href="/rendez-vous" class="btn-cta" data-umami-event="cta_booking_merci">
             <span>Réserver un appel tout de suite</span>
           </a>
           {config.messenger_url && (

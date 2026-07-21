@@ -14,6 +14,13 @@
   "calendly_url": "https://outlook.office.com/book/rdv-StephanieWeyman@hypotheca.ca/",
   "hypotheca_profile_url": "https://hypotheca.ca/sweyman",
   "google_place_id": "ChIJnde-9JoJSgYR6DgI66_nUl4",
+  "horaires": {
+    "semaine_jours": "Lundi au Vendredi",
+    "semaine_heures": "9h00 - 20h00",
+    "weekend": "Week-ends sur rendez-vous",
+    "opens": "09:00",
+    "closes": "20:00"
+  },
   "meta_title": "Courtière Hypothécaire Repentigny | Stéphanie Weyman",
   "meta_description": "Stéphanie Weyman, courtière hypothécaire au service de Repentigny, Lanaudière et la Rive-Nord. Plus de 20 prêteurs comparés. Première rencontre gratuite. Achat, renouvellement, refinancement."
 }

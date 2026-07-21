@@ -20,7 +20,9 @@ interface Props {
 }
 
 const {
-  titre = 'Votre hypothèque arrive à échéance&nbsp;?',
+  // Espace insécable littérale (U+00A0) : le texte passe par l'échappement Astro,
+  // une entité HTML « &nbsp; » s'afficherait telle quelle.
+  titre = 'Votre hypothèque arrive à échéance ?',
   texte = "Le meilleur moment pour magasiner se situe 4 à 6 mois avant l'échéance. Laissez vos coordonnées : je vous rappelle personnellement au bon moment.",
   cta = 'Être rappelé·e au bon moment',
 } = Astro.props;
@@ -31,7 +33,7 @@ const {
     <h2 class="rappel-cta-title">{titre}</h2>
     <p class="rappel-cta-text">{texte}</p>
   </div>
-  <a href="/rappel" class="btn-cta rappel-cta-btn">
+  <a href="/rappel" class="btn-cta rappel-cta-btn" data-umami-event="cta_rappel">
     <span>{cta}</span>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
   </a>

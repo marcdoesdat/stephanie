@@ -1,0 +1,115 @@
+---
+export const prerender = true;
+
+import MainLayout from '../layouts/MainLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import MessengerBtn from '../components/MessengerBtn.astro';
+import { loadSiteConfig } from '../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+const telephoneHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
+---
+
+<MainLayout
+  title="Prendre rendez-vous — consultation gratuite"
+  description="Réservez un appel de 15 minutes avec Stéphanie Weyman, courtière hypothécaire. Gratuit, sans engagement — choisissez le moment qui vous convient, en ligne."
+>
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+    <section class="rdv-section">
+      <div class="section-inner rdv-inner">
+
+        <div class="rdv-intro fade-up">
+          <div class="section-tag">Consultation gratuite</div>
+          <h1 class="section-title">Réservez votre <em>appel de 15 min</em></h1>
+          <p class="section-sub">
+            Choisissez le moment qui vous convient — {prenom} vous rappelle pour parler de
+            votre projet. Gratuit, sans engagement, sans document à préparer.
+          </p>
+        </div>
+
+        <div class="rdv-booking-card">
+          <iframe
+            src={config.calendly_url}
+            title={`Calendrier de réservation de ${config.nom}`}
+            class="rdv-iframe"
+            loading="eager"
+          ></iframe>
+        </div>
+
+        <p class="rdv-fallback">
+          Le calendrier ne s'affiche pas&nbsp;?
+          <a
+            href={config.calendly_url}
+            target="_blank"
+            rel="noopener"
+            data-umami-event="cta_booking_fallback"
+          >Ouvrez-le dans un nouvel onglet →</a><br />
+          Vous pouvez aussi appeler ou texter directement&nbsp;:
+          <a href={telephoneHref} data-umami-event="tel_click_rdv">{config.telephone}</a>
+        </p>
+
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<style>
+  .rdv-section {
+    background: var(--sand);
+    padding: 7rem 1.5rem 4rem;
+  }
+  .rdv-inner {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  .rdv-intro {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .rdv-intro .section-sub {
+    margin: 1rem auto 0;
+  }
+
+  .rdv-booking-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+  .rdv-iframe {
+    display: block;
+    width: 100%;
+    height: min(1150px, calc(100vh - 120px));
+    min-height: 640px;
+    border: 0;
+  }
+
+  .rdv-fallback {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.8;
+    margin-top: 1.25rem;
+  }
+  .rdv-fallback a {
+    color: var(--clay);
+    font-weight: 600;
+  }
+
+  @media (max-width: 600px) {
+    .rdv-section {
+      padding: 6rem 0.75rem 3rem;
+    }
+    .rdv-iframe {
+      height: calc(100vh - 90px);
+    }
+  }
+</style>

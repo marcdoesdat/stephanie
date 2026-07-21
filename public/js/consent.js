@@ -23,7 +23,24 @@
     loadScript('/js/gtag-init.js');
   }
 
+  // Consent Mode v2 : signale le choix à GTM/gtag. Les défauts « denied »
+  // sont posés avant GTM dans le <head> (MainLayout) ; ici on ne fait que
+  // les mettre à jour quand le visiteur clique Accepter ou Refuser.
+  function updateConsentMode(state) {
+    window.dataLayer = window.dataLayer || [];
+    var gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    var v = state === 'accepted' ? 'granted' : 'denied';
+    gtag('consent', 'update', {
+      ad_storage: v,
+      ad_user_data: v,
+      ad_personalization: v,
+      analytics_storage: v
+    });
+    gtag('set', 'ads_data_redaction', state !== 'accepted');
+  }
+
   function applyConsent(state) {
+    updateConsentMode(state);
     if (state === 'accepted') {
       loadGtag();
     }
@@ -66,6 +83,9 @@
     refuseBtn.addEventListener('click', function () {
       save('refused');
       hideBanner();
+      // Cas « Gérer mes cookies » après un accord antérieur : les tags déjà
+      // chargés doivent repasser en denied immédiatement.
+      applyConsent('refused');
     });
   }
 

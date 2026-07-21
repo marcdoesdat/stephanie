@@ -16,6 +16,13 @@ export interface SiteConfig {
   calendly_url?: string;       // Optionnel
   hypotheca_profile_url?: string; // Profil officiel sur hypotheca.ca
   google_place_id?: string;    // Google Place ID pour les avis (Places API New)
+  horaires: {
+    semaine_jours: string;     // Affichage : "Lundi au Vendredi"
+    semaine_heures: string;    // Affichage : "9h00 - 20h00"
+    weekend: string;           // Affichage : "Week-ends sur rendez-vous"
+    opens: string;             // JSON-LD (HH:MM) : ouverture en semaine
+    closes: string;            // JSON-LD (HH:MM) : fermeture en semaine
+  };
   meta_title: string;
   meta_description: string;
 }

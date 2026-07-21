@@ -2,13 +2,22 @@
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.webp';
 import { loadSiteConfig } from '../config';
+import type { GoogleReviews } from '../services/reviewsService';
+
+interface Props {
+  baseRate?: number | null;
+  reviews?: GoogleReviews | null;
+}
 
 const config = loadSiteConfig();
-const { baseRate = null } = Astro.props;
+const { baseRate = null, reviews = null } = Astro.props;
 function fmtRate(val: number | null | undefined): string {
   if (val == null) return '—';
   return val.toFixed(2).replace('.', ',') + ' %*';
 }
+
+// Note Google réelle (ex. « 4,9 ») — remplace le « 5/5 » codé en dur
+const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null;
 ---
 
 <section id="hero">
@@ -24,12 +33,21 @@ function fmtRate(val: number | null | undefined): string {
       </h1>
       
       <p>
-        Je magasine parmi une panoplie de prêteurs à ta place et je t'explique tout — sans jargon,
-        sans pression. On parle de ton projet quand t'es prêt.
+        Je magasine parmi une panoplie de prêteurs à votre place et je vous explique tout — sans jargon,
+        sans pression. On parle de votre projet quand vous êtes prêt·e.
       </p>
 
       <div class="hero-btns">
-        <a href="/outils#simulateur" class="btn-tools">Calcule ta capacité d'emprunt — gratuit</a>
+        <a
+          href="/rendez-vous"
+          class="btn-tools"
+          data-umami-event="cta_booking_hero"
+        >Réserver un appel de 15 min</a>
+        <a
+          href="/outils#simulateur"
+          class="btn-tools btn-tools--ghost"
+          data-umami-event="cta_outils_hero"
+        >Calculer ma capacité d'emprunt</a>
       </div>
       
       <div class="hero-stats scale-in">
@@ -40,7 +58,7 @@ function fmtRate(val: number | null | undefined): string {
         <div class="stat-item">
           <div class="stat-num">0&nbsp;$</div>
           <div class="stat-label">
-            Sans frais de courtage
+            Frais de courtage
             <span class="fee-tooltip-wrap">
               <button
                 class="fee-info-btn"
@@ -87,10 +105,17 @@ function fmtRate(val: number | null | undefined): string {
           <div class="ribbon-card ribbon-card--logo">
             <img src="/images/hypotheca-couleur.svg" alt="Hypotheca" width="76" height="76" style="display:block;" loading="lazy" />
           </div>
-          <div class="ribbon-card">
-            <span class="card-sm">Satisfaction</span>
-            <span class="card-val">⭐ 5&nbsp;/&nbsp;5</span>
-          </div>
+          {ratingLabel ? (
+            <a class="ribbon-card ribbon-card--reviews" href="#temoignages" aria-label={`${ratingLabel} sur 5 — voir les ${reviews!.totalReviews} avis Google`}>
+              <span class="card-sm">{reviews!.totalReviews} avis Google</span>
+              <span class="card-val">⭐ {ratingLabel}&nbsp;/&nbsp;5</span>
+            </a>
+          ) : (
+            <div class="ribbon-card">
+              <span class="card-sm">Satisfaction</span>
+              <span class="card-val">⭐ 5&nbsp;/&nbsp;5</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -113,7 +138,8 @@ function fmtRate(val: number | null | undefined): string {
   .hero-btns {
     display: flex;
     flex-wrap: wrap;
-    max-width: 430px;
+    gap: 0.75rem;
+    max-width: 520px;
   }
 
   .hero-btns .btn-tools {
@@ -144,6 +170,23 @@ function fmtRate(val: number | null | undefined): string {
   .hero-btns .btn-tools:active {
     transform: translate(4px, 4px);
     box-shadow: 1px 1px 0 var(--clay);
+  }
+
+  /* CTA secondaire (outils) : version outline, hiérarchie visuelle sous le booking */
+  .hero-btns .btn-tools--ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--ink);
+    box-shadow: none;
+  }
+  .hero-btns .btn-tools--ghost:hover {
+    background: rgba(0, 0, 0, 0.05);
+    box-shadow: none;
+    transform: translate(0, 0);
+  }
+  .hero-btns .btn-tools--ghost:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
   }
 
   .hero-badge::before {
@@ -265,6 +308,18 @@ function fmtRate(val: number | null | undefined): string {
   .ribbon-card--logo {
     flex: 0 0 auto;
     padding: 0.15rem 0.5rem;
+  }
+
+  /* Carte avis : cliquable vers #temoignages, sans changer l'apparence du ruban */
+  a.ribbon-card--reviews {
+    text-decoration: none;
+    color: inherit;
+    border-radius: 12px;
+    transition: background 0.2s;
+  }
+  a.ribbon-card--reviews:hover,
+  a.ribbon-card--reviews:focus-visible {
+    background: rgba(196, 122, 82, 0.1);
   }
 
   @media (max-width: 900px) {

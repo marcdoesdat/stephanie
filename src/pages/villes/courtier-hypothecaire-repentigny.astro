@@ -10,6 +10,7 @@ import { Image } from 'astro:assets';
 import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
+import RappelCTA from '../../components/RappelCTA.astro';
 
 const config = loadSiteConfig();
 const prenom = config.nom.split(' ')[0];
@@ -132,7 +133,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <div class="rep-eyebrow">Repentigny · Lanaudière</div>
             <h1 class="rep-h1">Courtière hypothécaire à Repentigny</h1>
             <p class="rep-subtitle">
-              Pré-approbation rapide. Accès à 20+ prêteurs. 0&nbsp;$ sans frais de courtage<span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>.
+              Pré-approbation rapide. Accès à 20+ prêteurs. Frais de courtage&nbsp;: 0&nbsp;$<span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>.
             </p>
 
             <ul class="rep-trust-list" aria-label="Garanties de service">
@@ -223,6 +224,17 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       </div>
     </section>
 
+    <!-- ============ RAPPEL RENOUVELLEMENT ============ -->
+    <section class="rep-rappel" aria-label="Rappel de renouvellement">
+      <div class="rep-inner">
+        <RappelCTA
+          titre="Votre hypothèque arrive à échéance ?"
+          texte="Le meilleur moment pour magasiner se situe 4 à 6 mois avant la fin de votre terme — avant que votre banque n'envoie son offre de renouvellement. Laissez vos coordonnées : je vous rappelle personnellement au bon moment."
+          cta="Être rappelé·e au bon moment"
+        />
+      </div>
+    </section>
+
     <!-- ============ SECTION 3 — MARCHÉ LOCAL ============ -->
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
@@ -270,12 +282,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <div class="rep-compare-cards">
           <div class="rep-compare-card rep-compare-card--bad">
             <div class="rep-compare-card-icon" aria-hidden="true">🏦</div>
-            <h3 class="rep-compare-card-title">Avec ta banque</h3>
+            <h3 class="rep-compare-card-title">Avec votre banque</h3>
             <ul class="rep-compare-list">
               <li><span class="rep-x" aria-hidden="true">✕</span> Une seule offre : la leur</li>
-              <li><span class="rep-x" aria-hidden="true">✕</span> Le conseiller travaille pour la banque, pas pour toi</li>
+              <li><span class="rep-x" aria-hidden="true">✕</span> Le conseiller travaille pour la banque, pas pour vous</li>
               <li><span class="rep-x" aria-hidden="true">✕</span> Heures d'ouverture restrictives</li>
-              <li><span class="rep-x" aria-hidden="true">✕</span> Pas de magasinage de taux pour toi</li>
+              <li><span class="rep-x" aria-hidden="true">✕</span> Pas de magasinage de taux pour vous</li>
               <li><span class="rep-x" aria-hidden="true">✕</span> Un refus = fin de la discussion</li>
             </ul>
           </div>
@@ -284,13 +296,13 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <div class="rep-compare-card-icon" aria-hidden="true">🤝</div>
             <h3 class="rep-compare-card-title">Avec {prenom} Weyman</h3>
             <ul class="rep-compare-list">
-              <li><span class="rep-check" aria-hidden="true">✓</span> 20+ prêteurs comparés pour toi</li>
-              <li><span class="rep-check" aria-hidden="true">✓</span> Je travaille pour <strong>toi,</strong> pas pour un prêteur</li>
+              <li><span class="rep-check" aria-hidden="true">✓</span> 20+ prêteurs comparés pour vous</li>
+              <li><span class="rep-check" aria-hidden="true">✓</span> Je travaille pour <strong>vous,</strong> pas pour un prêteur</li>
               <li><span class="rep-check" aria-hidden="true">✓</span> Dispo soirs et fins de semaine</li>
               <li><span class="rep-check" aria-hidden="true">✓</span> Je négocie les taux et les conditions</li>
               <li><span class="rep-check" aria-hidden="true">✓</span> Un refus bancaire ? J'ai des solutions alternatives</li>
             </ul>
-            <p class="rep-compare-bonus">💰 <strong>Service gratuit</strong> — rémunérée par le prêteur, pas par toi.</p>
+            <p class="rep-compare-bonus">💰 <strong>Service gratuit</strong> — rémunérée par le prêteur, pas par vous.</p>
           </div>
         </div>
       </div>
