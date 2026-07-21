@@ -29,7 +29,18 @@ function fmtRate(val: number | null | undefined): string {
       </p>
 
       <div class="hero-btns">
-        <a href="/outils#simulateur" class="btn-tools">Calcule ta capacité d'emprunt — gratuit</a>
+        <a
+          href={config.calendly_url}
+          class="btn-tools"
+          target="_blank"
+          rel="noopener"
+          data-umami-event="cta_booking_hero"
+        >Réserver un appel de 15 min</a>
+        <a
+          href="/outils#simulateur"
+          class="btn-tools btn-tools--ghost"
+          data-umami-event="cta_outils_hero"
+        >Calculer ma capacité d'emprunt</a>
       </div>
       
       <div class="hero-stats scale-in">
@@ -113,7 +124,8 @@ function fmtRate(val: number | null | undefined): string {
   .hero-btns {
     display: flex;
     flex-wrap: wrap;
-    max-width: 430px;
+    gap: 0.75rem;
+    max-width: 520px;
   }
 
   .hero-btns .btn-tools {
@@ -144,6 +156,23 @@ function fmtRate(val: number | null | undefined): string {
   .hero-btns .btn-tools:active {
     transform: translate(4px, 4px);
     box-shadow: 1px 1px 0 var(--clay);
+  }
+
+  /* CTA secondaire (outils) : version outline, hiérarchie visuelle sous le booking */
+  .hero-btns .btn-tools--ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--ink);
+    box-shadow: none;
+  }
+  .hero-btns .btn-tools--ghost:hover {
+    background: rgba(0, 0, 0, 0.05);
+    box-shadow: none;
+    transform: translate(0, 0);
+  }
+  .hero-btns .btn-tools--ghost:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
   }
 
   .hero-badge::before {
