@@ -249,9 +249,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
           </button>
 
           <div class="penalite-capture" id="pen-capture" style="display:none;">
-            <form name="penalite-lead" method="POST" action="/merci" data-netlify="true" data-netlify-honeypot="bot-field" class="penalite-capture-form" enctype="multipart/form-data">
-              <input type="hidden" name="form-name" value="penalite-lead" />
-              <input type="file" name="screenshot" id="pen-screenshot" hidden />
+            <form name="penalite-lead" class="penalite-capture-form">
               <p class="sr-only"><label>Ne remplissez pas ce champ <input name="bot-field" /></label></p>
               <div class="penalite-capture-label">Recevoir ce rapport par courriel ou texto</div>
               <p class="penalite-capture-note">{prenom} vous enverra personnellement votre rapport détaillé.</p>
@@ -363,6 +361,9 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     const capPenalite = document.getElementById('pen-cap-penalite') as HTMLInputElement;
     const capConsent = document.getElementById('pen-cap-consent') as HTMLInputElement;
     const capSubmit = document.getElementById('pen-cap-submit') as HTMLButtonElement;
+    const capPrenomEl = document.getElementById('pen-cap-prenom') as HTMLInputElement;
+    const capEmailEl = document.getElementById('pen-cap-email') as HTMLInputElement;
+    const capTelEl = document.getElementById('pen-cap-tel') as HTMLInputElement;
 
     // Consent checkbox enables submit button
     capConsent.addEventListener('change', () => {
@@ -617,25 +618,21 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     window.setTimeout(() => { fadeEls.forEach((el) => el.classList.add('visible')); }, 1000);
 
     const captureForm = document.querySelector('.penalite-capture-form') as HTMLFormElement;
-    let penaliteScreenshotCaptured = false;
+    const capMsgEl = document.getElementById('pen-cap-msg') as HTMLElement | null;
     if (captureForm) {
       captureForm.addEventListener('submit', async (e) => {
-        if (penaliteScreenshotCaptured) {
-          document.body.dataset.outilsConverted = 'true';
-          localStorage.setItem('penalite_email_sent', '1');
-          return;
-        }
-
         e.preventDefault();
+        if (!captureForm.reportValidity()) return;
+
         const submitBtn = captureForm.querySelector('button[type="submit"]') as HTMLButtonElement;
         const prevText = submitBtn.textContent;
-        submitBtn.textContent = 'Capture...';
+        submitBtn.textContent = 'Envoi...';
         submitBtn.disabled = true;
+        if (capMsgEl) capMsgEl.style.display = 'none';
 
+        let screenshotBase64 = '';
         const targetEl = document.querySelector('.section-inner') as HTMLElement;
-        const screenshotInput = document.getElementById('pen-screenshot') as HTMLInputElement;
-
-        if (targetEl && screenshotInput) {
+        if (targetEl) {
           try {
             const { default: html2canvas } = await import('html2canvas');
             const canvas = await html2canvas(targetEl, {
@@ -644,26 +641,51 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
               useCORS: true,
               logging: false,
             });
-            await new Promise<void>((resolve) => {
-              canvas.toBlob((blob) => {
-                if (blob) {
-                  const file = new File([blob], 'penalite-screenshot.png', { type: 'image/png' });
-                  const dt = new DataTransfer();
-                  dt.items.add(file);
-                  screenshotInput.files = dt.files;
-                }
-                resolve();
-              }, 'image/png', 0.9);
+            const blob = await new Promise<Blob | null>((resolve) => {
+              canvas.toBlob((b) => resolve(b), 'image/png', 0.9);
             });
+            if (blob) {
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+              screenshotBase64 = dataUrl.split(',')[1] || '';
+            }
           } catch {
             // Ne pas bloquer si la capture échoue
           }
         }
 
-        penaliteScreenshotCaptured = true;
-        submitBtn.textContent = prevText;
-        submitBtn.disabled = false;
-        captureForm.requestSubmit();
+        try {
+          const res = await fetch('/api/penalite-submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prenom: capPrenomEl.value.trim(),
+              email: capEmailEl.value.trim(),
+              telephone: capTelEl.value.trim(),
+              scenario: capScenario.value,
+              penalite: capPenalite.value,
+              consentement: capConsent.checked,
+              screenshotBase64,
+            }),
+          });
+          if (!res.ok) throw new Error('Erreur ' + res.status);
+
+          document.body.dataset.outilsConverted = 'true';
+          localStorage.setItem('penalite_email_sent', '1');
+          window.location.href = '/merci';
+        } catch {
+          if (capMsgEl) {
+            capMsgEl.textContent = "Une erreur est survenue lors de l'envoi. Veuillez réessayer.";
+            capMsgEl.style.display = '';
+            capMsgEl.style.color = '#c0392b';
+          }
+          submitBtn.textContent = prevText;
+          submitBtn.disabled = false;
+        }
       });
     }
   });

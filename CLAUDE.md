@@ -55,7 +55,13 @@ src/
 | `/confidentialite` | Statique | Politique de confidentialité |
 | `/404` | Statique | Page d'erreur |
 | `/api/bdc-rate` | API | Taux directeur Banque du Canada (proxy, cache 6h) |
-| `/api/rappel-submit` | API | Soumission formulaire de rappel |
+| `/api/rappel-submit` | API | Soumission formulaire de rappel (`/rappel`) |
+| `/api/contact-submit` | API | Soumission formulaire de contact / quiz (accueil, section `#contact`) |
+| `/api/calculateur-submit` | API | Soumission capture courriel/texto du calculateur de versement |
+| `/api/penalite-submit` | API | Soumission capture de rapport du calculateur de pénalité |
+| `/api/outils-submit` | API | Soumission formulaire de contact du hub d'outils (`/outils`) |
+| `/api/partenaires-submit` | API | Soumission formulaire de référence partenaire (`/partenaires`) |
+| `/api/demande-submit` | API | Soumission formulaire de demande de financement (`/demande`) |
 
 `export const prerender = true` force le statique sur une page (par défaut SSR via adapter Netlify).
 
@@ -214,6 +220,9 @@ Push sur `main` → Netlify build automatique.
 | Variable | Requis | Description |
 |----------|--------|-------------|
 | `GOOGLE_PLACES_API_KEY` | Oui (avis) | Clé API Google Places (New) |
+| `RESEND_API_KEY` | Oui (formulaires) | Clé API Resend — partagée par tous les formulaires (`/api/*-submit`) |
+| `RESEND_FROM_EMAIL` | Oui (formulaires) | Adresse d'expéditeur vérifiée dans Resend, partagée par tous les formulaires |
+| `RESEND_NOTIFY_EMAIL` | Oui (formulaires) | Adresse interne qui reçoit les notifications (boîte de la courtière) |
 | `ENABLE_RATES_PROXY=1` | Non | Active le proxy r.jina.ai comme fallback de scraping |
 | `DEBUG_RATES=1` | Non | Logs détaillés du scraping des taux |
 
