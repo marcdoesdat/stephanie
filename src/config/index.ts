@@ -12,6 +12,7 @@ export interface SiteConfig {
   courriel: string;
   site_url: string;
   messenger_url?: string;      // Page Facebook (SEO sameAs)
+  linkedin_url?: string;       // Profil LinkedIn
   messenger_chat_url?: string; // Lien chat direct m.me
   calendly_url?: string;       // Optionnel
   hypotheca_profile_url?: string; // Profil officiel sur hypotheca.ca

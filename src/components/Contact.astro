@@ -111,7 +111,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
               </div>
               <a
                 class="contact-link"
-                href="https://www.linkedin.com/in/st%C3%A9phanie-weyman-12208b3bb/"
+                href={config.linkedin_url ?? 'https://www.linkedin.com/in/st%C3%A9phanie-weyman-12208b3bb/'}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Profil LinkedIn de ${config.nom}`}

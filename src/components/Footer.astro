@@ -5,20 +5,43 @@ const config = loadSiteConfig();
 
 // Définit l'année actuelle dynamiquement
 const currentYear = new Date().getFullYear();
+const telHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
+
+// Avis Google — même construction que Testimonials (source : siteConfig.json)
+const googleReviewsUrl = config.google_place_id
+  ? `https://search.google.com/local/reviews?placeid=${encodeURIComponent(config.google_place_id)}`
+  : `https://www.google.com/search?q=${encodeURIComponent(config.nom + ' Hypotheca avis')}`;
 ---
 
 <footer role="contentinfo">
+  <!-- ===== CTA DE FIN DE PARCOURS ===== -->
+  <div class="footer-cta">
+    <div class="footer-cta-text">
+      <strong>Prêt·e à parler de votre projet&nbsp;?</strong>
+      <span>Gratuit, sans engagement — à votre heure.</span>
+    </div>
+    <div class="footer-cta-actions">
+      <a href="/rendez-vous" class="footer-cta-btn" data-umami-event="cta_booking_footer">Réserver un appel de 15 min</a>
+      <a href={telHref} class="footer-cta-tel" data-umami-event="tel_click_footer">ou appelez&nbsp;: {config.telephone}</a>
+    </div>
+  </div>
+
   <!-- ===== IDENTITÉ + NAP ===== -->
   <div class="footer-head">
     <div class="footer-head-line">
       <strong class="footer-name">{config.nom}</strong>
-      <span>— {config.titre} · Certificat AMF {config.amf}</span>
+      <span>— {config.titre} · <a
+        class="footer-amf"
+        href="https://lautorite.qc.ca/grand-public/registres"
+        target="_blank"
+        rel="noopener noreferrer"
+      >Certificat AMF {config.amf} — vérifier au registre</a></span>
     </div>
     <div class="footer-head-line">{config.organisation} — Cabinet en courtage hypothécaire</div>
     <div class="footer-head-line footer-head-nap">
       <span>{config.adresse}</span>
       <span class="footer-sep">·</span>
-      <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>
+      <a href={telHref}>{config.telephone}</a>
       <span class="footer-sep">·</span>
       <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
     </div>
@@ -28,12 +51,21 @@ const currentYear = new Date().getFullYear();
   <div class="footer-grid" role="navigation" aria-label="Navigation du pied de page">
 
     <div class="footer-col">
+      <strong class="footer-col-title">Services</strong>
+      <a href="/services/premier-achat">Premier achat</a>
+      <a href="/services/renouvellement">Renouvellement</a>
+      <a href="/services/refinancement">Refinancement</a>
+      <a href="/services/travailleur-autonome">Travailleur autonome</a>
+      <a href="/services/dossier-refuse">Dossier refusé</a>
+      <a href="/services/nouveaux-arrivants">Nouveaux arrivants</a>
+    </div>
+
+    <div class="footer-col">
       <strong class="footer-col-title">Outils</strong>
       <a href="/outils#simulateur">Simulateur d'emprunt</a>
       <a href="/outils#calculateur">Calculateur de versement</a>
       <a href="/outils#comparateur">Comparateur de taux</a>
       <a href="/outils/calculateur-penalite-hypothecaire">Calculateur de pénalité</a>
-      <a href="/rappel">Rappel de renouvellement</a>
       <a href="/outils">Tous les outils</a>
     </div>
 
@@ -47,18 +79,21 @@ const currentYear = new Date().getFullYear();
     </div>
 
     <div class="footer-col">
-      <strong class="footer-col-title">Services</strong>
-      <a href="/services/premier-achat">Premier achat</a>
-      <a href="/services/renouvellement">Renouvellement</a>
-      <a href="/services/refinancement">Refinancement</a>
-      <a href="/services/travailleur-autonome">Travailleur autonome</a>
-      <a href="/services/dossier-refuse">Dossier refusé</a>
-      <a href="/services/nouveaux-arrivants">Nouveaux arrivants</a>
+      <strong class="footer-col-title">Contact</strong>
+      <a href="/rendez-vous">Prendre rendez-vous</a>
+      <a href="/rappel">Rappel de renouvellement</a>
+      <a href={telHref}>{config.telephone}</a>
+      <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
+      {config.messenger_url && (
+        <a href={config.messenger_url} target="_blank" rel="noopener noreferrer">Facebook</a>
+      )}
+      {config.linkedin_url && (
+        <a href={config.linkedin_url} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      )}
     </div>
 
     <div class="footer-col">
       <strong class="footer-col-title">Liens</strong>
-      <a href="/rendez-vous">Prendre rendez-vous</a>
       <a href="/partenaires">Partenaires</a>
       <a href="/#faq">FAQ</a>
       <a href={config.hypotheca_profile_url ?? 'https://hypotheca.ca/sweyman'} target="_blank" rel="noopener noreferrer">Profil Hypotheca</a>
@@ -69,7 +104,7 @@ const currentYear = new Date().getFullYear();
 
   <!-- ===== AVIS + COPYRIGHT + LÉGAL ===== -->
   <div class="footer-bottom">
-    <a class="footer-reviews" href="https://search.google.com/local/reviews?placeid=ChIJnde-9JoJSgYR6DgI66_nUl4" target="_blank" rel="noopener noreferrer">
+    <a class="footer-reviews" href={googleReviewsUrl} target="_blank" rel="noopener noreferrer">
       ⭐ Voir les avis Google
     </a>
     <div class="footer-bottom-row">
@@ -99,6 +134,73 @@ const currentYear = new Date().getFullYear();
 </footer>
 
 <style>
+  /* ===== CTA DE FIN DE PARCOURS ===== */
+  .footer-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    max-width: 980px;
+    margin: 0 auto 1.75rem;
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    text-align: left;
+  }
+  .footer-cta-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .footer-cta-text strong {
+    font-family: 'Lora', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.3;
+  }
+  .footer-cta-text span {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+  }
+  .footer-cta-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+  }
+  .footer-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--clay);
+    color: #fff !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.15;
+    padding: 0.85rem 1.6rem;
+    border-radius: 50px;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .footer-cta-btn:hover {
+    background: var(--clay-dk);
+    transform: translateY(-1px);
+  }
+  .footer-cta-tel {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85) !important;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .footer-cta-tel:hover {
+    color: #fff !important;
+    text-decoration: underline;
+  }
+
   /* ===== IDENTITÉ + NAP ===== */
   .footer-head {
     text-align: center;
@@ -107,9 +209,9 @@ const currentYear = new Date().getFullYear();
     gap: 0.15rem;
   }
   .footer-head-line {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.6);
-    line-height: 1.4;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.5;
   }
   .footer-head-line:first-child {
     font-size: 0.88rem;
@@ -120,9 +222,19 @@ const currentYear = new Date().getFullYear();
     color: #fff;
     font-weight: 700;
   }
+  .footer-amf {
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.35);
+    text-underline-offset: 2px;
+    transition: color 0.2s;
+  }
+  .footer-amf:hover {
+    color: #fff;
+  }
   .footer-head-nap {
-    font-size: 0.76rem;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
   }
   .footer-head-nap a {
     color: inherit;
@@ -136,7 +248,7 @@ const currentYear = new Date().getFullYear();
   /* ===== GRILLE DE LIENS ===== */
   .footer-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1.5rem;
     margin-top: 1.5rem;
     padding-top: 1.25rem;
@@ -146,19 +258,19 @@ const currentYear = new Date().getFullYear();
   .footer-col {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.3rem;
   }
   .footer-col-title {
-    font-size: 0.68rem;
+    font-size: 0.7rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.6);
     margin-bottom: 0.15rem;
   }
   .footer-col a {
-    font-size: 0.78rem;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.78);
     text-decoration: none;
     transition: color 0.2s;
   }
@@ -168,9 +280,9 @@ const currentYear = new Date().getFullYear();
     text-decoration: underline;
   }
   .footer-col-note {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.3);
-    line-height: 1.4;
+    font-size: 0.74rem;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.45;
     margin-top: 0.15rem;
   }
 
@@ -189,11 +301,11 @@ const currentYear = new Date().getFullYear();
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.2rem 0.5rem;
-    font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.6);
   }
   .footer-bottom-row a {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
     transition: color 0.2s;
   }
@@ -203,8 +315,8 @@ const currentYear = new Date().getFullYear();
   }
   .footer-reviews {
     display: inline-block;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: color 0.2s;
     margin: 0 auto;
@@ -218,14 +330,14 @@ const currentYear = new Date().getFullYear();
     margin-top: 1.25rem;
     padding-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 0.68rem;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.72rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.55);
     text-align: left;
   }
   .footer-disclaimer strong {
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.7);
   }
 
   /* ===== NEXVIO ===== */
@@ -233,28 +345,54 @@ const currentYear = new Date().getFullYear();
     margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.55);
     text-align: center;
   }
   .footer-nexvio a {
-    color: #4A9EFF;
+    color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.2s;
   }
   .footer-nexvio a:hover {
-    color: #7AB8FF;
+    color: #fff;
+    text-decoration: underline;
   }
 
   .footer-sep {
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.35);
   }
 
   /* ===== RESPONSIVE ===== */
+  @media (max-width: 1000px) {
+    .footer-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
   @media (max-width: 800px) {
     .footer-grid {
       grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .footer-cta {
+      flex-direction: column;
+      align-items: stretch;
+      text-align: center;
+    }
+    .footer-cta-text {
+      align-items: center;
+    }
+    .footer-cta-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.6rem;
+    }
+    .footer-cta-tel {
+      text-align: center;
     }
   }
 
