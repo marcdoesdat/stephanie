@@ -13,7 +13,7 @@ import MessengerBtn from '../components/MessengerBtn.astro';
 import { fetchHypothecaRates } from '../services/ratesService';
 import { getReviews } from '../services/reviewsService';
 import { loadSiteConfig } from '../config';
-import { House, Calculator, Scale, ClipboardList, TrendingUp, Landmark } from '@lucide/astro';
+import { House, Calculator, ClipboardList } from '@lucide/astro';
 
 const config = loadSiteConfig();
 
@@ -61,19 +61,20 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
     <Services />
 
-    <Testimonials reviews={googleReviews} />
+    <section id="apropos">
+      <About />
+      <Testimonials reviews={googleReviews} />
+    </section>
 
     <TauxSection hypothecaRates={hypothecaRates} />
-
-    <About />
 
     <section id="outils-teaser">
       <div class="section-inner">
         <div class="fade-up">
           <h2 class="section-title">Préparez votre projet<br />avec mes <em>outils</em></h2>
           <p class="section-sub">
-            Six outils clairs pour planifier votre financement : capacité d'emprunt, versement estimé,
-            comparaison des taux, pénalité hypothécaire, simulation de refinancement et droits de mutation (taxe de bienvenue).
+            Capacité d'emprunt, versement estimé, pénalité hypothécaire — et trois autres outils
+            de planification pour préparer votre projet.
           </p>
           <p class="outils-trust">Sans inscription · Résultats instantanés</p>
         </div>
@@ -91,30 +92,16 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <p>Calculez des mensualités précises avec le taux, l'amortissement et les frais qui comptent vraiment.</p>
             <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
           </a>
-          <a href="/outils#comparateur" class="outils-card" aria-label="Comparateur de taux — Comparez les taux affichés en succursale et les taux négociés par un courtier">
-            <div class="service-icon" aria-hidden="true"><Scale size={22} stroke-width={1.8} /></div>
-            <div class="outils-card-title">Comparateur de taux</div>
-            <p>Comparez un taux affiché en succursale et mon taux négocié pour visualiser l'écart potentiel sur 5 ans.</p>
-            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
-          </a>
           <a href="/outils#penalite" class="outils-card" aria-label="Calculateur de pénalité — Estimez vos frais de remboursement anticipé">
             <div class="service-icon" aria-hidden="true"><ClipboardList size={22} stroke-width={1.8} /></div>
             <div class="outils-card-title">Calculateur de pénalité</div>
             <p>Estimez les frais de remboursement anticipé (IRD ou 3 mois d'intérêts) selon votre prêteur et votre contrat.</p>
             <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
           </a>
-          <a href="/outils#refinancement" class="outils-card" aria-label="Simulateur de refinancement — Évaluez l'impact d'un refinancement">
-            <div class="service-icon" aria-hidden="true"><TrendingUp size={22} stroke-width={1.8} /></div>
-            <div class="outils-card-title">Simulateur de refinancement</div>
-            <p>Évaluez l'impact d'un refinancement : liquidités dégagées, nouveau versement et comparaison avec votre situation actuelle.</p>
-            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
-          </a>
-          <a href="/outils#droits-mutation" class="outils-card" aria-label="Calculateur de droits de mutation — Estimez votre taxe de bienvenue">
-            <div class="service-icon" aria-hidden="true"><Landmark size={22} stroke-width={1.8} /></div>
-            <div class="outils-card-title">Droits de mutation</div>
-            <p>Estimez la taxe de bienvenue applicable à votre propriété selon le prix d'achat, tranche par tranche.</p>
-            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
-          </a>
+        </div>
+
+        <div class="fade-up outils-teaser-cta" style="text-align:center">
+          <a href="/outils" class="btn-secondary btn-secondary--sm">Voir les 6 outils de planification →</a>
         </div>
       </div>
     </section>

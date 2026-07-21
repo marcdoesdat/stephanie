@@ -150,8 +150,8 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 @media (max-width: 980px){#outils-teaser .outils-teaser-grid{grid-template-columns:repeat(2, 1fr);}}
 @media (max-width: 580px){#outils-teaser .outils-teaser-grid{grid-template-columns:1fr;}}
 
-/* À PROPOS */
-#apropos{background:var(--white)}
+/* À PROPOS + TÉMOIGNAGES (section fusionnée) */
+#apropos{background:var(--warm)}
 .apropos-grid{display:grid;grid-template-columns:1fr 1.3fr;gap:6rem;align-items:center;margin-top:4rem}
 .apropos-img{aspect-ratio:1;border-radius:30px;overflow:hidden;border:2px solid var(--border)}
 .apropos-img img{width:100%;height:100%;object-fit:cover;object-position:center top}
@@ -764,9 +764,6 @@ td:last-child{text-align:center}
 
 /* FORM ERROR */
 .form-error{display:none;background:#fef2f2;color:#c0392b;padding:.8rem 1rem;border-radius:10px;font-size:.82rem;margin-top:.8rem;margin-bottom:.8rem;border:1px solid #fca5a5}
-
-/* TÉMOIGNAGES */
-#temoignages{background:var(--warm)}
 
 /* Social proof banner */
 .temoignages-social{
