@@ -18,7 +18,12 @@
       "Bash(echo \"exit:$?\")",
       "Bash(node repro-message.mjs)",
       "Bash(node shot.mjs)",
-      "Bash(curl -s \"http://localhost:4321/src/pages/outils.astro?astro&type=script&index=0&lang.ts\")"
+      "Bash(curl -s \"http://localhost:4321/src/pages/outils.astro?astro&type=script&index=0&lang.ts\")",
+      "Bash(nslookup -type=NS stephanieweyman.ca)",
+      "Bash(nslookup -type=NS hypotheca.ca)",
+      "Bash(where netlify *)",
+      "Bash(npx vitest *)",
+      "Bash(git checkout *)"
     ]
   }
 }

@@ -193,15 +193,11 @@ Astro.response.headers.set('Cache-Control', 's-maxage=86400, stale-while-revalid
         </p>
 
         <form
+          id="part-form-el"
           name="partenaires-reference"
-          method="POST"
-          action="/merci"
-          data-netlify="true"
-          data-netlify-honeypot="bot-field"
           class="part-form"
           novalidate
         >
-          <input type="hidden" name="form-name" value="partenaires-reference" />
           <div style="display:none" aria-hidden="true">
             <label>Ne pas remplir : <input name="bot-field" tabindex="-1" /></label>
           </div>
@@ -265,11 +261,13 @@ Astro.response.headers.set('Cache-Control', 's-maxage=86400, stale-while-revalid
             </label>
           </div>
 
-          <button type="submit" class="btn-cta btn-cta--block">
-            <span>Envoyer la référence</span>
+          <button type="submit" id="part-submit" class="btn-cta btn-cta--block">
+            <span class="part-submit-label">Envoyer la référence</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
         </form>
+
+        <p id="part-status" class="part-status" role="status" aria-live="polite" hidden></p>
       </div>
     </section>
 
@@ -637,6 +635,31 @@ Astro.response.headers.set('Cache-Control', 's-maxage=86400, stale-while-revalid
     accent-color: var(--clay);
   }
 
+  #part-submit[disabled] { opacity: .65; cursor: not-allowed; }
+
+  .part-status {
+    margin-top: 1.25rem;
+    padding: .85rem 1.1rem;
+    border-radius: var(--radius-sm);
+    font-size: .88rem;
+    line-height: 1.5;
+  }
+  .part-status[data-state="error"] {
+    background: #fbeae3;
+    border: 1px solid var(--clay-dk);
+    color: var(--clay-dk);
+  }
+  .part-status[data-state="sending"] {
+    background: var(--warm);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .part-status[data-state="success"] {
+    background: var(--warm);
+    border: 1px solid var(--forest);
+    color: var(--forest);
+  }
+
   /* ===== CONTACT DIRECT ===== */
   .part-contact {
     padding: 3rem 0 5rem;
@@ -704,3 +727,59 @@ Astro.response.headers.set('Cache-Control', 's-maxage=86400, stale-while-revalid
     }
   }
 </style>
+
+<script is:inline>
+  (function () {
+    var form = document.getElementById('part-form-el');
+    if (!form) return;
+
+    var btn = document.getElementById('part-submit');
+    var label = form.querySelector('.part-submit-label');
+    var statusEl = document.getElementById('part-status');
+
+    function setStatus(state, msg) {
+      if (!statusEl) return;
+      if (!state) { statusEl.hidden = true; statusEl.removeAttribute('data-state'); statusEl.textContent = ''; return; }
+      statusEl.hidden = false;
+      statusEl.setAttribute('data-state', state);
+      statusEl.textContent = msg;
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      if (!form.reportValidity()) return;
+
+      var botField = form.elements['bot-field'];
+
+      btn.disabled = true;
+      if (label) label.textContent = 'Envoi en cours…';
+      setStatus('sending', 'Envoi de votre référence…');
+
+      fetch('/api/partenaires-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          'nom-partenaire': form.elements['nom-partenaire'].value.trim(),
+          profession: form.elements['profession'].value,
+          'contact-partenaire': form.elements['contact-partenaire'].value.trim(),
+          'client-nom': form.elements['client-nom'].value.trim(),
+          'client-telephone': form.elements['client-telephone'].value.trim(),
+          'type-projet': form.elements['type-projet'].value,
+          notes: form.elements['notes'].value.trim(),
+          'consentement-client': form.elements['consentement-client'].checked,
+          'bot-field': botField ? botField.value : ''
+        })
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('Erreur ' + res.status);
+          window.location.href = '/merci';
+        })
+        .catch(function () {
+          btn.disabled = false;
+          if (label) label.textContent = 'Envoyer la référence';
+          setStatus('error', "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
+        });
+    });
+  })();
+</script>

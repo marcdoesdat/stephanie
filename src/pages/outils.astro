@@ -269,19 +269,11 @@ const outilsFaqSchema = {
 
           <form
             name="contact-outils"
-            method="POST"
-            action="/merci"
-            enctype="multipart/form-data"
-            data-netlify="true"
-            data-netlify-honeypot="bot-field"
             class="outils-contact-form"
             novalidate
           >
-            <input type="hidden" name="form-name" value="contact-outils" />
             <!-- Champ peuplé par JS avec les données du simulateur actif -->
             <input type="hidden" name="simulateur-donnees" id="hidden-simulateur-donnees" />
-            <!-- Capture d'écran du calculateur (injectée par JS au submit) -->
-            <input type="file" name="screenshot" id="hidden-screenshot" accept="image/png" style="display:none" />
             <div style="display:none" aria-hidden="true">
               <label>Ne pas remplir : <input name="bot-field" tabindex="-1" /></label>
             </div>
@@ -355,6 +347,8 @@ const outilsFaqSchema = {
               <p class="outils-contact-note">En envoyant ce formulaire, vous acceptez d'être recontacté·e au sujet de votre demande. Vos données ne sont jamais partagées — voir la <a href="/confidentialite">politique de confidentialité</a>.</p>
             </div>
           </form>
+
+          <p id="outils-contact-status" class="outils-contact-status" role="status" aria-live="polite" hidden></p>
         </div>
       </div>
     </section>
@@ -645,8 +639,16 @@ const outilsFaqSchema = {
 
     // --- Capture d'écran + données calculateur au submit ---
     const contactForm = document.querySelector<HTMLFormElement>('.outils-contact-form');
-    const screenshotInput = document.getElementById('hidden-screenshot') as HTMLInputElement;
     const simulateurInput = document.getElementById('hidden-simulateur-donnees') as HTMLInputElement;
+    const contactStatusEl = document.getElementById('outils-contact-status') as HTMLElement | null;
+
+    function setContactStatus(state: 'error' | 'success' | null, msg: string) {
+      if (!contactStatusEl) return;
+      if (!state) { contactStatusEl.hidden = true; contactStatusEl.removeAttribute('data-state'); contactStatusEl.textContent = ''; return; }
+      contactStatusEl.hidden = false;
+      contactStatusEl.setAttribute('data-state', state);
+      contactStatusEl.textContent = msg;
+    }
 
     function getActiveTabLabel(): string {
       const activeTab = tabs.find((t) => t.getAttribute('aria-selected') === 'true');
@@ -705,15 +707,18 @@ const outilsFaqSchema = {
       if (!validateRequiredFields(contactForm!)) return;
 
       // Verrouiller le bouton pour éviter une double soumission pendant la capture
+      const originalLabel = submitLabel?.textContent ?? '';
       if (submitBtn) submitBtn.disabled = true;
       if (submitLabel) submitLabel.textContent = 'Envoi en cours…';
+      setContactStatus(null, '');
 
       // Texte résumé
       updateSimulateurDonnees();
 
       // Capture d'écran du panneau actif
+      let screenshotBase64 = '';
       const activePanel = panels.find((p) => !p.hidden) as HTMLElement | undefined;
-      if (activePanel && screenshotInput) {
+      if (activePanel) {
         try {
           const { default: html2canvas } = await import('html2canvas');
           const canvas = await html2canvas(activePanel, {
@@ -722,24 +727,50 @@ const outilsFaqSchema = {
             useCORS: true,
             logging: false,
           });
-          await new Promise<void>((resolve) => {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const file = new File([blob], 'calculateur-screenshot.png', { type: 'image/png' });
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                screenshotInput.files = dt.files;
-              }
-              resolve();
-            }, 'image/png', 0.9);
+          const blob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob((b) => resolve(b), 'image/png', 0.9);
           });
+          if (blob) {
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            screenshotBase64 = dataUrl.split(',')[1] || '';
+          }
         } catch {
           // Ne pas bloquer le submit si la capture échoue
         }
       }
 
-      // Soumettre le formulaire → Netlify le traite et redirige vers /merci
-      contactForm!.submit();
+      const formData = new FormData(contactForm!);
+      const payload: Record<string, string> = {};
+      formData.forEach((value, key) => {
+        payload[key] = typeof value === 'string' ? value : '';
+      });
+      payload['consentement-lcap'] = (document.querySelector('.outils-consent-check') as HTMLInputElement | null)?.checked ? 'true' : '';
+      payload.screenshotBase64 = screenshotBase64;
+
+      try {
+        const res = await fetch('/api/outils-submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...payload,
+            'consentement-lcap': payload['consentement-lcap'] === 'true',
+          }),
+        });
+        if (!res.ok) throw new Error('Erreur ' + res.status);
+
+        document.body.dataset.outilsConverted = 'true';
+        window.dispatchEvent(new CustomEvent('outils:converted'));
+        window.location.href = '/merci';
+      } catch {
+        setContactStatus('error', "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitLabel) submitLabel.textContent = originalLabel;
+      }
     });
   </script>
 
@@ -919,6 +950,23 @@ const outilsFaqSchema = {
       font-weight: 600;
       text-decoration: underline;
       text-underline-offset: 2px;
+    }
+    .outils-contact-status {
+      margin-top: 1.1rem;
+      padding: .85rem 1.1rem;
+      border-radius: var(--radius-sm);
+      font-size: .88rem;
+      line-height: 1.5;
+    }
+    .outils-contact-status[data-state="error"] {
+      background: #fbeae3;
+      border: 1px solid var(--clay-dk);
+      color: var(--clay-dk);
+    }
+    .outils-contact-status[data-state="success"] {
+      background: var(--warm);
+      border: 1px solid var(--forest);
+      color: var(--forest);
     }
     .outils-contact-simulation-note {
       font-size: .75rem;

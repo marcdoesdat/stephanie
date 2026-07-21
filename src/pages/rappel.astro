@@ -34,8 +34,7 @@ const prenom = config.nom.split(' ')[0];
         </div>
 
         <div class="rappel-card fade-up">
-          <form id="rappel-form" name="rappel" data-netlify="true" data-netlify-honeypot="company" novalidate>
-            <input type="hidden" name="form-name" value="rappel" />
+          <form id="rappel-form" name="rappel" novalidate>
             <!-- Honeypot anti-spam (hors écran, non visible) -->
             <div class="rappel-hp" aria-hidden="true">
               <label>Ne pas remplir
@@ -307,10 +306,22 @@ const prenom = config.nom.split(' ')[0];
       if (label) label.textContent = 'Envoi en cours…';
       setStatus('sending', 'Envoi de votre demande…');
 
-      fetch('/rappel', {
+      var companyEl = form.elements['company'];
+
+      fetch('/api/rappel-submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(new FormData(form)).toString()
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nom: nom.value.trim(),
+          courriel: courriel.value.trim(),
+          telephone: telephone.value.trim(),
+          type: type.value,
+          echeance: form.elements['echeance'].value,
+          institution: form.elements['institution'].value.trim(),
+          details: form.elements['details'].value.trim(),
+          consentement: consent.checked,
+          company: companyEl ? companyEl.value : ''
+        })
       })
         .then(function (res) {
           if (!res.ok) throw new Error('Erreur ' + res.status);

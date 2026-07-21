@@ -1,60 +1,34 @@
 // Endpoint de soumission du formulaire de rappel renouvellement / refinancement.
-// Envoie 2 courriels via l'API Resend (fetch natif — aucune dépendance externe) :
-//   1. Notification interne à Stéphanie (RAPPEL_NOTIFY_EMAIL)
+// Envoie 2 courriels via l'API Resend (voir src/services/emailService.ts) :
+//   1. Notification interne à Stéphanie (RESEND_NOTIFY_EMAIL)
 //   2. Confirmation chaleureuse au client
 // Aucune persistance, aucun cron : la requête est traitée puis oubliée.
 //
 // Variables d'environnement requises (à configurer dans Netlify) :
 //   - RESEND_API_KEY     : clé API Resend (re_...).
-//   - RAPPEL_FROM_EMAIL  : adresse d'expéditeur vérifiée dans Resend
-//                          (ex. "Stéphanie Weyman <rappel@stephanieweyman.ca>").
-//   - RAPPEL_NOTIFY_EMAIL: adresse interne qui reçoit la notification (boîte de Stéphanie).
+//   - RESEND_FROM_EMAIL  : adresse d'expéditeur vérifiée dans Resend, partagée par
+//                          tous les formulaires du site (ex. "Stéphanie Weyman
+//                          <bonjour@stephanieweyman.ca>").
+//   - RESEND_NOTIFY_EMAIL: adresse interne qui reçoit les notifications (boîte de Stéphanie).
 //
 // Convention identique à src/pages/api/bdc-rate.ts : API route Astro (prerender=false),
 // type APIRoute, gestion d'erreur par Response JSON.
 
 import type { APIRoute } from 'astro';
 import { loadSiteConfig } from '../../config';
+import {
+  sendEmail,
+  escapeHtml,
+  wrapEmailHtml,
+  renderDataRows,
+  renderSignatureBlock,
+  checkRateLimit,
+  clientIpFromRequest,
+  jsonResponse,
+  loadResendEnv,
+} from '../../services/emailService';
 
 export const prerender = false;
-
-const RESEND_ENDPOINT = 'https://api.resend.com/emails';
-
-/* ------------------------------------------------------------------ */
-/*  Rate limiting (IP-based, Netlify Blobs)                            */
-/*  Max 5 submissions per IP per hour.                                 */
-/*  Skipped gracefully in dev (no Blobs available).                    */
-/* ------------------------------------------------------------------ */
-
-const RATE_LIMIT_MAX = 5;
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-const RATE_BLOB_STORE = 'rate-limit';
-
-interface RateEntry { count: number; windowStart: number; }
-
-async function checkRateLimit(ip: string): Promise<boolean> {
-  if (!process.env.NETLIFY) return true; // skip in local dev
-  let getStore: typeof import('@netlify/blobs').getStore | undefined;
-  try {
-    getStore = (await import('@netlify/blobs')).getStore;
-  } catch { return true; }
-  if (!getStore) return true;
-  try {
-    const store = getStore(RATE_BLOB_STORE);
-    const key = `rappel:${ip.slice(0, 64)}`; // cap key length
-    const raw = await store.get(key, { type: 'text' });
-    const now = Date.now();
-    let entry: RateEntry = raw ? (JSON.parse(raw) as RateEntry) : { count: 0, windowStart: now };
-    if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-      entry = { count: 0, windowStart: now };
-    }
-    entry.count += 1;
-    await store.set(key, JSON.stringify(entry));
-    return entry.count <= RATE_LIMIT_MAX;
-  } catch {
-    return true; // fail open — never block legitimate traffic over a Blob error
-  }
-}
 
 /* ------------------------------------------------------------------ */
 /*  Types & helpers                                                    */
@@ -84,17 +58,6 @@ const MOIS_FR = [
   'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
 ];
 
-/** Neutralise toute entrée utilisateur injectée dans le HTML des courriels. */
-function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/\\/g, '&#92;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 function asTrimmedString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -123,44 +86,6 @@ function computeRappelDate(echeance: string): string {
   return `${MOIS_FR[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function jsonResponse(body: Record<string, unknown>, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-    },
-  });
-}
-
-/* ------------------------------------------------------------------ */
-/*  Envoi Resend                                                       */
-/* ------------------------------------------------------------------ */
-
-interface ResendEmail {
-  from: string;
-  to: string;
-  subject: string;
-  html: string;
-  reply_to?: string;
-}
-
-async function sendEmail(apiKey: string, email: ResendEmail): Promise<void> {
-  const res = await fetch(RESEND_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(email),
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new Error(`Resend HTTP ${res.status}: ${detail.slice(0, 300)}`);
-  }
-}
-
 /* ------------------------------------------------------------------ */
 /*  Handler                                                            */
 /* ------------------------------------------------------------------ */
@@ -185,11 +110,8 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // 3b. Rate limiting : max 5 soumissions par IP par heure.
-  const clientIp =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    'unknown';
-  const allowed = await checkRateLimit(clientIp);
+  const clientIp = clientIpFromRequest(request);
+  const allowed = await checkRateLimit(clientIp, 'rappel');
   if (!allowed) {
     return jsonResponse({ error: 'Trop de demandes. Veuillez réessayer dans une heure.' }, 429);
   }
@@ -219,26 +141,24 @@ export const POST: APIRoute = async ({ request }) => {
   const rappelDate = computeRappelDate(echeanceRaw);
 
   // 5. Variables d'environnement.
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RAPPEL_FROM_EMAIL;
-  const notifyEmail = process.env.RAPPEL_NOTIFY_EMAIL;
+  const resendEnv = loadResendEnv();
 
   // En développement sans clé Resend : on logue les courriels dans la console
   // au lieu de les envoyer. Le formulaire retourne un succès pour faciliter
   // les tests locaux. En production, les 3 variables sont obligatoires.
   const isDev = import.meta.env.DEV;
-  if (!apiKey || !fromEmail || !notifyEmail) {
+  if (!resendEnv) {
     if (isDev) {
       console.log('[rappel-submit] ⚠️  Mode développement — Resend non configuré. Les courriels sont logués ci-dessous.');
-      console.log('[rappel-submit] 📨 Expéditeur simulé :', fromEmail || '(non défini)');
-      console.log('[rappel-submit] 📩 Notification interne simulée vers :', notifyEmail || '(non défini)');
+      console.log('[rappel-submit] 📩 Notification interne simulée vers :', process.env.RESEND_NOTIFY_EMAIL || '(non défini)');
       console.log('[rappel-submit] ✉️  Confirmation client simulée vers :', courriel);
       // On retourne un succès simulé pour permettre le test du flux complet
       return jsonResponse({ ok: true, dev: true }, 200);
     }
-    console.error('[rappel-submit] Variables Resend manquantes (RESEND_API_KEY / RAPPEL_FROM_EMAIL / RAPPEL_NOTIFY_EMAIL).');
+    console.error('[rappel-submit] Variables Resend manquantes (RESEND_API_KEY / RESEND_FROM_EMAIL / RESEND_NOTIFY_EMAIL).');
     return jsonResponse({ error: 'Service temporairement indisponible' }, 502);
   }
+  const { apiKey, fromEmail, notifyEmail } = resendEnv;
 
   const config = loadSiteConfig();
   const prenomCourtiere = config.nom.split(' ')[0];
@@ -252,8 +172,6 @@ export const POST: APIRoute = async ({ request }) => {
   const eInstitution = escapeHtml(institution);
   const eDetails = escapeHtml(details).replace(/\n/g, '<br>');
   const eRappel = escapeHtml(rappelDate);
-  const eSiteUrl = escapeHtml(config.site_url);
-  const siteHost = escapeHtml(config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''));
 
   /* ---------- Courriel 1 — notification interne ---------- */
 
@@ -270,31 +188,35 @@ export const POST: APIRoute = async ({ request }) => {
          </p>
        </div>`;
 
-  const internalHtml = `<!doctype html><html lang="fr-CA"><body style="margin:0;background:#f7f2eb;font-family:Arial,Helvetica,sans-serif;color:#1f1e1c;">
-    <div style="max-width:600px;margin:0 auto;padding:24px;">
+  const internalTable = renderDataRows([
+    ['Nom', eNom],
+    ['Courriel', `<a href="mailto:${eCourriel}" style="color:#a85f38;">${eCourriel}</a>`],
+    ['Téléphone', eTel],
+    ['Type de demande', eType],
+    ['Échéance actuelle', echeanceFmt ? eEcheance : ''],
+    ['Institution actuelle', eInstitution],
+    ['Détails', eDetails],
+  ]);
+
+  const internalHtml = wrapEmailHtml(`
       <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouvelle demande de rappel</h1>
       <p style="margin:0 0 20px;color:#6a5f50;font-size:14px;">Type&nbsp;: <strong>${eType}</strong></p>
       ${rappelBanner}
       <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
-        <tr><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;"><strong>Nom</strong></td><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;">${eNom}</td></tr>
-        <tr><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;"><strong>Courriel</strong></td><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;"><a href="mailto:${eCourriel}" style="color:#a85f38;">${eCourriel}</a></td></tr>
-        <tr><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;"><strong>Téléphone</strong></td><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;">${eTel || '—'}</td></tr>
-        <tr><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;"><strong>Type de demande</strong></td><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;">${eType}</td></tr>
-        <tr><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;"><strong>Échéance actuelle</strong></td><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;">${echeanceFmt ? eEcheance : '—'}</td></tr>
-        <tr><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;"><strong>Institution actuelle</strong></td><td style="padding:12px 16px;border-bottom:1px solid #e3d9cc;font-size:14px;">${eInstitution || '—'}</td></tr>
-        <tr><td style="padding:12px 16px;font-size:14px;vertical-align:top;"><strong>Détails</strong></td><td style="padding:12px 16px;font-size:14px;">${eDetails || '—'}</td></tr>
+        ${internalTable}
       </table>
-      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">Répondez directement à ce courriel pour écrire à ${escapeHtml(eNom)}.</p>
-    </div></body></html>`;
+      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">Répondez directement à ce courriel pour écrire à ${eNom}.</p>
+  `);
 
-  /* ---------- Courriel 2 — confirmation client (styles inline) ---------- */
+  /* ---------- Courriel 2 — confirmation client ---------- */
 
   const suiteEcheance = echeanceFmt
     ? `Comme votre terme arrive à échéance en <strong>${eEcheance}</strong>, sachez que le meilleur moment pour magasiner se situe de 4 à 6 mois avant cette date. ${escapeHtml(prenomCourtiere)} vous contactera donc au moment idéal&nbsp;: vous n'avez rien à faire d'ici là.`
     : `${escapeHtml(prenomCourtiere)} examinera votre demande et vous contactera personnellement pour discuter du meilleur moment d'agir. Vous n'avez rien à faire d'ici là.`;
 
-  const clientHtml = `<!doctype html><html lang="fr-CA"><body style="margin:0;background:#f7f2eb;font-family:Arial,Helvetica,sans-serif;color:#1f1e1c;">
-    <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
+  const siteHost = escapeHtml(config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''));
+
+  const clientHtml = wrapEmailHtml(`
       <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
         <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${eNom} 🌿</h1>
         <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
@@ -310,22 +232,14 @@ export const POST: APIRoute = async ({ request }) => {
           Une question d'ici là&nbsp;? Vous pouvez simplement répondre à ce courriel — il se rend directement à moi.
         </p>
 
-        <div style="border-top:1px solid #e3d9cc;padding-top:20px;margin-top:8px;">
-          <p style="margin:0;font-size:14px;line-height:1.6;color:#1f1e1c;">
-            <strong>${escapeHtml(config.nom)}</strong><br>
-            ${escapeHtml(config.titre)}<br>
-            ${escapeHtml(config.organisation)}<br>
-            N&deg; de certificat AMF&nbsp;: ${escapeHtml(config.amf)}<br>
-            <a href="${eSiteUrl}" style="color:#a85f38;">${siteHost}</a>
-          </p>
-        </div>
+        ${renderSignatureBlock()}
       </div>
 
       <p style="margin:20px 4px 0;font-size:11px;line-height:1.6;color:#6a5f50;">
         Vous recevez ce courriel parce que vous avez soumis une demande de suivi sur ${siteHost}.
         Vos renseignements sont utilisés uniquement à cette fin.
       </p>
-    </div></body></html>`;
+  `, '32px 24px');
 
   // 6. Envoi des 2 courriels en parallèle.
   try {

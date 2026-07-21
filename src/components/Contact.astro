@@ -156,12 +156,8 @@ const prenomCourtiere = config.nom.split(' ')[0];
         <form
           id="netlify-contact-form"
           name="contact"
-          method="POST"
-          data-netlify="true"
-          data-netlify-honeypot="bot-field"
           novalidate
         >
-          <input type="hidden" name="form-name" value="contact" />
           <div style="display:none;" aria-hidden="true">
             <label>Ne pas remplir : <input name="bot-field" tabindex="-1" /></label>
           </div>
@@ -958,18 +954,19 @@ const prenomCourtiere = config.nom.split(' ')[0];
       btn.disabled = true;
 
       const formData = new FormData(form);
-      const params = new URLSearchParams();
+      const payload: Record<string, string> = {};
       formData.forEach((value, key) => {
-        params.append(key, typeof value === 'string' ? value : value.name);
+        payload[key] = typeof value === 'string' ? value : value.name;
       });
+      payload.lcap_consent = (document.getElementById('contact-lcap') as HTMLInputElement)?.checked ? 'oui' : '';
 
       try {
-        const response = await fetch('/', {
+        const response = await fetch('/api/contact-submit', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: params.toString(),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         });
-        if (!response.ok) throw new Error('Erreur serveur Netlify');
+        if (!response.ok) throw new Error('Erreur serveur');
         clearPersist();
         form.style.display = 'none';
         const escapeWrap = root.querySelector<HTMLElement>('.quiz-escape');

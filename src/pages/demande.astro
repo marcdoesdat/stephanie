@@ -33,8 +33,7 @@ const prenom = config.nom.split(' ')[0];
         </div>
 
         <div class="demande-card fade-up">
-          <form id="demande-form" name="demande" method="POST" action="/demande" data-netlify="true" data-netlify-honeypot="company" novalidate>
-            <input type="hidden" name="form-name" value="demande" />
+          <form id="demande-form" name="demande" novalidate>
             <!-- Honeypot anti-spam -->
             <div class="demande-hp" aria-hidden="true">
               <label>Ne pas remplir <input type="text" name="company" tabindex="-1" autocomplete="off" /></label>
@@ -1122,17 +1121,25 @@ const prenom = config.nom.split(' ')[0];
       setStatus('sending', 'Envoi de votre demande…');
 
       var formData = new FormData(form);
-      var params = new URLSearchParams();
+      var payload = {};
       formData.forEach(function (value, key) {
-        params.append(key, typeof value === 'string' ? value : '');
+        var v = typeof value === 'string' ? value : '';
+        if (Object.prototype.hasOwnProperty.call(payload, key)) {
+          if (Array.isArray(payload[key])) payload[key].push(v);
+          else payload[key] = [payload[key], v];
+        } else {
+          payload[key] = v;
+        }
       });
+      payload.consentement = !!(consentFinal && consentFinal.checked);
 
-      fetch('/demande', {
+      fetch('/api/demande-submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
-        .then(function () {
+        .then(function (res) {
+          if (!res.ok) throw new Error('Erreur ' + res.status);
           form.reset();
           form.hidden = true;
           setStatus(null);

@@ -85,12 +85,6 @@ const { defaultRate = 4.99 } = Astro.props;
 
       </form>
 
-      <!-- Formulaire Netlify Forms invisible (détection au build pour la capture courriel AJAX) -->
-      <form name="calculator-summary" data-netlify="true" data-netlify-honeypot="bot-field" hidden enctype="multipart/form-data">
-        <input type="hidden" name="form-name" value="calculator-summary" />
-        <input type="file" name="screenshot" />
-      </form>
-
       <div class="calc-results fade-up" style="transition-delay:.2s">
 
         <div class="calc-warning" id="calc-warning" style="display:none;"></div>
@@ -527,19 +521,7 @@ const { defaultRate = 4.99 } = Astro.props;
       emailBtn.disabled = true;
       emailMsg.style.display = 'none';
 
-      const formData = new FormData();
-      formData.append('form-name', 'calculator-summary');
-      formData.append('nom', nom);
-      formData.append('telephone', telephone);
-      formData.append('email', email);
-      formData.append('label_frequence', labelFrequence);
-      formData.append('versement', versement);
-      formData.append('montant_pret', montantPret);
-      formData.append('prime_schl', primeSchl);
-      formData.append('cout_mensuel_total', coutMensuel);
-      formData.append('amortissement_url', amortissementUrl);
-      formData.append('consentement', 'oui');
-
+      let screenshotBase64 = '';
       const targetEl = document.querySelector('.calc-wrapper') as HTMLElement;
       if (targetEl) {
         try {
@@ -550,27 +532,43 @@ const { defaultRate = 4.99 } = Astro.props;
             useCORS: true,
             logging: false,
           });
-          await new Promise<void>((resolve) => {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                formData.append('screenshot', blob, 'calculateur-screenshot.png');
-              }
-              resolve();
-            }, 'image/png', 0.9);
+          const blob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob((b) => resolve(b), 'image/png', 0.9);
           });
+          if (blob) {
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            screenshotBase64 = dataUrl.split(',')[1] || '';
+          }
         } catch {
           // Ne pas bloquer si la capture échoue
         }
       }
 
       try {
-        const response = await fetch('/', {
+        const response = await fetch('/api/calculateur-submit', {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nom,
+            telephone,
+            email,
+            labelFrequence,
+            versement,
+            montantPret,
+            primeSchl,
+            coutMensuelTotal: coutMensuel,
+            amortissementUrl,
+            screenshotBase64,
+          }),
         });
 
         if (!response.ok) {
-          throw new Error('Erreur serveur Netlify');
+          throw new Error('Erreur serveur');
         }
 
         emailMsg.textContent   = 'Merci. Je vous enverrai votre résumé sous peu.';
