@@ -1,5 +1,5 @@
 ---
-// Landing page publicitaire (Facebook/Google Ads) — funnel quiz refinancement en 3 étapes.
+// Landing page publicitaire (Facebook/Google Ads) — funnel quiz refinancement en 4 étapes.
 // Page volontairement sans Nav/Footer ni liens sortants au-dessus du pli : une pub = un
 // message = une action. noindex + exclue du sitemap (astro.config.mjs) — accessible
 // uniquement via les publicités. Soumission → /api/refinancement-submit → redirection /merci.
@@ -28,7 +28,7 @@ const courrielHref = `mailto:${config.courriel}`;
       <div class="refi-hero-inner">
         <h1>Refinancez votre hypothèque&nbsp;: <em>consolidez vos dettes, réduisez vos paiements</em></h1>
         <ul class="refi-bullets" role="list">
-          <li>✓ Aucuns frais pour toi avec les prêteurs traditionnels</li>
+          <li>✓ Aucuns frais pour vous avec les prêteurs traditionnels</li>
           <li>✓ Réponse rapide, directement par {prenom}</li>
           <li>✓ Plus de 20 institutions prêteuses comparées</li>
         </ul>
@@ -57,10 +57,10 @@ const courrielHref = `mailto:${config.courriel}`;
 
         <div class="quiz-progress" aria-hidden="true">
           <div class="quiz-progress-meta">
-            <span class="quiz-progress-label">Étape <span data-refi-step-num>1</span> sur 3</span>
+            <span class="quiz-progress-label">Étape <span data-refi-step-num>1</span> sur 4</span>
             <button type="button" class="quiz-back" data-refi-back hidden>← Retour</button>
           </div>
-          <div class="quiz-progress-bar"><div class="quiz-progress-fill" data-refi-fill style="width:33.34%"></div></div>
+          <div class="quiz-progress-bar"><div class="quiz-progress-fill" data-refi-fill style="width:25%"></div></div>
         </div>
 
         <form id="refi-form" name="refinancement" novalidate>
@@ -71,36 +71,29 @@ const courrielHref = `mailto:${config.courriel}`;
             </label>
           </div>
 
-          <!-- Alimenté par les cartes de sélection -->
+          <!-- Alimentés par les cartes de sélection -->
+          <input type="hidden" name="but_refinancement" data-refi-but value="" />
+          <input type="hidden" name="proprietaire" data-refi-proprio value="" />
           <input type="hidden" name="type_propriete" data-refi-type value="" />
 
-          <!-- ============ ÉTAPE 1 : Propriété et finances ============ -->
+          <!-- ============ ÉTAPE 1 : Momentum (3 taps, zéro clavier) ============ -->
           <div class="quiz-step" data-refi-step="1">
             <div class="quiz-field">
-              <label class="cform-label" for="refi-proprietaire">Êtes-vous propriétaire d'un bien immobilier&nbsp;? <span class="refi-req">*</span></label>
-              <select id="refi-proprietaire" name="proprietaire" required>
-                <option value="" disabled selected>Choisir…</option>
-                <option value="oui">Oui</option>
-                <option value="non">Non</option>
-              </select>
-            </div>
-
-            <div class="quiz-field">
-              <span class="cform-label" id="refi-type-label">Quel type de propriété voulez-vous refinancer&nbsp;? <span class="refi-req">*</span></span>
-              <div class="quiz-options refi-type-grid" role="group" aria-labelledby="refi-type-label">
-                <button type="button" class="quiz-card" data-refi-card data-value="maison" aria-pressed="false">
-                  <span class="quiz-card-icon" aria-hidden="true">🏡</span>
-                  <span class="quiz-card-text"><strong>Maison unifamiliale</strong></span>
+              <span class="cform-label" id="refi-but-label">Pourquoi voulez-vous refinancer&nbsp;? <span class="refi-req">*</span></span>
+              <div class="quiz-options refi-but-grid" role="group" aria-labelledby="refi-but-label">
+                <button type="button" class="quiz-card" data-refi-but-card data-value="consolider_dettes" aria-pressed="false">
+                  <span class="quiz-card-icon" aria-hidden="true">💳</span>
+                  <span class="quiz-card-text"><strong>Consolider mes dettes</strong></span>
                 </button>
-                <button type="button" class="quiz-card" data-refi-card data-value="condo" aria-pressed="false">
-                  <span class="quiz-card-icon" aria-hidden="true">🏢</span>
-                  <span class="quiz-card-text"><strong>Condo</strong></span>
+                <button type="button" class="quiz-card" data-refi-but-card data-value="renovations" aria-pressed="false">
+                  <span class="quiz-card-icon" aria-hidden="true">🔨</span>
+                  <span class="quiz-card-text"><strong>Rénovations</strong></span>
                 </button>
-                <button type="button" class="quiz-card" data-refi-card data-value="plex" aria-pressed="false">
-                  <span class="quiz-card-icon" aria-hidden="true">🏘️</span>
-                  <span class="quiz-card-text"><strong>Plex</strong></span>
+                <button type="button" class="quiz-card" data-refi-but-card data-value="cash_projet" aria-pressed="false">
+                  <span class="quiz-card-icon" aria-hidden="true">💰</span>
+                  <span class="quiz-card-text"><strong>Sortir du cash pour un projet</strong></span>
                 </button>
-                <button type="button" class="quiz-card" data-refi-card data-value="autre" aria-pressed="false">
+                <button type="button" class="quiz-card" data-refi-but-card data-value="autre" aria-pressed="false">
                   <span class="quiz-card-icon" aria-hidden="true">✏️</span>
                   <span class="quiz-card-text"><strong>Autre</strong></span>
                 </button>
@@ -108,23 +101,39 @@ const courrielHref = `mailto:${config.courriel}`;
             </div>
 
             <div class="quiz-field">
-              <label class="cform-label" for="refi-valeur">Quelle est la valeur marchande de votre propriété selon vous&nbsp;? <span class="refi-req">*</span></label>
-              <input type="text" id="refi-valeur" name="valeur_marchande" inputmode="numeric" placeholder="Ex. 550 000" required />
+              <span class="cform-label" id="refi-proprio-label">Êtes-vous propriétaire d'un bien immobilier&nbsp;? <span class="refi-req">*</span></span>
+              <div class="quiz-options refi-proprio-grid" role="group" aria-labelledby="refi-proprio-label">
+                <button type="button" class="quiz-card" data-refi-proprio-card data-value="oui" aria-pressed="false">
+                  <span class="quiz-card-icon" aria-hidden="true">✅</span>
+                  <span class="quiz-card-text"><strong>Oui</strong></span>
+                </button>
+                <button type="button" class="quiz-card quiz-card--exit" data-refi-proprio-card data-value="non" aria-pressed="false">
+                  <span class="quiz-card-icon" aria-hidden="true">🏠</span>
+                  <span class="quiz-card-text"><strong>Non</strong><span>Voir les solutions premier achat</span></span>
+                </button>
+              </div>
             </div>
 
             <div class="quiz-field">
-              <label class="cform-label" for="refi-solde">Quel est le solde actuel de votre prêt hypothécaire&nbsp;? <span class="refi-req">*</span></label>
-              <input type="text" id="refi-solde" name="solde_pret" inputmode="numeric" placeholder="Ex. 410 000" required />
-            </div>
-
-            <div class="quiz-field">
-              <label class="cform-label" for="refi-dettes">Quelle est la somme totale de vos dettes à refinancer&nbsp;? <span class="refi-req">*</span></label>
-              <input type="text" id="refi-dettes" name="dettes_a_refinancer" inputmode="numeric" placeholder="Ex. 100 000" required />
-            </div>
-
-            <div class="quiz-field">
-              <label class="cform-label" for="refi-revenu">Quel est votre revenu brut familial approximatif&nbsp;? <span class="refi-req">*</span></label>
-              <input type="text" id="refi-revenu" name="revenu_brut" inputmode="numeric" placeholder="Ex. 140 000" required />
+              <span class="cform-label" id="refi-type-label">Quel type de propriété voulez-vous refinancer&nbsp;? <span class="refi-req">*</span></span>
+              <div class="quiz-options refi-type-grid" role="group" aria-labelledby="refi-type-label">
+                <button type="button" class="quiz-card" data-refi-type-card data-value="maison" aria-pressed="false">
+                  <span class="quiz-card-icon" aria-hidden="true">🏡</span>
+                  <span class="quiz-card-text"><strong>Maison unifamiliale</strong></span>
+                </button>
+                <button type="button" class="quiz-card" data-refi-type-card data-value="condo" aria-pressed="false">
+                  <span class="quiz-card-icon" aria-hidden="true">🏢</span>
+                  <span class="quiz-card-text"><strong>Condo</strong></span>
+                </button>
+                <button type="button" class="quiz-card" data-refi-type-card data-value="plex" aria-pressed="false">
+                  <span class="quiz-card-icon" aria-hidden="true">🏘️</span>
+                  <span class="quiz-card-text"><strong>Plex</strong></span>
+                </button>
+                <button type="button" class="quiz-card" data-refi-type-card data-value="autre" aria-pressed="false">
+                  <span class="quiz-card-icon" aria-hidden="true">✏️</span>
+                  <span class="quiz-card-text"><strong>Autre</strong></span>
+                </button>
+              </div>
             </div>
 
             <p class="refi-error" data-refi-error role="alert" hidden></p>
@@ -135,17 +144,85 @@ const courrielHref = `mailto:${config.courriel}`;
             </button>
           </div>
 
-          <!-- ============ ÉTAPE 2 : Projet et crédit ============ -->
+          <!-- ============ ÉTAPE 2 : Les chiffres, avec feedback live ============ -->
           <div class="quiz-step" data-refi-step="2" hidden>
             <div class="quiz-field">
-              <label class="cform-label" for="refi-but">Dans quel but souhaitez-vous refinancer&nbsp;? <span class="refi-req">*</span></label>
-              <select id="refi-but" name="but_refinancement" required>
+              <label class="cform-label" for="refi-valeur">Quelle est la valeur marchande de votre propriété selon vous&nbsp;? <span class="refi-req">*</span></label>
+              <input type="text" id="refi-valeur" name="valeur_marchande" inputmode="numeric" placeholder="Ex. 550 000" required data-refi-calc data-refi-money />
+              <small class="refi-field-hint">Estime au meilleur de ta connaissance — on validera ensemble.</small>
+            </div>
+
+            <div class="quiz-field">
+              <label class="cform-label" for="refi-solde">Quel est le solde actuel de votre prêt hypothécaire&nbsp;? <span class="refi-req">*</span></label>
+              <input type="text" id="refi-solde" name="solde_pret" inputmode="numeric" placeholder="Ex. 410 000" required data-refi-calc data-refi-money />
+            </div>
+
+            <div class="quiz-field">
+              <label class="cform-label" for="refi-dettes">Quelle est la somme totale de vos dettes à refinancer&nbsp;? <span class="refi-req">*</span></label>
+              <input type="text" id="refi-dettes" name="dettes_a_refinancer" inputmode="numeric" placeholder="Ex. 100 000" required data-refi-calc data-refi-money />
+            </div>
+
+            <!-- Feedback live : montant disponible estimé -->
+            <div class="refi-estimate" data-refi-estimate hidden>
+              <span class="refi-estimate-label">Montant disponible estimé</span>
+              <span class="refi-estimate-amount" data-refi-estimate-amount></span>
+              <span class="refi-estimate-note"></span>
+              <small class="refi-estimate-disclaimer">Estimation basée sur 80&nbsp;% de la valeur marchande, moins ton solde hypothécaire. Le montant réel dépend de l'évaluation, de ton profil et des politiques du prêteur. Les frais applicables (pénalité, notaire, évaluation) ne sont pas inclus.</small>
+            </div>
+
+            <div class="quiz-field">
+              <label class="cform-label" for="refi-fin-terme">Date approximative de fin de terme&nbsp;? <span class="refi-req">*</span></label>
+              <input type="month" id="refi-fin-terme" name="fin_terme" required />
+              <label class="refi-ignore-check">
+                <input type="checkbox" id="refi-fin-terme-ignore" data-refi-terme-ignore />
+                <span>Je ne sais pas — on vérifiera ensemble.</span>
+              </label>
+            </div>
+
+            <div class="quiz-field">
+              <label class="cform-label" for="refi-preteur">Qui est votre prêteur actuel&nbsp;? <span class="refi-req">*</span></label>
+              <select id="refi-preteur" name="preteur_actuel" required>
                 <option value="" disabled selected>Choisir…</option>
-                <option value="sauver_interets">Sauver des intérêts</option>
-                <option value="consolider_dettes">Consolider mes dettes</option>
-                <option value="renovations">Rénovations</option>
-                <option value="autre_projet">Autre projet</option>
+                <option value="rbc">RBC — Banque Royale</option>
+                <option value="td">TD — Groupe Banque TD</option>
+                <option value="bmo">BMO — Banque de Montréal</option>
+                <option value="cibc">CIBC</option>
+                <option value="scotia">Banque Scotia</option>
+                <option value="bnc">Banque Nationale</option>
+                <option value="desjardins">Desjardins</option>
+                <option value="first_national">First National</option>
+                <option value="mcap">MCAP</option>
+                <option value="tangerine">Tangerine</option>
+                <option value="autre">Autre</option>
+                <option value="ne_sais_pas">Je ne sais pas</option>
               </select>
+            </div>
+
+            <p class="refi-error" data-refi-error role="alert" hidden></p>
+
+            <button type="button" class="btn-cta btn-cta--block" data-refi-next>
+              <span>Suivant</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+
+          <!-- ============ ÉTAPE 3 : Profil ============ -->
+          <div class="quiz-step" data-refi-step="3" hidden>
+            <div class="quiz-field">
+              <label class="cform-label" for="refi-type-revenu">Quel est votre type de revenu principal&nbsp;? <span class="refi-req">*</span></label>
+              <select id="refi-type-revenu" name="type_revenu" required>
+                <option value="" disabled selected>Choisir…</option>
+                <option value="salarie">Salarié</option>
+                <option value="travailleur_autonome">Travailleur autonome</option>
+                <option value="retraite">Retraité</option>
+                <option value="prestation">Prestation / Allocation</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+
+            <div class="quiz-field">
+              <label class="cform-label" for="refi-revenu">Quel est votre revenu brut familial approximatif&nbsp;? <span class="refi-req">*</span></label>
+              <input type="text" id="refi-revenu" name="revenu_brut" inputmode="numeric" placeholder="Ex. 140 000" required />
             </div>
 
             <div class="quiz-field">
@@ -186,8 +263,8 @@ const courrielHref = `mailto:${config.courriel}`;
             </button>
           </div>
 
-          <!-- ============ ÉTAPE 3 : Coordonnées ============ -->
-          <div class="quiz-step" data-refi-step="3" hidden>
+          <!-- ============ ÉTAPE 4 : Coordonnées ============ -->
+          <div class="quiz-step" data-refi-step="4" hidden>
             <div class="quiz-fields">
               <div class="quiz-row">
                 <div class="quiz-field">
@@ -350,12 +427,126 @@ const courrielHref = `mailto:${config.courriel}`;
   /* Un .quiz-step contient plusieurs champs : espacement vertical entre eux */
   .quiz-step > .quiz-field { margin-bottom: 0.15rem; }
 
-  /* Grille 2×2 des types de propriété sur desktop */
+  /* Grilles desktop pour les groupes de cartes */
   @media (min-width: 640px) {
+    .refi-but-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .refi-proprio-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
     .refi-type-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
     }
+  }
+
+  /* Carte de sortie (Non propriétaire → redirection premier achat) */
+  .quiz-card--exit {
+    background: var(--sand);
+    border-style: dashed;
+  }
+  .quiz-card--exit .quiz-card-text span {
+    font-size: 0.72rem;
+    color: var(--clay);
+    font-weight: 500;
+  }
+
+  /* Input type="month" (fin de terme) */
+  .quiz-field input[type="month"] {
+    width: 100%;
+    padding: 0.78rem 1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: 11px;
+    color: var(--ink);
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, background 0.2s;
+    margin: 0;
+    cursor: pointer;
+    min-height: 48px;
+  }
+  .quiz-field input[type="month"]:focus {
+    outline: none;
+    border-color: var(--clay);
+    background: white;
+  }
+
+  /* ── Montant disponible estimé (feedback live étape 2) ── */
+  .refi-estimate {
+    background: linear-gradient(135deg, #f0f7f1 0%, #e8f0e9 100%);
+    border: 1.5px solid #c5dac8;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin: 0.5rem 0 0.25rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .refi-estimate[hidden] {
+    display: none;
+  }
+  .refi-estimate-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .refi-estimate-amount {
+    font-family: "Lora", serif;
+    font-size: clamp(1.6rem, 5vw, 2.2rem);
+    font-weight: 700;
+    color: #2d5a3a;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .refi-estimate-note {
+    font-size: 0.82rem;
+    color: var(--ink);
+    line-height: 1.5;
+    font-weight: 500;
+  }
+
+  .refi-estimate-disclaimer {
+    display: block;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid #d5e0d7;
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  /* ── Hint sous les champs ── */
+  .refi-field-hint {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 0.25rem;
+  }
+
+  /* ── Checkbox « Je ne sais pas » ── */
+  .refi-ignore-check {
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .refi-ignore-check input[type="checkbox"] {
+    width: 0.95rem;
+    height: 0.95rem;
+    accent-color: var(--clay);
+    flex-shrink: 0;
   }
 
   .refi-error {
@@ -440,20 +631,23 @@ const courrielHref = `mailto:${config.courriel}`;
 
 <script>
   interface RefiState {
+    but_refinancement: string;
     proprietaire: string;
     type_propriete: string;
     valeur_marchande: string;
     solde_pret: string;
     dettes_a_refinancer: string;
+    fin_terme: string;
+    preteur_actuel: string;
+    type_revenu: string;
     revenu_brut: string;
-    but_refinancement: string;
     cote_credit: string;
     faillite: string;
   }
 
-  const STORAGE_KEY = 'sw_refi_state_v1';
+  const STORAGE_KEY = 'sw_refi_state_v2';
   const STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
-  const TOTAL_STEPS = 3;
+  const TOTAL_STEPS = 4;
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const TEL_RE = /(?:\D*\d){10}/;
 
@@ -462,6 +656,20 @@ const courrielHref = `mailto:${config.courriel}`;
     if (typeof window.umami?.track === 'function') window.umami.track(name);
     // @ts-ignore
     if (typeof window.gtag === 'function') window.gtag('event', name);
+  }
+
+  function formatEstimate(n: number): string {
+    return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(n);
+  }
+
+  function parseNumeric(raw: string): number {
+    return parseFloat(raw.replace(/[^\d.]/g, '')) || 0;
+  }
+
+  /** Formate un entier avec espace fine comme séparateur de milliers (fr-CA). */
+  function fmtThousands(n: number): string {
+    if (!n || n <= 0) return '';
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -474,25 +682,63 @@ const courrielHref = `mailto:${config.courriel}`;
     const fillEl = root.querySelector<HTMLElement>('[data-refi-fill]');
     const stepNumEl = root.querySelector<HTMLElement>('[data-refi-step-num]');
     const backBtn = root.querySelector<HTMLButtonElement>('[data-refi-back]');
+    const butHidden = form.querySelector<HTMLInputElement>('[data-refi-but]');
+    const proprioHidden = form.querySelector<HTMLInputElement>('[data-refi-proprio]');
     const typeHidden = form.querySelector<HTMLInputElement>('[data-refi-type]');
     const steps = Array.from(form.querySelectorAll<HTMLElement>('[data-refi-step]'));
     const submitBtn = document.getElementById('refi-submit') as HTMLButtonElement | null;
     const submitLabel = form.querySelector<HTMLElement>('.refi-submit-label');
+    const estimateEl = root.querySelector<HTMLElement>('[data-refi-estimate]');
+    const estimateAmountEl = root.querySelector<HTMLElement>('[data-refi-estimate-amount]');
+    const finTermeEl = document.getElementById('refi-fin-terme') as HTMLInputElement | null;
+    const finTermeIgnoreEl = document.getElementById('refi-fin-terme-ignore') as HTMLInputElement | null;
 
     let currentStep = 1;
     let started = false;
+    let estimateDebounceTimer: number | undefined;
+
+    /* ── Formatage des champs montant : séparateurs de milliers au blur, retirés au focus ── */
+    form.querySelectorAll<HTMLInputElement>('[data-refi-money]').forEach((el) => {
+      el.addEventListener('focus', () => {
+        el.value = el.value.replace(/\s/g, '');
+        el.select();
+      });
+      el.addEventListener('blur', () => {
+        const val = parseNumeric(el.value);
+        if (val > 0) el.value = fmtThousands(val);
+      });
+    });
+
+    /* ── Fin de terme : case « Je ne sais pas » désactive le champ mois ── */
+    if (finTermeIgnoreEl && finTermeEl) {
+      finTermeIgnoreEl.addEventListener('change', () => {
+        if (finTermeIgnoreEl.checked) {
+          finTermeEl.value = '';
+          finTermeEl.disabled = true;
+          finTermeEl.removeAttribute('required');
+        } else {
+          finTermeEl.disabled = false;
+          finTermeEl.setAttribute('required', '');
+        }
+        scheduleEstimate();
+        persist();
+      });
+    }
 
     /* ── Persistance sessionStorage (reprise du funnel < 24 h) ── */
     function collectState(): RefiState & { step: number } {
       const val = (name: string): string => field(name)?.value ?? '';
       return {
+        but_refinancement: val('but_refinancement'),
         proprietaire: val('proprietaire'),
         type_propriete: val('type_propriete'),
         valeur_marchande: val('valeur_marchande'),
         solde_pret: val('solde_pret'),
         dettes_a_refinancer: val('dettes_a_refinancer'),
+        fin_terme: val('fin_terme'),
+        preteur_actuel: val('preteur_actuel'),
+        type_revenu: val('type_revenu'),
         revenu_brut: val('revenu_brut'),
-        but_refinancement: val('but_refinancement'),
         cote_credit: val('cote_credit'),
         faillite: val('faillite'),
         step: currentStep,
@@ -519,7 +765,9 @@ const courrielHref = `mailto:${config.courriel}`;
           const el = field(key);
           if (el) el.value = String(data[key] ?? '');
         });
-        if (data.type_propriete) selectTypeCard(data.type_propriete);
+        if (data.but_refinancement) selectCard('but', data.but_refinancement);
+        if (data.proprietaire) selectCard('proprio', data.proprietaire);
+        if (data.type_propriete) selectCard('type', data.type_propriete);
         if (typeof data.step === 'number' && data.step >= 1 && data.step <= TOTAL_STEPS) {
           currentStep = data.step;
         }
@@ -528,6 +776,57 @@ const courrielHref = `mailto:${config.courriel}`;
     function clearPersist() {
       try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
     }
+
+    /* ── Live estimate (étape 2) ── */
+    function updateEstimate() {
+      if (!estimateEl || !estimateAmountEl) return;
+      const valeur = parseNumeric(field('valeur_marchande')?.value ?? '');
+      const solde = parseNumeric(field('solde_pret')?.value ?? '');
+      const dettes = parseNumeric(field('dettes_a_refinancer')?.value ?? '');
+
+      // Ne rien afficher tant que valeur ET solde ne sont pas tous les deux remplis.
+      if (!valeur || !solde) {
+        estimateEl.setAttribute('hidden', '');
+        return;
+      }
+
+      const dispo = Math.max(0, (valeur * 0.80) - solde);
+      const labelEl = estimateEl.querySelector<HTMLElement>('.refi-estimate-label');
+      const noteEl = estimateEl.querySelector<HTMLElement>('.refi-estimate-note');
+
+      if (dispo >= dettes && dettes > 0) {
+        if (labelEl) labelEl.textContent = 'Montant disponible estimé';
+        estimateAmountEl.textContent = formatEstimate(dispo);
+        estimateAmountEl.style.display = '';
+        if (noteEl) noteEl.textContent = `Assez pour regrouper tes ${formatEstimate(dettes)} de dettes en un seul paiement.`;
+      } else if (dispo > 0) {
+        if (labelEl) labelEl.textContent = 'Montant disponible estimé';
+        estimateAmountEl.textContent = formatEstimate(dispo);
+        estimateAmountEl.style.display = '';
+        if (noteEl) noteEl.textContent = 'De quoi couvrir une partie de tes dettes. On regarde ensemble par où commencer.';
+      } else {
+        if (labelEl) labelEl.textContent = 'Ton dossier demande une approche différente';
+        estimateAmountEl.textContent = '';
+        estimateAmountEl.style.display = 'none';
+        if (noteEl) noteEl.textContent = 'À 80 % de la valeur, les prêteurs traditionnels embarqueront pas. Prêteur alternatif, deuxième hypothèque, ou évaluation à revoir — c\'est le genre de cas que je traite tous les jours. Continue, je regarde ça.';
+      }
+
+      estimateEl.removeAttribute('hidden');
+    }
+
+    const ESTIMATE_DEBOUNCE_MS = 200;
+    function scheduleEstimate() {
+      if (estimateDebounceTimer) window.clearTimeout(estimateDebounceTimer);
+      estimateDebounceTimer = window.setTimeout(updateEstimate, ESTIMATE_DEBOUNCE_MS);
+    }
+
+    form.querySelectorAll<HTMLInputElement>('[data-refi-calc]').forEach((el) => {
+      el.addEventListener('input', scheduleEstimate);
+      el.addEventListener('blur', () => {
+        if (estimateDebounceTimer) window.clearTimeout(estimateDebounceTimer);
+        updateEstimate();
+      });
+    });
 
     /* ── Navigation ── */
     function stepEl(n: number): HTMLElement | undefined {
@@ -547,13 +846,14 @@ const courrielHref = `mailto:${config.courriel}`;
         else backBtn.setAttribute('hidden', '');
       }
 
-      const firstFocusable = visible?.querySelector<HTMLElement>('input:not([type="hidden"]), select, button');
+      const firstFocusable = visible?.querySelector<HTMLElement>('input:not([type="hidden"]), select, button:not([data-refi-proprio-card][data-value="non"])');
       if (firstFocusable) {
         window.setTimeout(() => firstFocusable.focus({ preventScroll: true }), 60);
       }
       if (window.innerWidth < 900 && scrollOnMobile) {
         root!.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
+      if (n === 2) updateEstimate();
       persist();
     }
 
@@ -598,30 +898,53 @@ const courrielHref = `mailto:${config.courriel}`;
       const hasDigit = (v: string) => /\d/.test(v);
 
       if (n === 1) {
-        check('proprietaire', nonEmpty);
-        check('valeur_marchande', hasDigit);
-        check('solde_pret', hasDigit);
-        check('dettes_a_refinancer', hasDigit);
-        check('revenu_brut', hasDigit);
+        const butChosen = !!butHidden && butHidden.value !== '';
+        const proprioChosen = !!proprioHidden && proprioHidden.value !== '';
         const typeChosen = !!typeHidden && typeHidden.value !== '';
-        if (!typeChosen) {
-          const grid = stepEl(1)?.querySelector<HTMLElement>('.refi-type-grid');
+        if (!butChosen) {
+          const grid = stepEl(1)?.querySelector<HTMLElement>('.refi-but-grid');
           const firstCard = grid?.querySelector<HTMLElement>('.quiz-card');
           if (firstCard) invalids.unshift(firstCard);
         }
-        if (invalids.length || !typeChosen) {
-          setError(1, 'Veuillez répondre à toutes les questions avant de continuer.', invalids[0] ?? null);
+        if (!proprioChosen) {
+          const grid = stepEl(1)?.querySelector<HTMLElement>('.refi-proprio-grid');
+          const firstCard = grid?.querySelector<HTMLElement>('.quiz-card:not(.quiz-card--exit)');
+          if (firstCard && !invalids.length) invalids.unshift(firstCard);
+        }
+        if (!typeChosen) {
+          const grid = stepEl(1)?.querySelector<HTMLElement>('.refi-type-grid');
+          const firstCard = grid?.querySelector<HTMLElement>('.quiz-card');
+          if (firstCard && !invalids.length) invalids.unshift(firstCard);
+        }
+        if (invalids.length || !butChosen || !proprioChosen || !typeChosen) {
+          setError(1, 'Veuillez répondre aux 3 questions avant de continuer.', invalids[0] ?? null);
           return false;
         }
       } else if (n === 2) {
-        check('but_refinancement', nonEmpty);
-        check('cote_credit', nonEmpty);
-        check('faillite', nonEmpty);
-        if (invalids.length) {
-          setError(2, 'Veuillez répondre à toutes les questions avant de continuer.', invalids[0] ?? null);
+        check('valeur_marchande', hasDigit);
+        check('solde_pret', hasDigit);
+        check('dettes_a_refinancer', hasDigit);
+        const finTermeOk = (finTermeIgnoreEl?.checked === true) || (field('fin_terme')?.value.trim() ?? '') !== '';
+        if (!finTermeOk) {
+          const el = field('fin_terme');
+          fieldInvalid(el, true);
+          if (el) invalids.push(el);
+        }
+        check('preteur_actuel', nonEmpty);
+        if (invalids.length || !finTermeOk) {
+          setError(2, 'Veuillez remplir tous les champs avant de continuer.', invalids[0] ?? null);
           return false;
         }
       } else if (n === 3) {
+        check('type_revenu', nonEmpty);
+        check('revenu_brut', hasDigit);
+        check('cote_credit', nonEmpty);
+        check('faillite', nonEmpty);
+        if (invalids.length) {
+          setError(3, 'Veuillez répondre à toutes les questions avant de continuer.', invalids[0] ?? null);
+          return false;
+        }
+      } else if (n === 4) {
         check('prenom', (v) => v.length >= 2);
         check('nom', (v) => v.length >= 2);
         check('courriel', (v) => EMAIL_RE.test(v));
@@ -631,7 +954,7 @@ const courrielHref = `mailto:${config.courriel}`;
           if (consent) invalids.push(consent);
         }
         if (invalids.length) {
-          setError(3, 'Veuillez remplir vos coordonnées (prénom, nom, courriel valide, cellulaire à 10 chiffres) et cocher la case de consentement.', invalids[0] ?? null);
+          setError(4, 'Veuillez remplir vos coordonnées (prénom, nom, courriel valide, cellulaire à 10 chiffres) et cocher la case de consentement.', invalids[0] ?? null);
           return false;
         }
       }
@@ -639,22 +962,39 @@ const courrielHref = `mailto:${config.courriel}`;
       return true;
     }
 
-    /* ── Cartes type de propriété ── */
-    const typeCards = Array.from(form.querySelectorAll<HTMLButtonElement>('[data-refi-card]'));
-    function selectTypeCard(value: string) {
-      typeCards.forEach((card) => {
+    /* ── Cartes de sélection (générique pour les 3 groupes) ── */
+    function selectCard(group: 'but' | 'proprio' | 'type', value: string) {
+      const attr = group === 'but' ? 'data-refi-but-card' : group === 'proprio' ? 'data-refi-proprio-card' : 'data-refi-type-card';
+      const hidden = group === 'but' ? butHidden : group === 'proprio' ? proprioHidden : typeHidden;
+      const cards = Array.from(form!.querySelectorAll<HTMLButtonElement>(`[${attr}]`));
+      cards.forEach((card) => {
         const active = card.dataset.value === value;
         card.classList.toggle('selected', active);
         card.setAttribute('aria-pressed', String(active));
       });
-      if (typeHidden) typeHidden.value = value;
+      if (hidden) hidden.value = value;
     }
-    typeCards.forEach((card) => {
-      card.addEventListener('click', () => {
-        selectTypeCard(card.dataset.value || '');
-        persist();
+
+    function bindCards(group: 'but' | 'proprio' | 'type') {
+      const attr = group === 'but' ? 'data-refi-but-card' : group === 'proprio' ? 'data-refi-proprio-card' : 'data-refi-type-card';
+      const cards = Array.from(form!.querySelectorAll<HTMLButtonElement>(`[${attr}]`));
+      cards.forEach((card) => {
+        card.addEventListener('click', () => {
+          const value = card.dataset.value || '';
+          // Le « Non » propriétaire redirige vers la page premier achat
+          if (group === 'proprio' && value === 'non') {
+            track('refi_funnel_exit_non_proprio');
+            window.location.assign('/services/premier-achat');
+            return;
+          }
+          selectCard(group, value);
+          persist();
+        });
       });
-    });
+    }
+    bindCards('but');
+    bindCards('proprio');
+    bindCards('type');
 
     /* ── Premier engagement (analytics) ── */
     form.addEventListener('input', markStarted);
@@ -681,11 +1021,11 @@ const courrielHref = `mailto:${config.courriel}`;
     /* ── Soumission ── */
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!validateStep(3)) return;
+      if (!validateStep(4)) return;
 
       if (submitBtn) submitBtn.disabled = true;
       if (submitLabel) submitLabel.textContent = 'Envoi en cours…';
-      setError(3, null);
+      setError(4, null);
 
       const formData = new FormData(form);
       const payload: Record<string, unknown> = {};
@@ -707,7 +1047,7 @@ const courrielHref = `mailto:${config.courriel}`;
       } catch {
         if (submitBtn) submitBtn.disabled = false;
         if (submitLabel) submitLabel.textContent = 'Soumettre ma demande';
-        setError(3, "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
+        setError(4, "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
       }
     });
 

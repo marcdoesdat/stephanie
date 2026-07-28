@@ -36,14 +36,26 @@ const LABELS: Record<string, Record<string, string>> = {
   proprietaire: { oui: 'Oui', non: 'Non' },
   type_propriete: { maison: 'Maison unifamiliale', condo: 'Condo', plex: 'Plex', autre: 'Autre' },
   but_refinancement: {
-    sauver_interets: 'Sauver des intérêts', consolider_dettes: 'Consolider mes dettes',
-    renovations: 'Rénovations', autre_projet: 'Autre projet',
+    consolider_dettes: 'Consolider mes dettes', renovations: 'Rénovations',
+    cash_projet: 'Sortir du cash pour un projet', autre: 'Autre',
+  },
+  preteur_actuel: {
+    rbc: 'RBC — Banque Royale', td: 'TD — Groupe Banque TD',
+    bmo: 'BMO — Banque de Montréal', cibc: 'CIBC', scotia: 'Banque Scotia',
+    bnc: 'Banque Nationale', desjardins: 'Desjardins',
+    first_national: 'First National', mcap: 'MCAP', tangerine: 'Tangerine',
+    autre: 'Autre',
+    ne_sais_pas: 'Je ne sais pas',
+  },
+  type_revenu: {
+    salarie: 'Salarié', travailleur_autonome: 'Travailleur autonome',
+    retraite: 'Retraité', prestation: 'Prestation / Allocation', autre: 'Autre',
   },
   cote_credit: {
     '760_plus': 'Excellente (760 et plus)', '700_759': 'Très bonne (700 à 759)',
     '650_699': 'Un peu basse (650 à 699)', moins_650: 'Moins de 650', ne_sais_pas: 'Je ne sais pas',
   },
-  faillite: { oui: 'Oui', non: 'Non' },
+  faillite: { oui: 'Oui', non: 'Non', pas_certain: 'Pas certain' },
 };
 
 function label(field: string, value: string): string {
@@ -81,12 +93,15 @@ export const POST: APIRoute = async ({ request }) => {
   const proprietaire = asTrimmedString(payload.proprietaire);
   const typePropriete = asTrimmedString(payload.type_propriete);
   const butRefinancement = asTrimmedString(payload.but_refinancement);
+  const preteurActuel = asTrimmedString(payload.preteur_actuel);
+  const typeRevenu = asTrimmedString(payload.type_revenu);
   const coteCredit = asTrimmedString(payload.cote_credit);
   const faillite = asTrimmedString(payload.faillite);
 
   const valeurMarchande = asTrimmedString(payload.valeur_marchande);
   const soldePret = asTrimmedString(payload.solde_pret);
   const dettes = asTrimmedString(payload.dettes_a_refinancer);
+  const finTerme = asTrimmedString(payload.fin_terme);
   const revenuBrut = asTrimmedString(payload.revenu_brut);
 
   if (
@@ -98,11 +113,14 @@ export const POST: APIRoute = async ({ request }) => {
     !LABELS.proprietaire?.[proprietaire] ||
     !LABELS.type_propriete?.[typePropriete] ||
     !LABELS.but_refinancement?.[butRefinancement] ||
+    !LABELS.preteur_actuel?.[preteurActuel] ||
+    !LABELS.type_revenu?.[typeRevenu] ||
     !LABELS.cote_credit?.[coteCredit] ||
     !LABELS.faillite?.[faillite] ||
     valeurMarchande === '' ||
     soldePret === '' ||
     dettes === '' ||
+    finTerme === '' ||
     revenuBrut === ''
   ) {
     return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
@@ -133,16 +151,19 @@ export const POST: APIRoute = async ({ request }) => {
   /* ---------- Notification interne ---------- */
 
   const sectionPropriete = renderDataRows([
+    ['But du refinancement', label('but_refinancement', butRefinancement)],
     ["Propriétaire d'un bien immobilier", label('proprietaire', proprietaire)],
     ['Type de propriété à refinancer', label('type_propriete', typePropriete)],
     ['Valeur marchande estimée', escapeHtml(valeurMarchande)],
     ['Solde hypothécaire actuel', escapeHtml(soldePret)],
     ['Dettes totales à refinancer', escapeHtml(dettes)],
-    ['Revenu brut familial approximatif', escapeHtml(revenuBrut)],
+    ['Date approximative de fin de terme', escapeHtml(finTerme)],
+    ['Prêteur actuel', label('preteur_actuel', preteurActuel)],
   ]);
 
-  const sectionProjet = renderDataRows([
-    ['But du refinancement', label('but_refinancement', butRefinancement)],
+  const sectionProfil = renderDataRows([
+    ['Type de revenu principal', label('type_revenu', typeRevenu)],
+    ['Revenu brut familial approximatif', escapeHtml(revenuBrut)],
     ['Cote de crédit approximative', label('cote_credit', coteCredit)],
     ['Faillite ou proposition au consommateur', label('faillite', faillite)],
   ]);
@@ -166,8 +187,8 @@ export const POST: APIRoute = async ({ request }) => {
   const internalHtml = wrapEmailHtml(`
       <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouveau lead — Refinancement (publicité)</h1>
       <p style="margin:0 0 4px;color:#6a5f50;font-size:14px;"><strong>${eNomComplet}</strong></p>
-      ${tableBlock('1. Propriété et finances', sectionPropriete)}
-      ${tableBlock('2. Projet et crédit', sectionProjet)}
+      ${tableBlock('1. Projet et propriété', sectionPropriete)}
+      ${tableBlock('2. Profil financier', sectionProfil)}
       ${tableBlock('3. Contact', sectionContact)}
       <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">Répondez directement à ce courriel pour écrire à ${ePrenom}.</p>
   `);
