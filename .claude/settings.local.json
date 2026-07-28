@@ -23,7 +23,29 @@
       "Bash(nslookup -type=NS hypotheca.ca)",
       "Bash(where netlify *)",
       "Bash(npx vitest *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(git push *)",
+      "Bash(gh pr create --title 'Migrate all site forms to Resend for transactional email' --body ' *)",
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)",
+      "Bash(env)",
+      "Bash(git fetch *)",
+      "Bash(git merge *)",
+      "Bash(grep -rn *)",
+      "Bash(git commit *)",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)",
+      "Bash(gh pr *)",
+      "PowerShell(gh pr view feat/resend-forms-integration --json url,number,state 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" pr view feat/resend-forms-integration --json url,number,state 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" auth status 2>&1)",
+      "Bash(curl -s \"https://api.github.com/repos/marcdoesdat/stephanie/pulls?head=marcdoesdat:feat/resend-forms-integration&state=open\")",
+      "Bash(git credential *)",
+      "PowerShell(npm run check)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -X POST http://localhost:4325/api/refinancement-submit -H \"Content-Type: application/json\" -d '{\"company\":\"spam\",\"prenom\":\"Bot\"}')",
+      "Bash(curl -s -X POST http://localhost:4325/api/refinancement-submit -H \"Content-Type: application/json\" -d '{\"prenom\":\"Marie\",\"nom\":\"Tremblay\",\"courriel\":\"a@b.ca\",\"cellulaire\":\"5145550123\",\"consentement\":true,\"proprietaire\":\"oui\",\"type_propriete\":\"chateau\",\"but_refinancement\":\"consolider_dettes\",\"cote_credit\":\"650_699\",\"faillite\":\"non\",\"valeur_marchande\":\"1\",\"solde_pret\":\"1\",\"dettes_a_refinancer\":\"1\",\"revenu_brut\":\"1\"}' -w \"\\\\n%{http_code}\\\\n\")",
+      "Bash(curl -s -X POST http://localhost:4325/api/refinancement-submit -H \"Content-Type: application/json\" -d '{\"prenom\":\"Marie\",\"nom\":\"Tremblay\",\"courriel\":\"a@b.ca\",\"cellulaire\":\"5145550123\",\"consentement\":false,\"proprietaire\":\"oui\",\"type_propriete\":\"maison\",\"but_refinancement\":\"consolider_dettes\",\"cote_credit\":\"650_699\",\"faillite\":\"non\",\"valeur_marchande\":\"1\",\"solde_pret\":\"1\",\"dettes_a_refinancer\":\"1\",\"revenu_brut\":\"1\"}' -w \"\\\\n%{http_code}\\\\n\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4325/api/refinancement-submit)",
+      "PowerShell(npx vitest run)"
     ]
   }
 }

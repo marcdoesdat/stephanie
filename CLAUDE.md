@@ -44,6 +44,7 @@ src/
 | `/outils/calculateur-penalite-hypothecaire` | SSR | Calculateur de pénalité dédié |
 | `/amortissement` | Statique | Tableau d'amortissement |
 | `/rappel` | Statique | Formulaire de prise de rappel |
+| `/refinancement` | Statique | Landing publicitaire (funnel quiz 3 étapes, noindex, sans Nav/Footer) |
 | `/services/premier-achat` | Statique | Page clientèle premier achat |
 | `/services/renouvellement` | Statique | Page renouvellement |
 | `/services/refinancement` | Statique | Page refinancement |
@@ -62,6 +63,7 @@ src/
 | `/api/outils-submit` | API | Soumission formulaire de contact du hub d'outils (`/outils`) |
 | `/api/partenaires-submit` | API | Soumission formulaire de référence partenaire (`/partenaires`) |
 | `/api/demande-submit` | API | Soumission formulaire de demande de financement (`/demande`) |
+| `/api/refinancement-submit` | API | Soumission du funnel publicitaire (`/refinancement`) |
 
 `export const prerender = true` force le statique sur une page (par défaut SSR via adapter Netlify).
 
