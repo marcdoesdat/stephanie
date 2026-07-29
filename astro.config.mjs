@@ -11,7 +11,13 @@ export default defineConfig({
       // Exclut les pages noindex du sitemap (sinon signaux contradictoires).
       // Comparaison sur le pathname exact : un endsWith('/refinancement/') exclurait
       // aussi la page SEO /services/refinancement/, qui doit rester indexée.
-      filter: (page) => !['/demande/', '/merci/', '/refinancement/'].includes(new URL(page).pathname),
+      filter: (page) => ![
+        '/demande/',
+        '/merci/',
+        '/refinancement/',
+        '/refinancement-v2/',
+        '/refinancement/merci/',
+      ].includes(new URL(page).pathname),
     })
   ],
 });

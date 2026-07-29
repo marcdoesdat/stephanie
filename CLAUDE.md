@@ -44,7 +44,9 @@ src/
 | `/outils/calculateur-penalite-hypothecaire` | SSR | Calculateur de pénalité dédié |
 | `/amortissement` | Statique | Tableau d'amortissement |
 | `/rappel` | Statique | Formulaire de prise de rappel |
-| `/refinancement` | Statique | Landing publicitaire (funnel quiz 3 étapes, noindex, sans Nav/Footer) |
+| `/refinancement` | Statique | Landing publicitaire V1 (funnel quiz 4 étapes, noindex, sans Nav/Footer) |
+| `/refinancement-v2` | Statique | Landing publicitaire V2 (funnel 5 étapes sans chiffre exact, noindex, sans Nav/Footer) |
+| `/refinancement/merci` | Statique | Page de remerciement du funnel V2 (noindex, sans Nav/Footer) |
 | `/services/premier-achat` | Statique | Page clientèle premier achat |
 | `/services/renouvellement` | Statique | Page renouvellement |
 | `/services/refinancement` | Statique | Page refinancement |
@@ -63,7 +65,8 @@ src/
 | `/api/outils-submit` | API | Soumission formulaire de contact du hub d'outils (`/outils`) |
 | `/api/partenaires-submit` | API | Soumission formulaire de référence partenaire (`/partenaires`) |
 | `/api/demande-submit` | API | Soumission formulaire de demande de financement (`/demande`) |
-| `/api/refinancement-submit` | API | Soumission du funnel publicitaire (`/refinancement`) |
+| `/api/refinancement-submit` | API | Soumission du funnel publicitaire V1 (`/refinancement`) |
+| `/api/refinancement-v2-submit` | API | Soumission du funnel publicitaire V2 (`/refinancement-v2`), équité déduite des tranches |
 
 `export const prerender = true` force le statique sur une page (par défaut SSR via adapter Netlify).
 
@@ -162,6 +165,14 @@ Décode l'obfuscation `occ(...)` utilisée sur hypotheca.ca : ROT13 (lettres) + 
 - `formatCAD(n)` → `"300 000 $"` (fr-CA, sans décimales)
 - `formatNumber(n)` → `"300 000"` (fr-CA)
 - `formatDateLong(d)` → `"1 juin 2028"` (fr-CA)
+
+### `src/utils/refinancementV2.ts`
+Source de vérité du funnel `/refinancement-v2`, partagée entre la page et `/api/refinancement-v2-submit`.
+- `INTENTIONS`, `VALEURS`, `SOLDES` — libellés + milieux de tranche ; servent aussi de whitelist de validation côté API
+- `evaluerEquite(valeurCle, soldeCle)` — déduit équité, ratio et montant refinançable (80 % LTV) à partir des tranches ; `null` si une clé est invalide
+- `classerRatio(ratio)` — `faible` sous 20 %, `bonne` à partir de 20 % inclusivement
+- Tests : `src/utils/refinancementV2.test.ts`
+- **L'équité est toujours recalculée côté serveur** — rien n'est accepté du client sur ce point.
 
 ## Configuration
 

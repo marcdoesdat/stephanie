@@ -1,0 +1,833 @@
+---
+// Landing page publicitaire (Facebook/Google Ads) — V2 du funnel refinancement.
+//
+// Différence clé avec /refinancement (V1) : aucun chiffre exact n'est demandé. Trois
+// questions à un clic (intention, tranche de valeur, tranche de solde) qui auto-avancent,
+// une ville, puis le contact. L'équité est déduite des tranches au lieu d'être saisie.
+//
+// Page volontairement sans Nav/Footer ni liens sortants au-dessus du pli : une pub = un
+// message = une action. noindex + exclue du sitemap (astro.config.mjs) — accessible
+// uniquement via les publicités. Soumission → /api/refinancement-v2-submit → /refinancement/merci.
+//
+// Ton : tutoiement assumé sur toute la V2 (la V1 vouvoie).
+export const prerender = true;
+
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../assets/stephanie.webp';
+import MainLayout from '../layouts/MainLayout.astro';
+import { loadSiteConfig } from '../config';
+import {
+  VALEURS,
+  SOLDES,
+  type IntentionCle,
+  type SoldeCle,
+  type ValeurCle,
+} from '../utils/refinancementV2';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+const telephoneHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
+const courrielHref = `mailto:${config.courriel}`;
+
+// Les libellés viennent de src/utils/refinancementV2.ts (partagés avec l'API) ; seuls
+// l'icône et le sous-titre sont propres à la présentation.
+const cartesIntention: Array<{ cle: IntentionCle; titre: string; sous: string; icone: string }> = [
+  { cle: 'baisser_paiements', titre: 'Baisser mes paiements mensuels', sous: 'Je suis serré', icone: '💸' },
+  { cle: 'effacer_dettes', titre: 'Effacer mes dettes à taux élevé', sous: 'Cartes, prêt auto, marge', icone: '💳' },
+  { cle: 'financer_renos', titre: 'Financer des rénos', sous: 'Sans toucher à mes économies', icone: '🔨' },
+  { cle: 'racheter_part', titre: 'Racheter la part de mon ex / conjoint', sous: 'Séparation, succession', icone: '🤝' },
+];
+
+const cartesValeur = (Object.keys(VALEURS) as ValeurCle[]).map((cle) => ({
+  cle,
+  titre: VALEURS[cle].label,
+}));
+
+const cartesSolde = (Object.keys(SOLDES) as SoldeCle[]).map((cle) => ({
+  cle,
+  titre: SOLDES[cle].label,
+}));
+
+const villesSuggerees = [
+  'Repentigny', 'Le Gardeur', 'Charlemagne', "L'Assomption", 'Terrebonne',
+  'Mascouche', 'Lachenaie', 'Laval', 'Montréal', 'Saint-Sulpice',
+];
+---
+
+<MainLayout
+  title="Refinancement hypothécaire — Découvre ton économie"
+  description="Consolide tes dettes et réduis tes paiements grâce au refinancement hypothécaire. Analyse gratuite et sans engagement avec Stéphanie Weyman, courtière hypothécaire."
+  noindex={true}
+>
+  <main id="main-content" class="refi-page">
+    <!-- ============ HERO ============ -->
+    <header class="refi-hero">
+      <div class="refi-hero-inner">
+        <h1>Refinance ton hypothèque&nbsp;: <em>baisse tes paiements, efface tes dettes</em></h1>
+        <ul class="refi-bullets" role="list">
+          <li>✓ Aucuns frais pour toi avec les prêteurs traditionnels</li>
+          <li>✓ Une réponse en moins de 24&nbsp;h ouvrables, directement par {prenom}</li>
+          <li>✓ Plus de 20 institutions prêteuses comparées</li>
+        </ul>
+      </div>
+    </header>
+
+    <!-- ============ FUNNEL ============ -->
+    <section class="refi-funnel" aria-label="Questionnaire de refinancement">
+      <div class="contact-form quiz">
+        <div class="quiz-trust">
+          <Image
+            src={stephaniePhoto}
+            alt={config.nom}
+            width={48}
+            height={48}
+            loading="eager"
+            decoding="async"
+            class="quiz-trust-photo"
+          />
+          <div class="quiz-trust-text">
+            <strong>4 questions rapides, puis je te dis combien tu pourrais économiser.</strong>
+            <span>{config.nom} · {config.titre}</span>
+          </div>
+        </div>
+
+        <div class="quiz-progress" aria-hidden="true">
+          <div class="quiz-progress-meta">
+            <span class="quiz-progress-label">Étape <span data-refi2-step-num>1</span> sur 5</span>
+            <button type="button" class="quiz-back" data-refi2-back hidden>← Retour</button>
+          </div>
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" data-refi2-fill style="width:20%"></div>
+          </div>
+        </div>
+
+        <form id="refi2-form" name="refinancement-v2" novalidate>
+          <!-- Honeypot anti-spam (hors écran, non visible) -->
+          <div class="refi-hp" aria-hidden="true">
+            <label>Ne pas remplir
+              <input type="text" name="company" tabindex="-1" autocomplete="off" />
+            </label>
+          </div>
+
+          <input type="hidden" name="intention" value="" />
+          <input type="hidden" name="valeur_tranche" value="" />
+          <input type="hidden" name="solde_tranche" value="" />
+
+          <!-- ---------- Étape 1 — Intention ---------- -->
+          <div class="quiz-step" data-refi2-step="1">
+            <p class="quiz-q" id="refi2-intention-label">Qu'est-ce qui te ferait le plus de bien en ce moment&nbsp;?</p>
+            <p class="quiz-q-sub">C'est pour que je calcule la bonne stratégie pour toi.</p>
+
+            <div class="quiz-options refi-grid" role="group" aria-labelledby="refi2-intention-label">
+              {cartesIntention.map((carte) => (
+                <button
+                  type="button"
+                  class="quiz-card"
+                  data-refi2-intention-card
+                  data-value={carte.cle}
+                  aria-pressed="false"
+                >
+                  <span class="quiz-card-icon" aria-hidden="true">{carte.icone}</span>
+                  <span class="quiz-card-text">
+                    <strong>{carte.titre}</strong>
+                    <span>{carte.sous}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <p class="refi-error" data-refi2-error role="alert" hidden></p>
+          </div>
+
+          <!-- ---------- Étape 2 — Valeur ---------- -->
+          <div class="quiz-step" data-refi2-step="2" hidden>
+            <p class="quiz-q" id="refi2-valeur-label">Ta maison vaut environ combien aujourd'hui&nbsp;?</p>
+            <p class="quiz-q-sub">Une estimation, pas besoin d'évaluation.</p>
+
+            <div class="quiz-options refi-grid" role="group" aria-labelledby="refi2-valeur-label">
+              {cartesValeur.map((carte) => (
+                <button
+                  type="button"
+                  class="quiz-card quiz-card--range"
+                  data-refi2-valeur-card
+                  data-value={carte.cle}
+                  aria-pressed="false"
+                >
+                  <span class="quiz-card-text"><strong>{carte.titre}</strong></span>
+                </button>
+              ))}
+            </div>
+
+            <p class="refi-error" data-refi2-error role="alert" hidden></p>
+          </div>
+
+          <!-- ---------- Étape 3 — Solde ---------- -->
+          <div class="quiz-step" data-refi2-step="3" hidden>
+            <p class="quiz-q" id="refi2-solde-label">Il te reste combien sur ton hypothèque&nbsp;?</p>
+            <p class="quiz-q-sub">Aucun chiffre exact demandé — une tranche suffit.</p>
+
+            <div class="quiz-options refi-grid" role="group" aria-labelledby="refi2-solde-label">
+              {cartesSolde.map((carte) => (
+                <button
+                  type="button"
+                  class="quiz-card quiz-card--range"
+                  data-refi2-solde-card
+                  data-value={carte.cle}
+                  aria-pressed="false"
+                >
+                  <span class="quiz-card-text"><strong>{carte.titre}</strong></span>
+                </button>
+              ))}
+            </div>
+
+            <p class="refi-error" data-refi2-error role="alert" hidden></p>
+          </div>
+
+          <!-- ---------- Étape 4 — Ville ---------- -->
+          <div class="quiz-step" data-refi2-step="4" hidden>
+            <!-- Moment de valeur : ce que les tranches des étapes 2-3 laissent entrevoir -->
+            <div class="quiz-value" data-refi2-value hidden>
+              <span class="quiz-value-eyebrow" data-refi2-value-eyebrow></span>
+              <strong class="refi-value-amount" data-refi2-value-amount hidden></strong>
+              <p data-refi2-value-text></p>
+              <small class="refi-value-disclaimer">
+                Estimation basée sur 80&nbsp;% de la valeur marchande, moins ton solde. Le montant réel
+                dépend de l'évaluation, de ton profil et des politiques du prêteur. Les frais applicables
+                (pénalité, notaire, évaluation) ne sont pas inclus.
+              </small>
+            </div>
+
+            <p class="quiz-q" >Ta propriété est dans quelle ville&nbsp;?</p>
+            <p class="quiz-q-sub">Ça me permet de cibler les prêteurs actifs dans ton secteur.</p>
+
+            <div class="quiz-field">
+              <label class="cform-label" for="refi2-ville">Ville <span class="refi-req">*</span></label>
+              <input
+                type="text"
+                id="refi2-ville"
+                name="ville"
+                placeholder="Ex. Repentigny"
+                autocomplete="address-level2"
+                maxlength="60"
+                list="refi2-villes"
+                required
+              />
+              <datalist id="refi2-villes">
+                {villesSuggerees.map((ville) => <option value={ville}></option>)}
+              </datalist>
+            </div>
+
+            <p class="refi-error" data-refi2-error role="alert" hidden></p>
+
+            <button type="button" class="btn-cta btn-cta--block" data-refi2-next>
+              <span>Suivant</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+
+          <!-- ---------- Étape 5 — Contact ---------- -->
+          <div class="quiz-step quiz-step--final" data-refi2-step="5" hidden>
+            <p class="quiz-q quiz-q--final">Parfait&nbsp;! Je peux te dire en 24&nbsp;h combien tu pourrais économiser. Où je t'envoie ça&nbsp;?</p>
+
+            <div class="quiz-fields">
+              <div class="quiz-field">
+                <label class="cform-label" for="refi2-prenom">Prénom <span class="refi-req">*</span></label>
+                <input type="text" id="refi2-prenom" name="prenom" autocomplete="given-name" required />
+              </div>
+              <div class="quiz-field">
+                <label class="cform-label" for="refi2-courriel">Courriel <span class="refi-req">*</span></label>
+                <input type="email" id="refi2-courriel" name="courriel" autocomplete="email" inputmode="email" required />
+              </div>
+              <div class="quiz-field">
+                <label class="cform-label" for="refi2-cellulaire">Cellulaire <span class="refi-req">*</span></label>
+                <input type="tel" id="refi2-cellulaire" name="cellulaire" placeholder="514 000-0000" autocomplete="tel" inputmode="tel" required />
+              </div>
+            </div>
+
+            <label class="cform-consent" for="refi2-consent">
+              <input type="checkbox" id="refi2-consent" name="consentement" value="oui" required />
+              <span>
+                J'accepte d'être contacté(e) par {config.nom} pour mon analyse gratuite.
+                Confidentiel, 0&nbsp;$ de frais — voir la
+                <a href="/confidentialite" target="_blank" rel="noopener">politique de confidentialité</a>. <span class="refi-req">*</span>
+              </span>
+            </label>
+
+            <p class="refi-error" data-refi2-error role="alert" hidden></p>
+
+            <button type="submit" class="btn-cta btn-cta--block" id="refi2-submit">
+              <span class="refi-submit-label">Voir mon économie</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+
+            <p class="quiz-final-note">Gratuit · Sans engagement · Réponse en moins de 24 h ouvrables</p>
+          </div>
+        </form>
+
+        <noscript>
+          <div class="quiz-noscript">
+            <p><strong>Le formulaire interactif nécessite JavaScript.</strong> Tu peux joindre {prenom} directement&nbsp;:</p>
+            <p><a href={telephoneHref}>{config.telephone}</a> · <a href={courrielHref}>{config.courriel}</a></p>
+          </div>
+        </noscript>
+      </div>
+    </section>
+
+    <!-- ============ BANDEAU PRÊTEURS ============ -->
+    <section class="refi-lenders" aria-label="Institutions prêteuses partenaires">
+      <p class="refi-lenders-title">Je fais affaire avec plus de 20 institutions prêteuses<br />dont plusieurs que tu connais déjà&nbsp;!</p>
+      <ul class="refi-lenders-list" role="list">
+        <li>Desjardins</li>
+        <li>Banque Nationale</li>
+        <li>First National</li>
+        <li>MCAP</li>
+        <li>Banque Scotia</li>
+        <li>CIBC</li>
+        <li>TD</li>
+        <li>Strive</li>
+        <li>Manuvie</li>
+      </ul>
+    </section>
+
+    <!-- ============ MICRO-FOOTER ============ -->
+    <footer class="refi-footer">
+      <p>
+        {config.nom} · {config.titre} · N° AMF {config.amf} ·
+        <a href="/confidentialite">Confidentialité</a> · <a href="/conditions">Conditions</a>
+      </p>
+    </footer>
+  </main>
+</MainLayout>
+
+<style is:global>
+  /* Landing publicitaire : le CTA sticky du layout compète avec le funnel */
+  .mobile-sticky-cta { display: none !important; }
+</style>
+
+<style>
+  .refi-page {
+    min-height: 100vh;
+    background: var(--sand);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Hero compact ── */
+  .refi-hero {
+    padding: 2.5rem 1.25rem 1.5rem;
+    text-align: center;
+  }
+  .refi-hero-inner { max-width: 640px; margin: 0 auto; }
+  .refi-hero h1 {
+    font-family: "Lora", serif;
+    font-size: clamp(1.5rem, 4.5vw, 2.2rem);
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0 0 1rem;
+    letter-spacing: -0.01em;
+  }
+  .refi-hero h1 em { color: var(--clay); font-style: italic; }
+  .refi-bullets {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+
+  /* ── Funnel ── */
+  .refi-funnel {
+    padding: 0 1.25rem 2rem;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .refi-funnel .contact-form.quiz {
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+  }
+
+  /* Honeypot : hors écran sans display:none (les bots l'ignorent moins) */
+  .refi-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .refi-req { color: var(--clay); text-transform: none; }
+
+  /* Grilles desktop pour les groupes de cartes */
+  @media (min-width: 640px) {
+    .refi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Cartes de tranche (étapes 2-3) : pas d'icône, le libellé porte l'information */
+  .quiz-card--range { min-height: 52px; }
+  .quiz-card--range .quiz-card-text strong { font-size: 1rem; }
+
+  /* ── Moment de valeur (étape 4) ── */
+  .quiz-value[hidden] { display: none; }
+  .refi-value-amount {
+    display: block;
+    font-family: "Lora", serif;
+    font-size: clamp(1.7rem, 6vw, 2.3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+    margin-bottom: 0.35rem;
+    position: relative;
+    z-index: 1;
+  }
+  .refi-value-amount[hidden] { display: none; }
+  .refi-value-disclaimer {
+    display: block;
+    margin-top: 0.7rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 0.68rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.72);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Erreurs ── */
+  .refi-error {
+    background: #fbeae3;
+    border: 1px solid var(--clay-dk);
+    color: var(--clay-dk);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .refi-error[hidden] { display: none; }
+
+  #refi2-submit[disabled] { opacity: 0.65; cursor: not-allowed; }
+  #refi2-submit .refi-submit-label {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Bandeau institutions ── */
+  .refi-lenders {
+    padding: 1rem 1.25rem 2rem;
+    text-align: center;
+  }
+  .refi-lenders-title {
+    font-size: 0.92rem;
+    color: var(--ink);
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+  .refi-lenders-list {
+    list-style: none;
+    margin: 0 auto;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    max-width: 560px;
+  }
+  .refi-lenders-list li {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.45rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  /* ── Micro-footer ── */
+  .refi-footer {
+    margin-top: auto;
+    padding: 1.25rem;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+  .refi-footer p {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 0;
+  }
+  .refi-footer a { color: var(--muted); text-decoration: underline; }
+  .refi-footer a:hover { color: var(--clay); }
+
+  /* ── Consentement checkbox ── */
+  .cform-consent {
+    display: flex;
+    gap: .55rem;
+    align-items: flex-start;
+    margin: 1.1rem 0 .6rem;
+    font-size: .78rem;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .cform-consent input[type="checkbox"] {
+    margin-top: .15rem;
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--clay);
+  }
+  .cform-consent a { color: var(--clay); text-decoration: underline; }
+</style>
+
+<script>
+  import { evaluerEquite } from '../utils/refinancementV2';
+  import { formatCAD } from '../utils/formatters';
+
+  /** Seules les réponses non personnelles sont persistées — jamais les coordonnées. */
+  interface Refi2State {
+    intention: string;
+    valeur_tranche: string;
+    solde_tranche: string;
+    ville: string;
+  }
+
+  type Groupe = 'intention' | 'valeur' | 'solde';
+
+  const STORAGE_KEY = 'sw_refi_v2_state_v1';
+  const PRENOM_KEY = 'sw_refi_v2_prenom';
+  const STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
+  const TOTAL_STEPS = 5;
+  const AUTO_ADVANCE_MS = 250;
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const TEL_RE = /(?:\D*\d){10}/;
+  const VILLE_MIN = 2;
+  const VILLE_MAX = 60;
+
+  /** Chaque groupe de cartes : attribut de repérage, champ caché et étape correspondante. */
+  const GROUPES: Record<Groupe, { attr: string; champ: keyof Refi2State; etape: number }> = {
+    intention: { attr: 'data-refi2-intention-card', champ: 'intention', etape: 1 },
+    valeur: { attr: 'data-refi2-valeur-card', champ: 'valeur_tranche', etape: 2 },
+    solde: { attr: 'data-refi2-solde-card', champ: 'solde_tranche', etape: 3 },
+  };
+
+  function track(name: string) {
+    // @ts-ignore
+    if (typeof window.umami?.track === 'function') window.umami.track(name);
+    // @ts-ignore
+    if (typeof window.gtag === 'function') window.gtag('event', name);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('refi2-form') as HTMLFormElement | null;
+    if (!form) return;
+
+    const root = form.closest<HTMLElement>('.contact-form.quiz');
+    if (!root) return;
+
+    const fillEl = root.querySelector<HTMLElement>('[data-refi2-fill]');
+    const stepNumEl = root.querySelector<HTMLElement>('[data-refi2-step-num]');
+    const backBtn = root.querySelector<HTMLButtonElement>('[data-refi2-back]');
+    const steps = Array.from(form.querySelectorAll<HTMLElement>('[data-refi2-step]'));
+    const submitBtn = document.getElementById('refi2-submit') as HTMLButtonElement | null;
+    const submitLabel = form.querySelector<HTMLElement>('.refi-submit-label');
+
+    const valueEl = form.querySelector<HTMLElement>('[data-refi2-value]');
+    const valueEyebrowEl = form.querySelector<HTMLElement>('[data-refi2-value-eyebrow]');
+    const valueAmountEl = form.querySelector<HTMLElement>('[data-refi2-value-amount]');
+    const valueTextEl = form.querySelector<HTMLElement>('[data-refi2-value-text]');
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let currentStep = 1;
+    let started = false;
+    let equiteFaibleSignalee = false;
+    let autoAdvanceTimer: number | undefined;
+
+    function field(name: string): HTMLInputElement | HTMLSelectElement | null {
+      const el = form!.elements.namedItem(name);
+      return el instanceof HTMLInputElement || el instanceof HTMLSelectElement ? el : null;
+    }
+
+    function valeurDe(name: keyof Refi2State): string {
+      return field(name)?.value.trim() ?? '';
+    }
+
+    /* ── Persistance sessionStorage (reprise du funnel < 24 h, sans données personnelles) ── */
+    function persist() {
+      try {
+        const data: Refi2State & { step: number } = {
+          intention: valeurDe('intention'),
+          valeur_tranche: valeurDe('valeur_tranche'),
+          solde_tranche: valeurDe('solde_tranche'),
+          ville: valeurDe('ville'),
+          step: currentStep,
+        };
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ts: Date.now(), data }));
+      } catch {}
+    }
+
+    function restore() {
+      try {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed.ts !== 'number' || Date.now() - parsed.ts > STORAGE_TTL_MS) {
+          sessionStorage.removeItem(STORAGE_KEY);
+          return;
+        }
+        const data = parsed.data as (Refi2State & { step: number }) | undefined;
+        if (!data) return;
+
+        const ville = field('ville');
+        if (ville) ville.value = String(data.ville ?? '');
+
+        if (data.intention) selectCard('intention', String(data.intention));
+        if (data.valeur_tranche) selectCard('valeur', String(data.valeur_tranche));
+        if (data.solde_tranche) selectCard('solde', String(data.solde_tranche));
+
+        if (typeof data.step === 'number' && data.step >= 1 && data.step <= TOTAL_STEPS) {
+          currentStep = data.step;
+        }
+      } catch {}
+    }
+
+    function clearPersist() {
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
+    }
+
+    /* ── Cartes de sélection (générique pour les 3 groupes) ── */
+    function selectCard(groupe: Groupe, value: string) {
+      const { attr, champ } = GROUPES[groupe];
+      form!.querySelectorAll<HTMLButtonElement>(`[${attr}]`).forEach((card) => {
+        const active = card.dataset.value === value;
+        card.classList.toggle('selected', active);
+        card.setAttribute('aria-pressed', String(active));
+      });
+      const hidden = field(champ);
+      if (hidden) hidden.value = value;
+    }
+
+    function bindCards(groupe: Groupe) {
+      const { attr, etape } = GROUPES[groupe];
+      form!.querySelectorAll<HTMLButtonElement>(`[${attr}]`).forEach((card) => {
+        card.addEventListener('click', () => {
+          selectCard(groupe, card.dataset.value || '');
+          setError(etape, null);
+          persist();
+          // Une question = un clic : on enchaîne sans bouton « Suivant ».
+          if (currentStep !== etape) return;
+          window.clearTimeout(autoAdvanceTimer);
+          autoAdvanceTimer = window.setTimeout(() => avancer(), reduceMotion ? 0 : AUTO_ADVANCE_MS);
+        });
+      });
+    }
+
+    /* ── Moment de valeur : ce que les tranches laissent entrevoir ── */
+    function updateValue() {
+      if (!valueEl || !valueEyebrowEl || !valueAmountEl || !valueTextEl) return;
+
+      const equite = evaluerEquite(valeurDe('valeur_tranche'), valeurDe('solde_tranche'));
+      if (!equite) {
+        valueEl.setAttribute('hidden', '');
+        return;
+      }
+
+      valueEl.removeAttribute('hidden');
+      valueAmountEl.setAttribute('hidden', '');
+
+      if (equite.niveau === 'bonne' && equite.disponible80 !== null) {
+        valueEyebrowEl.textContent = 'Montant refinançable estimé';
+        valueAmountEl.textContent = formatCAD(equite.disponible80);
+        valueAmountEl.removeAttribute('hidden');
+        valueTextEl.textContent =
+          "C'est ce qu'on pourrait potentiellement dégager selon tes réponses. On valide le vrai chiffre ensemble.";
+      } else if (equite.niveau === 'faible') {
+        valueEyebrowEl.textContent = 'Ton dossier demande une approche différente';
+        valueTextEl.textContent =
+          "Ton équité semble limitée, mais d'autres options existent — c'est exactement ce que je vais regarder pour toi.";
+        if (!equiteFaibleSignalee) {
+          equiteFaibleSignalee = true;
+          track('refi_v2_equite_faible');
+        }
+      } else {
+        valueEyebrowEl.textContent = 'On va calculer ça ensemble';
+        valueTextEl.textContent =
+          "Sans ton solde, je ne peux pas estimer tout de suite. Je te reviens avec le vrai chiffre en moins de 24 h.";
+      }
+    }
+
+    /* ── Navigation ── */
+    function stepEl(n: number): HTMLElement | undefined {
+      return steps.find((el) => el.dataset.refi2Step === String(n));
+    }
+
+    function showStep(n: number, scrollOnMobile = true) {
+      currentStep = n;
+      steps.forEach((el) => el.setAttribute('hidden', ''));
+      const visible = stepEl(n);
+      visible?.removeAttribute('hidden');
+
+      if (fillEl) fillEl.style.width = `${(n / TOTAL_STEPS) * 100}%`;
+      if (stepNumEl) stepNumEl.textContent = String(n);
+      if (backBtn) {
+        if (n > 1) backBtn.removeAttribute('hidden');
+        else backBtn.setAttribute('hidden', '');
+      }
+
+      if (n === 4) updateValue();
+
+      const firstFocusable = visible?.querySelector<HTMLElement>('input:not([type="hidden"]), select, button');
+      if (firstFocusable) {
+        window.setTimeout(() => firstFocusable.focus({ preventScroll: true }), 60);
+      }
+      if (window.innerWidth < 900 && scrollOnMobile) {
+        root!.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      persist();
+    }
+
+    function avancer() {
+      if (!validateStep(currentStep)) return;
+      if (currentStep >= TOTAL_STEPS) return;
+      const next = currentStep + 1;
+      showStep(next);
+      track(`refi_v2_step_${next}`);
+    }
+
+    /* ── Erreurs ── */
+    function setError(n: number, msg: string | null, firstInvalid?: HTMLElement | null) {
+      const errEl = stepEl(n)?.querySelector<HTMLElement>('[data-refi2-error]');
+      if (!errEl) return;
+      if (!msg) {
+        errEl.setAttribute('hidden', '');
+        errEl.textContent = '';
+        return;
+      }
+      errEl.removeAttribute('hidden');
+      errEl.textContent = msg;
+      if (firstInvalid) {
+        firstInvalid.focus({ preventScroll: true });
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function fieldInvalid(el: Element | null, invalid: boolean) {
+      if (!el) return;
+      if (invalid) el.setAttribute('aria-invalid', 'true');
+      else el.removeAttribute('aria-invalid');
+    }
+
+    /* ── Validation par étape (le serveur revalide systématiquement) ── */
+    function validateStep(n: number): boolean {
+      const invalids: HTMLElement[] = [];
+      const check = (name: string, ok: (v: string) => boolean) => {
+        const el = field(name);
+        const valid = !!el && ok(el.value.trim());
+        fieldInvalid(el, !valid);
+        if (!valid && el) invalids.push(el);
+      };
+
+      if (n <= 3) {
+        // Les étapes à cartes avancent au clic : ce garde-fou ne sert qu'en cas de retour arrière.
+        const groupe = (Object.keys(GROUPES) as Groupe[]).find((g) => GROUPES[g].etape === n);
+        if (groupe && valeurDe(GROUPES[groupe].champ) === '') {
+          const firstCard = stepEl(n)?.querySelector<HTMLElement>('.quiz-card');
+          setError(n, 'Choisis une réponse pour continuer.', firstCard ?? null);
+          return false;
+        }
+      } else if (n === 4) {
+        check('ville', (v) => v.length >= VILLE_MIN && v.length <= VILLE_MAX);
+        if (invalids.length) {
+          setError(4, 'Indique la ville de ta propriété pour continuer.', invalids[0] ?? null);
+          return false;
+        }
+      } else if (n === 5) {
+        check('prenom', (v) => v.length >= 2);
+        check('courriel', (v) => EMAIL_RE.test(v));
+        check('cellulaire', (v) => TEL_RE.test(v));
+        const consent = field('consentement') as HTMLInputElement | null;
+        if (!consent?.checked && consent) invalids.push(consent);
+        if (invalids.length) {
+          setError(
+            5,
+            'Il me faut ton prénom, un courriel valide, un cellulaire à 10 chiffres et ton accord pour te répondre.',
+            invalids[0] ?? null,
+          );
+          return false;
+        }
+      }
+      setError(n, null);
+      return true;
+    }
+
+    /* ── Liaisons ── */
+    bindCards('intention');
+    bindCards('valeur');
+    bindCards('solde');
+
+    form.addEventListener('input', markStarted);
+    form.addEventListener('click', markStarted);
+    function markStarted() {
+      if (started) return;
+      started = true;
+      track('refi_v2_start');
+    }
+
+    form.querySelectorAll<HTMLButtonElement>('[data-refi2-next]').forEach((btn) => {
+      btn.addEventListener('click', () => avancer());
+    });
+
+    field('ville')?.addEventListener('input', () => persist());
+
+    backBtn?.addEventListener('click', () => {
+      window.clearTimeout(autoAdvanceTimer);
+      if (currentStep > 1) showStep(currentStep - 1);
+    });
+
+    /* ── Soumission ── */
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!validateStep(5)) return;
+
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitLabel) submitLabel.textContent = 'Envoi en cours…';
+      setError(5, null);
+
+      const formData = new FormData(form);
+      const payload: Record<string, unknown> = {};
+      formData.forEach((value, key) => {
+        payload[key] = typeof value === 'string' ? value.trim() : '';
+      });
+      payload.consentement = (field('consentement') as HTMLInputElement | null)?.checked === true;
+
+      try {
+        const response = await fetch('/api/refinancement-v2-submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error(`Erreur ${response.status}`);
+        track('refi_v2_submit');
+        // Le prénom sert à personnaliser /refinancement/merci — jamais en query string.
+        try { sessionStorage.setItem(PRENOM_KEY, field('prenom')?.value.trim() ?? ''); } catch {}
+        clearPersist();
+        window.location.assign('/refinancement/merci');
+      } catch {
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitLabel) submitLabel.textContent = 'Voir mon économie';
+        setError(5, "Une erreur est survenue lors de l'envoi. Vérifie ta connexion et réessaie.");
+      }
+    });
+
+    /* ── Init ── */
+    restore();
+    showStep(currentStep, false);
+  });
+</script>

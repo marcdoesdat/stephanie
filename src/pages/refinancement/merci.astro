@@ -1,0 +1,170 @@
+---
+// Page de remerciement dédiée au funnel /refinancement-v2.
+//
+// Volontairement sans Nav ni Footer, comme la landing : la continuité visuelle est
+// conservée et aucun lien ne détourne le prospect avant la prise de rendez-vous.
+// noindex + exclue du sitemap (astro.config.mjs).
+//
+// Conversion Google Ads (AW-18126348856) : le tag global est chargé après consentement
+// par /js/consent.js → /js/gtag-init.js, qui le configure aussi sur cette page.
+// Pas de tag dédié ici.
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import { loadSiteConfig } from '../../config';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+---
+
+<MainLayout
+  title="Demande envoyée — Merci"
+  description="Ta demande d'analyse de refinancement a bien été reçue. Stéphanie Weyman te revient en moins de 24 h ouvrables."
+  noindex={true}
+>
+  <main id="main-content" class="refi-merci-page">
+    <section class="refi-merci-inner">
+      <div class="refi-merci-card">
+        <span class="refi-merci-check" aria-hidden="true">✅</span>
+
+        <h1 class="refi-merci-title">
+          Merci<span data-merci-prenom></span>&nbsp;! J'ai bien reçu.
+        </h1>
+
+        <p class="refi-merci-sub">
+          Je calcule ton économie potentielle et je te reviens en moins de 24&nbsp;h ouvrables.
+        </p>
+
+        <p class="refi-merci-sub">
+          En attendant, tu peux prendre directement un 15&nbsp;min dans mon agenda&nbsp;:
+        </p>
+
+        <div class="refi-merci-actions">
+          <a
+            href={config.calendly_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-cta"
+            data-umami-event="cta_booking_refi_v2"
+          >
+            <span>Prendre rendez-vous</span>
+          </a>
+        </div>
+
+        <p class="refi-merci-sign">
+          {prenom} — {config.titre}, {config.organisation}<br />
+          Plus de 20 prêteurs comparés
+        </p>
+      </div>
+    </section>
+
+    <footer class="refi-merci-footer">
+      <p>
+        {config.nom} · {config.titre} · N° AMF {config.amf} ·
+        <a href="/confidentialite">Confidentialité</a> · <a href="/conditions">Conditions</a>
+      </p>
+    </footer>
+  </main>
+</MainLayout>
+
+<style is:global>
+  /* Continuité avec la landing publicitaire : pas de CTA sticky concurrent */
+  .mobile-sticky-cta { display: none !important; }
+</style>
+
+<style>
+  .refi-merci-page {
+    min-height: 100vh;
+    background: var(--sand);
+    display: flex;
+    flex-direction: column;
+  }
+  .refi-merci-inner {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 4rem 1.25rem 3rem;
+  }
+  .refi-merci-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 3rem 2.2rem;
+    max-width: 560px;
+    width: 100%;
+    text-align: center;
+  }
+  .refi-merci-check {
+    font-size: 2.6rem;
+    line-height: 1;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+  .refi-merci-title {
+    font-family: "Lora", serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 .9rem;
+    line-height: 1.3;
+  }
+  .refi-merci-sub {
+    font-size: 1rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+  .refi-merci-actions {
+    display: flex;
+    justify-content: center;
+    margin: 1.6rem 0 2rem;
+  }
+  .refi-merci-sign {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 0;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .refi-merci-footer {
+    margin-top: auto;
+    padding: 1.25rem;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+  .refi-merci-footer p {
+    font-size: .75rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 0;
+  }
+  .refi-merci-footer a { color: var(--muted); text-decoration: underline; }
+  .refi-merci-footer a:hover { color: var(--clay); }
+
+  @media (max-width: 720px) {
+    .refi-merci-inner { padding-top: 2.5rem; }
+    .refi-merci-card { padding: 2.2rem 1.4rem; }
+    .refi-merci-title { font-size: 1.4rem; }
+  }
+</style>
+
+<script>
+  // Le prénom transite par sessionStorage (jamais par la query string, qui fuiterait
+  // dans les referrers et les rapports analytics). Absent → le titre reste « Merci ! ».
+  const PRENOM_KEY = 'sw_refi_v2_prenom';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const slot = document.querySelector<HTMLElement>('[data-merci-prenom]');
+    if (!slot) return;
+    try {
+      const prenom = (sessionStorage.getItem(PRENOM_KEY) ?? '').trim();
+      sessionStorage.removeItem(PRENOM_KEY);
+      // textContent, jamais innerHTML : la valeur vient d'une saisie utilisateur.
+      if (prenom) slot.textContent = `, ${prenom.slice(0, 40)}`;
+    } catch {}
+  });
+</script>
