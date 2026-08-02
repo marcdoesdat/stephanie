@@ -16,7 +16,12 @@
   --radius-sm:12px;
   --radius-md:20px;
   --radius-lg:24px;
+  /* Hauteur de la barre CTA mobile (MainLayout) : 52px de bulle Messenger
+     + 12px de marge haut/bas. Sert aussi à décaler le footer et à centrer
+     verticalement le bouton Messenger dans la bande. */
+  --cta-bar-h:76px;
 }
+@media(max-width:420px){:root{--cta-bar-h:70px}}
 html{scroll-behavior:smooth;overflow-x:clip}
 body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);font-size:16px;line-height:1.65;overflow-x:clip;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 @media(prefers-reduced-motion:reduce){
@@ -759,8 +764,6 @@ td:last-child{text-align:center}
 .messenger-tooltip{position:absolute;right:70px;white-space:nowrap;background:var(--ink);color:white;font-size:.72rem;padding:.4rem .9rem;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s}
 .messenger-btn:hover .messenger-tooltip{opacity:1}
 @media(prefers-reduced-motion:reduce){.messenger-btn,.messenger-tooltip{transition:none}}
-/* Zone de sécurité : empêche Messenger de chevaucher le contenu */
-.messenger-safe-zone{padding-bottom:5.5rem}
 
 /* FORM ERROR */
 .form-error{display:none;background:#fef2f2;color:#c0392b;padding:.8rem 1rem;border-radius:10px;font-size:.82rem;margin-top:.8rem;margin-bottom:.8rem;border:1px solid #fca5a5}
@@ -1453,7 +1456,19 @@ footer strong{color:rgba(255,255,255,.85)}
   footer{padding:2rem 1.5rem calc(2rem + 58px + env(safe-area-inset-bottom))}
   th,td{padding:.8rem 1rem!important}
   .taux-footer{flex-direction:column}
-  .messenger-btn{bottom:calc(58px + 1rem);right:1rem;width:52px;height:52px}
+  /* Le bouton Messenger vient se poser DANS la barre CTA (MainLayout) :
+     centré verticalement dans la bande, aligné à droite, au-dessus d'elle. */
+  .messenger-btn{
+    right:1rem;
+    bottom:calc((var(--cta-bar-h) - 52px) / 2 + env(safe-area-inset-bottom));
+    width:52px;height:52px;
+    z-index:1001;
+    transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .2s;
+  }
+  /* Scroll-aware : la bulle glisse avec la bande */
+  body.cta-hidden .messenger-btn{
+    transform:translateY(calc(100% + var(--cta-bar-h)));
+  }
   .messenger-tooltip{display:none}
 
   /* --- Condensation mobile : sections plus compactes (sans retirer de contenu) --- */
