@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { decodeHypotheca } from '../utils/hypothecaDecoder';
 
@@ -65,8 +66,11 @@ export interface HypothecaRates {
 const BLOB_STORE = 'rates';
 const BLOB_KEY = 'hypotheca-rates';
 
-const CACHE_DIR = path.resolve('.cache');
-const CACHE_FILE = path.join(CACHE_DIR, 'hypotheca-rates.json');
+const CACHE_FILENAME = 'hypotheca-rates.json';
+// `.cache` en dev ; en fonction serverless le disque est en lecture seule
+// sauf /tmp, d'où le second candidat (survit aux invocations à chaud).
+const CACHE_DIRS = [path.resolve('.cache'), path.join(os.tmpdir(), 'hypotheca-rates')];
+
 // 24 h : les taux bougent peu d'un jour à l'autre et hypotheca.ca rate-limite
 // agressivement (429) — un TTL court multiplie les fetchs inutiles.
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -78,10 +82,6 @@ const CACHE_STALE_MAX_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const FETCH_FAILURE_COOLDOWN_MS = 15 * 60 * 1000; // 15 min
 let _nextFetchAllowedAt = 0;
 
-// Use Netlify Blobs when running on the Netlify platform (production or `netlify dev`).
-// Falls back to the local file cache for plain `astro dev` / `astro preview` runs.
-const useBlobs = Boolean(process.env.NETLIFY);
-
 interface CachedRates {
   timestamp: number;
   rates: HypothecaRates;
@@ -92,91 +92,123 @@ interface CacheReadResult {
   ageMs: number;
 }
 
+/** Valide un enregistrement de cache et en calcule l'âge. */
+function toCacheResult(raw: string, origine: string): CacheReadResult | null {
+  const cached: CachedRates = JSON.parse(raw);
+
+  if (!cached || typeof cached.timestamp !== 'number' || !Number.isFinite(cached.timestamp)) {
+    console.warn(`[ratesService] Ignoring ${origine} cache: invalid timestamp`);
+    return null;
+  }
+  if (!cached.rates || !Array.isArray(cached.rates.rows)) {
+    console.warn(`[ratesService] Ignoring ${origine} cache: malformed payload`);
+    return null;
+  }
+
+  const age = Date.now() - cached.timestamp;
+  if (!Number.isFinite(age) || age < 0) {
+    console.warn(`[ratesService] Ignoring ${origine} cache: invalid age`);
+    return null;
+  }
+
+  return { rates: cached.rates, ageMs: age };
+}
+
 /* ---------- Blob helpers (production) ---------- */
 
-async function readBlobCache(): Promise<CacheReadResult | null> {
+// Netlify Blobs n'est disponible qu'avec un contexte Netlify. Plutôt que de le
+// déduire d'une variable d'environnement (`NETLIFY` n'est pas garantie au
+// runtime des fonctions), on essaie et on retient le résultat pour l'instance.
+let _blobsUnavailable = false;
+
+async function getBlobStore(): Promise<import('@netlify/blobs').Store | null> {
+  if (_blobsUnavailable) return null;
   const getStore = await loadGetStore();
-  if (!getStore) return null;
+  if (!getStore) {
+    _blobsUnavailable = true;
+    return null;
+  }
   try {
-    const store = getStore(BLOB_STORE);
+    return getStore(BLOB_STORE);
+  } catch (err) {
+    // Pas de contexte Blobs (astro dev/preview, build local) — cache fichier.
+    debug('Netlify Blobs unavailable, falling back to file cache:', err);
+    _blobsUnavailable = true;
+    return null;
+  }
+}
+
+async function readBlobCache(): Promise<CacheReadResult | null> {
+  const store = await getBlobStore();
+  if (!store) return null;
+  try {
     const raw = await store.get(BLOB_KEY, { type: 'text' });
     if (!raw) return null;
-
-    const cached: CachedRates = JSON.parse(raw);
-    if (!cached || typeof cached.timestamp !== 'number' || !Number.isFinite(cached.timestamp)) {
-      console.warn('[ratesService] Ignoring blob cache: invalid timestamp');
-      return null;
-    }
-
-    const age = Date.now() - cached.timestamp;
-    if (!Number.isFinite(age) || age < 0) {
-      console.warn('[ratesService] Ignoring blob cache: invalid age');
-      return null;
-    }
-
-    return { rates: cached.rates, ageMs: age };
+    return toCacheResult(raw, 'blob');
   } catch (err) {
     console.warn('[ratesService] Failed to read blob cache:', err);
     return null;
   }
 }
 
-async function writeBlobCache(rates: HypothecaRates): Promise<void> {
-  const getStore = await loadGetStore();
-  if (!getStore) return;
+/** `true` si l'écriture a réussi — sinon l'appelant retombe sur le fichier. */
+async function writeBlobCache(rates: HypothecaRates): Promise<boolean> {
+  const store = await getBlobStore();
+  if (!store) return false;
   try {
-    const store = getStore(BLOB_STORE);
     const data: CachedRates = { timestamp: Date.now(), rates };
     await store.set(BLOB_KEY, JSON.stringify(data));
     debug('Rates cached to Netlify Blob');
+    return true;
   } catch (err) {
     console.warn('[ratesService] Failed to write blob cache:', err);
+    return false;
   }
 }
 
-/* ---------- File helpers (dev) ---------- */
+/* ---------- File helpers (dev + repli serverless) ---------- */
 
 async function readFileCache(): Promise<CacheReadResult | null> {
-  try {
-    const raw = await fs.readFile(CACHE_FILE, 'utf-8');
-    const cached: CachedRates = JSON.parse(raw);
+  let freshest: CacheReadResult | null = null;
 
-    if (!cached || typeof cached.timestamp !== 'number' || !Number.isFinite(cached.timestamp)) {
-      console.warn('[ratesService] Ignoring file cache: invalid timestamp');
-      return null;
+  for (const dir of CACHE_DIRS) {
+    try {
+      const raw = await fs.readFile(path.join(dir, CACHE_FILENAME), 'utf-8');
+      const result = toCacheResult(raw, 'file');
+      if (result && (!freshest || result.ageMs < freshest.ageMs)) freshest = result;
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') continue;
+      console.warn('[ratesService] Failed to read file cache:', err);
     }
-
-    const age = Date.now() - cached.timestamp;
-    if (!Number.isFinite(age) || age < 0) {
-      console.warn('[ratesService] Ignoring file cache: invalid age');
-      return null;
-    }
-
-    return { rates: cached.rates, ageMs: age };
-  } catch (err: unknown) {
-    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') return null;
-    console.warn('[ratesService] Failed to read file cache:', err);
-    return null;
   }
+
+  return freshest;
 }
 
 async function writeFileCache(rates: HypothecaRates): Promise<void> {
-  try {
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-    const data: CachedRates = { timestamp: Date.now(), rates };
-    const tempFile = path.join(CACHE_DIR, `.rates-cache.tmp-${process.pid}-${Date.now()}`);
-    await fs.writeFile(tempFile, JSON.stringify(data, null, 2), 'utf-8');
-    await fs.rename(tempFile, CACHE_FILE);
-    debug('Rates cached to file');
-  } catch (err) {
-    console.warn('[ratesService] Failed to write file cache:', err);
+  const data: CachedRates = { timestamp: Date.now(), rates };
+  const payload = JSON.stringify(data, null, 2);
+
+  for (const dir of CACHE_DIRS) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const tempFile = path.join(dir, `.rates-cache.tmp-${process.pid}-${Date.now()}`);
+      await fs.writeFile(tempFile, payload, 'utf-8');
+      await fs.rename(tempFile, path.join(dir, CACHE_FILENAME));
+      debug(`Rates cached to file (${dir})`);
+      return;
+    } catch {
+      // Répertoire non inscriptible (disque en lecture seule) — candidat suivant.
+    }
   }
+
+  console.warn('[ratesService] No writable cache directory; rates will be refetched');
 }
 
 /* ---------- Unified cache layer ---------- */
 
 async function readCacheAny(): Promise<CacheReadResult | null> {
-  return useBlobs ? readBlobCache() : readFileCache();
+  return (await readBlobCache()) ?? (await readFileCache());
 }
 
 async function readCache(): Promise<HypothecaRates | null> {
@@ -193,146 +225,234 @@ async function readCache(): Promise<HypothecaRates | null> {
 }
 
 async function writeCache(rates: HypothecaRates): Promise<void> {
-  return useBlobs ? writeBlobCache(rates) : writeFileCache(rates);
+  // Les Blobs sont partagés entre instances : on les privilégie, et le cache
+  // fichier prend le relais quand ils ne sont pas disponibles.
+  if (await writeBlobCache(rates)) return;
+  await writeFileCache(rates);
 }
 
 /* ------------------------------------------------------------------ */
 
 function isValidRate(val: number): boolean {
-  return val >= 0.5 && val <= 20;
+  return Number.isFinite(val) && val >= 0.5 && val <= 20;
+}
+
+/** Clés numériques de `HypothecaRates` (tout sauf les métadonnées). */
+type RateKey = Exclude<keyof HypothecaRates, 'rows' | 'source' | 'fetchedAt'>;
+
+/** Termes suivis, du plus long au plus court, avec leurs clés plates. */
+const TERMES_FIXES: ReadonlyArray<{ annees: number; taux: RateKey; affiche: RateKey }> = [
+  { annees: 10, taux: 'fixe_10ans', affiche: 'affiche_fixe_10ans' },
+  { annees: 7, taux: 'fixe_7ans', affiche: 'affiche_fixe_7ans' },
+  { annees: 6, taux: 'fixe_6ans', affiche: 'affiche_fixe_6ans' },
+  { annees: 5, taux: 'fixe_5ans', affiche: 'affiche_fixe_5ans' },
+  { annees: 4, taux: 'fixe_4ans', affiche: 'affiche_fixe_4ans' },
+  { annees: 3, taux: 'fixe_3ans', affiche: 'affiche_fixe_3ans' },
+  { annees: 2, taux: 'fixe_2ans', affiche: 'affiche_fixe_2ans' },
+  { annees: 1, taux: 'fixe_1ans', affiche: 'affiche_fixe_1ans' },
+];
+
+/**
+ * Texte lisible d'une cellule HTML : retire les balises imbriquées
+ * (<span>, <strong>, <br>…), décode les entités courantes et normalise
+ * les espaces (y compris l'espace insécable qui précède le « % » en fr-CA).
+ */
+function cellText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;|&#160;|&#xa0;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/[   ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
- * Parse both occ()-decoded rows and visible plaintext <tr> rows.
- * Returns structured rows with both "hypotheca" and "affiche" rates.
+ * Retourne la valeur d'une cellule qui *ressemble* à un taux — pourcentage
+ * explicite (« 4,19 % ») ou décimal (« 4.19 ») — sans juger de sa plausibilité.
+ * Un libellé de terme (« 5 ans ») ne passe pas ce filtre.
+ *
+ * La validation de plage est faite séparément pour préserver la position des
+ * colonnes : une valeur aberrante ne doit jamais faire glisser le « taux
+ * affiché » dans la colonne « votre taux ».
  */
-function extractAllRates(html: string): RateEntry[] {
+function rateShape(text: string): number | null {
+  const cleaned = cellText(text);
+  const match = cleaned.match(/^(\d{1,2}(?:[.,]\d{1,3})?)\s*%$/) ?? cleaned.match(/^(\d{1,2}[.,]\d{1,3})$/);
+  if (!match?.[1]) return null;
+  return parseFloat(match[1].replace(',', '.'));
+}
+
+/** Valeurs des cellules qui ont une forme de taux, dans l'ordre du tableau. */
+function rateCells(cells: string[]): number[] {
+  return cells.map(rateShape).filter((v): v is number => v !== null);
+}
+
+/**
+ * Reconnaît un libellé de terme (« 5 ans fixe », « Variable 5 ans », « 1 an »).
+ * Sert à écarter les en-têtes de tableau et les lignes de notes.
+ */
+function isTermeLabel(text: string): boolean {
+  const t = text.toLowerCase();
+  if (t.length === 0 || t.length > 40) return false;
+  return /\d\s*an/.test(t) || t.includes('variable');
+}
+
+/**
+ * Associe un libellé de terme à ses clés plates.
+ * `null` si le terme n'est pas un de ceux que l'on suit.
+ */
+function classerTerme(terme: string): { taux: RateKey; affiche: RateKey } | null {
+  const t = terme.toLowerCase();
+  // « 5 ans variable » est d'abord un variable — le test passe avant les termes fixes.
+  if (t.includes('variable')) return { taux: 'variable', affiche: 'affiche_variable' };
+
+  const match = t.match(/(\d{1,2})\s*an/);
+  if (!match?.[1]) return null;
+  const annees = parseInt(match[1], 10);
+  return TERMES_FIXES.find((x) => x.annees === annees) ?? null;
+}
+
+/**
+ * Construit une ligne à partir d'un libellé et des valeurs de taux de la ligne.
+ * `null` si le libellé n'est pas un terme, si aucun taux n'est présent, ou si
+ * le premier taux est hors bornes — dans ce dernier cas la ligne est écartée
+ * plutôt que décalée, pour ne jamais afficher un taux affiché comme « votre taux ».
+ */
+function buildRow(terme: string, taux: number[]): RateEntry | null {
+  if (!isTermeLabel(terme)) return null;
+
+  const hypotheca = taux[0];
+  if (hypotheca === undefined || !isValidRate(hypotheca)) return null;
+
+  const second = taux[1];
+  const affiche = second !== undefined && isValidRate(second) ? second : null;
+
+  const t = terme.toLowerCase();
+  const entry: RateEntry = {
+    terme,
+    hypotheca,
+    affiche,
+    type: t.includes('variable') ? 'variable' : 'fixe',
+  };
+  // Le 5 ans (fixe comme variable) est le terme phare mis en avant dans le tableau.
+  if (/(?<!\d)5\s*an/.test(t)) entry.populaire = true;
+  return entry;
+}
+
+/**
+ * Extrait les lignes d'un tableau HTML sans supposer de structure figée :
+ * tolère les balises imbriquées dans les cellules, les colonnes supplémentaires,
+ * les `<th scope="row">` et les attributs arbitraires.
+ */
+function extractRowsFromTable(html: string): RateEntry[] {
   const rows: RateEntry[] = [];
-  const seen = new Set<string>();
 
-  // ---- 1) Parse visible plaintext <tr> rows (tolerant to attributes/whitespace) ----
-  const trRegex = /<tr[^>]*>\s*<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>([^<]+)<\/td>\s*<\/tr>/gi;
-  for (const m of html.matchAll(trRegex)) {
-    const terme = (m[1] ?? '').trim();
-    const hypothecaStr = (m[2] ?? '').trim();
-    const afficheStr = (m[3] ?? '').trim();
+  for (const trMatch of html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)) {
+    const inner = trMatch[1] ?? '';
+    const cells = [...inner.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((c) => cellText(c[1] ?? ''));
+    if (cells.length < 2) continue;
 
-    const hypothecaVal = parseFloat(hypothecaStr.replace('%', ''));
-    const afficheVal = parseFloat(afficheStr.replace('%', ''));
+    const terme = cells[0] ?? '';
+    if (!isTermeLabel(terme)) continue;
 
-    if (!isValidRate(hypothecaVal)) continue;
-
-    const key = terme.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    const isVariable = key.includes('variable');
-    const entry: RateEntry = {
-      terme,
-      hypotheca: hypothecaVal,
-      affiche: isValidRate(afficheVal) ? afficheVal : null,
-      type: isVariable ? 'variable' : 'fixe',
-    };
-    if (key.includes('5 ans')) entry.populaire = true;
-    rows.push(entry);
-  }
-
-  // ---- 2) Parse occ()-decoded rows as fallback ----
-  if (rows.length === 0) {
-    for (const match of html.matchAll(/occ\("([^"]+)"\)/g)) {
-      const encoded = match[1];
-      if (!encoded) continue;
-      const decodedHtml = decodeHypotheca(encoded);
-      const tdMatches = [...decodedHtml.matchAll(/<td[^>]*>(.*?)<\/td>/g)];
-      if (tdMatches.length < 2) continue;
-
-      const terme = (tdMatches[0]?.[1] ?? '').trim();
-      const hypothecaStr = tdMatches[1]?.[1] ?? '';
-      const afficheStr = tdMatches[2]?.[1] ?? '';
-
-      const hypothecaVal = parseFloat(hypothecaStr.replace('%', '').trim());
-      const afficheVal = parseFloat(afficheStr.replace('%', '').trim());
-
-      if (!isValidRate(hypothecaVal)) continue;
-
-      const key = terme.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-
-      const isVariable = key.includes('variable');
-      const entry: RateEntry = {
-        terme,
-        hypotheca: hypothecaVal,
-        affiche: isValidRate(afficheVal) ? afficheVal : null,
-        type: isVariable ? 'variable' : 'fixe',
-      };
-      if (key.includes('5 ans')) entry.populaire = true;
-      rows.push(entry);
-    }
-  }
-
-  // ---- 3) Parse markdown table rows (proxy fallback format) ----
-  if (rows.length === 0) {
-    const mdRowRegex = /\|\s*([^|\n]+?)\s*\|\s*([0-9]+(?:[.,][0-9]+)?)%\s*\|\s*([0-9]+(?:[.,][0-9]+)?)%\s*\|/g;
-    for (const m of html.matchAll(mdRowRegex)) {
-      const terme = (m[1] ?? '').trim();
-      const hypothecaVal = parseFloat((m[2] ?? '').replace(',', '.'));
-      const afficheVal = parseFloat((m[3] ?? '').replace(',', '.'));
-
-      if (!isValidRate(hypothecaVal)) continue;
-
-      const key = terme.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-
-      const isVariable = key.includes('variable');
-      const entry: RateEntry = {
-        terme,
-        hypotheca: hypothecaVal,
-        affiche: isValidRate(afficheVal) ? afficheVal : null,
-        type: isVariable ? 'variable' : 'fixe',
-      };
-      if (key.includes('5 ans')) entry.populaire = true;
-      rows.push(entry);
-    }
+    // Les deux premières cellules qui ressemblent à un taux sont, dans l'ordre
+    // du tableau d'Hypotheca : « votre taux » puis « taux affiché ».
+    const row = buildRow(terme, rateCells(cells.slice(1)));
+    if (row) rows.push(row);
   }
 
   return rows;
 }
 
-function rowsToFlat(rows: RateEntry[]): Partial<HypothecaRates> {
-  const flat: Partial<HypothecaRates> = {};
-  for (const row of rows) {
-    const t = row.terme.toLowerCase();
-    if (t.includes('variable')) {
-      flat.variable = row.hypotheca;
-      flat.affiche_variable = row.affiche;
-    } else if (t.includes('10 an')) {
-      flat.fixe_10ans = row.hypotheca;
-      flat.affiche_fixe_10ans = row.affiche;
-    } else if (t.includes('7 an')) {
-      flat.fixe_7ans = row.hypotheca;
-      flat.affiche_fixe_7ans = row.affiche;
-    } else if (t.includes('6 an')) {
-      flat.fixe_6ans = row.hypotheca;
-      flat.affiche_fixe_6ans = row.affiche;
-    } else if (t.includes('5 an') && t.includes('fixe')) {
-      flat.fixe_5ans = row.hypotheca;
-      flat.affiche_fixe_5ans = row.affiche;
-    } else if (t.includes('4 an')) {
-      flat.fixe_4ans = row.hypotheca;
-      flat.affiche_fixe_4ans = row.affiche;
-    } else if (t.includes('3 an')) {
-      flat.fixe_3ans = row.hypotheca;
-      flat.affiche_fixe_3ans = row.affiche;
-    } else if (t.includes('2 an')) {
-      flat.fixe_2ans = row.hypotheca;
-      flat.affiche_fixe_2ans = row.affiche;
-    } else if (t.includes('1 an')) {
-      flat.fixe_1ans = row.hypotheca;
-      flat.affiche_fixe_1ans = row.affiche;
+/** Lignes cachées derrière l'obfuscation `occ("…")`. */
+function extractRowsFromOcc(html: string): RateEntry[] {
+  const rows: RateEntry[] = [];
+
+  for (const match of html.matchAll(/occ\("([^"]+)"\)/g)) {
+    const encoded = match[1];
+    if (!encoded) continue;
+    const decoded = decodeHypotheca(encoded);
+
+    // Le fragment décodé peut contenir une ligne complète (<tr>) ou juste des <td>.
+    const fromTable = extractRowsFromTable(decoded);
+    if (fromTable.length > 0) {
+      rows.push(...fromTable);
+      continue;
     }
+
+    const cells = [...decoded.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((c) => cellText(c[1] ?? ''));
+    if (cells.length < 2) continue;
+
+    const row = buildRow(cells[0] ?? '', rateCells(cells.slice(1)));
+    if (row) rows.push(row);
   }
+
+  return rows;
+}
+
+/** Lignes d'un tableau markdown (format renvoyé par le proxy r.jina.ai). */
+function extractRowsFromMarkdown(text: string): RateEntry[] {
+  const rows: RateEntry[] = [];
+
+  for (const line of text.split('\n')) {
+    if (!line.includes('|')) continue;
+    const cells = line
+      .split('|')
+      .map((c) => cellText(c))
+      .filter((c, i, arr) => !(c === '' && (i === 0 || i === arr.length - 1)));
+    if (cells.length < 2) continue;
+
+    const terme = cells[0] ?? '';
+    if (!isTermeLabel(terme)) continue;
+
+    const row = buildRow(terme, rateCells(cells.slice(1)));
+    if (row) rows.push(row);
+  }
+
+  return rows;
+}
+
+/**
+ * Parse les taux depuis le HTML d'hypotheca.ca, en cascade :
+ * tableau HTML visible → lignes obfusquées `occ(…)` → tableau markdown (proxy).
+ * Les doublons de terme sont écartés en conservant la première occurrence.
+ */
+export function extractAllRates(html: string): RateEntry[] {
+  // Les lignes obfusquées complètent le tableau visible (certaines pages
+  // n'exposent qu'une partie des termes en clair).
+  const candidates = [...extractRowsFromTable(html), ...extractRowsFromOcc(html)];
+
+  // Le markdown n'est tenté qu'en dernier recours : sur du HTML, un « | »
+  // égaré pourrait produire des lignes fantômes.
+  if (candidates.length === 0) candidates.push(...extractRowsFromMarkdown(html));
+
+  const rows: RateEntry[] = [];
+  const seen = new Set<string>();
+  for (const row of candidates) {
+    const key = row.terme.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+export function rowsToFlat(rows: RateEntry[]): Partial<HypothecaRates> {
+  const flat: Partial<HypothecaRates> = {};
+
+  for (const row of rows) {
+    const classe = classerTerme(row.terme);
+    if (!classe) continue;
+    // Première ligne trouvée pour un terme donné : ne pas l'écraser ensuite.
+    if (flat[classe.taux] != null) continue;
+
+    flat[classe.taux] = row.hypotheca;
+    flat[classe.affiche] = row.affiche;
+  }
+
   return flat;
 }
 
@@ -360,6 +480,18 @@ function buildFull(rows: RateEntry[], flat: Partial<HypothecaRates>, source: 'li
     source,
     fetchedAt,
   };
+}
+
+/**
+ * En-tête `Cache-Control` à poser sur une page qui affiche des taux.
+ *
+ * Sans taux, on ne met en cache CDN que quelques minutes : autrement un seul
+ * rendu raté fige « taux indisponibles » pendant 6 h pour tous les visiteurs.
+ */
+export function rateCacheControl(rates: HypothecaRates | null): string {
+  return rates
+    ? 's-maxage=21600, stale-while-revalidate=3600'
+    : 's-maxage=120, stale-while-revalidate=120';
 }
 
 function sleep(ms: number): Promise<void> {
@@ -518,7 +650,19 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
       const rows = extractAllRates(html);
 
       if (rows.length === 0) {
-        console.warn('[ratesService] No rows parsed from HTML');
+        // Signature du document reçu : permet de distinguer dans les logs Netlify
+        // un changement de balisage d'un blocage (page anti-bot / captcha).
+        console.warn(
+          '[ratesService] No rows parsed from HTML',
+          JSON.stringify({
+            length: html.length,
+            tables: (html.match(/<table/gi) ?? []).length,
+            tr: (html.match(/<tr/gi) ?? []).length,
+            occ: (html.match(/occ\("/g) ?? []).length,
+            pct: (html.match(/%/g) ?? []).length,
+            titre: html.match(/<title[^>]*>([\s\S]{0,120}?)<\/title>/i)?.[1]?.trim() ?? null,
+          }),
+        );
         _nextFetchAllowedAt = Date.now() + FETCH_FAILURE_COOLDOWN_MS;
         // Return stale cache if available, otherwise null
         if (staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.rates.source === 'live') {

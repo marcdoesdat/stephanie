@@ -4,8 +4,11 @@ import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import PenaliteCalculator from '../../components/PenaliteCalculator.astro';
 import { loadSiteConfig } from '../../config';
-import { fetchHypothecaRates } from '../../services/ratesService';
+import { fetchHypothecaRates, rateCacheControl } from '../../services/ratesService';
 import { preteursParCategorie } from '../../data/preteurs';
+
+// SSR obligatoire : les taux du marché servent de référence au calcul IRD.
+export const prerender = false;
 
 const config = loadSiteConfig();
 const hypothecaRates = await fetchHypothecaRates();
@@ -31,7 +34,7 @@ const dateMaj = hypothecaRates?.fetchedAt
 
 const groupes = preteursParCategorie();
 
-Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+Astro.response.headers.set('Cache-Control', rateCacheControl(hypothecaRates));
 ---
 
 <MainLayout
