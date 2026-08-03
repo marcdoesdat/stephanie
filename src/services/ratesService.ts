@@ -508,7 +508,20 @@ function backoffDelay(attempt: number): number {
   return Math.round(base + jitter);
 }
 
-async function fetchRatesHtml(): Promise<string> {
+/**
+ * Budget total du scraping. Depuis que les pages de taux sont en SSR, ce fetch
+ * bloque la réponse : sans plafond, la cascade (2 URL × 4 tentatives × 15 s de
+ * timeout, plus les backoffs) peut dépasser 2 min alors que Netlify coupe la
+ * fonction à 10 s. Passé le budget, on abandonne et on sert le cache périmé.
+ */
+const FETCH_BUDGET_MS = 4_000;
+
+/** Plafond par tentative, borné par ce qui reste du budget global. */
+const ATTEMPT_TIMEOUT_MS = 15_000;
+
+async function fetchRatesHtml(deadline: number): Promise<string> {
+  const remaining = (): number => deadline - Date.now();
+
   const urls = [
     'https://hypotheca.ca/taux-hypothecaires',
     'https://www.hypotheca.ca/taux-hypothecaires',
@@ -526,12 +539,18 @@ async function fetchRatesHtml(): Promise<string> {
 
   let lastError: unknown = null;
 
-  for (const url of urls) {
+  urlLoop: for (const url of urls) {
     for (let attempt = 1; attempt <= 4; attempt++) {
+      if (remaining() <= 0) {
+        lastError ??= new Error('Rates fetch budget exhausted');
+        debug('Fetch budget exhausted, aborting');
+        break urlLoop;
+      }
+
       try {
         const res = await fetch(url, {
           headers,
-          signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, remaining())),
         });
 
         if (res.status === 429) {
@@ -541,11 +560,13 @@ async function fetchRatesHtml(): Promise<string> {
             ? parseInt(retryAfter, 10) * 1000
             : backoffDelay(attempt);
           lastError = new Error(`HTTP 429 for ${url} (attempt ${attempt})`);
-          if (attempt < 4) {
+          // Inutile d'attendre si le budget expire avant la prochaine tentative.
+          if (attempt < 4 && delay < remaining()) {
             debug(`Rate-limited (429) on ${url}, waiting ${Math.round(delay / 1000)}s before retry ${attempt + 1}`);
             await sleep(delay);
+            continue;
           }
-          continue;
+          continue urlLoop;
         }
 
         if (!res.ok) {
@@ -563,6 +584,7 @@ async function fetchRatesHtml(): Promise<string> {
         }
         if (attempt < 4) {
           const delay = backoffDelay(attempt);
+          if (delay >= remaining()) break urlLoop;
           debug(`Attempt ${attempt} failed for ${url}, retrying in ${Math.round(delay / 1000)}s`);
           await sleep(delay);
         }
@@ -577,8 +599,9 @@ async function fetchRatesHtml(): Promise<string> {
       'https://r.jina.ai/http://hypotheca.ca/taux-hypothecaires',
       'https://r.jina.ai/http://www.hypotheca.ca/taux-hypothecaires',
     ];
-    for (const url of proxyUrls) {
+    proxyLoop: for (const url of proxyUrls) {
       for (let attempt = 1; attempt <= 2; attempt++) {
+        if (remaining() <= 0) break proxyLoop;
         try {
           const res = await fetch(url, {
             headers: {
@@ -586,7 +609,7 @@ async function fetchRatesHtml(): Promise<string> {
               Accept: 'text/plain,text/markdown;q=0.9,*/*;q=0.8',
               'Cache-Control': 'no-cache',
             },
-            signal: AbortSignal.timeout(15_000),
+            signal: AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, remaining())),
           });
           if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
           const text = await res.text();
@@ -595,7 +618,11 @@ async function fetchRatesHtml(): Promise<string> {
           return text;
         } catch (err) {
           lastError = err;
-          if (attempt < 2) await sleep(backoffDelay(attempt));
+          if (attempt < 2) {
+            const delay = backoffDelay(attempt);
+            if (delay >= remaining()) break proxyLoop;
+            await sleep(delay);
+          }
         }
       }
     }
@@ -645,7 +672,7 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
 
   const doFetch = async (): Promise<HypothecaRates | null> => {
     try {
-      const html = await fetchRatesHtml();
+      const html = await fetchRatesHtml(Date.now() + FETCH_BUDGET_MS);
 
       const rows = extractAllRates(html);
 

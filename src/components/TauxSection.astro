@@ -52,7 +52,10 @@ const displayRows = hypothecaRates?.rows?.length
             <th scope="col">Terme</th>
             <th scope="col" class="th-hypotheca" style="color:var(--forest);">
               <div class="th-hypotheca-inner">
-                 <img src="/images/icone-hypotheca-blanc.webp" alt="Hypotheca" style="height:5.36em;vertical-align:middle;" loading="lazy" />
+                 <!-- Dimensions intrinsèques (121×96) : donnent le ratio au navigateur
+                      avant le chargement. Pas de `loading="lazy"` — cet en-tête de
+                      tableau est visible tôt, le différer retarde son affichage. -->
+                 <img src="/images/icone-hypotheca-blanc.webp" alt="Hypotheca" width="121" height="96" style="height:5.36em;width:auto;vertical-align:middle;" />
                 <span class="th-hypotheca-label">Votre taux</span>
               </div>
             </th>

@@ -64,6 +64,9 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Umami envoie ses évènements vers gateway.umami.is, origine distincte du
+         script (cloud.umami.is) : sans ce hint la connexion est ouverte tard. -->
+    <link rel="preconnect" href="https://gateway.umami.is" crossorigin />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap"

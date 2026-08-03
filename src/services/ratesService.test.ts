@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { extractAllRates, rowsToFlat, rateCacheControl, type HypothecaRates } from './ratesService';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { extractAllRates, rowsToFlat, rateCacheControl, fetchHypothecaRates, type HypothecaRates } from './ratesService';
 
 /**
  * Encode comme `occ()` sur hypotheca.ca : ROT13 sur les lettres, ROT5 sur les
@@ -166,6 +166,34 @@ describe('rowsToFlat', () => {
   it('ignore les termes non suivis', () => {
     expect(rowsToFlat(extractAllRates('<tr><td>15 ans fixe</td><td>6.10 %</td><td>7.50 %</td></tr>'))).toEqual({});
   });
+});
+
+describe('budget de scraping (SSR)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("abandonne bien avant le timeout de fonction Netlify quand l'upstream ne répond jamais", async () => {
+    // Les pages de taux sont en SSR : ce fetch bloque la réponse. Netlify coupe
+    // la fonction à 10 s, donc la cascade complète (2 URL × 4 tentatives × 15 s)
+    // ne doit jamais pouvoir s'exécuter entièrement.
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
+      // Ne répond jamais : seul l'AbortSignal peut mettre fin à la tentative.
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new Error('TimeoutError')));
+      }),
+    );
+
+    const started = Date.now();
+    const result = await fetchHypothecaRates();
+    const elapsed = Date.now() - started;
+
+    expect(result).toBeNull();
+    expect(elapsed).toBeLessThan(8_000);
+  }, 20_000);
 });
 
 describe('rateCacheControl', () => {
