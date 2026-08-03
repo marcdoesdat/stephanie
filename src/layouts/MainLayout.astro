@@ -23,8 +23,12 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
     <!-- Google Consent Mode v2 — DOIT précéder GTM.
          Défaut : tout refusé (Loi 25). Si le visiteur a déjà accepté lors d'une
          visite précédente (localStorage sw_consent_v1, géré par /js/consent.js),
-         le défaut passe à « granted » avant même que GTM ne démarre.
-         Les clics Accepter/Refuser envoient ensuite un consent update (consent.js). -->
+         le défaut passe à « granted » avant que GTM ne démarre.
+         Les clics Accepter/Refuser envoient ensuite un consent update (consent.js).
+
+         Ce bloc définit aussi le shim window.gtag : les pages qui appellent
+         gtag('event', …) avant tout consentement empilent dans dataLayer, et
+         GTM traite la file au chargement si le visiteur accepte. -->
     <script is:inline>
       (function () {
         window.dataLayer = window.dataLayer || [];
@@ -47,13 +51,12 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
       })();
     </script>
 
-    <!-- Google Tag Manager -->
-    <script is:inline>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-P9NJL58S');</script>
-    <!-- End Google Tag Manager -->
+    <!-- Google Tag Manager : chargé par /js/consent.js UNIQUEMENT après
+         consentement, pas ici. Consent Mode « denied » n'empêche pas le
+         chargement des tags du container — il ne fait que bloquer les cookies.
+         Le container injectait donc ~450 KiB de JS Google (gtm.js + une copie
+         complète de gtag/js par compte Ads) chez tous les visiteurs, y compris
+         ceux qui n'avaient rien accepté. Voir §5.1 de AUDIT-CONVERSION-2026-07.md. -->
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
