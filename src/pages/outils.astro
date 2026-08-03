@@ -8,11 +8,14 @@ import Comparateur from '../components/Comparateur.astro';
 import PenaliteCalculator from '../components/PenaliteCalculator.astro';
 import RefinancementSimulator from '../components/RefinancementSimulator.astro';
 import DroitsMutationCalculator from '../components/DroitsMutationCalculator.astro';
-import { fetchHypothecaRates } from '../services/ratesService';
+import { fetchHypothecaRates, rateCacheControl } from '../services/ratesService';
 import { loadSiteConfig } from '../config';
 import { preteursParCategorie } from '../data/preteurs';
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie.webp';
+
+// SSR obligatoire : les taux alimentent les valeurs par défaut des outils.
+export const prerender = false;
 
 const config = loadSiteConfig();
 const prenom = config.nom.split(' ')[0] ?? 'Stéphanie';
@@ -40,7 +43,7 @@ const dateMaj = hypothecaRates?.fetchedAt
 
 const groupes = preteursParCategorie();
 
-Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+Astro.response.headers.set('Cache-Control', rateCacheControl(hypothecaRates));
 
 const tabs = [
   { id: 'simulateur', label: "Simulateur d'emprunt", sub: 'Capacité' },

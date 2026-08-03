@@ -11,10 +11,15 @@ import Testimonials from '../components/Testimonials.astro';
 import Contact from '../components/Contact.astro';
 import Footer from '../components/Footer.astro';
 import MessengerBtn from '../components/MessengerBtn.astro';
-import { fetchHypothecaRates } from '../services/ratesService';
+import { fetchHypothecaRates, rateCacheControl } from '../services/ratesService';
 import { getReviews } from '../services/reviewsService';
 import { loadSiteConfig } from '../config';
 import { House, Calculator, ClipboardList } from '@lucide/astro';
+
+// SSR obligatoire : les taux sont récupérés à chaque requête. Sans cette ligne,
+// Astro prérend la page au build et fige les taux du jour du déploiement
+// (ou « taux indisponibles » si le scraping échoue pendant le build).
+export const prerender = false;
 
 const config = loadSiteConfig();
 
@@ -23,8 +28,9 @@ const hypothecaVariable = hypothecaRates?.variable ?? null;
 
 const googleReviews = await getReviews();
 
-// CDN cache: serve cached HTML for 6 h, revalidate in background for 1 h after expiry
-Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+// CDN cache: serve cached HTML for 6 h, revalidate in background for 1 h after expiry.
+// Durée réduite quand les taux manquent, pour ne pas figer la page dégradée.
+Astro.response.headers.set('Cache-Control', rateCacheControl(hypothecaRates));
 
 ---
 

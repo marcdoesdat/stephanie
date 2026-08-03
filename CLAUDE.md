@@ -68,7 +68,15 @@ src/
 | `/api/refinancement-submit` | API | Soumission du funnel publicitaire V1 (`/refinancement`) |
 | `/api/refinancement-v2-submit` | API | Soumission du funnel publicitaire V2 (`/refinancement-v2`), équité déduite des tranches |
 
-`export const prerender = true` force le statique sur une page (par défaut SSR via adapter Netlify).
+**Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
+prérend chaque page au build sauf si elle déclare `export const prerender = false`.
+
+- Page qui lit des données à l'exécution (taux, avis) ou route API → `export const prerender = false` **obligatoire**.
+  Sans cette ligne, les taux sont figés au moment du déploiement — et si le scraping échoue pendant
+  le build, le site sert « taux indisponibles » jusqu'au prochain déploiement.
+- Page purement statique → `export const prerender = true` (explicite, même si c'est le défaut).
+
+Toute page du tableau ci-dessus marquée « SSR » doit donc porter `prerender = false`.
 
 ## Composants principaux
 
@@ -206,7 +214,8 @@ npx vitest              # mode watch
 
 ## Conventions
 
-- `export const prerender = true` pour forcer le statique sur une page.
+- Déclarer explicitement `export const prerender` sur **chaque** page : `false` pour le SSR
+  (données à l'exécution), `true` pour le statique. Ne jamais se fier au défaut.
 - Noms de fichiers en anglais, textes en français (fr-CA).
 - **Ne pas affaiblir la CSP** sans raison — `unsafe-inline` présent uniquement pour JSON-LD.
 - **Jamais de taux fictifs en fallback** — afficher `null` + lien hypotheca.ca si aucun cache valide.
