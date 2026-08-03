@@ -1,10 +1,9 @@
 (function () {
   var STORAGE_KEY = 'sw_consent_v1';
   var GTAG_ID = 'AW-18126348856';
+  var GTM_ID = 'GTM-P9NJL58S';
 
   var banner = document.getElementById('consent-banner');
-  if (!banner) return;
-
   var acceptBtn = document.getElementById('consent-accept');
   var refuseBtn = document.getElementById('consent-refuse');
 
@@ -21,6 +20,18 @@
     window.__gtag_loaded = true;
     loadScript('https://www.googletagmanager.com/gtag/js?id=' + GTAG_ID);
     loadScript('/js/gtag-init.js');
+  }
+
+  // GTM n'est plus dans le <head> : Consent Mode « denied » laisse quand même
+  // le container charger ses tags. On l'injecte donc seulement après un
+  // consentement explicite, après le consent update pour que le container
+  // démarre déjà en « granted ».
+  function loadGtm() {
+    if (window.__gtm_loaded) return;
+    window.__gtm_loaded = true;
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+    loadScript('https://www.googletagmanager.com/gtm.js?id=' + GTM_ID);
   }
 
   // Consent Mode v2 : signale le choix à GTM/gtag. Les défauts « denied »
@@ -42,16 +53,17 @@
   function applyConsent(state) {
     updateConsentMode(state);
     if (state === 'accepted') {
+      loadGtm();
       loadGtag();
     }
   }
 
   function showBanner() {
-    banner.hidden = false;
+    if (banner) banner.hidden = false;
   }
 
   function hideBanner() {
-    banner.hidden = true;
+    if (banner) banner.hidden = true;
   }
 
   function save(state) {
