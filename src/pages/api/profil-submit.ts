@@ -1,0 +1,206 @@
+// Soumission du formulaire « Profil des emprunteurs » (/profil-emprunteur).
+//
+// Deux issues selon la voie choisie par l'emprunteur qui remplit :
+//
+//   • « presence » — tout le monde a signé sur le même appareil. Le PDF est produit ici,
+//     envoyé à la courtière et à chaque signataire, et renvoyé au navigateur en base64
+//     pour le bouton de téléchargement. Rien n'est stocké.
+//
+//   • « distance » — seul l'initiateur a signé. Un dossier en attente est créé et chaque
+//     co-signataire reçoit un lien nominatif à usage unique (voir profilDossierService).
+//     Aucun PDF n'existe tant que le dernier n'a pas signé — c'est /api/profil-cosigner
+//     qui clôt le dossier.
+//
+// Rien de ce que le navigateur envoie n'est repris tel quel : les réponses sont validées
+// contre le catalogue de src/utils/profilEmprunteurs.ts, et chaque PNG de signature est
+// vérifié avant d'approcher pdf-lib.
+//
+// Variables d'environnement : voir src/services/emailService.ts (RESEND_*).
+
+import type { APIRoute } from 'astro';
+import { loadSiteConfig } from '../../config';
+import {
+  checkRateLimit,
+  clientIpFromRequest,
+  jsonResponse,
+  loadResendEnv,
+} from '../../services/emailService';
+import {
+  envoyerAvisEnAttente,
+  envoyerDossierComplet,
+  envoyerInvitations,
+  nomFichierProfil,
+  type InvitationCourriel,
+  type PreuveSignature,
+} from '../../services/profilCourriels';
+import { creerDossier, type SignatureEnregistree } from '../../services/profilDossierService';
+import { empreinteSha256, genererProfilPdf, versBase64 } from '../../services/profilPdfService';
+import {
+  decoderTraceSignature,
+  parserReponses,
+  parserSignataires,
+  type Signataire,
+} from '../../utils/profilEmprunteurs';
+
+export const prerender = false;
+
+type Payload = Record<string, unknown>;
+
+/** Construit le lien de signature envoyé à un co-signataire. */
+function lienSignature(dossierId: string, jeton: string): string {
+  const base = loadSiteConfig().site_url.replace(/\/$/, '');
+  return `${base}/signer?d=${encodeURIComponent(dossierId)}&j=${encodeURIComponent(jeton)}`;
+}
+
+export const POST: APIRoute = async ({ request }) => {
+  if (request.method !== 'POST') {
+    return jsonResponse({ error: 'Méthode non autorisée' }, 405);
+  }
+
+  let payload: Payload;
+  try {
+    payload = (await request.json()) as Payload;
+  } catch {
+    return jsonResponse({ error: 'Requête invalide' }, 400);
+  }
+
+  // Honeypot : succès silencieux, aucun courriel envoyé.
+  if (typeof payload.company === 'string' && payload.company.trim() !== '') {
+    return jsonResponse({ ok: true }, 200);
+  }
+
+  const clientIp = clientIpFromRequest(request);
+  const agent = request.headers.get('user-agent') ?? 'inconnu';
+
+  if (!(await checkRateLimit(clientIp, 'profil'))) {
+    return jsonResponse({ error: 'Trop de demandes. Veuillez réessayer dans une heure.' }, 429);
+  }
+
+  /* ---------- Validation ---------- */
+
+  const reponses = parserReponses(payload.reponses);
+  const signataires: Signataire[] | null = parserSignataires(payload.signataires);
+  const voie = payload.voie === 'distance' ? 'distance' : payload.voie === 'presence' ? 'presence' : null;
+  const attestation = payload.attestation === true;
+
+  if (!reponses || !signataires || !voie || !attestation) {
+    return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
+  }
+
+  // Les tracés arrivent indexés par la position du signataire : { "0": "data:image/png…" }.
+  const tracesBrutes = (payload.signatures ?? {}) as Record<string, unknown>;
+  const maintenant = new Date();
+  const signatures = new Map<number, SignatureEnregistree>();
+
+  for (const [index] of signataires.entries()) {
+    const brut = tracesBrutes[String(index)];
+    // En voie « distance », seul l'initiateur signe maintenant ; les autres signeront par lien.
+    if (brut === undefined && voie === 'distance' && index > 0) continue;
+
+    const trace = decoderTraceSignature(brut);
+    if (!trace) return jsonResponse({ error: 'Signature manquante ou illisible' }, 400);
+
+    signatures.set(index, {
+      tracePngBase64: versBase64(trace),
+      signeLe: maintenant.toISOString(),
+      voie,
+      ip: clientIp,
+      agent,
+      empreinteTrace: await empreinteSha256(trace),
+    });
+  }
+
+  if (!signatures.has(0)) {
+    return jsonResponse({ error: 'Signature manquante ou illisible' }, 400);
+  }
+  if (voie === 'presence' && signatures.size !== signataires.length) {
+    return jsonResponse({ error: 'Il manque une signature' }, 400);
+  }
+
+  /* ---------- Environnement Resend ---------- */
+
+  const resendEnv = loadResendEnv();
+  if (!resendEnv && !import.meta.env.DEV) {
+    console.error('[profil-submit] Variables Resend manquantes.');
+    return jsonResponse({ error: 'Service temporairement indisponible' }, 502);
+  }
+  // En développement sans Resend, tout le reste s'exécute quand même — dossier compris —
+  // et seuls les envois sont remplacés par des logs. C'est la seule façon de dérouler la
+  // chaîne de co-signature en local : le lien à ouvrir est imprimé dans la console.
+  const simule = resendEnv === null;
+
+  const preuves: PreuveSignature[] = signataires
+    .map((signataire, index) => {
+      const signature = signatures.get(index);
+      if (!signature) return null;
+      return {
+        nom: signataire.nom,
+        courriel: signataire.courriel,
+        signeLe: signature.signeLe,
+        voie: signature.voie,
+        ip: signature.ip,
+        agent: signature.agent,
+        empreinteTrace: signature.empreinteTrace,
+      } satisfies PreuveSignature;
+    })
+    .filter((p): p is PreuveSignature => p !== null);
+
+  /* ---------- Voie « en présence » : le dossier est clos tout de suite ---------- */
+
+  if (voie === 'presence') {
+    try {
+      const pdf = await genererProfilPdf(
+        reponses,
+        signataires.map((signataire, index) => ({
+          nom: signataire.nom,
+          trace: decoderTraceSignature(tracesBrutes[String(index)])!,
+          signeLe: maintenant,
+        })),
+      );
+      const nomFichier = nomFichierProfil(signataires[0]!.nom, maintenant);
+
+      if (resendEnv) {
+        await envoyerDossierComplet(resendEnv, {
+          reponses,
+          preuves,
+          pdfBase64: versBase64(pdf),
+          empreintePdf: await empreinteSha256(pdf),
+          nomFichier,
+        });
+      } else {
+        console.log('[profil-submit] ⚠️  Resend non configuré — envoi du dossier complet simulé :', nomFichier);
+      }
+
+      return jsonResponse({ ok: true, ...(simule ? { dev: true } : {}), pdf: versBase64(pdf), filename: nomFichier }, 200);
+    } catch (err) {
+      console.error('[profil-submit] Échec de génération ou d\'envoi :', err);
+      return jsonResponse({ error: "L'envoi a échoué. Veuillez réessayer." }, 502);
+    }
+  }
+
+  /* ---------- Voie « à distance » : dossier en attente + invitations ---------- */
+
+  try {
+    const { invitations } = await creerDossier(reponses, signataires, signatures);
+    const aEnvoyer: InvitationCourriel[] = invitations.map((invitation) => ({
+      nom: invitation.nom,
+      courriel: invitation.courriel,
+      lien: lienSignature(invitation.dossierId, invitation.jeton),
+    }));
+
+    if (resendEnv) {
+      await Promise.all([
+        envoyerInvitations(resendEnv, aEnvoyer, signataires[0]!.nom),
+        envoyerAvisEnAttente(resendEnv, reponses, preuves[0]!, aEnvoyer),
+      ]);
+    } else {
+      console.log('[profil-submit] ⚠️  Resend non configuré — invitations simulées. Liens à ouvrir :');
+      for (const invitation of aEnvoyer) console.log(`  ${invitation.nom} → ${invitation.lien}`);
+    }
+
+    return jsonResponse({ ok: true, ...(simule ? { dev: true } : {}), enAttente: aEnvoyer.map((i) => i.nom) }, 200);
+  } catch (err) {
+    console.error('[profil-submit] Échec de création du dossier :', err);
+    return jsonResponse({ error: "L'envoi a échoué. Veuillez réessayer." }, 502);
+  }
+};

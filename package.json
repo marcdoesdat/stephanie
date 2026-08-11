@@ -15,7 +15,8 @@
     "@netlify/blobs": "^10.7.4",
     "astro": "^6.0.8",
     "html2canvas": "^1.4.1",
-    "js-yaml": "^4.1.1"
+    "js-yaml": "^4.1.1",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",

@@ -44,6 +44,8 @@ src/
 | `/outils/calculateur-penalite-hypothecaire` | SSR | Calculateur de pénalité dédié |
 | `/amortissement` | Statique | Tableau d'amortissement |
 | `/rappel` | Statique | Formulaire de prise de rappel |
+| `/profil-emprunteur` | Statique | Formulaire AMF « Profil des emprunteurs » en tuiles + signature dessinée (noindex, sans Nav/Footer) |
+| `/signer` | SSR | Co-signature à distance par lien nominatif (noindex, sans Nav/Footer) |
 | `/refinancement` | Statique | Landing publicitaire V1 (funnel quiz 4 étapes, noindex, sans Nav/Footer) |
 | `/refinancement-v2` | Statique | Landing publicitaire V2 (funnel 5 étapes sans chiffre exact, noindex, sans Nav/Footer) |
 | `/refinancement/merci` | Statique | Page de remerciement du funnel V2 (noindex, sans Nav/Footer) |
@@ -67,6 +69,8 @@ src/
 | `/api/demande-submit` | API | Soumission formulaire de demande de financement (`/demande`) |
 | `/api/refinancement-submit` | API | Soumission du funnel publicitaire V1 (`/refinancement`) |
 | `/api/refinancement-v2-submit` | API | Soumission du funnel publicitaire V2 (`/refinancement-v2`), équité déduite des tranches |
+| `/api/profil-submit` | API | Soumission du profil des emprunteurs — estampe le PDF officiel, ou ouvre un dossier de co-signature |
+| `/api/profil-cosigner` | API | Signature (ou désaccord) d'un co-emprunteur via son lien nominatif |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
 prérend chaque page au build sauf si elle déclare `export const prerender = false`.
@@ -174,6 +178,17 @@ Décode l'obfuscation `occ(...)` utilisée sur hypotheca.ca : ROT13 (lettres) + 
 - `formatNumber(n)` → `"300 000"` (fr-CA)
 - `formatDateLong(d)` → `"1 juin 2028"` (fr-CA)
 
+### `src/utils/profilEmprunteurs.ts`
+Source de vérité du formulaire AMF « Profil des emprunteurs », partagée entre `/profil-emprunteur`,
+`/signer` et les deux endpoints.
+- `QUESTIONS` — les 8 questions, leurs options, et **les coordonnées des 30 cases à cocher du modèle PDF**
+- `ZONES_SIGNATURE`, `POSITION_AUTRE_MONTANT`, `TRACE_LARGEUR_MAX/HAUTEUR_MAX` — géométrie d'estampage
+- `parserReponses`, `parserSignataires`, `decoderTraceSignature` — validation stricte côté serveur
+  (le catalogue fait office de whitelist ; le PNG de signature est vérifié avant d'approcher pdf-lib)
+- Tests : `src/utils/profilEmprunteurs.test.ts`
+- **Si Hypotheca révise le formulaire**, il faut régénérer le modèle *et* réextraire les
+  coordonnées — voir l'entête du fichier.
+
 ### `src/utils/refinancementV2.ts`
 Source de vérité du funnel `/refinancement-v2`, partagée entre la page et `/api/refinancement-v2-submit`.
 - `INTENTIONS`, `VALEURS`, `SOLDES` — libellés + milieux de tranche ; servent aussi de whitelist de validation côté API
@@ -181,6 +196,32 @@ Source de vérité du funnel `/refinancement-v2`, partagée entre la page et `/a
 - `classerRatio(ratio)` — `faible` sous 20 %, `bonne` à partir de 20 % inclusivement
 - Tests : `src/utils/refinancementV2.test.ts`
 - **L'équité est toujours recalculée côté serveur** — rien n'est accepté du client sur ce point.
+
+## Formulaire « Profil des emprunteurs »
+
+Le PDF officiel n'est **jamais reconstruit** : on charge le modèle d'Hypotheca et on estampe
+par-dessus (coches vectorielles, montant libre, tracés de signature, dates). Le document produit
+est identique au modèle au pixel près.
+
+| Fichier | Rôle |
+|---------|------|
+| `src/data/profilEmprunteursModele.ts` | Le modèle PDF en base64 — **fichier généré**, ne pas éditer |
+| `scripts/encode-modele.mjs` | Régénère le module ci-dessus : `node scripts/encode-modele.mjs <pdf>` |
+| `src/services/profilPdfService.ts` | Estampage pdf-lib + empreintes SHA-256 |
+| `src/services/profilDossierService.ts` | Dossiers en attente de co-signature (Netlify Blobs, jetons hachés) |
+| `src/services/profilCourriels.ts` | Courriels + **trace de preuve** des signatures |
+| `src/components/SignaturePad.astro` + `src/scripts/signaturePad.ts` | Bloc de signature (canevas, recadrage sur l'encre, repli « nom tapé ») |
+
+**Règles :**
+- **Rien n'est ajouté au PDF hors des champs du modèle.** La trace de preuve (horodatage serveur,
+  IP, navigateur, empreintes) vit dans le courriel interne, jamais dans le document.
+- Les tracés de signature ne sont **jamais persistés côté navigateur** et le dossier Blob est
+  supprimé dès le PDF produit. TTL de 14 jours, purge opportuniste à la création.
+- Les jetons de co-signature sont à usage unique, stockés hachés (SHA-256), et comparés à temps
+  constant.
+- Le modèle contient déjà le nom de la courtière et son numéro AMF — ne rien y écrire.
+- En dev sans Resend, tout s'exécute quand même (dossier compris) et les liens de signature sont
+  imprimés dans la console : c'est la seule façon de dérouler la chaîne en local.
 
 ## Configuration
 

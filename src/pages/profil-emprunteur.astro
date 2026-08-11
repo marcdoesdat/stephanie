@@ -1,0 +1,987 @@
+---
+// Formulaire « Profil des emprunteurs » (Hypotheca / AMF) rempli en tuiles.
+//
+// Le client ne voit jamais le PDF : il clique des options qui auto-avancent, relit un
+// récapitulatif des 8 réponses dans les termes exacts du formulaire, puis signe. Le PDF
+// officiel est estampé côté serveur et livré par courriel + téléchargement.
+//
+// Page volontairement sans Nav ni Footer, noindex et hors sitemap : elle n'est pas une
+// page de contenu, c'est un document de conformité que Stéphanie envoie à ses clients par
+// lien. Voir PLAN-profil-emprunteurs.md.
+export const prerender = true;
+
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../assets/stephanie.webp';
+import MainLayout from '../layouts/MainLayout.astro';
+import SignaturePad from '../components/SignaturePad.astro';
+import { loadSiteConfig } from '../config';
+import {
+  AUTRE_MONTANT_MAX,
+  AUTRE_MONTANT_MIN,
+  MAX_SIGNATAIRES,
+  QUESTIONS,
+  TEXTE_ATTESTATION,
+} from '../utils/profilEmprunteurs';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+
+// 8 questions + récapitulatif + signataires + signature.
+const TOTAL_ETAPES = QUESTIONS.length + 3;
+const ETAPE_RECAP = QUESTIONS.length + 1;
+const ETAPE_SIGNATAIRES = QUESTIONS.length + 2;
+const ETAPE_SIGNATURE = QUESTIONS.length + 3;
+---
+
+<MainLayout
+  title="Profil des emprunteurs"
+  description="Questionnaire de profil d'emprunteur — quelques questions pour vous recommander le produit hypothécaire adapté à vos objectifs."
+  noindex={true}
+>
+  <main id="main-content" class="profil-page">
+    <section class="profil-shell" aria-label="Profil des emprunteurs">
+      <div class="contact-form quiz">
+        <div class="quiz-trust">
+          <Image
+            src={stephaniePhoto}
+            alt={`${config.nom}, ${config.titre}`}
+            width={56}
+            height={56}
+            class="quiz-trust-photo"
+            loading="eager"
+          />
+          <div class="quiz-trust-text">
+            <strong>{config.nom}</strong>
+            <span>{config.titre} · {config.organisation} · AMF {config.amf}</span>
+          </div>
+        </div>
+
+        <div class="quiz-progress" data-progress hidden>
+          <div class="quiz-progress-meta">
+            <span class="quiz-progress-label">
+              Étape <span data-num>1</span> sur {TOTAL_ETAPES}
+            </span>
+            <button type="button" class="quiz-back" data-retour hidden>← Retour</button>
+          </div>
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" data-fill style="width:0%"></div>
+          </div>
+        </div>
+
+        <form data-formulaire novalidate>
+          <div class="profil-hp" aria-hidden="true">
+            <label for="company">Ne pas remplir</label>
+            <input type="text" id="company" name="company" tabindex="-1" autocomplete="off" />
+          </div>
+
+          {/* ---------- Écran 0 : introduction ---------- */}
+          <div class="quiz-step" data-etape="0">
+            <h1 class="profil-titre">Votre profil d'emprunteur</h1>
+            <p class="profil-intro">
+              Quelques questions pour comprendre vos objectifs et vos préférences. Vos réponses
+              seront combinées à vos informations financières pour vous recommander le produit
+              hypothécaire le mieux adapté à votre situation — pas seulement le taux le plus bas.
+            </p>
+            <p class="profil-intro">
+              Comptez deux minutes. À la fin, vous relirez vos réponses et vous signerez.
+            </p>
+            <div class="profil-encadre">
+              <strong>Vous êtes plus d'un emprunteur&nbsp;?</strong>
+              Le prêt hypothécaire est un engagement conjoint et solidaire : discutez des réponses
+              ensemble avant de les soumettre, pour qu'elles reflètent votre vision commune et non
+              celle d'une seule personne.
+            </div>
+            <button type="button" class="btn-cta btn-cta--block" data-demarrer>Commencer</button>
+          </div>
+
+          {/* ---------- Écrans 1 à 8 : les questions ---------- */}
+          {
+            QUESTIONS.map((question, index) => (
+              <div class="quiz-step" data-etape={String(index + 1)} hidden>
+                <p class="quiz-q" id={`libelle-${question.id}`}>{question.question}</p>
+                {question.precision && <p class="quiz-q-sub">{question.precision}</p>}
+
+                <div
+                  class={`quiz-options ${question.disposition === 'grille' ? 'profil-grille' : ''}`}
+                  role="group"
+                  aria-labelledby={`libelle-${question.id}`}
+                >
+                  {question.options.map((option) => (
+                    <button
+                      type="button"
+                      class="quiz-card"
+                      data-choix
+                      data-question={question.id}
+                      data-valeur={option.cle}
+                    >
+                      <span class="quiz-card-text"><strong>{option.label}</strong></span>
+                    </button>
+                  ))}
+                </div>
+
+                {question.id === 'absorption' && (
+                  <div class="profil-autre" data-autre hidden>
+                    <label class="cform-label" for="autre-montant">Quel montant&nbsp;?</label>
+                    <div class="profil-autre-champ">
+                      <input
+                        type="number"
+                        id="autre-montant"
+                        class="cform-input"
+                        inputmode="numeric"
+                        min={AUTRE_MONTANT_MIN}
+                        max={AUTRE_MONTANT_MAX}
+                        step="1"
+                        placeholder="325"
+                      />
+                      <span aria-hidden="true">$</span>
+                    </div>
+                    <button type="button" class="btn-cta btn-cta--block" data-valider-autre>Continuer</button>
+                  </div>
+                )}
+
+                <p class="profil-erreur" data-erreur role="alert" hidden></p>
+              </div>
+            ))
+          }
+
+          {/* ---------- Récapitulatif ---------- */}
+          <div class="quiz-step" data-etape={String(ETAPE_RECAP)} hidden>
+            <p class="quiz-q">Relisez vos réponses</p>
+            <p class="quiz-q-sub">
+              Ce sont les termes exacts du formulaire que vous allez signer. Touchez une ligne pour
+              la corriger.
+            </p>
+            <ul class="profil-recap" data-recap></ul>
+          </div>
+
+          {/* ---------- Signataires ---------- */}
+          <div class="quiz-step" data-etape={String(ETAPE_SIGNATAIRES)} hidden>
+            <p class="quiz-q">Qui signe&nbsp;?</p>
+            <p class="quiz-q-sub">
+              Tous les emprunteurs au prêt doivent signer. Chacun a besoin de sa propre adresse
+              courriel.
+            </p>
+
+            <div data-signataires></div>
+
+            <button type="button" class="profil-ajout" data-ajouter>+ Ajouter un co-emprunteur</button>
+
+            <fieldset class="profil-voie" data-voie-groupe hidden>
+              <legend class="cform-label">Les autres emprunteurs sont-ils avec vous&nbsp;?</legend>
+              <label class="profil-voie-choix">
+                <input type="radio" name="voie" value="presence" checked />
+                <span>
+                  <strong>Oui, ils sont avec moi</strong>
+                  Chacun signera sur cet appareil, l'un après l'autre.
+                </span>
+              </label>
+              <label class="profil-voie-choix">
+                <input type="radio" name="voie" value="distance" />
+                <span>
+                  <strong>Non, ils signeront de leur côté</strong>
+                  Chacun recevra un lien personnel par courriel pour lire et signer.
+                </span>
+              </label>
+            </fieldset>
+
+            <p class="profil-note">
+              Vos renseignements servent uniquement à ce dossier. Voir la
+              <a href="/confidentialite">politique de confidentialité</a>.
+            </p>
+
+            <p class="profil-erreur" data-erreur role="alert" hidden></p>
+            <button type="button" class="btn-cta btn-cta--block" data-vers-signature>Passer à la signature</button>
+          </div>
+
+          {/* ---------- Signatures ---------- */}
+          <div class="quiz-step" data-etape={String(ETAPE_SIGNATURE)} hidden>
+            <p class="quiz-q" data-titre-signature>Votre signature</p>
+            <p class="quiz-q-sub" data-sous-signature>
+              Signez dans le cadre, comme sur papier.
+            </p>
+
+            {
+              Array.from({ length: MAX_SIGNATAIRES }).map((_, index) => (
+                <div class="profil-bloc-signature" data-bloc-signature={String(index)} hidden>
+                  <SignaturePad id={`signature-${index}`} />
+                  <label class="profil-attestation">
+                    <input type="checkbox" data-attestation={String(index)} />
+                    <span>{TEXTE_ATTESTATION}</span>
+                  </label>
+                </div>
+              ))
+            }
+
+            <p class="profil-erreur" data-erreur role="alert" hidden></p>
+            <button type="button" class="btn-cta btn-cta--block" data-signer>Signer</button>
+          </div>
+
+          {/* ---------- Confirmation ---------- */}
+          <div class="quiz-step quiz-step--final" data-etape="fin" hidden>
+            <h2 class="profil-titre" data-fin-titre>C'est signé</h2>
+            <p class="profil-intro" data-fin-texte></p>
+            <a class="btn-cta btn-cta--block" data-telecharger hidden download>Télécharger mon profil (PDF)</a>
+            <p class="profil-note">
+              Une question&nbsp;? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
+              ou appelez {prenom} au <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>.
+            </p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+</MainLayout>
+
+<style>
+  .profil-page {
+    background: var(--sand);
+    min-height: 100vh;
+    padding: clamp(1.25rem, 4vw, 3rem) 1rem 5rem;
+  }
+
+  .profil-shell {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .profil-titre {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.5rem, 4vw, 1.95rem);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--ink);
+    margin-bottom: 0.9rem;
+  }
+
+  .profil-intro {
+    font-size: 0.98rem;
+    line-height: 1.7;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .profil-encadre {
+    background: var(--warm);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: var(--ink);
+    margin: 1.2rem 0 1.6rem;
+  }
+
+  .profil-encadre strong {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Options courtes (Très faibles / Faibles / …) : deux colonnes au lieu d'une pile. */
+  .profil-grille {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .profil-autre {
+    margin-top: 1rem;
+  }
+
+  .profil-autre-champ {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .profil-autre-champ input {
+    flex: 1;
+  }
+
+  /* ---- Récapitulatif ---- */
+
+  .profil-recap {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0.4rem 0 1.4rem;
+    padding: 0;
+  }
+
+  /* Le contenu du récapitulatif est construit en JavaScript : ces éléments ne portent pas
+     l'attribut de scope d'Astro, il faut donc les viser en :global sous le parent scopé. */
+  .profil-recap :global(.recap-ligne) {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem 0.95rem;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .profil-recap :global(.recap-ligne:hover),
+  .profil-recap :global(.recap-ligne:focus-visible) {
+    border-color: var(--clay);
+  }
+
+  .profil-recap :global(.recap-q) {
+    display: block;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .profil-recap :global(.recap-r) {
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .profil-recap :global(.recap-modifier) {
+    float: right;
+    margin-left: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--clay-dk);
+    text-decoration: underline;
+  }
+
+  /* ---- Signataires ---- */
+
+  /* Cartes de signataires : également construites en JavaScript, d'où le :global. */
+  [data-signataires] :global(.profil-signataire) {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem 0.2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  [data-signataires] :global(.profil-signataire-tete) {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  [data-signataires] :global(.profil-signataire-tete strong) {
+    font-size: 0.85rem;
+  }
+
+  [data-signataires] :global(.profil-retirer) {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  [data-signataires] :global(.cform-label) {
+    margin-top: 0.6rem;
+  }
+
+  /* global.css met margin-bottom:1.2rem sur tout input de .contact-form : trop d'air
+     entre deux champs d'une même carte. */
+  [data-signataires] :global(input) {
+    margin-bottom: 0.7rem;
+  }
+
+  .profil-ajout {
+    display: block;
+    width: 100%;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 0.75rem;
+    font: inherit;
+    font-size: 0.88rem;
+    color: var(--clay-dk);
+    cursor: pointer;
+    margin-bottom: 1.1rem;
+  }
+
+  .profil-ajout:hover {
+    border-color: var(--clay);
+  }
+
+  .profil-voie {
+    border: 0;
+    padding: 0;
+    margin: 0 0 1.1rem;
+  }
+
+  .profil-voie-choix {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem 0.95rem;
+    margin-top: 0.55rem;
+    cursor: pointer;
+  }
+
+  .profil-voie-choix:has(input:checked) {
+    border-color: var(--clay);
+    background: var(--warm);
+  }
+
+  .profil-voie-choix span {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .profil-voie-choix strong {
+    display: block;
+    font-size: 0.92rem;
+    color: var(--ink);
+  }
+
+  /* ---- Signature ---- */
+
+  .profil-bloc-signature {
+    margin-bottom: 1.6rem;
+  }
+
+  .profil-attestation {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin-top: 0.8rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  /* global.css impose width:100% + padding à tout input de .contact-form ; sans ce
+     rappel, la case à cocher occupe toute la largeur et éjecte le texte hors de la carte. */
+  .profil-attestation input[type='checkbox'],
+  .profil-voie-choix input[type='radio'] {
+    width: auto;
+    flex: 0 0 auto;
+    padding: 0;
+    margin: 0.3rem 0 0;
+  }
+
+  /* ---- Divers ---- */
+
+  .profil-note {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-top: 1rem;
+  }
+
+  .profil-note a {
+    color: var(--clay-dk);
+  }
+
+  .profil-erreur {
+    margin-top: 0.8rem;
+    font-size: 0.86rem;
+    color: #a8382f;
+  }
+
+  .profil-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 420px) {
+    .profil-grille {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { QUESTIONS, MAX_SIGNATAIRES, resumerReponses } from '../utils/profilEmprunteurs';
+  import type { SignaturePadElement } from '../scripts/signaturePad';
+
+  const CLE_STOCKAGE = 'sw_profil_emprunteurs_v1';
+  const ETAPE_RECAP = QUESTIONS.length + 1;
+  const ETAPE_SIGNATAIRES = QUESTIONS.length + 2;
+  const ETAPE_SIGNATURE = QUESTIONS.length + 3;
+  const TOTAL = ETAPE_SIGNATURE;
+
+  interface Signataire {
+    nom: string;
+    courriel: string;
+  }
+
+  interface Etat {
+    reponses: Record<string, string>;
+    autreMontant: string;
+    signataires: Signataire[];
+    voie: 'presence' | 'distance';
+  }
+
+  const formulaire = document.querySelector<HTMLFormElement>('[data-formulaire]');
+  if (formulaire) demarrer(formulaire);
+
+  function demarrer(formulaire: HTMLFormElement): void {
+    const ecrans = Array.from(formulaire.querySelectorAll<HTMLElement>('.quiz-step'));
+    const barre = document.querySelector<HTMLElement>('[data-progress]');
+    const remplissage = document.querySelector<HTMLElement>('[data-fill]');
+    const numero = document.querySelector<HTMLElement>('[data-num]');
+    const boutonRetour = document.querySelector<HTMLButtonElement>('[data-retour]');
+    const listeRecap = formulaire.querySelector<HTMLElement>('[data-recap]');
+    const conteneurSignataires = formulaire.querySelector<HTMLElement>('[data-signataires]');
+    const boutonAjouter = formulaire.querySelector<HTMLButtonElement>('[data-ajouter]');
+    const groupeVoie = formulaire.querySelector<HTMLElement>('[data-voie-groupe]');
+
+    let etape = 0;
+    /** Quand on corrige depuis le récapitulatif, on y retourne au lieu d'avancer. */
+    let retourAuRecap = false;
+    let envoiEnCours = false;
+
+    const etat: Etat = charger();
+
+    /* ---------------- Persistance ---------------- */
+
+    function charger(): Etat {
+      const vide: Etat = { reponses: {}, autreMontant: '', signataires: [{ nom: '', courriel: '' }], voie: 'presence' };
+      try {
+        const brut = sessionStorage.getItem(CLE_STOCKAGE);
+        if (!brut) return vide;
+        const lu = JSON.parse(brut) as Partial<Etat>;
+        return {
+          reponses: lu.reponses ?? {},
+          autreMontant: lu.autreMontant ?? '',
+          signataires: lu.signataires?.length ? lu.signataires : vide.signataires,
+          voie: lu.voie === 'distance' ? 'distance' : 'presence',
+        };
+      } catch {
+        return vide;
+      }
+    }
+
+    function sauvegarder(): void {
+      try {
+        // Les tracés de signature ne sont jamais persistés — ils restent en mémoire.
+        sessionStorage.setItem(CLE_STOCKAGE, JSON.stringify(etat));
+      } catch {
+        // Navigation privée ou quota plein : on continue sans reprise possible.
+      }
+    }
+
+    /* ---------------- Navigation ---------------- */
+
+    function afficher(cible: number | 'fin'): void {
+      etape = typeof cible === 'number' ? cible : TOTAL;
+      const clef = typeof cible === 'number' ? String(cible) : 'fin';
+
+      for (const ecran of ecrans) {
+        const estActif = ecran.dataset.etape === clef;
+        ecran.hidden = !estActif;
+        if (estActif) {
+          const titre = ecran.querySelector<HTMLElement>('.quiz-q, .profil-titre');
+          titre?.setAttribute('tabindex', '-1');
+          titre?.focus();
+        }
+      }
+
+      const enCours = typeof cible === 'number' && cible >= 1 && cible <= TOTAL;
+      if (barre) barre.hidden = !enCours;
+      if (enCours) {
+        if (numero) numero.textContent = String(cible);
+        if (remplissage) remplissage.style.width = `${Math.round((cible / TOTAL) * 100)}%`;
+        if (boutonRetour) boutonRetour.hidden = cible <= 1;
+      }
+
+      masquerErreurs();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function masquerErreurs(): void {
+      for (const erreur of formulaire.querySelectorAll<HTMLElement>('[data-erreur]')) erreur.hidden = true;
+    }
+
+    function erreur(message: string): void {
+      const ecran = ecrans.find((e) => !e.hidden);
+      const cible = ecran?.querySelector<HTMLElement>('[data-erreur]');
+      if (!cible) return;
+      cible.textContent = message;
+      cible.hidden = false;
+    }
+
+    formulaire.querySelector('[data-demarrer]')?.addEventListener('click', () => afficher(1));
+
+    boutonRetour?.addEventListener('click', () => {
+      if (etape > 1) afficher(etape - 1);
+    });
+
+    /* ---------------- Questions ---------------- */
+
+    function appliquerSelection(question: string, valeur: string): void {
+      for (const carte of formulaire.querySelectorAll<HTMLElement>(`[data-choix][data-question="${question}"]`)) {
+        carte.classList.toggle('selected', carte.dataset.valeur === valeur);
+      }
+    }
+
+    function avancerDepuis(indexQuestion: number): void {
+      if (retourAuRecap) {
+        retourAuRecap = false;
+        construireRecap();
+        afficher(ETAPE_RECAP);
+        return;
+      }
+      const suivante = indexQuestion + 2; // les écrans de question commencent à 1
+      if (suivante > QUESTIONS.length) {
+        construireRecap();
+        afficher(ETAPE_RECAP);
+      } else {
+        afficher(suivante);
+      }
+    }
+
+    for (const carte of formulaire.querySelectorAll<HTMLElement>('[data-choix]')) {
+      carte.addEventListener('click', () => {
+        const question = carte.dataset.question!;
+        const valeur = carte.dataset.valeur!;
+        const index = QUESTIONS.findIndex((q) => q.id === question);
+
+        etat.reponses[question] = valeur;
+        if (question === 'absorption' && valeur !== 'autre') etat.autreMontant = '';
+        appliquerSelection(question, valeur);
+        sauvegarder();
+
+        const champAutre = carte.closest('.quiz-step')?.querySelector<HTMLElement>('[data-autre]');
+        if (question === 'absorption') {
+          const ouvrir = valeur === 'autre';
+          if (champAutre) champAutre.hidden = !ouvrir;
+          if (ouvrir) {
+            champAutre?.querySelector<HTMLInputElement>('input')?.focus();
+            return; // la seule étape qui n'auto-avance pas : il reste un montant à saisir
+          }
+        }
+
+        // Court délai : la sélection doit être visible avant que l'écran ne change.
+        window.setTimeout(() => avancerDepuis(index), 220);
+      });
+    }
+
+    formulaire.querySelector('[data-valider-autre]')?.addEventListener('click', () => {
+      const champ = formulaire.querySelector<HTMLInputElement>('#autre-montant');
+      const montant = Number(champ?.value);
+      if (!Number.isInteger(montant) || montant < 1 || montant > 100000) {
+        erreur('Indiquez un montant entier, entre 1 $ et 100 000 $.');
+        return;
+      }
+      etat.autreMontant = String(montant);
+      sauvegarder();
+      avancerDepuis(QUESTIONS.findIndex((q) => q.id === 'absorption'));
+    });
+
+    /* ---------------- Récapitulatif ---------------- */
+
+    function construireRecap(): void {
+      if (!listeRecap) return;
+      const montant = etat.autreMontant ? Number(etat.autreMontant) : null;
+      const lignes = resumerReponses({ choix: etat.reponses as never, autreMontant: montant });
+
+      listeRecap.textContent = '';
+      lignes.forEach(([intitule, valeur], index) => {
+        const element = document.createElement('li');
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        // Classe dédiée plutôt qu'un sélecteur sur `button` : le bouton « Tout est exact »
+        // vit dans la même liste et doit garder son apparence de call-to-action.
+        bouton.className = 'recap-ligne';
+        bouton.innerHTML =
+          '<span class="recap-modifier">Modifier</span>' +
+          `<span class="recap-q"></span><span class="recap-r"></span>`;
+        bouton.querySelector('.recap-q')!.textContent = intitule;
+        bouton.querySelector('.recap-r')!.textContent = valeur;
+        bouton.addEventListener('click', () => {
+          retourAuRecap = true;
+          afficher(index + 1);
+        });
+        element.appendChild(bouton);
+        listeRecap.appendChild(element);
+      });
+
+      const continuer = document.createElement('li');
+      const bouton = document.createElement('button');
+      bouton.type = 'button';
+      bouton.className = 'btn-cta btn-cta--block';
+      bouton.textContent = 'Tout est exact — continuer';
+      bouton.addEventListener('click', () => afficher(ETAPE_SIGNATAIRES));
+      continuer.appendChild(bouton);
+      listeRecap.appendChild(continuer);
+    }
+
+    /* ---------------- Signataires ---------------- */
+
+    function rendreSignataires(): void {
+      if (!conteneurSignataires) return;
+      conteneurSignataires.textContent = '';
+
+      etat.signataires.forEach((signataire, index) => {
+        const carte = document.createElement('div');
+        carte.className = 'profil-signataire';
+
+        const tete = document.createElement('div');
+        tete.className = 'profil-signataire-tete';
+        const titre = document.createElement('strong');
+        titre.textContent = index === 0 ? 'Emprunteur 1 (vous)' : `Emprunteur ${index + 1}`;
+        tete.appendChild(titre);
+        if (index > 0) {
+          const retirer = document.createElement('button');
+          retirer.type = 'button';
+          retirer.className = 'profil-retirer';
+          retirer.textContent = 'Retirer';
+          retirer.addEventListener('click', () => {
+            etat.signataires.splice(index, 1);
+            sauvegarder();
+            rendreSignataires();
+          });
+          tete.appendChild(retirer);
+        }
+        carte.appendChild(tete);
+
+        carte.appendChild(champ(`Nom complet`, 'text', signataire.nom, `sig-nom-${index}`, (valeur) => {
+          etat.signataires[index]!.nom = valeur;
+          sauvegarder();
+        }));
+        carte.appendChild(champ(`Courriel`, 'email', signataire.courriel, `sig-courriel-${index}`, (valeur) => {
+          etat.signataires[index]!.courriel = valeur;
+          sauvegarder();
+        }));
+
+        conteneurSignataires.appendChild(carte);
+      });
+
+      if (boutonAjouter) boutonAjouter.hidden = etat.signataires.length >= MAX_SIGNATAIRES;
+      if (groupeVoie) groupeVoie.hidden = etat.signataires.length < 2;
+    }
+
+    function champ(
+      etiquette: string,
+      type: string,
+      valeur: string,
+      id: string,
+      surChangement: (valeur: string) => void,
+    ): DocumentFragment {
+      const fragment = document.createDocumentFragment();
+      const label = document.createElement('label');
+      label.className = 'cform-label';
+      label.htmlFor = id;
+      label.textContent = etiquette;
+      const entree = document.createElement('input');
+      entree.type = type;
+      entree.id = id;
+      entree.className = 'cform-input';
+      entree.value = valeur;
+      entree.autocomplete = type === 'email' ? 'email' : 'name';
+      entree.maxLength = type === 'email' ? 120 : 60;
+      entree.addEventListener('input', () => surChangement(entree.value.trim()));
+      fragment.appendChild(label);
+      fragment.appendChild(entree);
+      return fragment;
+    }
+
+    boutonAjouter?.addEventListener('click', () => {
+      if (etat.signataires.length >= MAX_SIGNATAIRES) return;
+      etat.signataires.push({ nom: '', courriel: '' });
+      sauvegarder();
+      rendreSignataires();
+    });
+
+    for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="voie"]')) {
+      radio.addEventListener('change', () => {
+        if (!radio.checked) return;
+        etat.voie = radio.value === 'distance' ? 'distance' : 'presence';
+        sauvegarder();
+      });
+    }
+
+    formulaire.querySelector('[data-vers-signature]')?.addEventListener('click', () => {
+      const adresses = new Set<string>();
+      for (const [index, signataire] of etat.signataires.entries()) {
+        if (signataire.nom.length < 2) {
+          erreur(`Indiquez le nom complet de l'emprunteur ${index + 1}.`);
+          return;
+        }
+        if (!/^[^\s@]+@(?:[^\s@.]+\.)+[a-z]{2,}$/i.test(signataire.courriel)) {
+          erreur(`L'adresse courriel de l'emprunteur ${index + 1} semble incomplète.`);
+          return;
+        }
+        const normalisee = signataire.courriel.toLowerCase();
+        if (adresses.has(normalisee)) {
+          erreur('Chaque emprunteur doit avoir sa propre adresse courriel.');
+          return;
+        }
+        adresses.add(normalisee);
+      }
+      preparerSignatures();
+      afficher(ETAPE_SIGNATURE);
+    });
+
+    /* ---------------- Signatures ---------------- */
+
+    function blocsActifs(): number {
+      return etat.voie === 'distance' ? 1 : etat.signataires.length;
+    }
+
+    function preparerSignatures(): void {
+      const actifs = blocsActifs();
+      for (let index = 0; index < MAX_SIGNATAIRES; index += 1) {
+        const bloc = formulaire.querySelector<HTMLElement>(`[data-bloc-signature="${index}"]`);
+        if (!bloc) continue;
+        bloc.hidden = index >= actifs;
+        const rappel = bloc.querySelector<HTMLElement>('[data-sig-qui]');
+        const nom = etat.signataires[index]?.nom ?? '';
+        if (rappel) rappel.textContent = nom ? `Signature de ${nom}` : '';
+      }
+
+      const titre = formulaire.querySelector<HTMLElement>('[data-titre-signature]');
+      const sous = formulaire.querySelector<HTMLElement>('[data-sous-signature]');
+      if (titre) titre.textContent = actifs > 1 ? 'Vos signatures' : 'Votre signature';
+      if (sous) {
+        sous.textContent =
+          etat.voie === 'distance'
+            ? 'Signez votre partie. Les autres emprunteurs recevront leur propre lien par courriel.'
+            : actifs > 1
+              ? 'Chacun signe dans son cadre — passez l’appareil quand c’est fait.'
+              : 'Signez dans le cadre, comme sur papier.';
+      }
+    }
+
+    formulaire.querySelector('[data-signer]')?.addEventListener('click', async (evenement) => {
+      const bouton = evenement.currentTarget as HTMLButtonElement;
+      if (envoiEnCours) return;
+
+      const actifs = blocsActifs();
+      const signatures: Record<string, string> = {};
+
+      for (let index = 0; index < actifs; index += 1) {
+        const pad = formulaire.querySelector<SignaturePadElement>(`#signature-${index}`);
+        const attestation = formulaire.querySelector<HTMLInputElement>(`[data-attestation="${index}"]`);
+        const nom = etat.signataires[index]?.nom ?? `l'emprunteur ${index + 1}`;
+
+        const png = pad?.versPng() ?? null;
+        if (!png) {
+          erreur(`La signature de ${nom} est vide ou trop courte pour valoir signature.`);
+          return;
+        }
+        if (!attestation?.checked) {
+          erreur(`${nom} doit cocher la case d'attestation.`);
+          return;
+        }
+        signatures[String(index)] = png;
+      }
+
+      envoiEnCours = true;
+      bouton.disabled = true;
+      bouton.textContent = 'Envoi en cours…';
+      masquerErreurs();
+
+      try {
+        const reponse = await fetch('/api/profil-submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            company: (formulaire.querySelector<HTMLInputElement>('#company')?.value ?? '').trim(),
+            reponses: {
+              ...etat.reponses,
+              ...(etat.autreMontant ? { autre_montant: Number(etat.autreMontant) } : {}),
+            },
+            signataires: etat.signataires,
+            voie: etat.voie,
+            attestation: true,
+            signatures,
+          }),
+        });
+
+        const donnees = (await reponse.json()) as {
+          ok?: boolean;
+          error?: string;
+          pdf?: string;
+          filename?: string;
+          enAttente?: string[];
+        };
+
+        if (!reponse.ok || !donnees.ok) {
+          erreur(donnees.error ?? "L'envoi a échoué. Veuillez réessayer.");
+          return;
+        }
+
+        try {
+          sessionStorage.removeItem(CLE_STOCKAGE);
+        } catch {
+          // Sans importance : le dossier est déjà parti.
+        }
+        terminer(donnees);
+      } catch {
+        erreur("L'envoi a échoué. Vérifiez votre connexion et réessayez.");
+      } finally {
+        envoiEnCours = false;
+        bouton.disabled = false;
+        bouton.textContent = 'Signer';
+      }
+    });
+
+    /* ---------------- Confirmation ---------------- */
+
+    function terminer(donnees: { pdf?: string; filename?: string; enAttente?: string[] }): void {
+      const titre = formulaire.querySelector<HTMLElement>('[data-fin-titre]');
+      const texte = formulaire.querySelector<HTMLElement>('[data-fin-texte]');
+      const lien = formulaire.querySelector<HTMLAnchorElement>('[data-telecharger]');
+
+      if (donnees.enAttente?.length) {
+        if (titre) titre.textContent = 'Votre partie est signée';
+        if (texte) {
+          texte.textContent =
+            donnees.enAttente.length === 1
+              ? `Un lien de signature vient d'être envoyé à ${donnees.enAttente[0]}. Le formulaire sera transmis dès sa signature — vous en recevrez une copie.`
+              : `Un lien de signature vient d'être envoyé à ${donnees.enAttente.join(' et ')}. Le formulaire sera transmis dès les dernières signatures — vous en recevrez une copie.`;
+        }
+      } else {
+        if (titre) titre.textContent = 'C’est signé';
+        if (texte) {
+          texte.textContent =
+            'Le formulaire est transmis à Stéphanie et une copie vient de vous être envoyée par courriel.';
+        }
+        if (lien && donnees.pdf && donnees.filename) {
+          const octets = Uint8Array.from(atob(donnees.pdf), (caractere) => caractere.charCodeAt(0));
+          const url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+          lien.href = url;
+          lien.download = donnees.filename;
+          lien.hidden = false;
+        }
+      }
+
+      afficher('fin');
+    }
+
+    /* ---------------- Reprise ---------------- */
+
+    for (const [question, valeur] of Object.entries(etat.reponses)) appliquerSelection(question, valeur);
+    if (etat.autreMontant) {
+      const champMontant = formulaire.querySelector<HTMLInputElement>('#autre-montant');
+      if (champMontant) champMontant.value = etat.autreMontant;
+      const zone = formulaire.querySelector<HTMLElement>('[data-autre]');
+      if (zone && etat.reponses.absorption === 'autre') zone.hidden = false;
+    }
+    for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="voie"]')) {
+      radio.checked = radio.value === etat.voie;
+    }
+    rendreSignataires();
+  }
+</script>

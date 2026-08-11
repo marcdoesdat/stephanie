@@ -14,9 +14,11 @@ export default defineConfig({
       filter: (page) => ![
         '/demande/',
         '/merci/',
+        '/profil-emprunteur/',
         '/refinancement/',
         '/refinancement-v2/',
         '/refinancement/merci/',
+        '/signer/',
       ].includes(new URL(page).pathname),
     })
   ],
