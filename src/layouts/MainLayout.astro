@@ -351,6 +351,13 @@ const { title, fullTitle, description, ogImage, noindex, sansBarreCta } = Astro.
       transform: translateY(calc(100% + env(safe-area-inset-bottom)));
     }
 
+    /* Menu hamburger ouvert : le menu domine. La bande est déjà recouverte par
+       le panneau (voir Nav.astro), on la retire aussi du parcours clavier et
+       des clics pour qu'aucun « Prendre rendez-vous » invisible ne traîne. */
+    body.menu-open .mobile-sticky-cta {
+      visibility: hidden;
+    }
+
     /* --- État converti (après capture courriel sur /outils/) : plein gaz.
        La bande reste neutre, c'est la pilule qui monte en intensité. --- */
     .mobile-sticky-cta.sticky-converted .sticky-btn {

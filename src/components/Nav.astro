@@ -258,6 +258,14 @@ const nomDeFamille = nomArr.join(' ');
   @media (max-width: 1180px) and (prefers-reduced-motion: reduce) {
     .nav-links.open { animation: none; }
   }
+
+  /* Menu ouvert : le nav domine tout le reste. Sans ça, la barre CTA
+     « Prendre rendez-vous » (z-index 1000, MainLayout) et la bulle Messenger
+     (z-index 1001, global.css) passent par-dessus le panneau, qui vit dans le
+     contexte d'empilement du nav (z-index 200). */
+  :global(body.menu-open) #navbar {
+    z-index: 1100;
+  }
 </style>
 
 <script>
@@ -288,6 +296,9 @@ const nomDeFamille = nomArr.join(' ');
 
       // Verrouille le scroll du body quand le menu est ouvert
       document.body.style.overflow = menuOpen ? 'hidden' : '';
+
+      // Fait passer le nav au-dessus de la barre CTA / Messenger (voir styles)
+      document.body.classList.toggle('menu-open', menuOpen);
 
       // Masque le bouton Messenger quand le menu est ouvert
       if (messengerBtn) {
