@@ -912,12 +912,16 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
         const donnees = (await reponse.json()) as {
           ok?: boolean;
           error?: string;
+          code?: string;
           pdf?: string;
           filename?: string;
           enAttente?: string[];
         };
 
         if (!reponse.ok || !donnees.ok) {
+          // Le code d'étape sert au diagnostic : il identifie où la soumission a lâché
+          // sans obliger à ouvrir les journaux du serveur.
+          if (donnees.code) console.error('[profil] échec à l’étape :', donnees.code);
           erreur(donnees.error ?? "L'envoi a échoué. Veuillez réessayer.");
           return;
         }
