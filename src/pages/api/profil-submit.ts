@@ -52,6 +52,27 @@ function lienSignature(dossierId: string, jeton: string): string {
   return `${base}/signer?d=${encodeURIComponent(dossierId)}&j=${encodeURIComponent(jeton)}`;
 }
 
+/**
+ * Étapes qui peuvent échouer après validation. Un message générique unique rendait le
+ * diagnostic impossible depuis l'écran du client : on nomme désormais l'étape fautive,
+ * côté serveur (log complet) comme côté client (message + code).
+ */
+const ECHECS = {
+  pdf: 'Le document n’a pas pu être produit. Réessayez ; si ça persiste, écrivez à Stéphanie.',
+  courriel: 'Le document a été produit mais l’envoi par courriel a échoué. Réessayez dans quelques minutes.',
+  dossier: 'Votre dossier n’a pas pu être enregistré. Réessayez dans quelques minutes.',
+  invitation: 'Impossible d’envoyer l’invitation à signer. Vérifiez les adresses courriel saisies.',
+} as const;
+
+function echec(etape: keyof typeof ECHECS, err: unknown): Response {
+  console.error(`[profil-submit] Échec à l'étape « ${etape} » :`, err);
+  // Le détail technique est renvoyé au navigateur : la page n'est accessible que par lien
+  // privé, et sans lui il faut un aller-retour de déploiement pour diagnostiquer quoi que
+  // ce soit. Les messages amont (ex. « Resend HTTP 403: … ») ne contiennent aucune clé.
+  const detail = err instanceof Error ? err.message : String(err);
+  return jsonResponse({ error: ECHECS[etape], code: etape, detail: detail.slice(0, 300) }, 502);
+}
+
 export const POST: APIRoute = async ({ request }) => {
   if (request.method !== 'POST') {
     return jsonResponse({ error: 'Méthode non autorisée' }, 405);
@@ -148,8 +169,10 @@ export const POST: APIRoute = async ({ request }) => {
   /* ---------- Voie « en présence » : le dossier est clos tout de suite ---------- */
 
   if (voie === 'presence') {
+    let pdf: Uint8Array;
+    const nomFichier = nomFichierProfil(signataires[0]!.nom, maintenant);
     try {
-      const pdf = await genererProfilPdf(
+      pdf = await genererProfilPdf(
         reponses,
         signataires.map((signataire, index) => ({
           nom: signataire.nom,
@@ -157,8 +180,11 @@ export const POST: APIRoute = async ({ request }) => {
           signeLe: maintenant,
         })),
       );
-      const nomFichier = nomFichierProfil(signataires[0]!.nom, maintenant);
+    } catch (err) {
+      return echec('pdf', err);
+    }
 
+    try {
       if (resendEnv) {
         await envoyerDossierComplet(resendEnv, {
           reponses,
@@ -170,37 +196,46 @@ export const POST: APIRoute = async ({ request }) => {
       } else {
         console.log('[profil-submit] ⚠️  Resend non configuré — envoi du dossier complet simulé :', nomFichier);
       }
-
-      return jsonResponse({ ok: true, ...(simule ? { dev: true } : {}), pdf: versBase64(pdf), filename: nomFichier }, 200);
     } catch (err) {
-      console.error('[profil-submit] Échec de génération ou d\'envoi :', err);
-      return jsonResponse({ error: "L'envoi a échoué. Veuillez réessayer." }, 502);
+      return echec('courriel', err);
     }
+
+    return jsonResponse({ ok: true, ...(simule ? { dev: true } : {}), pdf: versBase64(pdf), filename: nomFichier }, 200);
   }
 
   /* ---------- Voie « à distance » : dossier en attente + invitations ---------- */
 
+  let aEnvoyer: InvitationCourriel[];
   try {
     const { invitations } = await creerDossier(reponses, signataires, signatures);
-    const aEnvoyer: InvitationCourriel[] = invitations.map((invitation) => ({
+    aEnvoyer = invitations.map((invitation) => ({
       nom: invitation.nom,
       courriel: invitation.courriel,
       lien: lienSignature(invitation.dossierId, invitation.jeton),
     }));
-
-    if (resendEnv) {
-      await Promise.all([
-        envoyerInvitations(resendEnv, aEnvoyer, signataires[0]!.nom),
-        envoyerAvisEnAttente(resendEnv, reponses, preuves[0]!, aEnvoyer),
-      ]);
-    } else {
-      console.log('[profil-submit] ⚠️  Resend non configuré — invitations simulées. Liens à ouvrir :');
-      for (const invitation of aEnvoyer) console.log(`  ${invitation.nom} → ${invitation.lien}`);
-    }
-
-    return jsonResponse({ ok: true, ...(simule ? { dev: true } : {}), enAttente: aEnvoyer.map((i) => i.nom) }, 200);
   } catch (err) {
-    console.error('[profil-submit] Échec de création du dossier :', err);
-    return jsonResponse({ error: "L'envoi a échoué. Veuillez réessayer." }, 502);
+    return echec('dossier', err);
   }
+
+  if (!resendEnv) {
+    console.log('[profil-submit] ⚠️  Resend non configuré — invitations simulées. Liens à ouvrir :');
+    for (const invitation of aEnvoyer) console.log(`  ${invitation.nom} → ${invitation.lien}`);
+    return jsonResponse({ ok: true, dev: true, enAttente: aEnvoyer.map((i) => i.nom) }, 200);
+  }
+
+  // L'invitation est ce qui débloque la suite : si elle part, le dossier vit, même si la
+  // notification interne échoue. On ne fait donc échouer la soumission que sur l'invitation.
+  const [invitationsEnvoyees, avisInterne] = await Promise.allSettled([
+    envoyerInvitations(resendEnv, aEnvoyer, signataires[0]!.nom),
+    envoyerAvisEnAttente(resendEnv, reponses, preuves[0]!, aEnvoyer),
+  ]);
+
+  if (invitationsEnvoyees.status === 'rejected') {
+    return echec('invitation', invitationsEnvoyees.reason);
+  }
+  if (avisInterne.status === 'rejected') {
+    console.error('[profil-submit] Invitations parties, mais la notification interne a échoué :', avisInterne.reason);
+  }
+
+  return jsonResponse({ ok: true, enAttente: aEnvoyer.map((i) => i.nom) }, 200);
 };

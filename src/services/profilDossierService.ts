@@ -113,7 +113,14 @@ async function ecrireBrut(id: string, contenu: string): Promise<void> {
     memoire.set(id, contenu);
     return;
   }
-  await store.set(id, contenu);
+  try {
+    await store.set(id, contenu);
+  } catch (err) {
+    // Un dossier qu'on ne peut pas écrire est un dossier perdu : le lien de signature ne
+    // mènerait nulle part. On remonte l'erreur en la nommant, plutôt que d'échouer plus loin
+    // sans savoir que Netlify Blobs est en cause.
+    throw new Error(`Écriture du dossier impossible dans Netlify Blobs (${(err as Error)?.message ?? err})`);
+  }
 }
 
 export async function supprimerDossier(id: string): Promise<void> {
