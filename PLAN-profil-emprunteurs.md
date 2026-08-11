@@ -7,6 +7,16 @@ depuis une page du site, en cliquant des tuiles, sans jamais voir le PDF — et 
 **Contrainte non négociable :** le document généré doit être *tel quel*. On ne recrée pas le
 formulaire : on **estampe le PDF original**. Aucun pixel du modèle n'est reconstruit.
 
+> **État : livré.** Les phases 1 et 2 sont implémentées (Hypotheca ne fournit aucun outil de
+> signature électronique — voir §7.2, la phase 2 était donc nécessaire). Ce document reste la
+> note de conception ; le fonctionnement courant est documenté dans `CLAUDE.md`.
+>
+> Deux écarts assumés par rapport au plan initial :
+> - **Signature dessinée** plutôt que nom tapé, à la demande de Stéphanie. Le repli « signer en
+>   tapant son nom » subsiste pour l'accessibilité (§6) et produit le même PNG.
+> - **Le PDF modèle n'est pas versionné.** Seul le module base64 généré l'est : quand Hypotheca
+>   révise le formulaire, c'est un nouveau document qui arrive, pas une modification de l'ancien.
+
 ---
 
 ## 1. Faisabilité — déjà validée

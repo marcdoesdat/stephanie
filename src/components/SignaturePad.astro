@@ -1,0 +1,170 @@
+---
+// Bloc de signature réutilisable — /profil-emprunteur et /signer.
+//
+// Le markup et les styles vivent ici ; le comportement est dans src/scripts/signaturePad.ts,
+// enregistré comme élément personnalisé <signature-pad>. Les pages récupèrent l'élément et
+// appellent .versPng() / .estRempli().
+
+interface Props {
+  /** Identifiant unique du bloc dans la page (une signature par emprunteur). */
+  id: string;
+  /** Nom du signataire, rappelé au-dessus du cadre. */
+  nom?: string;
+}
+
+const { id, nom } = Astro.props;
+---
+
+<signature-pad id={id} class="sig" data-mode="trace">
+  {/* Toujours rendu, même vide : c'est lui qui porte le style scopé quand la page
+      renseigne le nom en JavaScript (un élément créé à la volée ne l'aurait pas). */}
+  <p class="sig-qui" data-sig-qui>{nom ? `Signature de ${nom}` : ''}</p>
+
+  <div class="sig-cadre">
+    <canvas class="sig-canvas" aria-label="Zone de signature — dessinez avec le doigt, le stylet ou la souris"
+    ></canvas>
+    <span class="sig-ligne" aria-hidden="true"></span>
+    <span class="sig-invite" aria-hidden="true">Signez ici</span>
+  </div>
+
+  <div class="sig-texte">
+    <label class="cform-label" for={`${id}-nom`}>Votre nom complet</label>
+    <input
+      type="text"
+      id={`${id}-nom`}
+      class="cform-input"
+      data-sig-nom
+      autocomplete="name"
+      maxlength="60"
+      placeholder="Prénom et nom"
+    />
+    <p class="sig-note">Votre nom sera reproduit sur la ligne de signature du formulaire.</p>
+  </div>
+
+  <div class="sig-actions">
+    <button type="button" class="sig-effacer" data-sig-effacer>Effacer</button>
+    <button type="button" class="sig-bascule" data-sig-mode>
+      Je ne peux pas dessiner — signer en tapant mon nom
+    </button>
+  </div>
+</signature-pad>
+
+<style>
+  .sig {
+    display: block;
+  }
+
+  .sig-qui {
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .sig-qui:empty {
+    display: none;
+  }
+
+  .sig-cadre {
+    position: relative;
+    border: 2px dashed var(--line, #e3d9cc);
+    border-radius: 12px;
+    background: var(--white, #fff);
+    aspect-ratio: 3 / 1;
+    overflow: hidden;
+  }
+
+  .sig-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* Indispensable : sans ça, le doigt fait défiler la page au lieu de tracer. */
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  /* Ligne de repère : on signe dessus, comme sur le papier. */
+  .sig-ligne {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    bottom: 26%;
+    border-bottom: 1px solid var(--line, #e3d9cc);
+    pointer-events: none;
+  }
+
+  .sig-invite {
+    position: absolute;
+    left: 8%;
+    bottom: 12%;
+    font-size: 0.8rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  /* Le repère disparaît dès qu'il y a de l'encre, pour ne pas se mêler au tracé. */
+  .sig[data-rempli='oui'] .sig-invite,
+  .sig[data-rempli='oui'] .sig-ligne {
+    opacity: 0;
+  }
+
+  .sig-texte {
+    display: none;
+  }
+
+  .sig[data-mode='texte'] .sig-cadre,
+  .sig[data-mode='texte'] .sig-effacer {
+    display: none;
+  }
+
+  .sig[data-mode='texte'] .sig-texte {
+    display: block;
+  }
+
+  .sig-note {
+    margin: 0.4rem 0 0;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  /* Deux liens qui passent à la ligne sur mobile : alignés à gauche, jamais centrés. */
+  .sig-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.25rem;
+    align-items: baseline;
+    justify-content: flex-start;
+    margin-top: 0.6rem;
+  }
+
+  .sig-actions button {
+    text-align: left;
+  }
+
+  .sig-effacer,
+  .sig-bascule {
+    background: none;
+    border: 0;
+    padding: 0.2rem 0;
+    font: inherit;
+    font-size: 0.82rem;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .sig-effacer:hover,
+  .sig-bascule:hover {
+    color: var(--ink, #1f1e1c);
+  }
+
+  @media (max-width: 520px) {
+    .sig-cadre {
+      aspect-ratio: 5 / 2;
+    }
+  }
+</style>
+
+<script>
+  import { definirSignaturePad } from '../scripts/signaturePad';
+  definirSignaturePad();
+</script>

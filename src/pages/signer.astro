@@ -1,0 +1,397 @@
+---
+// Signature à distance d'un co-emprunteur — /signer?d=<dossier>&j=<jeton>.
+//
+// Rendu à l'exécution : la page doit ouvrir le dossier avec le jeton pour afficher les
+// réponses **en lecture seule**. C'est le cœur de la conformité — on ne demande à personne
+// de signer un document qu'il n'a pas lu. Le co-signataire ne peut rien modifier ; s'il
+// n'est pas d'accord, il le signale et le dossier est gelé.
+export const prerender = false;
+
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../assets/stephanie.webp';
+import MainLayout from '../layouts/MainLayout.astro';
+import SignaturePad from '../components/SignaturePad.astro';
+import { loadSiteConfig } from '../config';
+import { ouvrirParJeton } from '../services/profilDossierService';
+import { TEXTE_ATTESTATION, resumerReponses } from '../utils/profilEmprunteurs';
+
+const config = loadSiteConfig();
+const prenomCourtiere = config.nom.split(' ')[0];
+
+const dossierId = Astro.url.searchParams.get('d');
+const jeton = Astro.url.searchParams.get('j');
+const ouvert = await ouvrirParJeton(dossierId, jeton);
+
+const signataire = ouvert ? ouvert.dossier.signataires[ouvert.index] : null;
+const initiateur = ouvert?.dossier.signataires.find((s) => s.signature !== null) ?? null;
+const lignes = ouvert ? resumerReponses(ouvert.dossier.reponses) : [];
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+---
+
+<MainLayout
+  title="Signer le profil des emprunteurs"
+  description="Signature du profil des emprunteurs."
+  noindex={true}
+>
+  <main id="main-content" class="signer-page">
+    <section class="signer-shell">
+      <div class="contact-form quiz">
+        <div class="quiz-trust">
+          <Image
+            src={stephaniePhoto}
+            alt={`${config.nom}, ${config.titre}`}
+            width={56}
+            height={56}
+            class="quiz-trust-photo"
+            loading="eager"
+          />
+          <div class="quiz-trust-text">
+            <strong>{config.nom}</strong>
+            <span>{config.titre} · {config.organisation} · AMF {config.amf}</span>
+          </div>
+        </div>
+
+        {
+          !ouvert || !signataire ? (
+            <div class="quiz-step">
+              <h1 class="signer-titre">Ce lien n'est plus valide</h1>
+              <p class="signer-texte">
+                Il a peut-être déjà servi, expiré après 14 jours, ou le dossier a été repris
+                autrement. Rien n'est perdu&nbsp;: écrivez à {prenomCourtiere} et elle vous en
+                renverra un nouveau.
+              </p>
+              <p class="signer-texte">
+                <a href={`mailto:${config.courriel}`}>{config.courriel}</a> ·{' '}
+                <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>
+              </p>
+            </div>
+          ) : (
+            <form data-formulaire novalidate data-dossier={ouvert.dossier.id} data-jeton={jeton}>
+              <div class="signer-hp" aria-hidden="true">
+                <label for="company">Ne pas remplir</label>
+                <input type="text" id="company" name="company" tabindex="-1" autocomplete="off" />
+              </div>
+
+              <div class="quiz-step" data-ecran="lecture">
+                <h1 class="signer-titre">Bonjour {signataire.nom.split(' ')[0]}</h1>
+                <p class="signer-texte">
+                  {initiateur ? `${initiateur.nom} a rempli` : 'Un co-emprunteur a rempli'} le profil
+                  des emprunteurs avec {prenomCourtiere}. Puisque le prêt est un engagement conjoint
+                  et solidaire, ces réponses doivent refléter <strong>votre vision commune</strong>.
+                </p>
+                <p class="signer-texte">
+                  Lisez-les. Si tout vous convient, signez plus bas. Sinon, dites-le — mieux vaut
+                  reprendre la discussion que signer à contrecœur.
+                </p>
+
+                <ul class="signer-recap">
+                  {lignes.map(([intitule, valeur]) => (
+                    <li>
+                      <span class="signer-q">{intitule}</span>
+                      <span class="signer-r">{valeur}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <SignaturePad id="signature-0" nom={signataire.nom} />
+
+                <label class="signer-attestation">
+                  <input type="checkbox" data-attestation />
+                  <span>{TEXTE_ATTESTATION}</span>
+                </label>
+
+                <p class="signer-erreur" data-erreur role="alert" hidden />
+
+                <button type="button" class="btn-cta btn-cta--block" data-signer>Signer</button>
+
+                <button type="button" class="signer-desaccord" data-ouvrir-desaccord>
+                  Je ne suis pas d'accord avec ces réponses
+                </button>
+              </div>
+
+              <div class="quiz-step" data-ecran="desaccord" hidden>
+                <p class="quiz-q">Qu'est-ce qui ne va pas&nbsp;?</p>
+                <p class="quiz-q-sub">
+                  {prenomCourtiere} sera prévenue et reprendra le questionnaire avec vous. Aucun
+                  document ne sera produit d'ici là.
+                </p>
+                <label class="cform-label" for="motif">En quelques mots (facultatif)</label>
+                <textarea id="motif" class="cform-input" rows="4" maxlength="500" data-motif />
+                <p class="signer-erreur" data-erreur role="alert" hidden />
+                <button type="button" class="btn-cta btn-cta--block" data-envoyer-desaccord>
+                  Envoyer et suspendre le dossier
+                </button>
+                <button type="button" class="signer-desaccord" data-annuler-desaccord>
+                  Revenir aux réponses
+                </button>
+              </div>
+
+              <div class="quiz-step quiz-step--final" data-ecran="fin" hidden>
+                <h2 class="signer-titre" data-fin-titre />
+                <p class="signer-texte" data-fin-texte />
+                <a class="btn-cta btn-cta--block" data-telecharger hidden download>
+                  Télécharger le profil signé (PDF)
+                </a>
+              </div>
+            </form>
+          )
+        }
+      </div>
+    </section>
+  </main>
+</MainLayout>
+
+<style>
+  .signer-page {
+    background: var(--sand);
+    min-height: 100vh;
+    padding: clamp(1.25rem, 4vw, 3rem) 1rem 5rem;
+  }
+
+  .signer-shell {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .signer-titre {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.5rem, 4vw, 1.95rem);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--ink);
+    margin-bottom: 0.9rem;
+  }
+
+  .signer-texte {
+    font-size: 0.98rem;
+    line-height: 1.7;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .signer-recap {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1.4rem 0;
+    padding: 0;
+  }
+
+  .signer-recap li {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem 0.95rem;
+  }
+
+  .signer-q {
+    display: block;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .signer-r {
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .signer-attestation {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin: 1rem 0 1.2rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  /* global.css impose width:100% + padding à tout input de .contact-form ; sans ce
+     rappel, la case à cocher occupe toute la largeur et éjecte le texte hors de la carte. */
+  .signer-attestation input[type='checkbox'] {
+    width: auto;
+    flex: 0 0 auto;
+    padding: 0;
+    margin: 0.3rem 0 0;
+  }
+
+  .signer-desaccord {
+    display: block;
+    width: 100%;
+    background: none;
+    border: 0;
+    margin-top: 1rem;
+    padding: 0.4rem;
+    font: inherit;
+    font-size: 0.84rem;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .signer-erreur {
+    margin-top: 0.8rem;
+    font-size: 0.86rem;
+    color: #a8382f;
+  }
+
+  .signer-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+</style>
+
+<script>
+  import type { SignaturePadElement } from '../scripts/signaturePad';
+
+  const formulaire = document.querySelector<HTMLFormElement>('[data-formulaire]');
+  if (formulaire) piloter(formulaire);
+
+  function piloter(formulaire: HTMLFormElement): void {
+    const dossier = formulaire.dataset.dossier!;
+    const jeton = formulaire.dataset.jeton!;
+    let envoiEnCours = false;
+
+    function ecran(nom: string): void {
+      for (const bloc of formulaire.querySelectorAll<HTMLElement>('[data-ecran]')) {
+        bloc.hidden = bloc.dataset.ecran !== nom;
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function erreur(message: string): void {
+      const visible = Array.from(formulaire.querySelectorAll<HTMLElement>('[data-ecran]')).find((b) => !b.hidden);
+      const cible = visible?.querySelector<HTMLElement>('[data-erreur]');
+      if (!cible) return;
+      cible.textContent = message;
+      cible.hidden = false;
+    }
+
+    function masquerErreurs(): void {
+      for (const bloc of formulaire.querySelectorAll<HTMLElement>('[data-erreur]')) bloc.hidden = true;
+    }
+
+    async function envoyer(corps: Record<string, unknown>): Promise<Record<string, unknown> | null> {
+      const reponse = await fetch('/api/profil-cosigner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dossier,
+          jeton,
+          company: (formulaire.querySelector<HTMLInputElement>('#company')?.value ?? '').trim(),
+          ...corps,
+        }),
+      });
+      const donnees = (await reponse.json()) as Record<string, unknown>;
+      if (!reponse.ok || donnees.ok !== true) {
+        erreur((donnees.error as string) ?? "L'envoi a échoué. Veuillez réessayer.");
+        return null;
+      }
+      return donnees;
+    }
+
+    /* ---------------- Signature ---------------- */
+
+    formulaire.querySelector('[data-signer]')?.addEventListener('click', async (evenement) => {
+      if (envoiEnCours) return;
+      const bouton = evenement.currentTarget as HTMLButtonElement;
+      const pad = formulaire.querySelector<SignaturePadElement>('#signature-0');
+      const attestation = formulaire.querySelector<HTMLInputElement>('[data-attestation]');
+
+      const png = pad?.versPng() ?? null;
+      if (!png) {
+        erreur('Votre signature est vide ou trop courte pour valoir signature.');
+        return;
+      }
+      if (!attestation?.checked) {
+        erreur("Cochez la case d'attestation pour signer.");
+        return;
+      }
+
+      envoiEnCours = true;
+      bouton.disabled = true;
+      bouton.textContent = 'Envoi en cours…';
+      masquerErreurs();
+
+      try {
+        const donnees = await envoyer({ signature: png, attestation: true });
+        if (donnees) terminer(donnees);
+      } catch {
+        erreur("L'envoi a échoué. Vérifiez votre connexion et réessayez.");
+      } finally {
+        envoiEnCours = false;
+        bouton.disabled = false;
+        bouton.textContent = 'Signer';
+      }
+    });
+
+    /* ---------------- Désaccord ---------------- */
+
+    formulaire.querySelector('[data-ouvrir-desaccord]')?.addEventListener('click', () => ecran('desaccord'));
+    formulaire.querySelector('[data-annuler-desaccord]')?.addEventListener('click', () => ecran('lecture'));
+
+    formulaire.querySelector('[data-envoyer-desaccord]')?.addEventListener('click', async (evenement) => {
+      if (envoiEnCours) return;
+      const bouton = evenement.currentTarget as HTMLButtonElement;
+      const motif = formulaire.querySelector<HTMLTextAreaElement>('[data-motif]')?.value.trim() ?? '';
+
+      envoiEnCours = true;
+      bouton.disabled = true;
+      masquerErreurs();
+
+      try {
+        const donnees = await envoyer({ action: 'desaccord', motif });
+        if (donnees) {
+          const titre = formulaire.querySelector<HTMLElement>('[data-fin-titre]');
+          const texte = formulaire.querySelector<HTMLElement>('[data-fin-texte]');
+          if (titre) titre.textContent = 'C’est noté';
+          if (texte) {
+            texte.textContent =
+              'Le dossier est suspendu et la courtière est prévenue. Elle reprendra le questionnaire avec vous — aucun document n’a été produit.';
+          }
+          ecran('fin');
+        }
+      } catch {
+        erreur("L'envoi a échoué. Vérifiez votre connexion et réessayez.");
+      } finally {
+        envoiEnCours = false;
+        bouton.disabled = false;
+      }
+    });
+
+    /* ---------------- Confirmation ---------------- */
+
+    function terminer(donnees: Record<string, unknown>): void {
+      const titre = formulaire.querySelector<HTMLElement>('[data-fin-titre]');
+      const texte = formulaire.querySelector<HTMLElement>('[data-fin-texte]');
+      const lien = formulaire.querySelector<HTMLAnchorElement>('[data-telecharger]');
+      const complet = donnees.complet === true;
+      const enAttente = (donnees.enAttente as string[] | undefined) ?? [];
+
+      if (titre) titre.textContent = 'Merci, c’est signé';
+      if (texte) {
+        texte.textContent = complet
+          ? 'Le formulaire complet vient d’être transmis à la courtière, et une copie vous a été envoyée par courriel.'
+          : `Il reste la signature de ${enAttente.join(' et ')}. Vous recevrez une copie du document dès que tout le monde aura signé.`;
+      }
+
+      if (complet && lien && typeof donnees.pdf === 'string' && typeof donnees.filename === 'string') {
+        const octets = Uint8Array.from(atob(donnees.pdf), (caractere) => caractere.charCodeAt(0));
+        lien.href = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+        lien.download = donnees.filename;
+        lien.hidden = false;
+      }
+
+      ecran('fin');
+    }
+  }
+</script>
