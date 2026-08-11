@@ -494,6 +494,15 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
     color: #a8382f;
   }
 
+  .profil-erreur-detail {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    color: var(--muted);
+    word-break: break-word;
+  }
+
   .profil-hp {
     position: absolute;
     left: -9999px;
@@ -612,11 +621,19 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
       for (const erreur of formulaire.querySelectorAll<HTMLElement>('[data-erreur]')) erreur.hidden = true;
     }
 
-    function erreur(message: string): void {
+    function erreur(message: string, code?: string, detail?: string): void {
       const ecran = ecrans.find((e) => !e.hidden);
       const cible = ecran?.querySelector<HTMLElement>('[data-erreur]');
       if (!cible) return;
       cible.textContent = message;
+      if (code || detail) {
+        // Ligne de diagnostic discrète : elle évite un cycle de déploiement complet pour
+        // savoir ce qui a réellement échoué.
+        const technique = document.createElement('span');
+        technique.className = 'profil-erreur-detail';
+        technique.textContent = `Détail technique — ${code ?? 'inconnu'} : ${detail ?? 'aucun'}`;
+        cible.appendChild(technique);
+      }
       cible.hidden = false;
     }
 
@@ -913,16 +930,17 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
           ok?: boolean;
           error?: string;
           code?: string;
+          detail?: string;
           pdf?: string;
           filename?: string;
           enAttente?: string[];
         };
 
         if (!reponse.ok || !donnees.ok) {
-          // Le code d'étape sert au diagnostic : il identifie où la soumission a lâché
-          // sans obliger à ouvrir les journaux du serveur.
-          if (donnees.code) console.error('[profil] échec à l’étape :', donnees.code);
-          erreur(donnees.error ?? "L'envoi a échoué. Veuillez réessayer.");
+          // L'étape et le détail amont identifient où la soumission a lâché sans obliger
+          // à ouvrir les journaux du serveur.
+          if (donnees.code) console.error('[profil] échec à l’étape :', donnees.code, donnees.detail ?? '');
+          erreur(donnees.error ?? "L'envoi a échoué. Veuillez réessayer.", donnees.code, donnees.detail);
           return;
         }
 

@@ -36,6 +36,19 @@ export interface PreuveSignature {
   readonly empreinteTrace: string;
 }
 
+/**
+ * Resend limite le débit à quelques requêtes par seconde. Ce formulaire est le seul du site
+ * à envoyer plus de deux courriels d'un coup — jusqu'à quatre avec trois signataires, chacun
+ * portant le PDF en pièce jointe. Les lancer en parallèle déclenche un 429, qui fait échouer
+ * toute la soumission. On les espace donc, quitte à prendre deux secondes de plus.
+ */
+async function envoyerEnSerie(envois: ReadonlyArray<() => Promise<void>>): Promise<void> {
+  for (const [index, envoi] of envois.entries()) {
+    if (index > 0) await new Promise((resoudre) => setTimeout(resoudre, 600));
+    await envoi();
+  }
+}
+
 function bloc(titre: string, lignes: string): string {
   if (!lignes) return '';
   return `<h2 style="font-size:15px;margin:22px 0 8px;color:#a85f38;">${titre}</h2>
@@ -124,15 +137,16 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
       </p>
   `);
 
-  const envois = [
-    sendEmail(env.apiKey, {
-      from: env.fromEmail,
-      to: env.notifyEmail,
-      subject: `Profil des emprunteurs signé — ${principal?.nom ?? 'client'}`,
-      html: interne,
-      attachments: [piece],
-      ...(principal ? { reply_to: principal.courriel } : {}),
-    }),
+  const envois: Array<() => Promise<void>> = [
+    () =>
+      sendEmail(env.apiKey, {
+        from: env.fromEmail,
+        to: env.notifyEmail,
+        subject: `Profil des emprunteurs signé — ${principal?.nom ?? 'client'}`,
+        html: interne,
+        attachments: [piece],
+        ...(principal ? { reply_to: principal.courriel } : {}),
+      }),
   ];
 
   for (const preuve of envoi.preuves) {
@@ -157,7 +171,7 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
       '32px 24px',
     );
 
-    envois.push(
+    envois.push(() =>
       sendEmail(env.apiKey, {
         from: env.fromEmail,
         to: preuve.courriel,
@@ -169,7 +183,7 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
     );
   }
 
-  await Promise.all(envois);
+  await envoyerEnSerie(envois);
 }
 
 /* ------------------------------------------------------------------ */
@@ -191,8 +205,8 @@ export async function envoyerInvitations(
   const config = loadSiteConfig();
   const prenomCourtiere = config.nom.split(' ')[0];
 
-  await Promise.all(
-    invitations.map((invitation) => {
+  await envoyerEnSerie(
+    invitations.map((invitation) => () => {
       const html = wrapEmailHtml(
         `
       <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">

@@ -66,7 +66,11 @@ const ECHECS = {
 
 function echec(etape: keyof typeof ECHECS, err: unknown): Response {
   console.error(`[profil-submit] Échec à l'étape « ${etape} » :`, err);
-  return jsonResponse({ error: ECHECS[etape], code: etape }, 502);
+  // Le détail technique est renvoyé au navigateur : la page n'est accessible que par lien
+  // privé, et sans lui il faut un aller-retour de déploiement pour diagnostiquer quoi que
+  // ce soit. Les messages amont (ex. « Resend HTTP 403: … ») ne contiennent aucune clé.
+  const detail = err instanceof Error ? err.message : String(err);
+  return jsonResponse({ error: ECHECS[etape], code: etape, detail: detail.slice(0, 300) }, 502);
 }
 
 export const POST: APIRoute = async ({ request }) => {
