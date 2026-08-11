@@ -124,19 +124,28 @@ export const POST: APIRoute = async ({ request }) => {
     signatures.set(index, {
       tracePngBase64: versBase64(trace),
       signeLe: maintenant.toISOString(),
-      voie,
+      // Toute signature recueillie ici l'a été sur l'appareil du demandeur, quelle que soit
+      // la voie annoncée. Le libellé « à distance » appartient à /api/profil-cosigner.
+      voie: 'presence',
       ip: clientIp,
       agent,
       empreinteTrace: await empreinteSha256(trace),
     });
   }
 
+  // En voie « en présence », la boucle ci-dessus exige déjà un tracé pour chaque signataire :
+  // il ne reste qu'à garantir la signature du demandeur, seule obligatoire dans tous les cas.
   if (!signatures.has(0)) {
     return jsonResponse({ error: 'Signature manquante ou illisible' }, 400);
   }
-  if (voie === 'presence' && signatures.size !== signataires.length) {
-    return jsonResponse({ error: 'Il manque une signature' }, 400);
-  }
+
+  /**
+   * La complétude se déduit des signatures réellement reçues, jamais de la voie annoncée
+   * par le navigateur. Sans ça, un emprunteur seul dont l'état local était resté sur
+   * « ils signeront de leur côté » ouvrait un dossier sans aucun co-signataire à inviter :
+   * aucun PDF produit, aucun courriel au client, et un écran qui affirmait le contraire.
+   */
+  const toutSigne = signatures.size === signataires.length;
 
   /* ---------- Environnement Resend ---------- */
 
@@ -166,9 +175,9 @@ export const POST: APIRoute = async ({ request }) => {
     })
     .filter((p): p is PreuveSignature => p !== null);
 
-  /* ---------- Voie « en présence » : le dossier est clos tout de suite ---------- */
+  /* ---------- Tout le monde a signé : le dossier est clos tout de suite ---------- */
 
-  if (voie === 'presence') {
+  if (toutSigne) {
     let pdf: Uint8Array;
     const nomFichier = nomFichierProfil(signataires[0]!.nom, maintenant);
     try {
@@ -203,7 +212,7 @@ export const POST: APIRoute = async ({ request }) => {
     return jsonResponse({ ok: true, ...(simule ? { dev: true } : {}), pdf: versBase64(pdf), filename: nomFichier }, 200);
   }
 
-  /* ---------- Voie « à distance » : dossier en attente + invitations ---------- */
+  /* ---------- Il manque des signatures : dossier en attente + invitations ---------- */
 
   let aEnvoyer: InvitationCourriel[];
   try {

@@ -12,9 +12,16 @@ interface Props {
   description: string;
   ogImage?: string;
   noindex?: boolean;
+  /**
+   * Retire la barre CTA mobile « Prendre rendez-vous ». À utiliser sur les pages où le
+   * visiteur est déjà en train d'accomplir une tâche précise (signer un document, remplir
+   * un formulaire de conformité) : la barre y couvre le contenu et propose une action qui
+   * entre en concurrence avec celle de la page.
+   */
+  sansBarreCta?: boolean;
 }
 
-const { title, fullTitle, description, ogImage, noindex } = Astro.props;
+const { title, fullTitle, description, ogImage, noindex, sansBarreCta } = Astro.props;
 ---
 
 <!doctype html>
@@ -145,11 +152,13 @@ const { title, fullTitle, description, ogImage, noindex } = Astro.props;
     <slot />
     <!-- Barre CTA mobile : bande + bouton pilule centré. Le bouton Messenger
          (position:fixed, rendu par page) vient se placer dans cette bande à droite. -->
-    <div class="mobile-sticky-cta">
-      <a href="/rendez-vous" class="sticky-btn" data-umami-event="cta_booking_sticky">
-        <span class="sticky-label">Prendre rendez-vous</span>
-      </a>
-    </div>
+    {!sansBarreCta && (
+      <div class="mobile-sticky-cta">
+        <a href="/rendez-vous" class="sticky-btn" data-umami-event="cta_booking_sticky">
+          <span class="sticky-label">Prendre rendez-vous</span>
+        </a>
+      </div>
+    )}
     <ConsentBanner />
 
     <!-- Sticky scroll-aware + état conversion -->
