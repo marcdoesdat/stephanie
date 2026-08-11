@@ -33,6 +33,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
   title="Signer le profil des emprunteurs"
   description="Signature du profil des emprunteurs."
   noindex={true}
+  sansBarreCta={true}
 >
   <main id="main-content" class="signer-page">
     <section class="signer-shell">
@@ -133,6 +134,12 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 <a class="btn-cta btn-cta--block" data-telecharger hidden download>
                   Télécharger le profil signé (PDF)
                 </a>
+                <p class="signer-texte">
+                  Une question&nbsp;? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
+                  ou appelez {prenomCourtiere} au{' '}
+                  <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>.
+                </p>
+                <a class="signer-retour" href="/">Retour au site de {prenomCourtiere} →</a>
               </div>
             </form>
           )
@@ -219,6 +226,17 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     flex: 0 0 auto;
     padding: 0;
     margin: 0.3rem 0 0;
+  }
+
+  .signer-retour {
+    align-self: flex-start;
+    font-size: 0.86rem;
+    color: var(--muted);
+    text-decoration: underline;
+  }
+
+  .signer-retour:hover {
+    color: var(--clay-dk);
   }
 
   .signer-desaccord {

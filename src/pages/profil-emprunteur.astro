@@ -37,6 +37,7 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
   title="Profil des emprunteurs"
   description="Questionnaire de profil d'emprunteur — quelques questions pour vous recommander le produit hypothécaire adapté à vos objectifs."
   noindex={true}
+  sansBarreCta={true}
 >
   <main id="main-content" class="profil-page">
     <section class="profil-shell" aria-label="Profil des emprunteurs">
@@ -225,6 +226,9 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
               Une question&nbsp;? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
               ou appelez {prenom} au <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>.
             </p>
+            {/* Discret et non concurrent du téléchargement, mais la page ne doit pas être un
+                cul-de-sac : le client est arrivé par un lien privé, sans navigation. */}
+            <a class="profil-retour" href="/">Retour au site de {prenom} →</a>
           </div>
         </form>
       </div>
@@ -485,6 +489,17 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
   }
 
   .profil-note a {
+    color: var(--clay-dk);
+  }
+
+  .profil-retour {
+    align-self: flex-start;
+    font-size: 0.86rem;
+    color: var(--muted);
+    text-decoration: underline;
+  }
+
+  .profil-retour:hover {
     color: var(--clay-dk);
   }
 
@@ -785,7 +800,19 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
       });
 
       if (boutonAjouter) boutonAjouter.hidden = etat.signataires.length >= MAX_SIGNATAIRES;
-      if (groupeVoie) groupeVoie.hidden = etat.signataires.length < 2;
+
+      // Le choix de la voie n'a de sens qu'à plusieurs. Seul, on la remet à « en présence » :
+      // sinon un « ils signeront de leur côté » resté en session après le retrait d'un
+      // co-emprunteur enverrait la soumission vers un dossier sans personne à inviter.
+      const aPlusieurs = etat.signataires.length >= 2;
+      if (groupeVoie) groupeVoie.hidden = !aPlusieurs;
+      if (!aPlusieurs && etat.voie !== 'presence') {
+        etat.voie = 'presence';
+        for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="voie"]')) {
+          radio.checked = radio.value === 'presence';
+        }
+        sauvegarder();
+      }
     }
 
     function champ(
