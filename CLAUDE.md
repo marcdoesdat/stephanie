@@ -217,6 +217,12 @@ est identique au modèle au pixel près.
   IP, navigateur, empreintes) vit dans le courriel interne, jamais dans le document.
 - Les tracés de signature ne sont **jamais persistés côté navigateur** et le dossier Blob est
   supprimé dès le PDF produit. TTL de 14 jours, purge opportuniste à la création.
+- Le parcours reprend où il en était après un rechargement : réponses **et écran courant**
+  vivent en `sessionStorage`, l'écran repris étant ramené au dernier que les données
+  sauvegardées permettent de reconstruire. Effacé dès la soumission.
+- L'écran de confirmation affiche les adresses **renvoyées par le serveur** (`copies`,
+  `enAttente`), jamais celles restées en mémoire : c'est ce qui permet au client de repérer
+  sa propre faute de frappe.
 - Les jetons de co-signature sont à usage unique, stockés hachés (SHA-256), et comparés à temps
   constant.
 - Le modèle contient déjà le nom de la courtière et son numéro AMF — ne rien y écrire.

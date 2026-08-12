@@ -68,7 +68,13 @@ Astro.response.headers.set('Cache-Control', 'no-store');
               </p>
             </div>
           ) : (
-            <form data-formulaire novalidate data-dossier={ouvert.dossier.id} data-jeton={jeton}>
+            <form
+              data-formulaire
+              novalidate
+              data-dossier={ouvert.dossier.id}
+              data-jeton={jeton}
+              data-courriel={signataire.courriel}
+            >
               <div class="signer-hp" aria-hidden="true">
                 <label for="company">Ne pas remplir</label>
                 <input type="text" id="company" name="company" tabindex="-1" autocomplete="off" />
@@ -175,6 +181,13 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     line-height: 1.7;
     color: var(--muted);
     margin-bottom: 1rem;
+  }
+
+  /* Adresse de destination sur l'écran final : construite en JavaScript, d'où le :global. */
+  .signer-texte :global(.signer-adresse) {
+    color: var(--ink);
+    font-weight: 600;
+    overflow-wrap: anywhere;
   }
 
   .signer-recap {
@@ -397,9 +410,24 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
       if (titre) titre.textContent = 'Merci, c’est signé';
       if (texte) {
-        texte.textContent = complet
-          ? 'Le formulaire complet vient d’être transmis à la courtière, et une copie vous a été envoyée par courriel.'
-          : `Il reste la signature de ${enAttente.join(' et ')}. Vous recevrez une copie du document dès que tout le monde aura signé.`;
+        // L'adresse est celle du dossier, pas une saisie de cet écran : la montrer permet au
+        // co-signataire de savoir tout de suite où chercher sa copie.
+        const adresse = formulaire.dataset.courriel ?? '';
+        const forte = document.createElement('strong');
+        forte.className = 'signer-adresse';
+        forte.textContent = adresse;
+
+        texte.textContent = '';
+        if (complet) {
+          texte.append('Le formulaire complet vient d’être transmis à la courtière, et une copie vous a été envoyée ');
+          texte.append(adresse ? 'à ' : 'par courriel');
+          if (adresse) texte.append(forte);
+          texte.append('.');
+        } else {
+          texte.append(`Il reste la signature de ${enAttente.join(' et ')}. Vous recevrez une copie du document `);
+          if (adresse) texte.append('à ', forte, ' ');
+          texte.append('dès que tout le monde aura signé.');
+        }
       }
 
       if (complet && lien && typeof donnees.pdf === 'string' && typeof donnees.filename === 'string') {

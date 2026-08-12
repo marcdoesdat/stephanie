@@ -76,6 +76,8 @@ describe('POST /api/profil-submit', () => {
     expect(reponse.status).toBe(200);
     expect(corps.pdf).toEqual(expect.any(String));
     expect(corps.filename).toBe('profil-emprunteurs-marc-andre-lacroix-' + new Date().toISOString().slice(0, 10) + '.pdf');
+    // Les adresses annoncées à l'écran sont exactement celles qui reçoivent le PDF.
+    expect(corps.copies).toEqual(['marc@exemple.ca']);
     expect(envois.map((e) => e.to)).toEqual(['interne@exemple.ca', 'marc@exemple.ca']);
   });
 
@@ -110,7 +112,9 @@ describe('POST /api/profil-submit', () => {
 
     expect(reponse.status).toBe(200);
     expect(corps.pdf).toBeUndefined();
-    expect(corps.enAttente).toEqual(['Julie Bergeron']);
+    expect(corps.enAttente).toEqual([JULIE]);
+    // L'écran de confirmation annonce la copie à venir : il lui faut les adresses.
+    expect(corps.copies).toEqual(['marc@exemple.ca', 'julie@exemple.ca']);
     // Une invitation à Julie, un avis à la courtière — rien au demandeur.
     expect(envois.map((e) => e.to)).toEqual(['julie@exemple.ca', 'interne@exemple.ca']);
   });
