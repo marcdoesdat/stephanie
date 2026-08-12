@@ -87,22 +87,55 @@ type BlobStore = {
   list(): Promise<{ blobs: Array<{ key: string }> }>;
 };
 
+/**
+ * Le repli mémoire n'a de sens qu'en développement. En production, chaque invocation de
+ * fonction Netlify a sa propre mémoire : un dossier écrit là serait introuvable à
+ * l'ouverture du lien de signature — c'est-à-dire un lien mort, sans le moindre signal.
+ */
+function repliMemoireAutorise(): boolean {
+  return import.meta.env.DEV === true;
+}
+
+// Netlify Blobs n'existe qu'avec un contexte Netlify. On ne le déduit **pas** de
+// `process.env.NETLIFY` : cette variable n'est pas garantie au runtime des fonctions (même
+// constat que ratesService). On tente l'appel, et on retient le résultat pour l'instance.
+let blobsIndisponibles = false;
+
 async function chargerStore(): Promise<BlobStore | null> {
-  if (!process.env.NETLIFY) return null;
+  if (blobsIndisponibles) return null;
   try {
     const { getStore } = await import('@netlify/blobs');
-    return getStore(STORE) as unknown as BlobStore;
-  } catch {
+    // Consistance forte : la signature de l'un doit être visible dès l'ouverture du lien du
+    // suivant, sur n'importe quelle instance. Le défaut (éventuel) rendrait un lien encore
+    // valide après usage, ou un dossier fraîchement créé introuvable.
+    return getStore({ name: STORE, consistency: 'strong' }) as unknown as BlobStore;
+  } catch (err) {
+    blobsIndisponibles = true;
+    console.warn('[profilDossier] Netlify Blobs indisponible :', err);
     return null;
   }
 }
 
+/** Message unique : c'est lui que /api/profil-submit relaie sous le code « dossier ». */
+function erreurStockage(cause: unknown): Error {
+  return new Error(
+    `Stockage des dossiers indisponible (Netlify Blobs)${cause ? ` : ${(cause as Error)?.message ?? cause}` : ''}`,
+  );
+}
+
 async function lireBrut(id: string): Promise<string | null> {
   const store = await chargerStore();
-  if (!store) return memoire.get(id) ?? null;
+  if (!store) {
+    if (!repliMemoireAutorise()) {
+      console.error('[profilDossier] Lecture impossible : Netlify Blobs indisponible en production.');
+      return null;
+    }
+    return memoire.get(id) ?? null;
+  }
   try {
     return await store.get(id, { type: 'text' });
-  } catch {
+  } catch (err) {
+    console.error('[profilDossier] Échec de lecture du dossier :', err);
     return null;
   }
 }
@@ -110,6 +143,9 @@ async function lireBrut(id: string): Promise<string | null> {
 async function ecrireBrut(id: string, contenu: string): Promise<void> {
   const store = await chargerStore();
   if (!store) {
+    // Sans Blobs en production, écrire en mémoire reviendrait à envoyer des liens morts :
+    // mieux vaut faire échouer la soumission tout de suite, avec la cause nommée.
+    if (!repliMemoireAutorise()) throw erreurStockage(null);
     memoire.set(id, contenu);
     return;
   }
@@ -247,6 +283,11 @@ export async function creerDossier(
   };
 
   await ecrireBrut(id, JSON.stringify(dossier));
+
+  // Un dossier écrit mais illisible, ce sont des invitations parties vers des liens morts.
+  // On relit avant de laisser /api/profil-submit envoyer quoi que ce soit.
+  if (!(await lireBrut(id))) throw erreurStockage('dossier introuvable juste après écriture');
+
   return { dossier, invitations };
 }
 
