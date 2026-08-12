@@ -2,9 +2,9 @@
 //
 // Deux issues selon la voie choisie par l'emprunteur qui remplit :
 //
-//   • « presence » — tout le monde a signé sur le même appareil. Le PDF est produit ici,
-//     envoyé à la courtière et à chaque signataire, et renvoyé au navigateur en base64
-//     pour le bouton de téléchargement. Rien n'est stocké.
+//   • « presence » — tout le monde a signé sur le même appareil. Le PDF est produit ici et
+//     envoyé à la seule courtière ; les signataires reçoivent un accusé sans pièce jointe.
+//     Le document ne redescend jamais au navigateur. Rien n'est stocké.
 //
 //   • « distance » — seul l'initiateur a signé. Un dossier en attente est créé et chaque
 //     co-signataire reçoit un lien nominatif à usage unique (voir profilDossierService).
@@ -209,15 +209,16 @@ export const POST: APIRoute = async ({ request }) => {
       return echec('courriel', err);
     }
 
-    // `copies` : les adresses qui reçoivent réellement le PDF, telles que normalisées ici.
-    // L'écran de confirmation les affiche — c'est la seule façon pour le client de vérifier
-    // tout de suite qu'il n'a pas fait une faute de frappe dans sa propre adresse.
+    // Le PDF n'est jamais renvoyé au navigateur : il ne part qu'à la courtière, par courriel.
+    //
+    // `copies` : les adresses qui reçoivent réellement l'accusé de signature, telles que
+    // normalisées ici. L'écran de confirmation les affiche — c'est la seule façon pour le
+    // client de vérifier tout de suite qu'il n'a pas fait une faute de frappe dans sa propre
+    // adresse.
     return jsonResponse(
       {
         ok: true,
         ...(simule ? { dev: true } : {}),
-        pdf: versBase64(pdf),
-        filename: nomFichier,
         copies: signataires.map((signataire) => signataire.courriel),
       },
       200,
