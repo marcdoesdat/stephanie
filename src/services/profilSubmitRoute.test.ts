@@ -74,9 +74,10 @@ describe('POST /api/profil-submit', () => {
     const corps = (await reponse.json()) as Record<string, unknown>;
 
     expect(reponse.status).toBe(200);
-    expect(corps.pdf).toEqual(expect.any(String));
-    expect(corps.filename).toBe('profil-emprunteurs-marc-andre-lacroix-' + new Date().toISOString().slice(0, 10) + '.pdf');
-    // Les adresses annoncées à l'écran sont exactement celles qui reçoivent le PDF.
+    // Le document ne redescend jamais au navigateur : la courtière est seule à le recevoir.
+    expect(corps.pdf).toBeUndefined();
+    expect(corps.filename).toBeUndefined();
+    // Les adresses annoncées à l'écran sont exactement celles qui reçoivent l'accusé.
     expect(corps.copies).toEqual(['marc@exemple.ca']);
     expect(envois.map((e) => e.to)).toEqual(['interne@exemple.ca', 'marc@exemple.ca']);
   });
@@ -95,9 +96,10 @@ describe('POST /api/profil-submit', () => {
     const corps = (await reponse.json()) as Record<string, unknown>;
 
     expect(reponse.status).toBe(200);
-    expect(corps.pdf).toEqual(expect.any(String));
     expect(corps.enAttente).toBeUndefined();
+    // Deux envois et une pièce jointe : le dossier a bien été clos, pas mis en attente.
     expect(envois.map((e) => e.to)).toEqual(['interne@exemple.ca', 'marc@exemple.ca']);
+    expect(envois[0]!.attachments).toEqual([expect.objectContaining({ content: expect.any(String) })]);
   });
 
   it('ouvre un dossier en attente quand une signature manque vraiment', async () => {
@@ -111,9 +113,8 @@ describe('POST /api/profil-submit', () => {
     const corps = (await reponse.json()) as Record<string, unknown>;
 
     expect(reponse.status).toBe(200);
-    expect(corps.pdf).toBeUndefined();
     expect(corps.enAttente).toEqual([JULIE]);
-    // L'écran de confirmation annonce la copie à venir : il lui faut les adresses.
+    // L'écran de confirmation annonce l'accusé à venir : il lui faut les adresses.
     expect(corps.copies).toEqual(['marc@exemple.ca', 'julie@exemple.ca']);
     // Une invitation à Julie, un avis à la courtière — rien au demandeur.
     expect(envois.map((e) => e.to)).toEqual(['julie@exemple.ca', 'interne@exemple.ca']);

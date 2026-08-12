@@ -137,9 +137,6 @@ Astro.response.headers.set('Cache-Control', 'no-store');
               <div class="quiz-step quiz-step--final" data-ecran="fin" hidden>
                 <h2 class="signer-titre" data-fin-titre />
                 <p class="signer-texte" data-fin-texte />
-                <a class="btn-cta btn-cta--block" data-telecharger hidden download>
-                  Télécharger le profil signé (PDF)
-                </a>
                 <p class="signer-texte">
                   Une question&nbsp;? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
                   ou appelez {prenomCourtiere} au{' '}
@@ -404,37 +401,33 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     function terminer(donnees: Record<string, unknown>): void {
       const titre = formulaire.querySelector<HTMLElement>('[data-fin-titre]');
       const texte = formulaire.querySelector<HTMLElement>('[data-fin-texte]');
-      const lien = formulaire.querySelector<HTMLAnchorElement>('[data-telecharger]');
       const complet = donnees.complet === true;
       const enAttente = (donnees.enAttente as string[] | undefined) ?? [];
 
       if (titre) titre.textContent = 'Merci, c’est signé';
       if (texte) {
         // L'adresse est celle du dossier, pas une saisie de cet écran : la montrer permet au
-        // co-signataire de savoir tout de suite où chercher sa copie.
+        // co-signataire de savoir tout de suite où chercher son accusé.
         const adresse = formulaire.dataset.courriel ?? '';
         const forte = document.createElement('strong');
         forte.className = 'signer-adresse';
         forte.textContent = adresse;
 
         texte.textContent = '';
+        // Le document lui-même ne quitte pas la courtière : on annonce une confirmation, pas
+        // une copie du formulaire.
         if (complet) {
-          texte.append('Le formulaire complet vient d’être transmis à la courtière, et une copie vous a été envoyée ');
+          texte.append(
+            'Le formulaire complet vient d’être transmis à la courtière, qui le conserve au dossier. Une confirmation vous a été envoyée ',
+          );
           texte.append(adresse ? 'à ' : 'par courriel');
           if (adresse) texte.append(forte);
           texte.append('.');
         } else {
-          texte.append(`Il reste la signature de ${enAttente.join(' et ')}. Vous recevrez une copie du document `);
+          texte.append(`Il reste la signature de ${enAttente.join(' et ')}. Vous recevrez une confirmation `);
           if (adresse) texte.append('à ', forte, ' ');
           texte.append('dès que tout le monde aura signé.');
         }
-      }
-
-      if (complet && lien && typeof donnees.pdf === 'string' && typeof donnees.filename === 'string') {
-        const octets = Uint8Array.from(atob(donnees.pdf), (caractere) => caractere.charCodeAt(0));
-        lien.href = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
-        lien.download = donnees.filename;
-        lien.hidden = false;
       }
 
       ecran('fin');

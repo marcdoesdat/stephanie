@@ -85,7 +85,7 @@ describe('nomFichierProfil', () => {
 });
 
 describe('envoyerDossierComplet', () => {
-  it('écrit à la courtière et à chaque signataire, le PDF en pièce jointe', async () => {
+  it('écrit à la courtière et à chaque signataire', async () => {
     const appels = installerFauxResend();
 
     await envoyerDossierComplet(ENV, {
@@ -98,8 +98,26 @@ describe('envoyerDossierComplet', () => {
 
     expect(appels).toHaveLength(3);
     expect(appels.map((a) => a.corps.to)).toEqual(['interne@exemple.ca', 'marc@exemple.ca', 'julie@exemple.ca']);
-    for (const appel of appels) {
-      expect(appel.corps.attachments).toEqual([{ filename: 'profil.pdf', content: 'JVBERi0xLjc=' }]);
+  });
+
+  it('ne joint le PDF qu’au courriel de la courtière', async () => {
+    // Le document est une pièce de dossier : il ne doit jamais partir dans la boîte d'un
+    // signataire, même celle du client qui vient de remplir le formulaire.
+    const appels = installerFauxResend();
+
+    await envoyerDossierComplet(ENV, {
+      reponses: REPONSES,
+      preuves: [preuve('Marc-André Lacroix', 'marc@exemple.ca'), preuve('Julie Bergeron', 'julie@exemple.ca')],
+      pdfBase64: 'JVBERi0xLjc=',
+      empreintePdf: 'deadbeef',
+      nomFichier: 'profil.pdf',
+    });
+
+    expect(appels[0]!.corps.to).toBe('interne@exemple.ca');
+    expect(appels[0]!.corps.attachments).toEqual([{ filename: 'profil.pdf', content: 'JVBERi0xLjc=' }]);
+    for (const appel of appels.slice(1)) {
+      expect(appel.corps.attachments).toBeUndefined();
+      expect(String(appel.corps.html)).not.toContain('JVBERi0xLjc=');
     }
   });
 

@@ -3,7 +3,9 @@
 //
 // Le client ne voit jamais le PDF : il clique des options qui auto-avancent, relit un
 // récapitulatif des 8 réponses dans les termes exacts du formulaire, puis signe. Le PDF
-// officiel est estampé côté serveur et livré par courriel + téléchargement.
+// officiel est estampé côté serveur et envoyé à la seule courtière — il n'est ni joint à
+// l'accusé du client, ni redescendu au navigateur. L'écran de confirmation ne propose donc
+// aucun téléchargement.
 //
 // Page volontairement sans Nav ni Footer, noindex et hors sitemap : elle n'est pas une
 // page de contenu, c'est un document de conformité que Stéphanie envoie à ses clients par
@@ -221,7 +223,6 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
           <div class="quiz-step quiz-step--final" data-etape="fin" hidden>
             <h2 class="profil-titre" data-fin-titre>C'est signé</h2>
             <p class="profil-intro" data-fin-texte></p>
-            <a class="btn-cta btn-cta--block" data-telecharger hidden download>Télécharger mon profil (PDF)</a>
             <p class="profil-note">
               Rien reçu d'ici quelques minutes&nbsp;? Regardez dans vos courriels indésirables.
             </p>
@@ -229,8 +230,8 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
               Une question&nbsp;? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
               ou appelez {prenom} au <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>.
             </p>
-            {/* Discret et non concurrent du téléchargement, mais la page ne doit pas être un
-                cul-de-sac : le client est arrivé par un lien privé, sans navigation. */}
+            {/* Discret, mais la page ne doit pas être un cul-de-sac : le client est arrivé
+                par un lien privé, sans navigation. */}
             <a class="profil-retour" href="/">Retour au site de {prenom} →</a>
           </div>
         </form>
@@ -561,11 +562,9 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
 
   /** Ce que /api/profil-submit renvoie quand la soumission a abouti. */
   interface Reponse {
-    pdf?: string;
-    filename?: string;
     /** Co-emprunteurs relancés par lien nominatif — voie « à distance » uniquement. */
     enAttente?: Signataire[];
-    /** Adresses qui reçoivent (ou recevront) une copie du document signé. */
+    /** Adresses qui reçoivent (ou recevront) l'accusé de signature. Jamais le PDF. */
     copies?: string[];
   }
 
@@ -1059,9 +1058,8 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
     function terminer(donnees: Reponse): void {
       const titre = formulaire.querySelector<HTMLElement>('[data-fin-titre]');
       const texte = formulaire.querySelector<HTMLElement>('[data-fin-texte]');
-      const lien = formulaire.querySelector<HTMLAnchorElement>('[data-telecharger]');
       // Les adresses renvoyées par le serveur, jamais celles restées en mémoire : ce sont
-      // elles qui ont réellement reçu (ou recevront) le document.
+      // elles qui ont réellement reçu (ou recevront) l'accusé de signature.
       const copies = donnees.copies ?? [];
 
       if (donnees.enAttente?.length) {
@@ -1075,8 +1073,8 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
         });
         phrase.push(
           attendus.length === 1
-            ? '. Le formulaire sera transmis dès sa signature — vous en recevrez une copie'
-            : '. Le formulaire sera transmis dès les dernières signatures — vous en recevrez une copie',
+            ? '. Le formulaire sera transmis à Stéphanie dès sa signature, et vous recevrez une confirmation'
+            : '. Le formulaire sera transmis à Stéphanie dès les dernières signatures, et vous recevrez une confirmation',
         );
         // copies[0] est l'emprunteur qui vient de remplir : c'est son adresse à lui qu'on
         // lui confirme, pas celle de tout le monde.
@@ -1085,23 +1083,20 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
         ecrire(texte, phrase);
       } else {
         if (titre) titre.textContent = 'C’est signé';
+        // Aucune copie du document ne part au client : le dire ici évite qu'il cherche une
+        // pièce jointe qui n'existe pas.
         ecrire(
           texte,
           copies.length
             ? [
-                "Le formulaire est transmis à Stéphanie et une copie vient d'être envoyée à ",
+                'Le formulaire est transmis à Stéphanie, qui le conserve à votre dossier. Une confirmation vient d’être envoyée à ',
                 listeAdresses(copies),
                 '.',
               ]
-            : ['Le formulaire est transmis à Stéphanie et une copie vient de vous être envoyée par courriel.'],
+            : [
+                'Le formulaire est transmis à Stéphanie, qui le conserve à votre dossier. Une confirmation vient de vous être envoyée par courriel.',
+              ],
         );
-        if (lien && donnees.pdf && donnees.filename) {
-          const octets = Uint8Array.from(atob(donnees.pdf), (caractere) => caractere.charCodeAt(0));
-          const url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
-          lien.href = url;
-          lien.download = donnees.filename;
-          lien.hidden = false;
-        }
       }
 
       afficher('fin');

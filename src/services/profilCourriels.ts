@@ -38,9 +38,9 @@ export interface PreuveSignature {
 
 /**
  * Resend limite le débit à quelques requêtes par seconde. Ce formulaire est le seul du site
- * à envoyer plus de deux courriels d'un coup — jusqu'à quatre avec trois signataires, chacun
- * portant le PDF en pièce jointe. Les lancer en parallèle déclenche un 429, qui fait échouer
- * toute la soumission. On les espace donc, quitte à prendre deux secondes de plus.
+ * à envoyer plus de deux courriels d'un coup — jusqu'à quatre avec trois signataires. Les
+ * lancer en parallèle déclenche un 429, qui fait échouer toute la soumission. On les espace
+ * donc, quitte à prendre deux secondes de plus.
  */
 async function envoyerEnSerie(envois: ReadonlyArray<() => Promise<void>>): Promise<void> {
   for (const [index, envoi] of envois.entries()) {
@@ -102,7 +102,7 @@ function sectionPreuves(preuves: readonly PreuveSignature[]): string {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Dossier complet — PDF à la courtière et à chaque signataire         */
+/*  Dossier complet — PDF à la courtière, confirmation aux signataires  */
 /* ------------------------------------------------------------------ */
 
 export interface EnvoiComplet {
@@ -113,6 +113,11 @@ export interface EnvoiComplet {
   readonly nomFichier: string;
 }
 
+/**
+ * Le PDF signé ne part **qu'à la courtière**. Les signataires reçoivent une confirmation
+ * sans pièce jointe : le document est une pièce de dossier, il circule par le canal de la
+ * courtière et non par une boîte courriel de client. Ne pas y rattacher `piece`.
+ */
 export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet): Promise<void> {
   const config = loadSiteConfig();
   const prenomCourtiere = config.nom.split(' ')[0];
@@ -127,6 +132,7 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
       </p>
       <p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#f0f7f1;border:1px solid #c5dac8;color:#2d5a3a;">
         Le formulaire rempli et signé est en pièce jointe (<strong>${escapeHtml(envoi.nomFichier)}</strong>).
+        Vous êtes seule à le recevoir : les signataires n'ont eu qu'un accusé de signature, sans le document.
       </p>
       ${sectionReponses(envoi.reponses)}
       ${sectionPreuves(envoi.preuves)}
@@ -155,8 +161,8 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
       <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
         <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${escapeHtml(preuve.nom.split(' ')[0] ?? preuve.nom)} 🌿</h1>
         <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
-          Votre profil d'emprunteur est signé et transmis. Vous en trouverez une copie complète
-          en pièce jointe — gardez-la, c'est le document que vous avez signé.
+          Votre profil d'emprunteur est signé et m'a été transmis. Je le conserve à votre
+          dossier&nbsp;; demandez-le-moi quand vous voulez et je vous en envoie une copie.
         </p>
         <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
           Ce profil me sert à vous recommander le produit hypothécaire qui correspond vraiment à
@@ -177,7 +183,6 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
         to: preuve.courriel,
         subject: `Votre profil d'emprunteur signé — ${prenomCourtiere} Weyman`,
         html: client,
-        attachments: [piece],
         reply_to: env.notifyEmail,
       }),
     );

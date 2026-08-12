@@ -215,14 +215,17 @@ est identique au modèle au pixel près.
 **Règles :**
 - **Rien n'est ajouté au PDF hors des champs du modèle.** La trace de preuve (horodatage serveur,
   IP, navigateur, empreintes) vit dans le courriel interne, jamais dans le document.
+- **Le PDF ne sort que vers la courtière.** Seul le courriel interne le porte en pièce jointe : les
+  signataires reçoivent un accusé de signature sans document, et les endpoints ne renvoient plus
+  ni `pdf` ni `filename` au navigateur — l'écran de confirmation ne propose aucun téléchargement.
 - Les tracés de signature ne sont **jamais persistés côté navigateur** et le dossier Blob est
   supprimé dès le PDF produit. TTL de 14 jours, purge opportuniste à la création.
 - Le parcours reprend où il en était après un rechargement : réponses **et écran courant**
   vivent en `sessionStorage`, l'écran repris étant ramené au dernier que les données
   sauvegardées permettent de reconstruire. Effacé dès la soumission.
-- L'écran de confirmation affiche les adresses **renvoyées par le serveur** (`copies`,
-  `enAttente`), jamais celles restées en mémoire : c'est ce qui permet au client de repérer
-  sa propre faute de frappe.
+- L'écran de confirmation affiche les adresses **renvoyées par le serveur** (`copies` = les
+  destinataires de l'accusé, `enAttente`), jamais celles restées en mémoire : c'est ce qui
+  permet au client de repérer sa propre faute de frappe.
 - Les jetons de co-signature sont à usage unique, stockés hachés (SHA-256), et comparés à temps
   constant.
 - Le modèle contient déjà le nom de la courtière et son numéro AMF — ne rien y écrire.

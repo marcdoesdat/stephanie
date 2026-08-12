@@ -2,8 +2,8 @@
 //
 // Deux actions possibles :
 //   • « signer »   — enregistre le tracé et consomme le jeton. Si c'était la dernière
-//                    signature attendue, le PDF est produit, envoyé à tout le monde, et
-//                    le dossier est supprimé.
+//                    signature attendue, le PDF est produit, envoyé à la courtière (les
+//                    signataires n'ont qu'un accusé), et le dossier est supprimé.
 //   • « desaccord » — le co-signataire ne se reconnaît pas dans les réponses : le dossier
 //                    est gelé, aucun PDF ne sera produit, la courtière est prévenue.
 //
@@ -168,7 +168,8 @@ export const POST: APIRoute = async ({ request }) => {
     // Le dossier n'a plus de raison d'exister : il ne contenait que des tracés au repos.
     await supprimerDossier(aJour.id);
 
-    return jsonResponse({ ok: true, complet: true, pdf: versBase64(pdf), filename: nomFichier }, 200);
+    // Comme dans /api/profil-submit : le document reste entre le serveur et la courtière.
+    return jsonResponse({ ok: true, complet: true }, 200);
   } catch (err) {
     console.error('[profil-cosigner] Échec de clôture du dossier :', err);
     // Le dossier reste en place : la signature est enregistrée, une relance pourra reprendre.
