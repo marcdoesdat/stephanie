@@ -223,6 +223,9 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
             <p class="profil-intro" data-fin-texte></p>
             <a class="btn-cta btn-cta--block" data-telecharger hidden download>Télécharger mon profil (PDF)</a>
             <p class="profil-note">
+              Rien reçu d'ici quelques minutes&nbsp;? Regardez dans vos courriels indésirables.
+            </p>
+            <p class="profil-note">
               Une question&nbsp;? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
               ou appelez {prenom} au <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>.
             </p>
@@ -492,6 +495,14 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
     color: var(--clay-dk);
   }
 
+  /* Adresses de destination sur l'écran final : construites en JavaScript, d'où le :global.
+     `anywhere` plutôt que nowrap — une adresse longue doit se couper, pas déborder du bloc. */
+  .profil-intro :global(.profil-adresse) {
+    color: var(--ink);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
   .profil-retour {
     align-self: flex-start;
     font-size: 0.86rem;
@@ -534,7 +545,7 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
 </style>
 
 <script>
-  import { QUESTIONS, MAX_SIGNATAIRES, resumerReponses } from '../utils/profilEmprunteurs';
+  import { QUESTIONS, MAX_SIGNATAIRES, estCourrielValide, resumerReponses } from '../utils/profilEmprunteurs';
   import type { SignaturePadElement } from '../scripts/signaturePad';
 
   const CLE_STOCKAGE = 'sw_profil_emprunteurs_v1';
@@ -548,11 +559,23 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
     courriel: string;
   }
 
+  /** Ce que /api/profil-submit renvoie quand la soumission a abouti. */
+  interface Reponse {
+    pdf?: string;
+    filename?: string;
+    /** Co-emprunteurs relancés par lien nominatif — voie « à distance » uniquement. */
+    enAttente?: Signataire[];
+    /** Adresses qui reçoivent (ou recevront) une copie du document signé. */
+    copies?: string[];
+  }
+
   interface Etat {
     reponses: Record<string, string>;
     autreMontant: string;
     signataires: Signataire[];
     voie: 'presence' | 'distance';
+    /** Écran affiché au moment de la dernière sauvegarde — pour reprendre après un F5. */
+    etape: number;
   }
 
   const formulaire = document.querySelector<HTMLFormElement>('[data-formulaire]');
@@ -573,13 +596,21 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
     /** Quand on corrige depuis le récapitulatif, on y retourne au lieu d'avancer. */
     let retourAuRecap = false;
     let envoiEnCours = false;
+    /** Une fois le dossier parti, plus rien ne doit être réécrit en session. */
+    let termine = false;
 
     const etat: Etat = charger();
 
     /* ---------------- Persistance ---------------- */
 
     function charger(): Etat {
-      const vide: Etat = { reponses: {}, autreMontant: '', signataires: [{ nom: '', courriel: '' }], voie: 'presence' };
+      const vide: Etat = {
+        reponses: {},
+        autreMontant: '',
+        signataires: [{ nom: '', courriel: '' }],
+        voie: 'presence',
+        etape: 0,
+      };
       try {
         const brut = sessionStorage.getItem(CLE_STOCKAGE);
         if (!brut) return vide;
@@ -589,6 +620,7 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
           autreMontant: lu.autreMontant ?? '',
           signataires: lu.signataires?.length ? lu.signataires : vide.signataires,
           voie: lu.voie === 'distance' ? 'distance' : 'presence',
+          etape: typeof lu.etape === 'number' && Number.isInteger(lu.etape) ? lu.etape : 0,
         };
       } catch {
         return vide;
@@ -596,6 +628,7 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
     }
 
     function sauvegarder(): void {
+      if (termine) return;
       try {
         // Les tracés de signature ne sont jamais persistés — ils restent en mémoire.
         sessionStorage.setItem(CLE_STOCKAGE, JSON.stringify(etat));
@@ -626,6 +659,14 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
         if (numero) numero.textContent = String(cible);
         if (remplissage) remplissage.style.width = `${Math.round((cible / TOTAL) * 100)}%`;
         if (boutonRetour) boutonRetour.hidden = cible <= 1;
+      }
+
+      // L'écran courant fait partie de l'état : sans lui, un rechargement conservait les
+      // réponses mais renvoyait à l'introduction — ce qui se vit comme une perte totale.
+      // L'écran final n'est jamais mémorisé : le dossier est parti, la session est effacée.
+      if (typeof cible === 'number') {
+        etat.etape = cible;
+        sauvegarder();
       }
 
       masquerErreurs();
@@ -855,23 +896,30 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
       });
     }
 
-    formulaire.querySelector('[data-vers-signature]')?.addEventListener('click', () => {
+    /**
+     * Premier problème bloquant dans la liste des signataires, ou `null` si elle est bonne.
+     * Sert au passage à la signature comme au garde-fou de reprise : un état sauvegardé ne
+     * doit jamais rouvrir la page sur un écran que ces données ne permettent pas de tenir.
+     */
+    function erreurSignataires(): string | null {
       const adresses = new Set<string>();
       for (const [index, signataire] of etat.signataires.entries()) {
-        if (signataire.nom.length < 2) {
-          erreur(`Indiquez le nom complet de l'emprunteur ${index + 1}.`);
-          return;
-        }
-        if (!/^[^\s@]+@(?:[^\s@.]+\.)+[a-z]{2,}$/i.test(signataire.courriel)) {
-          erreur(`L'adresse courriel de l'emprunteur ${index + 1} semble incomplète.`);
-          return;
+        if (signataire.nom.length < 2) return `Indiquez le nom complet de l'emprunteur ${index + 1}.`;
+        if (!estCourrielValide(signataire.courriel)) {
+          return `L'adresse courriel de l'emprunteur ${index + 1} semble incomplète.`;
         }
         const normalisee = signataire.courriel.toLowerCase();
-        if (adresses.has(normalisee)) {
-          erreur('Chaque emprunteur doit avoir sa propre adresse courriel.');
-          return;
-        }
+        if (adresses.has(normalisee)) return 'Chaque emprunteur doit avoir sa propre adresse courriel.';
         adresses.add(normalisee);
+      }
+      return null;
+    }
+
+    formulaire.querySelector('[data-vers-signature]')?.addEventListener('click', () => {
+      const probleme = erreurSignataires();
+      if (probleme) {
+        erreur(probleme);
+        return;
       }
       preparerSignatures();
       afficher(ETAPE_SIGNATURE);
@@ -953,15 +1001,7 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
           }),
         });
 
-        const donnees = (await reponse.json()) as {
-          ok?: boolean;
-          error?: string;
-          code?: string;
-          detail?: string;
-          pdf?: string;
-          filename?: string;
-          enAttente?: string[];
-        };
+        const donnees = (await reponse.json()) as Reponse & { ok?: boolean; error?: string; code?: string; detail?: string };
 
         if (!reponse.ok || !donnees.ok) {
           // L'étape et le détail amont identifient où la soumission a lâché sans obliger
@@ -971,6 +1011,7 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
           return;
         }
 
+        termine = true;
         try {
           sessionStorage.removeItem(CLE_STOCKAGE);
         } catch {
@@ -988,25 +1029,72 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
 
     /* ---------------- Confirmation ---------------- */
 
-    function terminer(donnees: { pdf?: string; filename?: string; enAttente?: string[] }): void {
+    /**
+     * Une adresse mise en évidence dans une phrase. Élément construit à la main plutôt
+     * qu'injecté en HTML : l'adresse vient de ce que le client a tapé.
+     */
+    function adresse(courriel: string): HTMLElement {
+      const element = document.createElement('strong');
+      element.className = 'profil-adresse';
+      element.textContent = courriel;
+      return element;
+    }
+
+    /** « a@x.ca », « a@x.ca et b@y.ca », « a@x.ca, b@y.ca et c@z.ca ». */
+    function listeAdresses(courriels: readonly string[]): DocumentFragment {
+      const fragment = document.createDocumentFragment();
+      courriels.forEach((courriel, index) => {
+        if (index > 0) fragment.append(index === courriels.length - 1 ? ' et ' : ', ');
+        fragment.appendChild(adresse(courriel));
+      });
+      return fragment;
+    }
+
+    function ecrire(cible: HTMLElement | null, morceaux: ReadonlyArray<string | Node>): void {
+      if (!cible) return;
+      cible.textContent = '';
+      for (const morceau of morceaux) cible.append(morceau);
+    }
+
+    function terminer(donnees: Reponse): void {
       const titre = formulaire.querySelector<HTMLElement>('[data-fin-titre]');
       const texte = formulaire.querySelector<HTMLElement>('[data-fin-texte]');
       const lien = formulaire.querySelector<HTMLAnchorElement>('[data-telecharger]');
+      // Les adresses renvoyées par le serveur, jamais celles restées en mémoire : ce sont
+      // elles qui ont réellement reçu (ou recevront) le document.
+      const copies = donnees.copies ?? [];
 
       if (donnees.enAttente?.length) {
+        const attendus = donnees.enAttente;
         if (titre) titre.textContent = 'Votre partie est signée';
-        if (texte) {
-          texte.textContent =
-            donnees.enAttente.length === 1
-              ? `Un lien de signature vient d'être envoyé à ${donnees.enAttente[0]}. Le formulaire sera transmis dès sa signature — vous en recevrez une copie.`
-              : `Un lien de signature vient d'être envoyé à ${donnees.enAttente.join(' et ')}. Le formulaire sera transmis dès les dernières signatures — vous en recevrez une copie.`;
-        }
+
+        const phrase: Array<string | Node> = ["Un lien de signature vient d'être envoyé à "];
+        attendus.forEach((personne, index) => {
+          if (index > 0) phrase.push(index === attendus.length - 1 ? ' et ' : ', ');
+          phrase.push(`${personne.nom} (`, adresse(personne.courriel), ')');
+        });
+        phrase.push(
+          attendus.length === 1
+            ? '. Le formulaire sera transmis dès sa signature — vous en recevrez une copie'
+            : '. Le formulaire sera transmis dès les dernières signatures — vous en recevrez une copie',
+        );
+        // copies[0] est l'emprunteur qui vient de remplir : c'est son adresse à lui qu'on
+        // lui confirme, pas celle de tout le monde.
+        if (copies[0]) phrase.push(' à ', adresse(copies[0]));
+        phrase.push('.');
+        ecrire(texte, phrase);
       } else {
         if (titre) titre.textContent = 'C’est signé';
-        if (texte) {
-          texte.textContent =
-            'Le formulaire est transmis à Stéphanie et une copie vient de vous être envoyée par courriel.';
-        }
+        ecrire(
+          texte,
+          copies.length
+            ? [
+                "Le formulaire est transmis à Stéphanie et une copie vient d'être envoyée à ",
+                listeAdresses(copies),
+                '.',
+              ]
+            : ['Le formulaire est transmis à Stéphanie et une copie vient de vous être envoyée par courriel.'],
+        );
         if (lien && donnees.pdf && donnees.filename) {
           const octets = Uint8Array.from(atob(donnees.pdf), (caractere) => caractere.charCodeAt(0));
           const url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
@@ -1032,5 +1120,36 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
       radio.checked = radio.value === etat.voie;
     }
     rendreSignataires();
+
+    /**
+     * Jusqu'où l'écran mémorisé peut être rouvert. On ne fait jamais confiance au numéro
+     * seul : on le ramène au dernier écran que les données sauvegardées permettent
+     * réellement de reconstruire, sinon un état tronqué ouvrirait un récapitulatif à trous
+     * ou une signature sans signataires valides.
+     */
+    function etapeReprise(): number {
+      const voulue = etat.etape;
+      if (voulue < 1) return 0;
+
+      const sansReponse = QUESTIONS.findIndex((q) => !etat.reponses[q.id]);
+      if (sansReponse !== -1) return Math.min(voulue, sansReponse + 1);
+
+      if (etat.reponses.absorption === 'autre' && !etat.autreMontant) {
+        return Math.min(voulue, QUESTIONS.findIndex((q) => q.id === 'absorption') + 1);
+      }
+
+      if (voulue >= ETAPE_SIGNATURE && erreurSignataires() !== null) return ETAPE_SIGNATAIRES;
+
+      return Math.min(voulue, TOTAL);
+    }
+
+    // Reprise après un rechargement. Les tracés de signature, eux, ne survivent pas : celui
+    // qui recharge depuis l'écran de signature retrouve ses réponses et resigne.
+    const reprise = etapeReprise();
+    if (reprise >= 1) {
+      if (reprise >= ETAPE_RECAP) construireRecap();
+      if (reprise >= ETAPE_SIGNATURE) preparerSignatures();
+      afficher(reprise);
+    }
   }
 </script>

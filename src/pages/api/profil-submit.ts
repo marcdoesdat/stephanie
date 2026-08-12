@@ -209,7 +209,19 @@ export const POST: APIRoute = async ({ request }) => {
       return echec('courriel', err);
     }
 
-    return jsonResponse({ ok: true, ...(simule ? { dev: true } : {}), pdf: versBase64(pdf), filename: nomFichier }, 200);
+    // `copies` : les adresses qui reçoivent réellement le PDF, telles que normalisées ici.
+    // L'écran de confirmation les affiche — c'est la seule façon pour le client de vérifier
+    // tout de suite qu'il n'a pas fait une faute de frappe dans sa propre adresse.
+    return jsonResponse(
+      {
+        ok: true,
+        ...(simule ? { dev: true } : {}),
+        pdf: versBase64(pdf),
+        filename: nomFichier,
+        copies: signataires.map((signataire) => signataire.courriel),
+      },
+      200,
+    );
   }
 
   /* ---------- Il manque des signatures : dossier en attente + invitations ---------- */
@@ -226,10 +238,15 @@ export const POST: APIRoute = async ({ request }) => {
     return echec('dossier', err);
   }
 
+  // Nom **et** adresse : l'écran de confirmation nomme la personne relancée et montre où le
+  // lien est parti, sans jamais divulguer le lien lui-même.
+  const enAttente = aEnvoyer.map((i) => ({ nom: i.nom, courriel: i.courriel }));
+  const copies = signataires.map((signataire) => signataire.courriel);
+
   if (!resendEnv) {
     console.log('[profil-submit] ⚠️  Resend non configuré — invitations simulées. Liens à ouvrir :');
     for (const invitation of aEnvoyer) console.log(`  ${invitation.nom} → ${invitation.lien}`);
-    return jsonResponse({ ok: true, dev: true, enAttente: aEnvoyer.map((i) => i.nom) }, 200);
+    return jsonResponse({ ok: true, dev: true, enAttente, copies }, 200);
   }
 
   // L'invitation est ce qui débloque la suite : si elle part, le dossier vit, même si la
@@ -246,5 +263,5 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('[profil-submit] Invitations parties, mais la notification interne a échoué :', avisInterne.reason);
   }
 
-  return jsonResponse({ ok: true, enAttente: aEnvoyer.map((i) => i.nom) }, 200);
+  return jsonResponse({ ok: true, enAttente, copies }, 200);
 };
