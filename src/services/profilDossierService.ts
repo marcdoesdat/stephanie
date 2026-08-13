@@ -21,25 +21,25 @@
  */
 
 import type { ReponsesProfil, Signataire } from '../utils/profilEmprunteurs';
-import { empreinteSha256 } from './profilPdfService';
+import {
+  creerStockage,
+  egaliteConstante,
+  hacher,
+  identifiantPlausible,
+  nouveauJeton,
+  nouvelIdentifiant,
+  type SignatureEnregistree,
+} from './dossierStockage';
+
+// Le stockage, les jetons et la forme d'une signature enregistrée sont communs au profil et
+// au contrat de courtage : ils vivent dans dossierStockage.ts. Réexportés ici pour que les
+// appelants historiques continuent d'importer depuis ce module.
+export type { SignatureEnregistree, VoieSignature } from './dossierStockage';
 
 /** Durée de vie d'un dossier en attente. Au-delà, le lien de signature ne vaut plus rien. */
 export const DUREE_VIE_MS = 14 * 24 * 60 * 60 * 1000;
 
-const STORE = 'profils-emprunteurs';
-
-/** Comment une signature a été recueillie — déterminant pour la valeur de la preuve. */
-export type VoieSignature = 'presence' | 'distance';
-
-export interface SignatureEnregistree {
-  /** Le tracé PNG en base64 (sans le préfixe `data:`). */
-  readonly tracePngBase64: string;
-  readonly signeLe: string;
-  readonly voie: VoieSignature;
-  readonly ip: string;
-  readonly agent: string;
-  readonly empreinteTrace: string;
-}
+const stockage = creerStockage('profils-emprunteurs', 'profilDossier');
 
 export interface EntreeSignataire {
   readonly nom: string;
@@ -74,169 +74,9 @@ export interface Invitation {
   readonly jeton: string;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Stockage                                                           */
-/* ------------------------------------------------------------------ */
-
-const memoire = new Map<string, string>();
-
-type BlobStore = {
-  get(key: string, options: { type: 'text' }): Promise<string | null>;
-  set(key: string, value: string): Promise<unknown>;
-  delete(key: string): Promise<unknown>;
-  list(): Promise<{ blobs: Array<{ key: string }> }>;
-};
-
-/**
- * Le repli mémoire n'a de sens qu'en développement. En production, chaque invocation de
- * fonction Netlify a sa propre mémoire : un dossier écrit là serait introuvable à
- * l'ouverture du lien de signature — c'est-à-dire un lien mort, sans le moindre signal.
- */
-function repliMemoireAutorise(): boolean {
-  return import.meta.env.DEV === true;
-}
-
-// Netlify Blobs n'existe qu'avec un contexte Netlify. On ne le déduit **pas** de
-// `process.env.NETLIFY` : cette variable n'est pas garantie au runtime des fonctions (même
-// constat que ratesService). On tente l'appel, et on retient le résultat pour l'instance.
-let blobsIndisponibles = false;
-
-async function chargerStore(): Promise<BlobStore | null> {
-  if (blobsIndisponibles) return null;
-  try {
-    const { getStore } = await import('@netlify/blobs');
-    // Consistance forte : la signature de l'un doit être visible dès l'ouverture du lien du
-    // suivant, sur n'importe quelle instance. Le défaut (éventuel) rendrait un lien encore
-    // valide après usage, ou un dossier fraîchement créé introuvable.
-    return getStore({ name: STORE, consistency: 'strong' }) as unknown as BlobStore;
-  } catch (err) {
-    blobsIndisponibles = true;
-    console.warn('[profilDossier] Netlify Blobs indisponible :', err);
-    return null;
-  }
-}
-
-/** Message unique : c'est lui que /api/profil-submit relaie sous le code « dossier ». */
-function erreurStockage(cause: unknown): Error {
-  return new Error(
-    `Stockage des dossiers indisponible (Netlify Blobs)${cause ? ` : ${(cause as Error)?.message ?? cause}` : ''}`,
-  );
-}
-
-async function lireBrut(id: string): Promise<string | null> {
-  const store = await chargerStore();
-  if (!store) {
-    if (!repliMemoireAutorise()) {
-      console.error('[profilDossier] Lecture impossible : Netlify Blobs indisponible en production.');
-      return null;
-    }
-    return memoire.get(id) ?? null;
-  }
-  try {
-    return await store.get(id, { type: 'text' });
-  } catch (err) {
-    console.error('[profilDossier] Échec de lecture du dossier :', err);
-    return null;
-  }
-}
-
-async function ecrireBrut(id: string, contenu: string): Promise<void> {
-  const store = await chargerStore();
-  if (!store) {
-    // Sans Blobs en production, écrire en mémoire reviendrait à envoyer des liens morts :
-    // mieux vaut faire échouer la soumission tout de suite, avec la cause nommée.
-    if (!repliMemoireAutorise()) throw erreurStockage(null);
-    memoire.set(id, contenu);
-    return;
-  }
-  try {
-    await store.set(id, contenu);
-  } catch (err) {
-    // Un dossier qu'on ne peut pas écrire est un dossier perdu : le lien de signature ne
-    // mènerait nulle part. On remonte l'erreur en la nommant, plutôt que d'échouer plus loin
-    // sans savoir que Netlify Blobs est en cause.
-    throw new Error(`Écriture du dossier impossible dans Netlify Blobs (${(err as Error)?.message ?? err})`);
-  }
-}
-
+/** Supprime un dossier — appelé dès que le PDF est produit. */
 export async function supprimerDossier(id: string): Promise<void> {
-  const store = await chargerStore();
-  if (!store) {
-    memoire.delete(id);
-    return;
-  }
-  try {
-    await store.delete(id);
-  } catch {
-    // Un dossier qu'on n'arrive pas à supprimer expirera de toute façon.
-  }
-}
-
-/**
- * Supprime les dossiers périmés. Appelée au passage lors d'une création — le volume est
- * trop faible (quelques dizaines de dossiers vivants) pour justifier une tâche planifiée.
- */
-async function purgerExpires(): Promise<void> {
-  const store = await chargerStore();
-  const maintenant = Date.now();
-
-  if (!store) {
-    for (const [id, contenu] of memoire) {
-      try {
-        if (Date.parse((JSON.parse(contenu) as Dossier).expireLe) < maintenant) memoire.delete(id);
-      } catch {
-        memoire.delete(id);
-      }
-    }
-    return;
-  }
-
-  try {
-    const { blobs } = await store.list();
-    for (const { key } of blobs) {
-      const contenu = await store.get(key, { type: 'text' });
-      if (!contenu) continue;
-      try {
-        if (Date.parse((JSON.parse(contenu) as Dossier).expireLe) < maintenant) await store.delete(key);
-      } catch {
-        await store.delete(key);
-      }
-    }
-  } catch {
-    // Purge best-effort : jamais une raison de faire échouer une soumission.
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/*  Jetons                                                             */
-/* ------------------------------------------------------------------ */
-
-function base64url(octets: Uint8Array): string {
-  let binaire = '';
-  for (const octet of octets) binaire += String.fromCharCode(octet);
-  return btoa(binaire).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-/** Identifiant de dossier : 16 octets d'aléa, non devinable. */
-function nouvelIdentifiant(): string {
-  return base64url(crypto.getRandomValues(new Uint8Array(16)));
-}
-
-/** Jeton d'invitation : 32 octets d'aléa. N'existe en clair que dans le courriel envoyé. */
-function nouveauJeton(): string {
-  return base64url(crypto.getRandomValues(new Uint8Array(32)));
-}
-
-async function hacher(valeur: string): Promise<string> {
-  return empreinteSha256(new TextEncoder().encode(valeur));
-}
-
-/** Comparaison à temps constant — évite de distinguer deux jetons par la durée du test. */
-function egaliteConstante(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let ecart = 0;
-  for (let i = 0; i < a.length; i += 1) ecart |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return ecart === 0;
+  await stockage.supprimer(id);
 }
 
 /* ------------------------------------------------------------------ */
@@ -255,7 +95,7 @@ export async function creerDossier(
   signataires: readonly Signataire[],
   signaturesPresentes: ReadonlyMap<number, SignatureEnregistree>,
 ): Promise<{ dossier: Dossier; invitations: Invitation[] }> {
-  await purgerExpires();
+  await stockage.purgerExpires();
 
   const id = nouvelIdentifiant();
   const maintenant = Date.now();
@@ -282,11 +122,11 @@ export async function creerDossier(
     signataires: entrees,
   };
 
-  await ecrireBrut(id, JSON.stringify(dossier));
+  await stockage.ecrire(id, JSON.stringify(dossier));
 
   // Un dossier écrit mais illisible, ce sont des invitations parties vers des liens morts.
   // On relit avant de laisser /api/profil-submit envoyer quoi que ce soit.
-  if (!(await lireBrut(id))) throw erreurStockage('dossier introuvable juste après écriture');
+  if (!(await stockage.lire(id))) throw stockage.erreur('dossier introuvable juste après écriture');
 
   return { dossier, invitations };
 }
@@ -305,10 +145,10 @@ export interface DossierOuvert {
  * signataire qui a déjà signé ne peut plus rouvrir son lien.
  */
 export async function ouvrirParJeton(id: unknown, jeton: unknown): Promise<DossierOuvert | null> {
-  if (typeof id !== 'string' || typeof jeton !== 'string') return null;
-  if (id.length > 64 || jeton.length > 128 || !/^[A-Za-z0-9_-]+$/.test(id)) return null;
+  if (!identifiantPlausible(id, jeton)) return null;
+  const identifiant = id as string;
 
-  const brut = await lireBrut(id);
+  const brut = await stockage.lire(identifiant);
   if (!brut) return null;
 
   let dossier: Dossier;
@@ -319,12 +159,12 @@ export async function ouvrirParJeton(id: unknown, jeton: unknown): Promise<Dossi
   }
 
   if (Date.parse(dossier.expireLe) < Date.now()) {
-    await supprimerDossier(id);
+    await supprimerDossier(identifiant);
     return null;
   }
   if (dossier.statut !== 'en_attente') return null;
 
-  const empreinte = await hacher(jeton);
+  const empreinte = await hacher(jeton as string);
   const index = dossier.signataires.findIndex(
     (s) => s.signature === null && s.jetonHash !== null && egaliteConstante(s.jetonHash, empreinte),
   );
@@ -349,7 +189,7 @@ export async function enregistrerSignature(
   entree.jetonHash = null; // usage unique : le lien ne rouvrira plus
 
   const complet = dossier.signataires.every((s) => s.signature !== null);
-  await ecrireBrut(dossier.id, JSON.stringify(dossier));
+  await stockage.ecrire(dossier.id, JSON.stringify(dossier));
   return { dossier, complet };
 }
 
@@ -369,7 +209,7 @@ export async function marquerDesaccord(dossier: Dossier, index: number, motif: s
     motif: motif.slice(0, 500),
     le: new Date().toISOString(),
   };
-  await ecrireBrut(dossier.id, JSON.stringify(dossier));
+  await stockage.ecrire(dossier.id, JSON.stringify(dossier));
   return dossier;
 }
 
