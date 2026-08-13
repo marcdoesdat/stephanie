@@ -340,9 +340,16 @@ export const DATE_VERIFICATION: Emplacement = { page: 4, point: [169.9, 259.4], 
 /*  Texte de l'attestation signée                                      */
 /* ------------------------------------------------------------------ */
 
-/** Texte exact coché par chaque emprunteur avant de signer — conservé dans la preuve. */
+/**
+ * Texte exact coché par chaque emprunteur avant de signer — conservé dans la preuve.
+ *
+ * Il dit « affiché ci-dessus » parce que la page de signature affiche réellement les quatre
+ * pages du contrat (voir /api/contrat-apercu). Toute reformulation de cette phrase doit
+ * rester vraie de ce que l'écran montre : une attestation qui affirme plus que ce qui a été
+ * présenté ruinerait la preuve qu'elle est censée constituer.
+ */
 export const TEXTE_ATTESTATION =
-  'J’ai lu le contrat de courtage ci-dessus, je le comprends, et ce tracé vaut ma signature.';
+  'J’ai lu en entier le contrat de courtage affiché ci-dessus, je le comprends, et ce tracé vaut ma signature.';
 
 /* ================================================================== */
 /*  Données du contrat — types et validation                          */

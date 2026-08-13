@@ -75,6 +75,7 @@ src/
 | `/api/profil-cosigner` | API | Signature (ou désaccord) d'un co-emprunteur via son lien nominatif |
 | `/api/contrat-acces` | API | Ouverture de session sur `/contrat` (mot de passe partagé → cookie signé) |
 | `/api/contrat-creer` | API | Création du contrat de courtage — estampe le modèle, ou ouvre un dossier de signature |
+| `/api/contrat-apercu` | API | Sert le contrat intégral (PDF) au signataire, via son jeton — sans le consommer |
 | `/api/contrat-signer` | API | Signature (ou refus) d'un emprunteur via son lien nominatif |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
@@ -281,8 +282,13 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
 **Règles :**
 - **Rien n'est ajouté au PDF hors des champs du modèle.** La trace de preuve (horodatage
   serveur, IP, navigateur, empreintes) vit dans le courriel interne, jamais dans le document.
-- **Le PDF ne sort que vers la courtière.** Les emprunteurs reçoivent un accusé sans pièce
-  jointe ; les endpoints ne renvoient jamais le document au navigateur.
+- **On ne signe pas ce qu'on n'a pas lu.** `/signer-contrat` affiche les 4 pages du contrat
+  intégral (`/api/contrat-apercu`), pas un résumé. Le texte de `TEXTE_ATTESTATION` doit rester
+  vrai de ce que l'écran montre — une attestation qui affirme plus que ce qui a été présenté
+  ruinerait la preuve qu'elle constitue.
+- **Le PDF *signé* ne sort que vers la courtière.** Les emprunteurs reçoivent un accusé sans
+  pièce jointe, et c'est Stéphanie qui leur remet copie. L'aperçu avant signature, lui, est
+  un droit : il est servi au signataire par son propre jeton, qui n'est pas consommé.
 - **La courtière signe à la création.** Un contrat envoyé sans sa signature est refusé —
   ce serait un brouillon, pas un contrat.
 - Les initiales ne sont estampées que pour les emprunteurs **ayant effectivement signé** :
