@@ -25,6 +25,7 @@ import {
   type ResendEnv,
 } from './emailService';
 import { loadSiteConfig } from '../config';
+import { formatDateHeureLong } from '../utils/formatters';
 import { TEXTE_ATTESTATION, resumerContrat, type DonneesContrat } from '../utils/contratCourtage';
 
 /** Ce qu'on peut démontrer a posteriori sur une signature donnée. */
@@ -78,7 +79,8 @@ function sectionPreuves(preuves: readonly PreuveSignature[]): string {
         `Signature — ${escapeHtml(preuve.nom)}`,
         renderDataRows([
           ['Courriel', escapeHtml(preuve.courriel)],
-          ['Horodatage serveur', escapeHtml(preuve.signeLe)],
+          ['Signé le', escapeHtml(formatDateHeureLong(preuve.signeLe))],
+          ['Horodatage serveur (UTC)', escapeHtml(preuve.signeLe)],
           ['Voie', escapeHtml(LIBELLE_VOIE[preuve.voie])],
           ['Adresse IP', escapeHtml(preuve.ip)],
           ['Navigateur', escapeHtml(preuve.agent)],
@@ -155,7 +157,7 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
          </p>
          <p style="margin:0 0 14px;font-size:14px;">
            Votre contrat de courtage hypothécaire a été signé par toutes les parties le
-           ${escapeHtml(preuve.signeLe)}. ${escapeHtml(config.nom)} vous fera parvenir une
+           ${escapeHtml(formatDateHeureLong(preuve.signeLe))}. ${escapeHtml(config.nom)} vous fera parvenir une
            copie du document signé.
          </p>
          <p style="margin:0 0 14px;font-size:14px;">
