@@ -33,6 +33,7 @@ import {
   type PreuveSignature,
 } from '../../services/contratCourriels';
 import { creerDossier } from '../../services/contratDossierService';
+import { lireReglages, traceEnregistree } from '../../services/reglagesCourtiere';
 import type { SignatureEnregistree } from '../../services/dossierStockage';
 import {
   empreinteSha256,
@@ -113,9 +114,17 @@ export const POST: APIRoute = async ({ request }) => {
 
   // La courtière signe à la création : un contrat qui part en signature sans la signature
   // du courtier n'est pas un contrat, c'est un brouillon.
-  const traceCourtiere = decoderTraceSignature(payload.signatureCourtiere);
+  //
+  // Le tracé vient d'ordinaire des réglages mémorisés — elle l'a dessiné une fois pour
+  // toutes. Un tracé envoyé dans la requête (première utilisation, ou remplacement) a la
+  // priorité. L'exigence, elle, ne bouge pas : sans signature, on refuse.
+  const traceCourtiere =
+    decoderTraceSignature(payload.signatureCourtiere) ?? traceEnregistree(await lireReglages());
   if (!traceCourtiere) {
-    return jsonResponse({ error: 'Votre signature est manquante ou illisible.' }, 400);
+    return jsonResponse(
+      { error: 'Aucune signature enregistrée. Dessinez la vôtre dans « Ma signature ».', code: 'signature' },
+      400,
+    );
   }
   const signatureCourtiere: SignatureEnregistree = {
     tracePngBase64: versBase64(traceCourtiere),

@@ -76,6 +76,8 @@ src/
 | `/api/contrat-acces` | API | Ouverture de session sur `/contrat` (mot de passe partagé → cookie signé) |
 | `/api/contrat-creer` | API | Création du contrat de courtage — estampe le modèle, ou ouvre un dossier de signature |
 | `/api/contrat-apercu` | API | Sert le contrat intégral (PDF) au signataire, via son jeton — sans le consommer |
+| `/api/contrat-previsualiser` | API | Aperçu PDF du contrat en cours de saisie, pour la courtière — rien n'est envoyé ni stocké |
+| `/api/contrat-reglages` | API | Signature mémorisée et valeurs par défaut de la courtière (GET/PUT/DELETE) |
 | `/api/contrat-signer` | API | Signature (ou refus) d'un emprunteur via son lien nominatif |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
@@ -277,6 +279,7 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
 | `src/services/contratDossierService.ts` | Dossiers en attente de signature (Netlify Blobs, jetons hachés) |
 | `src/services/contratCourriels.ts` | Courriels + **trace de preuve** des signatures |
 | `src/services/accesCourtiere.ts` | Mot de passe partagé + cookie signé de `/contrat` |
+| `src/services/reglagesCourtiere.ts` | Signature mémorisée + valeurs par défaut du formulaire |
 | `src/services/dossierStockage.ts` | Socle commun au profil et au contrat : stockage Blobs, jetons, purge |
 
 **Règles :**
@@ -290,7 +293,14 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   pièce jointe, et c'est Stéphanie qui leur remet copie. L'aperçu avant signature, lui, est
   un droit : il est servi au signataire par son propre jeton, qui n'est pas consommé.
 - **La courtière signe à la création.** Un contrat envoyé sans sa signature est refusé —
-  ce serait un brouillon, pas un contrat.
+  ce serait un brouillon, pas un contrat. Elle dessine son tracé **une seule fois** : il est
+  mémorisé (`reglagesCourtiere`) et apposé automatiquement ensuite. La page n'envoie donc
+  plus de signature à `/api/contrat-creer` — le serveur prend celle qui est enregistrée.
+- **Le tracé mémorisé est la donnée la plus sensible du site.** Il vit derrière la même porte
+  que `/contrat` : qui a le mot de passe peut émettre un contrat signé de sa main.
+- **`CLES_DEFAUTS` ne doit contenir que des champs du cabinet**, jamais un champ propre au
+  client : une valeur mémorisée est reportée d'un dossier au suivant sans que personne ne le
+  remarque. Un test verrouille cette règle.
 - Les initiales ne sont estampées que pour les emprunteurs **ayant effectivement signé** :
   des initiales sans signature laisseraient croire qu'une clause a été acceptée.
 - Les jetons de signature sont à usage unique, stockés hachés (SHA-256), comparés à temps

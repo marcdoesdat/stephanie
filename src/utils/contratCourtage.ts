@@ -415,6 +415,37 @@ export interface DonneesContrat {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Réglages mémorisés d'un contrat à l'autre                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Les champs qui décrivent le cabinet et les usages de la courtière plutôt que le dossier
+ * du client : ils sont identiques d'un contrat à l'autre et méritent d'être mémorisés (voir
+ * src/services/reglagesCourtiere.ts).
+ *
+ * Ne jamais y ajouter un champ propre au client — il serait reporté d'un dossier au suivant,
+ * et personne ne remarquerait qu'un contrat porte l'adresse ou le montant du précédent.
+ */
+export const CLES_DEFAUTS = [
+  'nbPreteursCabinet',
+  'nbPreteursCourtier',
+  'preteurMajoritaire',
+  'autresLogiciels',
+  'autreCabinet',
+  'collaborateur',
+  'retributionAutreEntite',
+  'partageRetribution',
+  'fraisEtude',
+  'honorairesMontant',
+  'honorairesPourcentage',
+  'resiliationMontant',
+  'resiliationPourcentage',
+  'doubleRemuneration',
+] as const;
+
+export type CleDefaut = (typeof CLES_DEFAUTS)[number];
+
+/* ------------------------------------------------------------------ */
 /*  Bornes                                                             */
 /* ------------------------------------------------------------------ */
 

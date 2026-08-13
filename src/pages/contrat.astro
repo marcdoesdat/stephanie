@@ -5,20 +5,29 @@
 // de quoi, ne rendre que l'écran de connexion. Un formulaire protégé côté client seulement
 // ne protège rien — /api/contrat-creer applique exactement le même verdict.
 //
-// Le formulaire est une page unique en sections plutôt qu'un assistant : Stéphanie remplit
-// le même document plusieurs fois par semaine et doit pouvoir sauter d'un champ à l'autre,
-// pas dérouler douze écrans.
+// Organisation de l'écran : ce qui change à chaque client est ouvert et en haut ; ce qui
+// décrit le cabinet est replié et prérempli depuis les réglages mémorisés. Stéphanie remplit
+// le même document plusieurs fois par semaine — l'essentiel doit tenir sur un écran, pas
+// se perdre dans cinquante champs de même poids.
 export const prerender = false;
 
 import MainLayout from '../layouts/MainLayout.astro';
 import SignaturePad from '../components/SignaturePad.astro';
 import { loadSiteConfig } from '../config';
 import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
+import { lireReglages } from '../services/reglagesCourtiere';
 import { LIGNES_IDENTITE, TYPES_FINANCEMENT } from '../utils/contratCourtage';
 
 const config = loadSiteConfig();
 const autorise = await requeteAutorisee(Astro.request);
 const configureManquante = !accesConfigure() && !accesLibreEnDev();
+
+// Les réglages ne sont lus que derrière la porte : ils contiennent le tracé de signature.
+const reglages = autorise ? await lireReglages() : null;
+const signatureEnregistree = reglages?.signature
+  ? `data:image/png;base64,${reglages.signature.tracePngBase64}`
+  : null;
+const defauts = reglages?.defauts ?? {};
 
 Astro.response.headers.set('Cache-Control', 'no-store');
 
@@ -63,12 +72,62 @@ const RANGS = [0, 1, 2];
             )}
           </div>
         ) : (
-          <form id="ct-form" class="contact-form ct-form" autocomplete="off">
-            <h1 class="ct-titre">Nouveau contrat de courtage</h1>
-            <p class="ct-texte">
-              Votre nom, votre numéro AMF, votre adresse et votre téléphone sont ajoutés
-              automatiquement depuis la configuration du site. Tout le reste se remplit ici.
-            </p>
+          <form
+            id="ct-form"
+            class="ct-form"
+            autocomplete="off"
+            data-signature-enregistree={signatureEnregistree ? 'oui' : 'non'}
+          >
+            <header class="ct-entete">
+              <h1 class="ct-titre">Nouveau contrat de courtage</h1>
+              <p class="ct-texte">
+                Vos coordonnées et votre numéro AMF sont ajoutés automatiquement. Les sections
+                repliées sont préremplies avec vos valeurs habituelles — ouvrez-les seulement
+                si ce dossier fait exception.
+              </p>
+            </header>
+
+            {/* ---------------- Ma signature ---------------- */}
+
+            <div class="ct-signature-barre" data-etat={signatureEnregistree ? 'ok' : 'manquante'}>
+              {signatureEnregistree ? (
+                <>
+                  <div class="ct-signature-apercu">
+                    <span class="ct-signature-etiquette">Votre signature</span>
+                    <img src={signatureEnregistree} alt="Votre signature enregistrée" />
+                  </div>
+                  <p class="ct-signature-note">
+                    Elle sera apposée automatiquement sur chaque contrat. Vous n’avez plus à la
+                    dessiner.
+                  </p>
+                  <button type="button" class="ct-lien" data-remplacer-signature>
+                    Remplacer ma signature
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p class="ct-signature-note ct-signature-invite">
+                    <strong>Une seule fois :</strong> dessinez votre signature. Elle sera
+                    ensuite apposée automatiquement sur tous vos contrats.
+                  </p>
+                </>
+              )}
+
+              <div class="ct-signature-saisie" hidden={signatureEnregistree !== null}>
+                <SignaturePad id="ct-signature" nom={config.nom} />
+                <div class="ct-signature-actions">
+                  <button type="button" class="btn btn-primary ct-bouton-petit" data-enregistrer-signature>
+                    Enregistrer ma signature
+                  </button>
+                  {signatureEnregistree && (
+                    <button type="button" class="ct-lien" data-annuler-signature>
+                      annuler
+                    </button>
+                  )}
+                </div>
+                <p class="ct-erreur" data-erreur-signature hidden />
+              </div>
+            </div>
 
             {/* ---------------- Emprunteurs ---------------- */}
 
@@ -77,7 +136,7 @@ const RANGS = [0, 1, 2];
               {RANGS.map((rang) => (
                 <div class="ct-emprunteur" data-emprunteur={rang} hidden={rang > 0}>
                   <h2 class="ct-sous-titre">
-                    Emprunteur {rang + 1}
+                    <span>Emprunteur {rang + 1}</span>
                     {rang > 0 && (
                       <button type="button" class="ct-lien" data-retirer={rang}>
                         retirer
@@ -86,20 +145,32 @@ const RANGS = [0, 1, 2];
                   </h2>
                   <div class="ct-grille">
                     <div>
-                      <label class="cform-label" for={`ct-prenom-${rang}`}>Prénom</label>
+                      <label class="cform-label" for={`ct-prenom-${rang}`}>
+                        Prénom <span class="ct-requis">*</span>
+                      </label>
                       <input type="text" id={`ct-prenom-${rang}`} class="cform-input" maxlength="60" />
                     </div>
                     <div>
-                      <label class="cform-label" for={`ct-nom-${rang}`}>Nom</label>
+                      <label class="cform-label" for={`ct-nom-${rang}`}>
+                        Nom <span class="ct-requis">*</span>
+                      </label>
                       <input type="text" id={`ct-nom-${rang}`} class="cform-input" maxlength="60" />
+                    </div>
+                    <div>
+                      <label class="cform-label" for={`ct-courriel-${rang}`}>
+                        Courriel <span class="ct-requis">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        id={`ct-courriel-${rang}`}
+                        class="cform-input"
+                        maxlength="120"
+                        placeholder="pour le lien de signature"
+                      />
                     </div>
                     <div>
                       <label class="cform-label" for={`ct-tel-${rang}`}>Téléphone</label>
                       <input type="tel" id={`ct-tel-${rang}`} class="cform-input" maxlength="40" />
-                    </div>
-                    <div>
-                      <label class="cform-label" for={`ct-courriel-${rang}`}>Courriel</label>
-                      <input type="email" id={`ct-courriel-${rang}`} class="cform-input" maxlength="120" />
                     </div>
                     <div class="ct-pleine">
                       <label class="cform-label" for={`ct-adresse-${rang}`}>Adresse</label>
@@ -108,7 +179,7 @@ const RANGS = [0, 1, 2];
                   </div>
                 </div>
               ))}
-              <button type="button" class="ct-lien" data-ajouter>+ Ajouter un emprunteur</button>
+              <button type="button" class="ct-ajouter" data-ajouter>+ Ajouter un emprunteur</button>
             </fieldset>
 
             {/* ---------------- Financement ---------------- */}
@@ -129,9 +200,6 @@ const RANGS = [0, 1, 2];
                 ))}
               </div>
 
-              <label class="cform-label ct-espace" for="ct-precisions">Autres précisions</label>
-              <input type="text" id="ct-precisions" class="cform-input" maxlength="200" />
-
               <div class="ct-grille ct-espace">
                 <div>
                   <label class="cform-label" for="ct-montant">Montant du prêt ($)</label>
@@ -142,12 +210,11 @@ const RANGS = [0, 1, 2];
                   <input type="text" id="ct-assurance" class="cform-input" inputmode="numeric" maxlength="20" />
                 </div>
                 <div>
-                  <label class="cform-label" for="ct-total">Total du prêt ($)</label>
+                  <label class="cform-label" for="ct-total">
+                    Total du prêt ($)
+                    <span class="ct-astuce" data-calcul-total hidden>calculé</span>
+                  </label>
                   <input type="text" id="ct-total" class="cform-input" inputmode="numeric" maxlength="20" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-versement">Versement cap. + int. ($)</label>
-                  <input type="text" id="ct-versement" class="cform-input" inputmode="numeric" maxlength="20" />
                 </div>
                 <div>
                   <label class="cform-label" for="ct-taux">Taux d’intérêt (%)</label>
@@ -161,6 +228,13 @@ const RANGS = [0, 1, 2];
                     <option value="variable">Variable</option>
                   </select>
                 </div>
+                <div>
+                  <label class="cform-label" for="ct-versement">Versement cap. + int. ($)</label>
+                  <input type="text" id="ct-versement" class="cform-input" inputmode="numeric" maxlength="20" />
+                </div>
+              </div>
+
+              <div class="ct-grille ct-espace">
                 <div>
                   <label class="cform-label" for="ct-amort-ans">Amortissement (ans)</label>
                   <input type="text" id="ct-amort-ans" class="cform-input" inputmode="numeric" maxlength="4" />
@@ -179,9 +253,22 @@ const RANGS = [0, 1, 2];
                 </div>
                 <div>
                   <label class="cform-label" for="ct-rang">Rang</label>
-                  <input type="text" id="ct-rang" class="cform-input" maxlength="10" />
+                  <input type="text" id="ct-rang" class="cform-input" maxlength="10" placeholder="1" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-validite">Consentements valides jusqu’au</label>
+                  <input
+                    type="text"
+                    id="ct-validite"
+                    class="cform-input"
+                    maxlength="40"
+                    placeholder="31 décembre 2026"
+                  />
                 </div>
               </div>
+
+              <label class="cform-label ct-espace" for="ct-precisions">Autres précisions</label>
+              <input type="text" id="ct-precisions" class="cform-input" maxlength="200" />
 
               <label class="cform-label ct-espace" for="ct-exigences">
                 Autres exigences de l’emprunteur
@@ -190,77 +277,11 @@ const RANGS = [0, 1, 2];
               <p class="ct-aide">4 lignes disponibles sur le contrat ; le surplus est tronqué.</p>
             </fieldset>
 
-            {/* ---------------- Frais et honoraires ---------------- */}
+            {/* ---------------- Le dossier ---------------- */}
 
             <fieldset class="ct-section">
-              <legend>Frais et honoraires</legend>
+              <legend>Ce dossier</legend>
               <div class="ct-grille">
-                <div>
-                  <label class="cform-label" for="ct-frais-etude">Frais d’étude de dossier ($)</label>
-                  <input type="text" id="ct-frais-etude" class="cform-input" inputmode="numeric" maxlength="20" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-honoraires">Rétribution ($)</label>
-                  <input type="text" id="ct-honoraires" class="cform-input" inputmode="numeric" maxlength="20" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-honoraires-pct">Rétribution (%)</label>
-                  <input type="text" id="ct-honoraires-pct" class="cform-input" inputmode="decimal" maxlength="10" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-resiliation">Frais de résiliation ($)</label>
-                  <input type="text" id="ct-resiliation" class="cform-input" inputmode="numeric" maxlength="20" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-resiliation-pct">Frais de résiliation (%)</label>
-                  <input type="text" id="ct-resiliation-pct" class="cform-input" inputmode="decimal" maxlength="10" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-double-remuneration">Divulgation additionnelle</label>
-                  <select id="ct-double-remuneration" class="cform-input">
-                    <option value="">— (pas de frais ni honoraires)</option>
-                    <option value="ne_recevra_pas">Le cabinet ne recevra pas de commission du prêteur</option>
-                    <option value="recevra">Le cabinet recevra une commission du prêteur</option>
-                  </select>
-                </div>
-              </div>
-              <label class="cform-label ct-espace" for="ct-raison-double">
-                Raison de la double rémunération, le cas échéant
-              </label>
-              <textarea id="ct-raison-double" class="cform-input" rows="2" maxlength="600" />
-            </fieldset>
-
-            {/* ---------------- Divulgations ---------------- */}
-
-            <fieldset class="ct-section">
-              <legend>Divulgations et consentements</legend>
-              <div class="ct-grille">
-                <div>
-                  <label class="cform-label" for="ct-nb-cabinet">Prêteurs — cabinet (12 mois)</label>
-                  <input type="text" id="ct-nb-cabinet" class="cform-input" inputmode="numeric" maxlength="10" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-nb-courtier">Prêteurs — courtier (12 mois)</label>
-                  <input type="text" id="ct-nb-courtier" class="cform-input" inputmode="numeric" maxlength="10" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-preteur-majoritaire">
-                    Prêteur ayant consenti &gt; 50 % des prêts
-                  </label>
-                  <input type="text" id="ct-preteur-majoritaire" class="cform-input" maxlength="200" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-autres-logiciels">Autres logiciels utilisés</label>
-                  <input type="text" id="ct-autres-logiciels" class="cform-input" maxlength="200" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-autre-cabinet">Autre cabinet de rattachement</label>
-                  <input type="text" id="ct-autre-cabinet" class="cform-input" maxlength="200" value="N/A" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-collaborateur">Collaborateur (assurances)</label>
-                  <input type="text" id="ct-collaborateur" class="cform-input" maxlength="200" value="N/A" />
-                </div>
                 <div>
                   <label class="cform-label" for="ct-ppv">Personne politiquement vulnérable</label>
                   <select id="ct-ppv" class="cform-input">
@@ -275,76 +296,262 @@ const RANGS = [0, 1, 2];
                     <option value="non">Non</option>
                   </select>
                 </div>
-                <div>
-                  <label class="cform-label" for="ct-validite">Consentements valides jusqu’au</label>
-                  <input type="text" id="ct-validite" class="cform-input" maxlength="40" placeholder="31 décembre 2026" />
-                </div>
-              </div>
-
-              <div class="ct-grille ct-espace">
-                <div>
-                  <label class="cform-label" for="ct-retribution-entite">Rétribution d’une autre entité</label>
-                  <input type="text" id="ct-retribution-entite" class="cform-input" maxlength="600" value="N/A" />
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-partage-retribution">Partage de la rétribution</label>
-                  <input type="text" id="ct-partage-retribution" class="cform-input" maxlength="600" value="N/A" />
-                </div>
               </div>
             </fieldset>
+
+            {/* ---------------- Frais et honoraires (mémorisés) ---------------- */}
+
+            <details class="ct-repliable">
+              <summary>
+                <span class="ct-repliable-titre">Frais et honoraires</span>
+                <span class="ct-repliable-note" data-resume-frais>vos valeurs habituelles</span>
+              </summary>
+              <div class="ct-repliable-corps">
+                <div class="ct-grille">
+                  <div>
+                    <label class="cform-label" for="ct-frais-etude">Frais d’étude de dossier ($)</label>
+                    <input
+                      type="text"
+                      id="ct-frais-etude"
+                      class="cform-input"
+                      inputmode="numeric"
+                      maxlength="20"
+                      data-defaut="fraisEtude"
+                      value={defauts.fraisEtude ?? ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-honoraires">Rétribution ($)</label>
+                    <input
+                      type="text"
+                      id="ct-honoraires"
+                      class="cform-input"
+                      inputmode="numeric"
+                      maxlength="20"
+                      data-defaut="honorairesMontant"
+                      value={defauts.honorairesMontant ?? ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-honoraires-pct">Rétribution (%)</label>
+                    <input
+                      type="text"
+                      id="ct-honoraires-pct"
+                      class="cform-input"
+                      inputmode="decimal"
+                      maxlength="10"
+                      data-defaut="honorairesPourcentage"
+                      value={defauts.honorairesPourcentage ?? ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-resiliation">Frais de résiliation ($)</label>
+                    <input
+                      type="text"
+                      id="ct-resiliation"
+                      class="cform-input"
+                      inputmode="numeric"
+                      maxlength="20"
+                      data-defaut="resiliationMontant"
+                      value={defauts.resiliationMontant ?? ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-resiliation-pct">Frais de résiliation (%)</label>
+                    <input
+                      type="text"
+                      id="ct-resiliation-pct"
+                      class="cform-input"
+                      inputmode="decimal"
+                      maxlength="10"
+                      data-defaut="resiliationPourcentage"
+                      value={defauts.resiliationPourcentage ?? ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-double-remuneration">Divulgation additionnelle</label>
+                    <select id="ct-double-remuneration" class="cform-input" data-defaut="doubleRemuneration">
+                      <option value="">— (pas de frais ni honoraires)</option>
+                      <option value="ne_recevra_pas" selected={defauts.doubleRemuneration === 'ne_recevra_pas'}>
+                        Le cabinet ne recevra pas de commission du prêteur
+                      </option>
+                      <option value="recevra" selected={defauts.doubleRemuneration === 'recevra'}>
+                        Le cabinet recevra une commission du prêteur
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <label class="cform-label ct-espace" for="ct-raison-double">
+                  Raison de la double rémunération, le cas échéant
+                </label>
+                <textarea id="ct-raison-double" class="cform-input" rows="2" maxlength="600" />
+              </div>
+            </details>
+
+            {/* ---------------- Divulgations (mémorisées) ---------------- */}
+
+            <details class="ct-repliable">
+              <summary>
+                <span class="ct-repliable-titre">Divulgations du cabinet</span>
+                <span class="ct-repliable-note">identiques d’un contrat à l’autre</span>
+              </summary>
+              <div class="ct-repliable-corps">
+                <div class="ct-grille">
+                  <div>
+                    <label class="cform-label" for="ct-nb-cabinet">Prêteurs — cabinet (12 mois)</label>
+                    <input
+                      type="text"
+                      id="ct-nb-cabinet"
+                      class="cform-input"
+                      inputmode="numeric"
+                      maxlength="10"
+                      data-defaut="nbPreteursCabinet"
+                      value={defauts.nbPreteursCabinet ?? ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-nb-courtier">Prêteurs — courtier (12 mois)</label>
+                    <input
+                      type="text"
+                      id="ct-nb-courtier"
+                      class="cform-input"
+                      inputmode="numeric"
+                      maxlength="10"
+                      data-defaut="nbPreteursCourtier"
+                      value={defauts.nbPreteursCourtier ?? ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-preteur-majoritaire">
+                      Prêteur ayant consenti &gt; 50 % des prêts
+                    </label>
+                    <input
+                      type="text"
+                      id="ct-preteur-majoritaire"
+                      class="cform-input"
+                      maxlength="200"
+                      data-defaut="preteurMajoritaire"
+                      value={defauts.preteurMajoritaire ?? ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-autres-logiciels">Autres logiciels utilisés</label>
+                    <input
+                      type="text"
+                      id="ct-autres-logiciels"
+                      class="cform-input"
+                      maxlength="200"
+                      data-defaut="autresLogiciels"
+                      value={defauts.autresLogiciels ?? ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-autre-cabinet">Autre cabinet de rattachement</label>
+                    <input
+                      type="text"
+                      id="ct-autre-cabinet"
+                      class="cform-input"
+                      maxlength="200"
+                      data-defaut="autreCabinet"
+                      value={defauts.autreCabinet ?? 'N/A'}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-collaborateur">Collaborateur (assurances)</label>
+                    <input
+                      type="text"
+                      id="ct-collaborateur"
+                      class="cform-input"
+                      maxlength="200"
+                      data-defaut="collaborateur"
+                      value={defauts.collaborateur ?? 'N/A'}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-retribution-entite">Rétribution d’une autre entité</label>
+                    <input
+                      type="text"
+                      id="ct-retribution-entite"
+                      class="cform-input"
+                      maxlength="200"
+                      data-defaut="retributionAutreEntite"
+                      value={defauts.retributionAutreEntite ?? 'N/A'}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="ct-partage-retribution">Partage de la rétribution</label>
+                    <input
+                      type="text"
+                      id="ct-partage-retribution"
+                      class="cform-input"
+                      maxlength="200"
+                      data-defaut="partageRetribution"
+                      value={defauts.partageRetribution ?? 'N/A'}
+                    />
+                  </div>
+                </div>
+
+                <div class="ct-memoriser">
+                  <button type="button" class="ct-lien" data-memoriser>
+                    Mémoriser ces valeurs pour les prochains contrats
+                  </button>
+                  <span class="ct-memoriser-etat" data-memoriser-etat hidden>Enregistré ✓</span>
+                </div>
+              </div>
+            </details>
 
             {/* ---------------- Vérification d'identité ---------------- */}
 
-            <fieldset class="ct-section">
-              <legend>Vérification de l’identité</legend>
-              <p class="ct-aide">
-                Partie réservée au courtier. Une colonne par emprunteur, dans le même ordre
-                que plus haut.
-              </p>
-              <div class="ct-identite">
-                {LIGNES_IDENTITE.map((ligne) => (
-                  <div class="ct-identite-ligne">
-                    <span class="ct-identite-label">{ligne.label}</span>
-                    {RANGS.map((rang) => (
-                      <input
-                        type="text"
-                        class="cform-input"
-                        maxlength="60"
-                        data-identite={ligne.id}
-                        data-colonne={rang}
-                        aria-label={`${ligne.label} — emprunteur ${rang + 1}`}
-                      />
-                    ))}
-                  </div>
-                ))}
+            <details class="ct-repliable">
+              <summary>
+                <span class="ct-repliable-titre">Vérification de l’identité</span>
+                <span class="ct-repliable-note">peut être remplie plus tard</span>
+              </summary>
+              <div class="ct-repliable-corps">
+                <p class="ct-aide">
+                  Une colonne par emprunteur, dans le même ordre que plus haut. Laissez vide si
+                  vous n’avez pas encore vu les pièces.
+                </p>
+                <div class="ct-identite">
+                  {LIGNES_IDENTITE.map((ligne) => (
+                    <div class="ct-identite-ligne">
+                      <span class="ct-identite-label">{ligne.label}</span>
+                      {RANGS.map((rang) => (
+                        <input
+                          type="text"
+                          class="cform-input"
+                          maxlength="60"
+                          data-identite={ligne.id}
+                          data-colonne={rang}
+                          aria-label={`${ligne.label} — emprunteur ${rang + 1}`}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <label class="cform-label ct-espace" for="ct-date-verification">
+                  Date de la vérification
+                </label>
+                <input type="text" id="ct-date-verification" class="cform-input" maxlength="40" />
               </div>
-              <label class="cform-label ct-espace" for="ct-date-verification">Date de la vérification</label>
-              <input type="text" id="ct-date-verification" class="cform-input" maxlength="40" />
-            </fieldset>
+            </details>
 
-            {/* ---------------- Signature et envoi ---------------- */}
+            {/* ---------------- Envoi ---------------- */}
 
             <fieldset class="ct-section">
-              <legend>Votre signature</legend>
-              <p class="ct-aide">
-                Le contrat part signé de votre côté. Sans votre signature, ce n’est qu’un
-                brouillon — l’envoi sera refusé.
-              </p>
-              <SignaturePad id="ct-signature" nom={config.nom} />
-
-              <p class="cform-label ct-espace">Comment les emprunteurs signent-ils ?</p>
-              <label class="ct-case">
+              <legend>Envoi</legend>
+              <label class="ct-case ct-case-large">
                 <input type="radio" name="ct-voie" value="distance" checked />
                 <span>
-                  <strong>À distance</strong> — chacun reçoit par courriel un lien personnel à
-                  usage unique. Le contrat est produit quand le dernier a signé.
+                  <strong>Par courriel</strong> — chaque emprunteur reçoit un lien personnel pour
+                  lire et signer le contrat. Vous le recevez signé quand tout le monde a signé.
                 </span>
               </label>
-              <label class="ct-case">
+              <label class="ct-case ct-case-large">
                 <input type="radio" name="ct-voie" value="presence" />
                 <span>
-                  <strong>En présence</strong> — tout le monde signe maintenant, sur cet
-                  appareil. Le contrat est produit et envoyé tout de suite.
+                  <strong>Ici, maintenant</strong> — les emprunteurs sont avec vous et signent sur
+                  cet appareil.
                 </span>
               </label>
 
@@ -360,9 +567,27 @@ const RANGS = [0, 1, 2];
             <p class="ct-erreur" data-erreur hidden />
             <p class="ct-succes" data-succes hidden />
 
-            <button type="submit" class="btn btn-primary ct-bouton" data-envoyer>
-              Créer et envoyer le contrat
-            </button>
+            {/* Aperçu du document, ouvert à la demande. */}
+            <div class="ct-apercu" data-apercu hidden>
+              <div class="ct-apercu-entete">
+                <strong>Aperçu du contrat</strong>
+                <button type="button" class="ct-lien" data-fermer-apercu>fermer</button>
+              </div>
+              <iframe data-apercu-cadre title="Aperçu du contrat de courtage"></iframe>
+            </div>
+
+            {/* Barre d'action collante : le résumé rappelle ce qui part, sans remonter. */}
+            <div class="ct-barre">
+              <p class="ct-barre-resume" data-resume>Aucun emprunteur saisi</p>
+              <div class="ct-barre-actions">
+                <button type="button" class="btn ct-bouton-secondaire" data-previsualiser>
+                  Aperçu
+                </button>
+                <button type="submit" class="btn btn-primary" data-envoyer>
+                  Créer et envoyer
+                </button>
+              </div>
+            </div>
           </form>
         )
       }
@@ -372,12 +597,21 @@ const RANGS = [0, 1, 2];
 
 <style>
   .ct-page {
-    padding: 2rem 1rem 4rem;
+    padding: 2rem 1rem 1rem;
   }
 
   .ct-shell {
-    max-width: 860px;
+    max-width: 880px;
     margin: 0 auto;
+  }
+
+  .ct-form {
+    /* Place pour la barre d'action collante, qui ne doit jamais couvrir un champ. */
+    padding-bottom: 6.5rem;
+  }
+
+  .ct-entete {
+    margin-bottom: 1.4rem;
   }
 
   .ct-titre {
@@ -388,13 +622,15 @@ const RANGS = [0, 1, 2];
   .ct-sous-titre {
     display: flex;
     align-items: baseline;
+    justify-content: space-between;
     gap: 0.75rem;
     margin: 0 0 0.7rem;
-    font-size: 1rem;
+    font-size: 0.95rem;
+    font-weight: 700;
   }
 
   .ct-texte {
-    margin: 0 0 1.4rem;
+    margin: 0 0 1rem;
     font-size: 0.92rem;
     line-height: 1.55;
     color: var(--muted);
@@ -406,8 +642,84 @@ const RANGS = [0, 1, 2];
     color: var(--muted);
   }
 
+  .ct-requis {
+    color: #a8442f;
+  }
+
+  .ct-astuce {
+    margin-left: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  /* ---------- Signature de la courtière ---------- */
+
+  .ct-signature-barre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin: 0 0 1.5rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 12px;
+    background: #faf7f2;
+  }
+
+  .ct-signature-barre[data-etat='manquante'] {
+    display: block;
+    border-color: #e0b8a4;
+    background: #fdf3ee;
+  }
+
+  .ct-signature-apercu {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .ct-signature-etiquette {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .ct-signature-apercu img {
+    height: 34px;
+    width: auto;
+    max-width: 180px;
+  }
+
+  .ct-signature-note {
+    flex: 1 1 220px;
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .ct-signature-invite {
+    margin-bottom: 0.8rem;
+    font-size: 0.9rem;
+    color: var(--ink, #1f1e1c);
+  }
+
+  .ct-signature-saisie {
+    width: 100%;
+    margin-top: 0.9rem;
+  }
+
+  .ct-signature-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1rem;
+    margin-top: 0.7rem;
+  }
+
+  /* ---------- Sections ---------- */
+
   .ct-section {
-    margin: 0 0 1.8rem;
+    margin: 0 0 1.2rem;
     padding: 1.1rem 1.15rem 1.3rem;
     border: 1px solid var(--line, #e3d9cc);
     border-radius: 12px;
@@ -418,6 +730,53 @@ const RANGS = [0, 1, 2];
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--accent, #a85f38);
+  }
+
+  /* Les sections repliables portent ce qui ne change presque jamais. */
+  .ct-repliable {
+    margin: 0 0 1.2rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 12px;
+    background: #fcfaf7;
+  }
+
+  .ct-repliable summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 0.7rem;
+    padding: 0.9rem 1.1rem;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .ct-repliable summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .ct-repliable summary::before {
+    content: '▸';
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .ct-repliable[open] summary::before {
+    content: '▾';
+  }
+
+  .ct-repliable-titre {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--accent, #a85f38);
+  }
+
+  .ct-repliable-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .ct-repliable-corps {
+    padding: 0 1.1rem 1.3rem;
   }
 
   .ct-grille {
@@ -440,9 +799,24 @@ const RANGS = [0, 1, 2];
     border-bottom: 1px dashed var(--line, #e3d9cc);
   }
 
+  .ct-ajouter {
+    padding: 0.5rem 0.9rem;
+    border: 1px dashed var(--line, #c9bba8);
+    border-radius: 8px;
+    background: none;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--accent, #a85f38);
+    cursor: pointer;
+  }
+
+  .ct-ajouter:hover {
+    border-color: var(--accent, #a85f38);
+  }
+
   .ct-cases {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 0.4rem 1rem;
   }
 
@@ -461,7 +835,10 @@ const RANGS = [0, 1, 2];
     flex: 0 0 auto;
   }
 
-  /* Le tableau d'identité : trois colonnes serrées, empilées sur mobile. */
+  .ct-case-large {
+    padding: 0.6rem 0;
+  }
+
   .ct-identite-ligne {
     display: grid;
     grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
@@ -479,6 +856,18 @@ const RANGS = [0, 1, 2];
     margin-top: 1.1rem;
   }
 
+  .ct-memoriser {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 1.1rem;
+  }
+
+  .ct-memoriser-etat {
+    font-size: 0.82rem;
+    color: #26603a;
+  }
+
   .ct-lien {
     background: none;
     border: 0;
@@ -494,8 +883,20 @@ const RANGS = [0, 1, 2];
     color: var(--ink, #1f1e1c);
   }
 
-  .ct-bouton {
+  .ct-bouton,
+  .ct-bouton-petit {
     margin-top: 0.6rem;
+  }
+
+  .ct-bouton-petit {
+    padding: 0.5rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  .ct-bouton-secondaire {
+    border: 1px solid var(--line, #c9bba8);
+    background: #fff;
+    color: var(--ink, #1f1e1c);
   }
 
   .ct-erreur,
@@ -519,6 +920,67 @@ const RANGS = [0, 1, 2];
     line-height: 1.5;
   }
 
+  /* ---------- Aperçu ---------- */
+
+  .ct-apercu {
+    margin: 1rem 0 0;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f6f2ec;
+  }
+
+  .ct-apercu-entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0.9rem;
+    background: #fff;
+    border-bottom: 1px solid var(--line, #e3d9cc);
+    font-size: 0.9rem;
+  }
+
+  .ct-apercu iframe {
+    display: block;
+    width: 100%;
+    height: 70vh;
+    min-height: 420px;
+    border: 0;
+  }
+
+  /* ---------- Barre d'action ---------- */
+
+  .ct-barre {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1rem;
+    margin-top: 1.2rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 -4px 18px rgba(31, 30, 28, 0.08);
+    backdrop-filter: blur(6px);
+  }
+
+  .ct-barre-resume {
+    flex: 1 1 200px;
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .ct-barre-actions {
+    display: flex;
+    gap: 0.6rem;
+  }
+
   .ct-connexion {
     max-width: 420px;
     margin: 0 auto;
@@ -529,6 +991,14 @@ const RANGS = [0, 1, 2];
       grid-template-columns: 1fr;
       gap: 0.25rem;
       margin-bottom: 1rem;
+    }
+
+    .ct-barre-actions {
+      width: 100%;
+    }
+
+    .ct-barre-actions .btn {
+      flex: 1 1 auto;
     }
   }
 </style>
@@ -575,21 +1045,81 @@ const RANGS = [0, 1, 2];
     // Alias non nullable : les fonctions déclarées plus bas capturent le formulaire, et
     // TypeScript ne conserve pas l'affinage de `form` à travers une déclaration de fonction.
     const formulaire: HTMLFormElement = form;
+    let signatureEnregistree = formulaire.dataset.signatureEnregistree === 'oui';
+
     const valeur = (id: string): string =>
       (document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null)?.value.trim() ??
       '';
 
-    /** Combien de blocs « Emprunteur N » sont visibles. */
     const blocs = () => [...formulaire.querySelectorAll<HTMLElement>('[data-emprunteur]')];
     const visibles = () => blocs().filter((bloc) => !bloc.hidden);
 
-    /**
-     * Les cadres de signature « en présence » suivent le nombre d'emprunteurs et la voie
-     * choisie : afficher un cadre pour un emprunteur qui n'existe pas produirait un envoi
-     * refusé côté serveur, sans que rien à l'écran l'explique.
-     */
-    function rafraichirSignatures(): void {
-      const presence = formulaire.querySelector<HTMLInputElement>('input[name="ct-voie"]:checked')?.value === 'presence';
+    /* ---------------- Signature de la courtière ---------------- */
+
+    const barreSignature = formulaire.querySelector<HTMLElement>('.ct-signature-barre');
+    const saisieSignature = formulaire.querySelector<HTMLElement>('.ct-signature-saisie');
+    const erreurSignature = formulaire.querySelector<HTMLElement>('[data-erreur-signature]');
+
+    formulaire.querySelector('[data-remplacer-signature]')?.addEventListener('click', () => {
+      if (saisieSignature) saisieSignature.hidden = false;
+    });
+    formulaire.querySelector('[data-annuler-signature]')?.addEventListener('click', () => {
+      if (saisieSignature) saisieSignature.hidden = true;
+    });
+
+    formulaire.querySelector('[data-enregistrer-signature]')?.addEventListener('click', async (evenement) => {
+      const bouton = evenement.currentTarget as HTMLButtonElement;
+      if (erreurSignature) erreurSignature.hidden = true;
+
+      const pad = document.getElementById('ct-signature') as SignaturePadElement | null;
+      const png = pad?.versPng();
+      if (!png) {
+        if (erreurSignature) {
+          erreurSignature.textContent = 'Dessinez votre signature dans le cadre.';
+          erreurSignature.hidden = false;
+        }
+        return;
+      }
+
+      bouton.disabled = true;
+      const libelle = bouton.textContent;
+      bouton.textContent = 'Enregistrement…';
+
+      try {
+        const reponse = await fetch('/api/contrat-reglages', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ signature: png }),
+        });
+        if (!reponse.ok) {
+          const data = (await reponse.json().catch(() => ({}))) as { error?: string };
+          if (erreurSignature) {
+            erreurSignature.textContent = data.error ?? 'Enregistrement impossible.';
+            erreurSignature.hidden = false;
+          }
+          bouton.disabled = false;
+          bouton.textContent = libelle;
+          return;
+        }
+        signatureEnregistree = true;
+        // Recharger montre l'aperçu de la signature servie par le serveur — la preuve
+        // qu'elle est bien enregistrée, et non seulement dessinée à l'écran.
+        window.location.reload();
+      } catch {
+        if (erreurSignature) {
+          erreurSignature.textContent = 'Connexion impossible. Réessayez.';
+          erreurSignature.hidden = false;
+        }
+        bouton.disabled = false;
+        bouton.textContent = libelle;
+      }
+    });
+
+    /* ---------------- Emprunteurs et signatures en présence ---------------- */
+
+    function rafraichir(): void {
+      const presence =
+        formulaire.querySelector<HTMLInputElement>('input[name="ct-voie"]:checked')?.value === 'presence';
       const zone = document.getElementById('ct-presence');
       if (zone) zone.hidden = !presence;
 
@@ -597,45 +1127,97 @@ const RANGS = [0, 1, 2];
       for (const bloc of formulaire.querySelectorAll<HTMLElement>('[data-signature-bloc]')) {
         const rang = Number(bloc.dataset.signatureBloc);
         bloc.hidden = !presence || rang >= nombre;
-        const pad = bloc.querySelector<SignaturePadElement>('signature-pad');
         const qui = bloc.querySelector<HTMLElement>('[data-sig-qui]');
         if (qui) {
-          const prenom = valeur(`ct-prenom-${rang}`);
-          const nom = valeur(`ct-nom-${rang}`);
-          const complet = `${prenom} ${nom}`.trim();
+          const complet = `${valeur(`ct-prenom-${rang}`)} ${valeur(`ct-nom-${rang}`)}`.trim();
           qui.textContent = complet ? `Signature de ${complet}` : `Signature de l’emprunteur ${rang + 1}`;
         }
-        void pad;
       }
+
+      // Le bouton « Ajouter » disparaît quand les trois blocs du modèle sont utilisés.
+      const ajouter = formulaire.querySelector<HTMLElement>('[data-ajouter]');
+      if (ajouter) ajouter.hidden = nombre >= blocs().length;
+
+      majResume();
+    }
+
+    /** Rappelle, sans remonter la page, ce qui partira réellement. */
+    function majResume(): void {
+      const cible = formulaire.querySelector<HTMLElement>('[data-resume]');
+      if (!cible) return;
+
+      const noms = visibles()
+        .map((bloc) => `${valeur(`ct-prenom-${bloc.dataset.emprunteur}`)} ${valeur(`ct-nom-${bloc.dataset.emprunteur}`)}`.trim())
+        .filter((nom) => nom !== '');
+
+      const types = [...formulaire.querySelectorAll<HTMLInputElement>('[data-type-financement]')]
+        .filter((entree) => entree.checked)
+        .map((entree) => entree.closest('label')?.querySelector('span')?.textContent?.trim() ?? '');
+
+      const morceaux: string[] = [];
+      morceaux.push(noms.length ? noms.join(', ') : 'Aucun emprunteur saisi');
+      if (types.length) morceaux.push(types.join(', '));
+      const montant = valeur('ct-montant');
+      if (montant) morceaux.push(`${montant} $`);
+
+      cible.textContent = morceaux.join(' · ');
     }
 
     formulaire.querySelector('[data-ajouter]')?.addEventListener('click', () => {
       const suivant = blocs().find((bloc) => bloc.hidden);
       if (suivant) suivant.hidden = false;
-      rafraichirSignatures();
+      rafraichir();
     });
 
     for (const bouton of formulaire.querySelectorAll<HTMLButtonElement>('[data-retirer]')) {
       bouton.addEventListener('click', () => {
-        const rang = bouton.dataset.retirer;
-        const bloc = formulaire.querySelector<HTMLElement>(`[data-emprunteur="${rang}"]`);
+        const bloc = formulaire.querySelector<HTMLElement>(`[data-emprunteur="${bouton.dataset.retirer}"]`);
         if (!bloc) return;
         bloc.hidden = true;
         for (const champ of bloc.querySelectorAll<HTMLInputElement>('input')) champ.value = '';
-        rafraichirSignatures();
+        rafraichir();
       });
     }
 
     for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="ct-voie"]')) {
-      radio.addEventListener('change', rafraichirSignatures);
+      radio.addEventListener('change', rafraichir);
     }
-    formulaire.addEventListener('input', (evenement) => {
-      const cible = evenement.target as HTMLElement;
-      if (cible instanceof HTMLInputElement && /^ct-(prenom|nom)-\d$/.test(cible.id)) rafraichirSignatures();
-    });
-    rafraichirSignatures();
+    formulaire.addEventListener('input', () => rafraichir());
+    formulaire.addEventListener('change', () => rafraichir());
+    rafraichir();
 
-    /* ---------------- Collecte et envoi ---------------- */
+    /* ---------------- Mémorisation des valeurs habituelles ---------------- */
+
+    formulaire.querySelector('[data-memoriser]')?.addEventListener('click', async (evenement) => {
+      const bouton = evenement.currentTarget as HTMLButtonElement;
+      const etat = formulaire.querySelector<HTMLElement>('[data-memoriser-etat]');
+      const defauts: Record<string, string> = {};
+      for (const champ of formulaire.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-defaut]')) {
+        defauts[champ.dataset.defaut ?? ''] = champ.value.trim();
+      }
+
+      bouton.disabled = true;
+      try {
+        const reponse = await fetch('/api/contrat-reglages', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ defauts }),
+        });
+        if (etat) {
+          etat.textContent = reponse.ok ? 'Enregistré ✓' : 'Échec de l’enregistrement';
+          etat.hidden = false;
+        }
+      } catch {
+        if (etat) {
+          etat.textContent = 'Échec de l’enregistrement';
+          etat.hidden = false;
+        }
+      } finally {
+        bouton.disabled = false;
+      }
+    });
+
+    /* ---------------- Collecte ---------------- */
 
     function collecter(): Record<string, unknown> {
       const emprunteurs = visibles().map((bloc) => {
@@ -716,26 +1298,81 @@ const RANGS = [0, 1, 2];
       erreur.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
+    /** Contrôles communs à l'aperçu et à l'envoi. */
+    function emprunteursValides(donnees: Record<string, unknown>): boolean {
+      const emprunteurs = donnees.emprunteurs as Array<Record<string, string>>;
+      if (emprunteurs.length === 0 || emprunteurs.some((e) => !e.prenom || !e.nom || !e.courriel)) {
+        montrerErreur('Chaque emprunteur affiché doit avoir un prénom, un nom et un courriel.');
+        return false;
+      }
+      return true;
+    }
+
+    /* ---------------- Aperçu ---------------- */
+
+    const apercu = formulaire.querySelector<HTMLElement>('[data-apercu]');
+    const cadre = formulaire.querySelector<HTMLIFrameElement>('[data-apercu-cadre]');
+    let urlApercu: string | null = null;
+
+    formulaire.querySelector('[data-fermer-apercu]')?.addEventListener('click', () => {
+      if (apercu) apercu.hidden = true;
+    });
+
+    formulaire.querySelector('[data-previsualiser]')?.addEventListener('click', async (evenement) => {
+      const declencheur = evenement.currentTarget as HTMLButtonElement;
+      if (erreur) erreur.hidden = true;
+
+      const donnees = collecter();
+      if (!emprunteursValides(donnees)) return;
+
+      declencheur.disabled = true;
+      const libelle = declencheur.textContent;
+      declencheur.textContent = 'Préparation…';
+
+      try {
+        const reponse = await fetch('/api/contrat-previsualiser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ donnees }),
+        });
+        if (!reponse.ok) {
+          montrerErreur(await reponse.text().catch(() => 'L’aperçu a échoué.'));
+          return;
+        }
+        // Un blob local plutôt qu'un rechargement du cadre : le PDF n'est jamais remis en
+        // cache et disparaît avec l'onglet.
+        if (urlApercu) URL.revokeObjectURL(urlApercu);
+        urlApercu = URL.createObjectURL(await reponse.blob());
+        if (cadre) cadre.src = urlApercu;
+        if (apercu) {
+          apercu.hidden = false;
+          apercu.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } catch {
+        montrerErreur('Connexion impossible. Vérifiez votre réseau et réessayez.');
+      } finally {
+        declencheur.disabled = false;
+        declencheur.textContent = libelle;
+      }
+    });
+
+    /* ---------------- Envoi ---------------- */
+
     formulaire.addEventListener('submit', async (evenement) => {
       evenement.preventDefault();
       if (erreur) erreur.hidden = true;
       if (succes) succes.hidden = true;
 
       const donnees = collecter();
+      if (!emprunteursValides(donnees)) return;
+
+      if (!signatureEnregistree) {
+        montrerErreur('Enregistrez d’abord votre signature, en haut de la page.');
+        barreSignature?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
       const emprunteurs = donnees.emprunteurs as Array<Record<string, string>>;
-
-      if (emprunteurs.length === 0 || emprunteurs.some((e) => !e.prenom || !e.nom || !e.courriel)) {
-        montrerErreur('Chaque emprunteur affiché doit avoir un prénom, un nom et un courriel.');
-        return;
-      }
-
-      const padCourtiere = document.getElementById('ct-signature') as SignaturePadElement | null;
-      const signatureCourtiere = padCourtiere?.versPng();
-      if (!signatureCourtiere) {
-        montrerErreur('Signez le contrat dans le cadre « Votre signature » avant de l’envoyer.');
-        return;
-      }
-
       const voie = formulaire.querySelector<HTMLInputElement>('input[name="ct-voie"]:checked')?.value ?? 'distance';
       const signatures: Record<string, string> = {};
       if (voie === 'presence') {
@@ -759,7 +1396,9 @@ const RANGS = [0, 1, 2];
         const reponse = await fetch('/api/contrat-creer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ donnees, voie, signatureCourtiere, signatures }),
+          // La signature de la courtière n'est pas transmise : le serveur prend celle qui
+          // est mémorisée. Une seule source de vérité, et rien de sensible qui circule.
+          body: JSON.stringify({ donnees, voie, signatures }),
         });
         const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
 
@@ -771,7 +1410,7 @@ const RANGS = [0, 1, 2];
           }
           if (bouton) {
             bouton.disabled = false;
-            bouton.textContent = 'Créer et envoyer le contrat';
+            bouton.textContent = 'Créer et envoyer';
           }
           return;
         }
@@ -789,7 +1428,7 @@ const RANGS = [0, 1, 2];
         montrerErreur('Connexion impossible. Vérifiez votre réseau et réessayez.');
         if (bouton) {
           bouton.disabled = false;
-          bouton.textContent = 'Créer et envoyer le contrat';
+          bouton.textContent = 'Créer et envoyer';
         }
       }
     });
