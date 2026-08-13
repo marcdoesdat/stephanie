@@ -1,0 +1,797 @@
+---
+// Générateur de contrat de courtage — /contrat. Réservé à la courtière.
+//
+// Rendu à l'exécution : la page doit vérifier le cookie d'accès à chaque requête et, faute
+// de quoi, ne rendre que l'écran de connexion. Un formulaire protégé côté client seulement
+// ne protège rien — /api/contrat-creer applique exactement le même verdict.
+//
+// Le formulaire est une page unique en sections plutôt qu'un assistant : Stéphanie remplit
+// le même document plusieurs fois par semaine et doit pouvoir sauter d'un champ à l'autre,
+// pas dérouler douze écrans.
+export const prerender = false;
+
+import MainLayout from '../layouts/MainLayout.astro';
+import SignaturePad from '../components/SignaturePad.astro';
+import { loadSiteConfig } from '../config';
+import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
+import { LIGNES_IDENTITE, TYPES_FINANCEMENT } from '../utils/contratCourtage';
+
+const config = loadSiteConfig();
+const autorise = await requeteAutorisee(Astro.request);
+const configureManquante = !accesConfigure() && !accesLibreEnDev();
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+/** Les trois blocs d'emprunteur du modèle — rendus d'avance, masqués tant qu'inutiles. */
+const RANGS = [0, 1, 2];
+---
+
+<MainLayout
+  title="Générer un contrat de courtage"
+  description="Outil interne de génération du contrat de courtage hypothécaire."
+  noindex={true}
+  sansBarreCta={true}
+>
+  <main id="main-content" class="ct-page">
+    <section class="ct-shell">
+      {
+        !autorise ? (
+          <div class="contact-form ct-connexion">
+            <h1 class="ct-titre">Générateur de contrat</h1>
+            {configureManquante ? (
+              <p class="ct-alerte">
+                L’accès n’est pas configuré : la variable d’environnement
+                <code>CONTRAT_MOT_DE_PASSE</code> est absente ou trop courte (12 caractères
+                minimum). Ajoutez-la dans Netlify, puis redéployez.
+              </p>
+            ) : (
+              <>
+                <p class="ct-texte">Cette page est réservée à {config.nom}.</p>
+                <form id="ct-connexion-form" autocomplete="on">
+                  <label class="cform-label" for="ct-mdp">Mot de passe</label>
+                  <input
+                    type="password"
+                    id="ct-mdp"
+                    class="cform-input"
+                    autocomplete="current-password"
+                    required
+                  />
+                  <p class="ct-erreur" data-erreur-connexion hidden />
+                  <button type="submit" class="btn btn-primary ct-bouton">Entrer</button>
+                </form>
+              </>
+            )}
+          </div>
+        ) : (
+          <form id="ct-form" class="contact-form ct-form" autocomplete="off">
+            <h1 class="ct-titre">Nouveau contrat de courtage</h1>
+            <p class="ct-texte">
+              Votre nom, votre numéro AMF, votre adresse et votre téléphone sont ajoutés
+              automatiquement depuis la configuration du site. Tout le reste se remplit ici.
+            </p>
+
+            {/* ---------------- Emprunteurs ---------------- */}
+
+            <fieldset class="ct-section">
+              <legend>Emprunteurs</legend>
+              {RANGS.map((rang) => (
+                <div class="ct-emprunteur" data-emprunteur={rang} hidden={rang > 0}>
+                  <h2 class="ct-sous-titre">
+                    Emprunteur {rang + 1}
+                    {rang > 0 && (
+                      <button type="button" class="ct-lien" data-retirer={rang}>
+                        retirer
+                      </button>
+                    )}
+                  </h2>
+                  <div class="ct-grille">
+                    <div>
+                      <label class="cform-label" for={`ct-prenom-${rang}`}>Prénom</label>
+                      <input type="text" id={`ct-prenom-${rang}`} class="cform-input" maxlength="60" />
+                    </div>
+                    <div>
+                      <label class="cform-label" for={`ct-nom-${rang}`}>Nom</label>
+                      <input type="text" id={`ct-nom-${rang}`} class="cform-input" maxlength="60" />
+                    </div>
+                    <div>
+                      <label class="cform-label" for={`ct-tel-${rang}`}>Téléphone</label>
+                      <input type="tel" id={`ct-tel-${rang}`} class="cform-input" maxlength="40" />
+                    </div>
+                    <div>
+                      <label class="cform-label" for={`ct-courriel-${rang}`}>Courriel</label>
+                      <input type="email" id={`ct-courriel-${rang}`} class="cform-input" maxlength="120" />
+                    </div>
+                    <div class="ct-pleine">
+                      <label class="cform-label" for={`ct-adresse-${rang}`}>Adresse</label>
+                      <input type="text" id={`ct-adresse-${rang}`} class="cform-input" maxlength="160" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button type="button" class="ct-lien" data-ajouter>+ Ajouter un emprunteur</button>
+            </fieldset>
+
+            {/* ---------------- Financement ---------------- */}
+
+            <fieldset class="ct-section">
+              <legend>Financement recherché</legend>
+
+              <label class="cform-label" for="ct-adresse-projet">Adresse du projet</label>
+              <input type="text" id="ct-adresse-projet" class="cform-input" maxlength="200" />
+
+              <p class="cform-label ct-espace">Type de financement</p>
+              <div class="ct-cases">
+                {TYPES_FINANCEMENT.map((type) => (
+                  <label class="ct-case">
+                    <input type="checkbox" data-type-financement={type.cle} />
+                    <span>{type.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              <label class="cform-label ct-espace" for="ct-precisions">Autres précisions</label>
+              <input type="text" id="ct-precisions" class="cform-input" maxlength="200" />
+
+              <div class="ct-grille ct-espace">
+                <div>
+                  <label class="cform-label" for="ct-montant">Montant du prêt ($)</label>
+                  <input type="text" id="ct-montant" class="cform-input" inputmode="numeric" maxlength="20" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-assurance">Assurance hypothécaire ($)</label>
+                  <input type="text" id="ct-assurance" class="cform-input" inputmode="numeric" maxlength="20" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-total">Total du prêt ($)</label>
+                  <input type="text" id="ct-total" class="cform-input" inputmode="numeric" maxlength="20" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-versement">Versement cap. + int. ($)</label>
+                  <input type="text" id="ct-versement" class="cform-input" inputmode="numeric" maxlength="20" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-taux">Taux d’intérêt (%)</label>
+                  <input type="text" id="ct-taux" class="cform-input" inputmode="decimal" maxlength="10" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-type-taux">Type de taux</label>
+                  <select id="ct-type-taux" class="cform-input">
+                    <option value="">—</option>
+                    <option value="fixe">Fixe</option>
+                    <option value="variable">Variable</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-amort-ans">Amortissement (ans)</label>
+                  <input type="text" id="ct-amort-ans" class="cform-input" inputmode="numeric" maxlength="4" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-amort-mois">Amortissement (mois)</label>
+                  <input type="text" id="ct-amort-mois" class="cform-input" inputmode="numeric" maxlength="4" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-terme-ans">Terme (ans)</label>
+                  <input type="text" id="ct-terme-ans" class="cform-input" inputmode="numeric" maxlength="4" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-terme-mois">Terme (mois)</label>
+                  <input type="text" id="ct-terme-mois" class="cform-input" inputmode="numeric" maxlength="4" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-rang">Rang</label>
+                  <input type="text" id="ct-rang" class="cform-input" maxlength="10" />
+                </div>
+              </div>
+
+              <label class="cform-label ct-espace" for="ct-exigences">
+                Autres exigences de l’emprunteur
+              </label>
+              <textarea id="ct-exigences" class="cform-input" rows="3" maxlength="600" />
+              <p class="ct-aide">4 lignes disponibles sur le contrat ; le surplus est tronqué.</p>
+            </fieldset>
+
+            {/* ---------------- Frais et honoraires ---------------- */}
+
+            <fieldset class="ct-section">
+              <legend>Frais et honoraires</legend>
+              <div class="ct-grille">
+                <div>
+                  <label class="cform-label" for="ct-frais-etude">Frais d’étude de dossier ($)</label>
+                  <input type="text" id="ct-frais-etude" class="cform-input" inputmode="numeric" maxlength="20" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-honoraires">Rétribution ($)</label>
+                  <input type="text" id="ct-honoraires" class="cform-input" inputmode="numeric" maxlength="20" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-honoraires-pct">Rétribution (%)</label>
+                  <input type="text" id="ct-honoraires-pct" class="cform-input" inputmode="decimal" maxlength="10" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-resiliation">Frais de résiliation ($)</label>
+                  <input type="text" id="ct-resiliation" class="cform-input" inputmode="numeric" maxlength="20" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-resiliation-pct">Frais de résiliation (%)</label>
+                  <input type="text" id="ct-resiliation-pct" class="cform-input" inputmode="decimal" maxlength="10" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-double-remuneration">Divulgation additionnelle</label>
+                  <select id="ct-double-remuneration" class="cform-input">
+                    <option value="">— (pas de frais ni honoraires)</option>
+                    <option value="ne_recevra_pas">Le cabinet ne recevra pas de commission du prêteur</option>
+                    <option value="recevra">Le cabinet recevra une commission du prêteur</option>
+                  </select>
+                </div>
+              </div>
+              <label class="cform-label ct-espace" for="ct-raison-double">
+                Raison de la double rémunération, le cas échéant
+              </label>
+              <textarea id="ct-raison-double" class="cform-input" rows="2" maxlength="600" />
+            </fieldset>
+
+            {/* ---------------- Divulgations ---------------- */}
+
+            <fieldset class="ct-section">
+              <legend>Divulgations et consentements</legend>
+              <div class="ct-grille">
+                <div>
+                  <label class="cform-label" for="ct-nb-cabinet">Prêteurs — cabinet (12 mois)</label>
+                  <input type="text" id="ct-nb-cabinet" class="cform-input" inputmode="numeric" maxlength="10" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-nb-courtier">Prêteurs — courtier (12 mois)</label>
+                  <input type="text" id="ct-nb-courtier" class="cform-input" inputmode="numeric" maxlength="10" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-preteur-majoritaire">
+                    Prêteur ayant consenti &gt; 50 % des prêts
+                  </label>
+                  <input type="text" id="ct-preteur-majoritaire" class="cform-input" maxlength="200" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-autres-logiciels">Autres logiciels utilisés</label>
+                  <input type="text" id="ct-autres-logiciels" class="cform-input" maxlength="200" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-autre-cabinet">Autre cabinet de rattachement</label>
+                  <input type="text" id="ct-autre-cabinet" class="cform-input" maxlength="200" value="N/A" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-collaborateur">Collaborateur (assurances)</label>
+                  <input type="text" id="ct-collaborateur" class="cform-input" maxlength="200" value="N/A" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-ppv">Personne politiquement vulnérable</label>
+                  <select id="ct-ppv" class="cform-input">
+                    <option value="non">Non</option>
+                    <option value="oui">Oui</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-transfert">Transfert au nouveau cabinet</label>
+                  <select id="ct-transfert" class="cform-input">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-validite">Consentements valides jusqu’au</label>
+                  <input type="text" id="ct-validite" class="cform-input" maxlength="40" placeholder="31 décembre 2026" />
+                </div>
+              </div>
+
+              <div class="ct-grille ct-espace">
+                <div>
+                  <label class="cform-label" for="ct-retribution-entite">Rétribution d’une autre entité</label>
+                  <input type="text" id="ct-retribution-entite" class="cform-input" maxlength="600" value="N/A" />
+                </div>
+                <div>
+                  <label class="cform-label" for="ct-partage-retribution">Partage de la rétribution</label>
+                  <input type="text" id="ct-partage-retribution" class="cform-input" maxlength="600" value="N/A" />
+                </div>
+              </div>
+            </fieldset>
+
+            {/* ---------------- Vérification d'identité ---------------- */}
+
+            <fieldset class="ct-section">
+              <legend>Vérification de l’identité</legend>
+              <p class="ct-aide">
+                Partie réservée au courtier. Une colonne par emprunteur, dans le même ordre
+                que plus haut.
+              </p>
+              <div class="ct-identite">
+                {LIGNES_IDENTITE.map((ligne) => (
+                  <div class="ct-identite-ligne">
+                    <span class="ct-identite-label">{ligne.label}</span>
+                    {RANGS.map((rang) => (
+                      <input
+                        type="text"
+                        class="cform-input"
+                        maxlength="60"
+                        data-identite={ligne.id}
+                        data-colonne={rang}
+                        aria-label={`${ligne.label} — emprunteur ${rang + 1}`}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <label class="cform-label ct-espace" for="ct-date-verification">Date de la vérification</label>
+              <input type="text" id="ct-date-verification" class="cform-input" maxlength="40" />
+            </fieldset>
+
+            {/* ---------------- Signature et envoi ---------------- */}
+
+            <fieldset class="ct-section">
+              <legend>Votre signature</legend>
+              <p class="ct-aide">
+                Le contrat part signé de votre côté. Sans votre signature, ce n’est qu’un
+                brouillon — l’envoi sera refusé.
+              </p>
+              <SignaturePad id="ct-signature" nom={config.nom} />
+
+              <p class="cform-label ct-espace">Comment les emprunteurs signent-ils ?</p>
+              <label class="ct-case">
+                <input type="radio" name="ct-voie" value="distance" checked />
+                <span>
+                  <strong>À distance</strong> — chacun reçoit par courriel un lien personnel à
+                  usage unique. Le contrat est produit quand le dernier a signé.
+                </span>
+              </label>
+              <label class="ct-case">
+                <input type="radio" name="ct-voie" value="presence" />
+                <span>
+                  <strong>En présence</strong> — tout le monde signe maintenant, sur cet
+                  appareil. Le contrat est produit et envoyé tout de suite.
+                </span>
+              </label>
+
+              <div id="ct-presence" hidden>
+                {RANGS.map((rang) => (
+                  <div class="ct-signature-emprunteur" data-signature-bloc={rang} hidden>
+                    <SignaturePad id={`ct-signature-${rang}`} />
+                  </div>
+                ))}
+              </div>
+            </fieldset>
+
+            <p class="ct-erreur" data-erreur hidden />
+            <p class="ct-succes" data-succes hidden />
+
+            <button type="submit" class="btn btn-primary ct-bouton" data-envoyer>
+              Créer et envoyer le contrat
+            </button>
+          </form>
+        )
+      }
+    </section>
+  </main>
+</MainLayout>
+
+<style>
+  .ct-page {
+    padding: 2rem 1rem 4rem;
+  }
+
+  .ct-shell {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .ct-titre {
+    margin: 0 0 0.6rem;
+    font-size: 1.5rem;
+  }
+
+  .ct-sous-titre {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin: 0 0 0.7rem;
+    font-size: 1rem;
+  }
+
+  .ct-texte {
+    margin: 0 0 1.4rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .ct-aide {
+    margin: 0.35rem 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .ct-section {
+    margin: 0 0 1.8rem;
+    padding: 1.1rem 1.15rem 1.3rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 12px;
+  }
+
+  .ct-section legend {
+    padding: 0 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent, #a85f38);
+  }
+
+  .ct-grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem 1rem;
+  }
+
+  .ct-pleine {
+    grid-column: 1 / -1;
+  }
+
+  .ct-espace {
+    margin-top: 1.1rem;
+  }
+
+  .ct-emprunteur {
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px dashed var(--line, #e3d9cc);
+  }
+
+  .ct-cases {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.4rem 1rem;
+  }
+
+  .ct-case {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    padding: 0.3rem 0;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    cursor: pointer;
+  }
+
+  .ct-case input {
+    margin-top: 0.15rem;
+    flex: 0 0 auto;
+  }
+
+  /* Le tableau d'identité : trois colonnes serrées, empilées sur mobile. */
+  .ct-identite-ligne {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.45rem;
+  }
+
+  .ct-identite-label {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .ct-signature-emprunteur {
+    margin-top: 1.1rem;
+  }
+
+  .ct-lien {
+    background: none;
+    border: 0;
+    padding: 0.2rem 0;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .ct-lien:hover {
+    color: var(--ink, #1f1e1c);
+  }
+
+  .ct-bouton {
+    margin-top: 0.6rem;
+  }
+
+  .ct-erreur,
+  .ct-alerte {
+    margin: 1rem 0 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: 8px;
+    background: #fdeceb;
+    color: #8f2f28;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .ct-succes {
+    margin: 1rem 0 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: 8px;
+    background: #eaf5ec;
+    color: #26603a;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .ct-connexion {
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 620px) {
+    .ct-identite-ligne {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+    }
+  }
+</style>
+
+<script>
+  import type { SignaturePadElement } from '../scripts/signaturePad';
+
+  /* ---------------- Écran de connexion ---------------- */
+
+  const connexion = document.getElementById('ct-connexion-form') as HTMLFormElement | null;
+  connexion?.addEventListener('submit', async (evenement) => {
+    evenement.preventDefault();
+    const erreur = document.querySelector<HTMLElement>('[data-erreur-connexion]');
+    const champ = document.getElementById('ct-mdp') as HTMLInputElement | null;
+    if (erreur) erreur.hidden = true;
+
+    try {
+      const reponse = await fetch('/api/contrat-acces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motDePasse: champ?.value ?? '' }),
+      });
+      if (reponse.ok) {
+        window.location.reload();
+        return;
+      }
+      const data = (await reponse.json().catch(() => ({}))) as { error?: string };
+      if (erreur) {
+        erreur.textContent = data.error ?? 'Connexion impossible.';
+        erreur.hidden = false;
+      }
+    } catch {
+      if (erreur) {
+        erreur.textContent = 'Connexion impossible. Vérifiez votre réseau.';
+        erreur.hidden = false;
+      }
+    }
+  });
+
+  /* ---------------- Formulaire ---------------- */
+
+  const form = document.getElementById('ct-form') as HTMLFormElement | null;
+  if (form) {
+    // Alias non nullable : les fonctions déclarées plus bas capturent le formulaire, et
+    // TypeScript ne conserve pas l'affinage de `form` à travers une déclaration de fonction.
+    const formulaire: HTMLFormElement = form;
+    const valeur = (id: string): string =>
+      (document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null)?.value.trim() ??
+      '';
+
+    /** Combien de blocs « Emprunteur N » sont visibles. */
+    const blocs = () => [...formulaire.querySelectorAll<HTMLElement>('[data-emprunteur]')];
+    const visibles = () => blocs().filter((bloc) => !bloc.hidden);
+
+    /**
+     * Les cadres de signature « en présence » suivent le nombre d'emprunteurs et la voie
+     * choisie : afficher un cadre pour un emprunteur qui n'existe pas produirait un envoi
+     * refusé côté serveur, sans que rien à l'écran l'explique.
+     */
+    function rafraichirSignatures(): void {
+      const presence = formulaire.querySelector<HTMLInputElement>('input[name="ct-voie"]:checked')?.value === 'presence';
+      const zone = document.getElementById('ct-presence');
+      if (zone) zone.hidden = !presence;
+
+      const nombre = visibles().length;
+      for (const bloc of formulaire.querySelectorAll<HTMLElement>('[data-signature-bloc]')) {
+        const rang = Number(bloc.dataset.signatureBloc);
+        bloc.hidden = !presence || rang >= nombre;
+        const pad = bloc.querySelector<SignaturePadElement>('signature-pad');
+        const qui = bloc.querySelector<HTMLElement>('[data-sig-qui]');
+        if (qui) {
+          const prenom = valeur(`ct-prenom-${rang}`);
+          const nom = valeur(`ct-nom-${rang}`);
+          const complet = `${prenom} ${nom}`.trim();
+          qui.textContent = complet ? `Signature de ${complet}` : `Signature de l’emprunteur ${rang + 1}`;
+        }
+        void pad;
+      }
+    }
+
+    formulaire.querySelector('[data-ajouter]')?.addEventListener('click', () => {
+      const suivant = blocs().find((bloc) => bloc.hidden);
+      if (suivant) suivant.hidden = false;
+      rafraichirSignatures();
+    });
+
+    for (const bouton of formulaire.querySelectorAll<HTMLButtonElement>('[data-retirer]')) {
+      bouton.addEventListener('click', () => {
+        const rang = bouton.dataset.retirer;
+        const bloc = formulaire.querySelector<HTMLElement>(`[data-emprunteur="${rang}"]`);
+        if (!bloc) return;
+        bloc.hidden = true;
+        for (const champ of bloc.querySelectorAll<HTMLInputElement>('input')) champ.value = '';
+        rafraichirSignatures();
+      });
+    }
+
+    for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="ct-voie"]')) {
+      radio.addEventListener('change', rafraichirSignatures);
+    }
+    formulaire.addEventListener('input', (evenement) => {
+      const cible = evenement.target as HTMLElement;
+      if (cible instanceof HTMLInputElement && /^ct-(prenom|nom)-\d$/.test(cible.id)) rafraichirSignatures();
+    });
+    rafraichirSignatures();
+
+    /* ---------------- Collecte et envoi ---------------- */
+
+    function collecter(): Record<string, unknown> {
+      const emprunteurs = visibles().map((bloc) => {
+        const rang = bloc.dataset.emprunteur;
+        return {
+          prenom: valeur(`ct-prenom-${rang}`),
+          nom: valeur(`ct-nom-${rang}`),
+          telephone: valeur(`ct-tel-${rang}`),
+          adresse: valeur(`ct-adresse-${rang}`),
+          courriel: valeur(`ct-courriel-${rang}`),
+        };
+      });
+
+      const typesFinancement = [...formulaire.querySelectorAll<HTMLInputElement>('[data-type-financement]')]
+        .filter((entree) => entree.checked)
+        .map((entree) => entree.dataset.typeFinancement ?? '');
+
+      const identite: Record<string, string[]> = {};
+      for (const champ of formulaire.querySelectorAll<HTMLInputElement>('[data-identite]')) {
+        const cle = champ.dataset.identite ?? '';
+        const colonne = Number(champ.dataset.colonne ?? '0');
+        if (colonne >= emprunteurs.length) continue;
+        identite[cle] ??= [];
+        identite[cle][colonne] = champ.value.trim();
+      }
+      for (const cle of Object.keys(identite)) {
+        identite[cle] = Array.from(identite[cle] ?? [], (v) => v ?? '');
+      }
+
+      return {
+        emprunteurs,
+        retributionAutreEntite: valeur('ct-retribution-entite'),
+        partageRetribution: valeur('ct-partage-retribution'),
+        autreCabinet: valeur('ct-autre-cabinet'),
+        nbPreteursCabinet: valeur('ct-nb-cabinet'),
+        nbPreteursCourtier: valeur('ct-nb-courtier'),
+        preteurMajoritaire: valeur('ct-preteur-majoritaire'),
+        autresLogiciels: valeur('ct-autres-logiciels'),
+        collaborateur: valeur('ct-collaborateur'),
+        ppv: valeur('ct-ppv'),
+        adresseProjet: valeur('ct-adresse-projet'),
+        typesFinancement,
+        autresPrecisions: valeur('ct-precisions'),
+        montantPret: valeur('ct-montant'),
+        assuranceHypothecaire: valeur('ct-assurance'),
+        totalPret: valeur('ct-total'),
+        tauxInteret: valeur('ct-taux'),
+        typeTaux: valeur('ct-type-taux'),
+        amortissementAns: valeur('ct-amort-ans'),
+        amortissementMois: valeur('ct-amort-mois'),
+        termeAns: valeur('ct-terme-ans'),
+        termeMois: valeur('ct-terme-mois'),
+        versement: valeur('ct-versement'),
+        rang: valeur('ct-rang'),
+        autresExigences: valeur('ct-exigences'),
+        fraisEtude: valeur('ct-frais-etude'),
+        honorairesMontant: valeur('ct-honoraires'),
+        honorairesPourcentage: valeur('ct-honoraires-pct'),
+        doubleRemuneration: valeur('ct-double-remuneration'),
+        raisonDoubleRemuneration: valeur('ct-raison-double'),
+        resiliationMontant: valeur('ct-resiliation'),
+        resiliationPourcentage: valeur('ct-resiliation-pct'),
+        transfertCabinet: valeur('ct-transfert'),
+        consentementsValidesJusquau: valeur('ct-validite'),
+        identite,
+        dateVerification: valeur('ct-date-verification'),
+      };
+    }
+
+    const erreur = formulaire.querySelector<HTMLElement>('[data-erreur]');
+    const succes = formulaire.querySelector<HTMLElement>('[data-succes]');
+    const bouton = formulaire.querySelector<HTMLButtonElement>('[data-envoyer]');
+
+    function montrerErreur(message: string): void {
+      if (!erreur) return;
+      erreur.textContent = message;
+      erreur.hidden = false;
+      erreur.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    formulaire.addEventListener('submit', async (evenement) => {
+      evenement.preventDefault();
+      if (erreur) erreur.hidden = true;
+      if (succes) succes.hidden = true;
+
+      const donnees = collecter();
+      const emprunteurs = donnees.emprunteurs as Array<Record<string, string>>;
+
+      if (emprunteurs.length === 0 || emprunteurs.some((e) => !e.prenom || !e.nom || !e.courriel)) {
+        montrerErreur('Chaque emprunteur affiché doit avoir un prénom, un nom et un courriel.');
+        return;
+      }
+
+      const padCourtiere = document.getElementById('ct-signature') as SignaturePadElement | null;
+      const signatureCourtiere = padCourtiere?.versPng();
+      if (!signatureCourtiere) {
+        montrerErreur('Signez le contrat dans le cadre « Votre signature » avant de l’envoyer.');
+        return;
+      }
+
+      const voie = formulaire.querySelector<HTMLInputElement>('input[name="ct-voie"]:checked')?.value ?? 'distance';
+      const signatures: Record<string, string> = {};
+      if (voie === 'presence') {
+        for (const [rang] of emprunteurs.entries()) {
+          const pad = document.getElementById(`ct-signature-${rang}`) as SignaturePadElement | null;
+          const png = pad?.versPng();
+          if (!png) {
+            montrerErreur(`Il manque la signature de l’emprunteur ${rang + 1}.`);
+            return;
+          }
+          signatures[String(rang)] = png;
+        }
+      }
+
+      if (bouton) {
+        bouton.disabled = true;
+        bouton.textContent = 'Envoi…';
+      }
+
+      try {
+        const reponse = await fetch('/api/contrat-creer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ donnees, voie, signatureCourtiere, signatures }),
+        });
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+
+        if (!reponse.ok) {
+          if (data.code === 'acces') {
+            montrerErreur('Votre session a expiré. Rechargez la page pour vous reconnecter.');
+          } else {
+            montrerErreur(String(data.error ?? 'L’envoi a échoué. Réessayez.'));
+          }
+          if (bouton) {
+            bouton.disabled = false;
+            bouton.textContent = 'Créer et envoyer le contrat';
+          }
+          return;
+        }
+
+        const enAttente = (data.enAttente ?? []) as Array<{ nom: string; courriel: string }>;
+        if (succes) {
+          succes.textContent = enAttente.length
+            ? `Contrat envoyé. En attente de signature : ${enAttente.map((e) => `${e.nom} (${e.courriel})`).join(', ')}.`
+            : 'Contrat signé par toutes les parties et envoyé dans votre boîte courriel.';
+          succes.hidden = false;
+          succes.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (bouton) bouton.textContent = 'Contrat envoyé';
+      } catch {
+        montrerErreur('Connexion impossible. Vérifiez votre réseau et réessayez.');
+        if (bouton) {
+          bouton.disabled = false;
+          bouton.textContent = 'Créer et envoyer le contrat';
+        }
+      }
+    });
+  }
+</script>

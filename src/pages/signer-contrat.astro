@@ -1,0 +1,444 @@
+---
+// Signature à distance du contrat de courtage — /signer-contrat?d=<dossier>&j=<jeton>.
+//
+// Rendu à l'exécution : la page doit ouvrir le dossier avec le jeton pour afficher le
+// contrat **en lecture seule**. C'est le cœur de la conformité — on ne demande à personne
+// de signer un document qu'il n'a pas lu. L'emprunteur ne peut rien modifier ; s'il n'est
+// pas d'accord, il le signale et le dossier est gelé.
+export const prerender = false;
+
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../assets/stephanie.webp';
+import MainLayout from '../layouts/MainLayout.astro';
+import SignaturePad from '../components/SignaturePad.astro';
+import { loadSiteConfig } from '../config';
+import { ouvrirParJeton } from '../services/contratDossierService';
+import { TEXTE_ATTESTATION, nomComplet, resumerContrat } from '../utils/contratCourtage';
+
+const config = loadSiteConfig();
+const prenomCourtiere = config.nom.split(' ')[0];
+
+const dossierId = Astro.url.searchParams.get('d');
+const jeton = Astro.url.searchParams.get('j');
+const ouvert = await ouvrirParJeton(dossierId, jeton);
+
+const entree = ouvert ? ouvert.dossier.emprunteurs[ouvert.index] : null;
+const lignes = ouvert ? resumerContrat(ouvert.dossier.donnees) : [];
+const dejaSignes = ouvert
+  ? ouvert.dossier.emprunteurs.filter((e) => e.signature !== null).map((e) => nomComplet(e.emprunteur))
+  : [];
+
+// Un lien de signature ne doit jamais être mis en cache par un intermédiaire.
+Astro.response.headers.set('Cache-Control', 'no-store');
+---
+
+<MainLayout
+  title="Signer le contrat de courtage"
+  description="Signature du contrat de courtage hypothécaire."
+  noindex={true}
+  sansBarreCta={true}
+>
+  <main id="main-content" class="signer-page">
+    <section class="signer-shell">
+      <div class="contact-form quiz">
+        <div class="quiz-trust">
+          <Image
+            src={stephaniePhoto}
+            alt={`${config.nom}, ${config.titre}`}
+            width={56}
+            height={56}
+            class="quiz-trust-photo"
+            loading="eager"
+          />
+          <div>
+            <p class="quiz-trust-nom">{config.nom}</p>
+            <p class="quiz-trust-titre">{config.titre} — AMF {config.amf}</p>
+          </div>
+        </div>
+
+        {
+          !ouvert || !entree ? (
+            <div class="sc-etat">
+              <h1 class="sc-titre">Ce lien n’est plus valide</h1>
+              <p class="sc-texte">
+                Il a peut-être déjà servi — un lien de signature ne fonctionne qu’une fois —
+                ou le contrat a expiré, ou un autre emprunteur a signalé un désaccord.
+              </p>
+              <p class="sc-texte">
+                Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a> ou
+                appelez au <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>,
+                {' '}{prenomCourtiere} vous en renverra un.
+              </p>
+            </div>
+          ) : (
+            <div
+              id="sc-app"
+              data-dossier={dossierId}
+              data-jeton={jeton}
+              data-nom={nomComplet(entree.emprunteur)}
+            >
+              <div data-ecran="lecture">
+                <h1 class="sc-titre">Votre contrat de courtage</h1>
+                <p class="sc-texte">
+                  Bonjour {entree.emprunteur.prenom}, {prenomCourtiere} a préparé votre contrat
+                  de courtage hypothécaire. Relisez-le en entier, puis signez au bas de la page.
+                </p>
+
+                {dejaSignes.length > 0 && (
+                  <p class="sc-note">Déjà signé par : {dejaSignes.join(', ')}.</p>
+                )}
+
+                <h2 class="sc-sous-titre">Ce que vous vous apprêtez à signer</h2>
+                <dl class="sc-recap">
+                  {lignes.map(([libelle, valeur]) => (
+                    <div class="sc-recap-ligne">
+                      <dt>{libelle}</dt>
+                      <dd>{valeur}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <details class="sc-details">
+                  <summary>Les engagements et consentements du contrat</summary>
+                  <div class="sc-details-corps">
+                    <p>
+                      En signant, vous confirmez avoir été informé de la rémunération du cabinet
+                      et du courtier, vous autorisez la collecte et la vérification des
+                      renseignements nécessaires à votre demande de financement, et vous vous
+                      engagez à ne pas utiliser le travail du courtier pour négocier vous-même
+                      un financement équivalent pendant la durée du contrat.
+                    </p>
+                    <p>
+                      Le texte intégral est celui du formulaire officiel d’Hypotheca. Le document
+                      signé vous sera transmis par {prenomCourtiere}. Si une clause vous
+                      préoccupe, ne signez pas : utilisez « Je ne suis pas d’accord » ci-dessous.
+                    </p>
+                  </div>
+                </details>
+
+                <label class="sc-attestation">
+                  <input type="checkbox" data-attestation />
+                  <span>{TEXTE_ATTESTATION}</span>
+                </label>
+
+                <SignaturePad id="sc-signature" nom={nomComplet(entree.emprunteur)} />
+
+                <p class="sc-erreur" data-erreur hidden></p>
+
+                <div class="sc-actions">
+                  <button type="button" class="btn btn-primary" data-signer>
+                    Signer le contrat
+                  </button>
+                  <button type="button" class="sc-refus-lien" data-vers-refus>
+                    Je ne suis pas d’accord
+                  </button>
+                </div>
+              </div>
+
+              <div data-ecran="refus" hidden>
+                <h1 class="sc-titre">Qu’est-ce qui ne va pas ?</h1>
+                <p class="sc-texte">
+                  Rien ne sera signé. {prenomCourtiere} sera prévenue, corrigera le contrat et
+                  vous en renverra un. Dites-lui en deux mots ce qui cloche — c’est facultatif.
+                </p>
+                <label class="cform-label" for="sc-motif">Ce qui ne correspond pas</label>
+                <textarea
+                  id="sc-motif"
+                  class="cform-input"
+                  rows="4"
+                  maxlength="500"
+                  placeholder="Par exemple : le montant du prêt n’est pas celui dont nous avions parlé."
+                ></textarea>
+                <p class="sc-erreur" data-erreur-refus hidden></p>
+                <div class="sc-actions">
+                  <button type="button" class="btn btn-primary" data-envoyer-refus>
+                    Envoyer à {prenomCourtiere}
+                  </button>
+                  <button type="button" class="sc-refus-lien" data-retour>Revenir au contrat</button>
+                </div>
+              </div>
+
+              <div data-ecran="merci" hidden>
+                <h1 class="sc-titre" data-merci-titre>Merci, c’est signé</h1>
+                <p class="sc-texte" data-merci-texte></p>
+                <p class="sc-texte">
+                  Une question ? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>.
+                </p>
+              </div>
+            </div>
+          )
+        }
+      </div>
+    </section>
+  </main>
+</MainLayout>
+
+<style>
+  .signer-page {
+    padding: 2rem 1rem 4rem;
+  }
+
+  .signer-shell {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .sc-titre {
+    margin: 0 0 0.6rem;
+    font-size: 1.5rem;
+  }
+
+  .sc-sous-titre {
+    margin: 1.8rem 0 0.6rem;
+    font-size: 1.05rem;
+  }
+
+  .sc-texte {
+    margin: 0 0 0.9rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .sc-note {
+    margin: 0 0 1rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* Le récapitulatif est la pièce maîtresse : il doit se lire, pas se survoler. */
+  .sc-recap {
+    margin: 0 0 1.4rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .sc-recap-ligne {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid var(--line, #e3d9cc);
+    font-size: 0.88rem;
+  }
+
+  .sc-recap-ligne:last-child {
+    border-bottom: 0;
+  }
+
+  .sc-recap dt {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .sc-recap dd {
+    margin: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .sc-details {
+    margin: 0 0 1.4rem;
+    font-size: 0.9rem;
+  }
+
+  .sc-details summary {
+    cursor: pointer;
+    padding: 0.5rem 0;
+  }
+
+  .sc-details-corps p {
+    margin: 0 0 0.8rem;
+    line-height: 1.55;
+  }
+
+  .sc-attestation {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin: 0 0 1.2rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    cursor: pointer;
+  }
+
+  .sc-attestation input {
+    margin-top: 0.2rem;
+    flex: 0 0 auto;
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .sc-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    margin-top: 1.4rem;
+  }
+
+  .sc-refus-lien {
+    background: none;
+    border: 0;
+    padding: 0.2rem 0;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .sc-refus-lien:hover {
+    color: var(--ink, #1f1e1c);
+  }
+
+  .sc-erreur {
+    margin: 1rem 0 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: 8px;
+    background: #fdeceb;
+    color: #8f2f28;
+    font-size: 0.88rem;
+  }
+
+  .sc-etat {
+    padding: 0.5rem 0;
+  }
+
+  @media (max-width: 560px) {
+    .sc-recap-ligne {
+      grid-template-columns: 1fr;
+      gap: 0.15rem;
+    }
+  }
+</style>
+
+<script>
+  import type { SignaturePadElement } from '../scripts/signaturePad';
+
+  const app = document.getElementById('sc-app');
+  if (app) {
+    const ecran = (nom: string) => app.querySelector<HTMLElement>(`[data-ecran="${nom}"]`);
+    const pad = document.getElementById('sc-signature') as SignaturePadElement | null;
+    const attestation = app.querySelector<HTMLInputElement>('[data-attestation]');
+    const erreur = app.querySelector<HTMLElement>('[data-erreur]');
+    const erreurRefus = app.querySelector<HTMLElement>('[data-erreur-refus]');
+
+    const dossier = app.dataset.dossier ?? '';
+    const jeton = app.dataset.jeton ?? '';
+
+    function afficher(nom: string): void {
+      for (const cle of ['lecture', 'refus', 'merci']) {
+        const bloc = ecran(cle);
+        if (bloc) bloc.hidden = cle !== nom;
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function montrerErreur(cible: HTMLElement | null, message: string): void {
+      if (!cible) return;
+      cible.textContent = message;
+      cible.hidden = false;
+    }
+
+    function masquerErreur(cible: HTMLElement | null): void {
+      if (cible) cible.hidden = true;
+    }
+
+    async function envoyer(corps: Record<string, unknown>): Promise<{ ok: boolean; data: Record<string, unknown> }> {
+      const reponse = await fetch('/api/contrat-signer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ d: dossier, j: jeton, ...corps }),
+      });
+      const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+      return { ok: reponse.ok, data };
+    }
+
+    /* ---------- Signature ---------- */
+
+    const boutonSigner = app.querySelector<HTMLButtonElement>('[data-signer]');
+    boutonSigner?.addEventListener('click', async () => {
+      masquerErreur(erreur);
+
+      if (!attestation?.checked) {
+        montrerErreur(erreur, 'Cochez la case de confirmation avant de signer.');
+        return;
+      }
+      if (!pad?.estRempli()) {
+        montrerErreur(erreur, 'Signez dans le cadre — ou utilisez « signer en tapant mon nom ».');
+        return;
+      }
+
+      boutonSigner.disabled = true;
+      const libelleOrigine = boutonSigner.textContent;
+      boutonSigner.textContent = 'Envoi…';
+
+      try {
+        const { ok, data } = await envoyer({
+          action: 'signature',
+          attestation: true,
+          signature: pad.versPng(),
+        });
+
+        if (!ok) {
+          montrerErreur(erreur, String(data.error ?? 'L’envoi a échoué. Réessayez.'));
+          boutonSigner.disabled = false;
+          boutonSigner.textContent = libelleOrigine;
+          return;
+        }
+
+        const titre = app.querySelector<HTMLElement>('[data-merci-titre]');
+        const texte = app.querySelector<HTMLElement>('[data-merci-texte]');
+        if (titre) titre.textContent = 'Merci, votre signature est enregistrée';
+        if (texte) {
+          texte.textContent = data.complet
+            ? 'Le contrat est signé par toutes les parties. Stéphanie vous en fera parvenir une copie.'
+            : 'Il reste des personnes à signer. Vous recevrez une confirmation quand ce sera fait.';
+        }
+        afficher('merci');
+      } catch {
+        montrerErreur(erreur, 'Connexion impossible. Vérifiez votre réseau et réessayez.');
+        boutonSigner.disabled = false;
+        boutonSigner.textContent = libelleOrigine;
+      }
+    });
+
+    /* ---------- Désaccord ---------- */
+
+    app.querySelector('[data-vers-refus]')?.addEventListener('click', () => afficher('refus'));
+    app.querySelector('[data-retour]')?.addEventListener('click', () => afficher('lecture'));
+
+    const boutonRefus = app.querySelector<HTMLButtonElement>('[data-envoyer-refus]');
+    boutonRefus?.addEventListener('click', async () => {
+      masquerErreur(erreurRefus);
+      boutonRefus.disabled = true;
+      const libelleOrigine = boutonRefus.textContent;
+      boutonRefus.textContent = 'Envoi…';
+
+      const motif = app.querySelector<HTMLTextAreaElement>('#sc-motif')?.value ?? '';
+
+      try {
+        const { ok, data } = await envoyer({ action: 'refus', motif });
+        if (!ok) {
+          montrerErreur(erreurRefus, String(data.error ?? 'L’envoi a échoué. Réessayez.'));
+          boutonRefus.disabled = false;
+          boutonRefus.textContent = libelleOrigine;
+          return;
+        }
+        const titre = app.querySelector<HTMLElement>('[data-merci-titre]');
+        const texte = app.querySelector<HTMLElement>('[data-merci-texte]');
+        if (titre) titre.textContent = 'C’est noté, rien n’a été signé';
+        if (texte) {
+          texte.textContent =
+            'Stéphanie a été prévenue. Elle vous rappellera, corrigera le contrat et vous en renverra un.';
+        }
+        afficher('merci');
+      } catch {
+        montrerErreur(erreurRefus, 'Connexion impossible. Vérifiez votre réseau et réessayez.');
+        boutonRefus.disabled = false;
+        boutonRefus.textContent = libelleOrigine;
+      }
+    });
+  }
+</script>

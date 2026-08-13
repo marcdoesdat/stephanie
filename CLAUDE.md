@@ -46,6 +46,8 @@ src/
 | `/rappel` | Statique | Formulaire de prise de rappel |
 | `/profil-emprunteur` | Statique | Formulaire AMF « Profil des emprunteurs » en tuiles + signature dessinée (noindex, sans Nav/Footer) |
 | `/signer` | SSR | Co-signature à distance par lien nominatif (noindex, sans Nav/Footer) |
+| `/contrat` | SSR | Générateur du contrat de courtage — réservé à la courtière, protégé par mot de passe (noindex) |
+| `/signer-contrat` | SSR | Signature du contrat de courtage par lien nominatif (noindex, sans Nav/Footer) |
 | `/refinancement` | Statique | Landing publicitaire V1 (funnel quiz 4 étapes, noindex, sans Nav/Footer) |
 | `/refinancement-v2` | Statique | Landing publicitaire V2 (funnel 5 étapes sans chiffre exact, noindex, sans Nav/Footer) |
 | `/refinancement/merci` | Statique | Page de remerciement du funnel V2 (noindex, sans Nav/Footer) |
@@ -71,6 +73,9 @@ src/
 | `/api/refinancement-v2-submit` | API | Soumission du funnel publicitaire V2 (`/refinancement-v2`), équité déduite des tranches |
 | `/api/profil-submit` | API | Soumission du profil des emprunteurs — estampe le PDF officiel, ou ouvre un dossier de co-signature |
 | `/api/profil-cosigner` | API | Signature (ou désaccord) d'un co-emprunteur via son lien nominatif |
+| `/api/contrat-acces` | API | Ouverture de session sur `/contrat` (mot de passe partagé → cookie signé) |
+| `/api/contrat-creer` | API | Création du contrat de courtage — estampe le modèle, ou ouvre un dossier de signature |
+| `/api/contrat-signer` | API | Signature (ou refus) d'un emprunteur via son lien nominatif |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
 prérend chaque page au build sauf si elle déclare `export const prerender = false`.
@@ -189,6 +194,27 @@ Source de vérité du formulaire AMF « Profil des emprunteurs », partagée ent
 - **Si Hypotheca révise le formulaire**, il faut régénérer le modèle *et* réextraire les
   coordonnées — voir l'entête du fichier.
 
+### `src/utils/contratCourtage.ts`
+Source de vérité du « Contrat de courtage hypothécaire », partagée entre `/contrat`,
+`/signer-contrat` et les trois endpoints `contrat-*`.
+- Catalogue complet des champs du modèle PDF avec **leurs coordonnées sur les 4 pages**
+  (pages 612 × 1008 pt — format légal, pas lettre)
+- `TYPES_FINANCEMENT`, `TYPES_TAUX`, `DOUBLE_REMUNERATION`, `PPV_CASES`… — cases à cocher,
+  qui servent aussi de whitelist de validation côté serveur
+- `LIGNES_IDENTITE` + `COLONNES_IDENTITE` — le tableau de vérification d'identité (10 × 3)
+- `parserDonneesContrat`, `parserEmprunteurs` — validation stricte : toute option hors
+  catalogue fait échouer la requête, les champs libres sont normalisés et plafonnés
+- `repartirSurLignes` — répartit un texte libre sur les 2 à 4 lignes que le modèle réserve
+- Tests : `src/utils/contratCourtage.test.ts`
+- **Si Hypotheca révise le contrat**, il faut régénérer le modèle *et* réextraire les
+  coordonnées — voir l'entête du fichier.
+
+### `src/utils/traceSignature.ts`
+Validation des tracés de signature (PNG), partagée par le profil et le contrat :
+nombre magique, poids, et dimensions lues dans le chunk IHDR **avant** que pdf-lib ne
+touche aux octets. `src/utils/profilEmprunteurs.ts` la réexporte pour les appelants
+historiques.
+
 ### `src/utils/refinancementV2.ts`
 Source de vérité du funnel `/refinancement-v2`, partagée entre la page et `/api/refinancement-v2-submit`.
 - `INTENTIONS`, `VALEURS`, `SOLDES` — libellés + milieux de tranche ; servent aussi de whitelist de validation côté API
@@ -232,6 +258,47 @@ est identique au modèle au pixel près.
 - En dev sans Resend, tout s'exécute quand même (dossier compris) et les liens de signature sont
   imprimés dans la console : c'est la seule façon de dérouler la chaîne en local.
 
+## Contrat de courtage hypothécaire
+
+Stéphanie prépare le contrat dans un formulaire, le signe, et chaque emprunteur reçoit un
+lien nominatif pour le lire et le signer. Aucune plateforme externe : la chaîne de signature
+est celle déjà éprouvée par le « Profil des emprunteurs ».
+
+Le PDF officiel n'est **jamais reconstruit** : on charge le modèle d'Hypotheca et on estampe
+par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signature, dates).
+
+| Fichier | Rôle |
+|---------|------|
+| `src/data/contratCourtageModele.ts` | Le modèle PDF vierge en base64 — **fichier généré**, ne pas éditer |
+| `scripts/encode-modele.mjs` | Régénère le module : `node scripts/encode-modele.mjs <pdf> contrat` |
+| `src/utils/contratCourtage.ts` | Catalogue des champs, coordonnées, validation |
+| `src/services/contratPdfService.ts` | Estampage pdf-lib + empreintes SHA-256 |
+| `src/services/contratDossierService.ts` | Dossiers en attente de signature (Netlify Blobs, jetons hachés) |
+| `src/services/contratCourriels.ts` | Courriels + **trace de preuve** des signatures |
+| `src/services/accesCourtiere.ts` | Mot de passe partagé + cookie signé de `/contrat` |
+| `src/services/dossierStockage.ts` | Socle commun au profil et au contrat : stockage Blobs, jetons, purge |
+
+**Règles :**
+- **Rien n'est ajouté au PDF hors des champs du modèle.** La trace de preuve (horodatage
+  serveur, IP, navigateur, empreintes) vit dans le courriel interne, jamais dans le document.
+- **Le PDF ne sort que vers la courtière.** Les emprunteurs reçoivent un accusé sans pièce
+  jointe ; les endpoints ne renvoient jamais le document au navigateur.
+- **La courtière signe à la création.** Un contrat envoyé sans sa signature est refusé —
+  ce serait un brouillon, pas un contrat.
+- Les initiales ne sont estampées que pour les emprunteurs **ayant effectivement signé** :
+  des initiales sans signature laisseraient croire qu'une clause a été acceptée.
+- Les jetons de signature sont à usage unique, stockés hachés (SHA-256), comparés à temps
+  constant, et expirent après 10 jours (plus court que le profil : les conditions bougent).
+- Si un emprunteur refuse, le dossier est **gelé** : aucun PDF, tous les liens restants
+  meurent, Stéphanie est prévenue. Mieux vaut un dossier gelé qu'une signature arrachée.
+- Le dossier Blob est supprimé dès le PDF produit — les tracés ne restent pas au repos.
+- `/contrat` et `/api/contrat-creer` appliquent **le même** verdict d'accès : une page
+  protégée devant une API ouverte ne protège rien.
+- Sans `CONTRAT_MOT_DE_PASSE` en production, la page se **ferme** (fail closed). En dev,
+  elle reste ouverte pour pouvoir travailler en local.
+- En dev sans Resend, tout s'exécute quand même (dossier compris) et les liens de signature
+  sont imprimés dans la console.
+
 ## Configuration
 
 ### `src/config/siteConfig.json`
@@ -260,6 +327,11 @@ npx vitest              # mode watch
 ```
 
 - `src/lib/penalite.test.ts` — 35+ cas sur la logique de pénalité (3 mois, IRD, cas limites)
+- `src/utils/contratCourtage.test.ts` — géométrie du modèle PDF + whitelist de validation
+- `src/services/contratPdfService.test.ts` — estampage : 4 pages au bon format, caractères
+  hors WinAnsi, champs trop longs tronqués plutôt que débordants
+- `src/services/contratDossierService.test.ts` — jetons à usage unique, expiration, gel sur refus
+- `src/services/accesCourtiere.test.ts` — porte de `/contrat` (fail closed, rotation du secret)
 - Date de référence fixe dans les tests : 2026-05-14
 
 ## Conventions
@@ -295,6 +367,7 @@ Push sur `main` → Netlify build automatique.
 | `RESEND_API_KEY` | Oui (formulaires) | Clé API Resend — partagée par tous les formulaires (`/api/*-submit`) |
 | `RESEND_FROM_EMAIL` | Oui (formulaires) | Adresse d'expéditeur vérifiée dans Resend, partagée par tous les formulaires |
 | `RESEND_NOTIFY_EMAIL` | Oui (formulaires) | Adresse interne qui reçoit les notifications (boîte de la courtière) |
+| `CONTRAT_MOT_DE_PASSE` | Oui (`/contrat`) | Mot de passe partagé du générateur de contrats — 12 caractères minimum. **Absent en production = page fermée.** |
 | `ENABLE_RATES_PROXY=1` | Non | Active le proxy r.jina.ai comme fallback de scraping |
 | `DEBUG_RATES=1` | Non | Logs détaillés du scraping des taux |
 
