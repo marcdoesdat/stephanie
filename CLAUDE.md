@@ -252,6 +252,11 @@ est identique au modèle au pixel près.
 - **Le PDF ne sort que vers la courtière.** Seul le courriel interne le porte en pièce jointe : les
   signataires reçoivent un accusé de signature sans document, et les endpoints ne renvoient plus
   ni `pdf` ni `filename` au navigateur — l'écran de confirmation ne propose aucun téléchargement.
+- **Le nombre d'emprunteurs est demandé, jamais déduit.** Un écran dédié — en tuiles, sans valeur
+  par défaut — précède la liste des signataires. Tant que la liste s'ouvrait sur une seule carte
+  suivie d'un « + Ajouter » discret, le co-emprunteur se retrouvait absent d'un formulaire pourtant
+  signé « notre vision commune ». Le bouton « + Ajouter » reste, mais comme correction, pas comme
+  seul chemin.
 - Les tracés de signature ne sont **jamais persistés côté navigateur** et le dossier Blob est
   supprimé dès le PDF produit. TTL de 14 jours, purge opportuniste à la création.
 - Le parcours reprend où il en était après un rechargement : réponses **et écran courant**
