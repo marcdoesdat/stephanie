@@ -191,6 +191,18 @@ describe('ouvrirParJeton', () => {
     expect(ouvert?.index).toBe(0);
   });
 
+  it('n’use pas le jeton à la simple lecture', async () => {
+    // /api/contrat-apercu s'appuie là-dessus : l'emprunteur doit pouvoir relire le contrat
+    // autant de fois qu'il le souhaite avant de se décider, sans tuer son propre lien.
+    const service = await chargerService();
+    const { invitations } = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());
+    const { dossierId, jeton } = invitations[0]!;
+
+    expect(await service.ouvrirParJeton(dossierId, jeton)).not.toBeNull();
+    expect(await service.ouvrirParJeton(dossierId, jeton)).not.toBeNull();
+    expect(await service.ouvrirParJeton(dossierId, jeton)).not.toBeNull();
+  });
+
   it('refuse un dossier expiré et le supprime au passage', async () => {
     const service = await chargerService();
     const { dossier, invitations } = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());

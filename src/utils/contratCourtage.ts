@@ -340,9 +340,16 @@ export const DATE_VERIFICATION: Emplacement = { page: 4, point: [169.9, 259.4], 
 /*  Texte de l'attestation signée                                      */
 /* ------------------------------------------------------------------ */
 
-/** Texte exact coché par chaque emprunteur avant de signer — conservé dans la preuve. */
+/**
+ * Texte exact coché par chaque emprunteur avant de signer — conservé dans la preuve.
+ *
+ * Il dit « affiché ci-dessus » parce que la page de signature affiche réellement les quatre
+ * pages du contrat (voir /api/contrat-apercu). Toute reformulation de cette phrase doit
+ * rester vraie de ce que l'écran montre : une attestation qui affirme plus que ce qui a été
+ * présenté ruinerait la preuve qu'elle est censée constituer.
+ */
 export const TEXTE_ATTESTATION =
-  'J’ai lu le contrat de courtage ci-dessus, je le comprends, et ce tracé vaut ma signature.';
+  'J’ai lu en entier le contrat de courtage affiché ci-dessus, je le comprends, et ce tracé vaut ma signature.';
 
 /* ================================================================== */
 /*  Données du contrat — types et validation                          */
@@ -406,6 +413,37 @@ export interface DonneesContrat {
   readonly identite: Readonly<Record<LigneIdentiteId, readonly string[]>>;
   readonly dateVerification: string;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Réglages mémorisés d'un contrat à l'autre                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Les champs qui décrivent le cabinet et les usages de la courtière plutôt que le dossier
+ * du client : ils sont identiques d'un contrat à l'autre et méritent d'être mémorisés (voir
+ * src/services/reglagesCourtiere.ts).
+ *
+ * Ne jamais y ajouter un champ propre au client — il serait reporté d'un dossier au suivant,
+ * et personne ne remarquerait qu'un contrat porte l'adresse ou le montant du précédent.
+ */
+export const CLES_DEFAUTS = [
+  'nbPreteursCabinet',
+  'nbPreteursCourtier',
+  'preteurMajoritaire',
+  'autresLogiciels',
+  'autreCabinet',
+  'collaborateur',
+  'retributionAutreEntite',
+  'partageRetribution',
+  'fraisEtude',
+  'honorairesMontant',
+  'honorairesPourcentage',
+  'resiliationMontant',
+  'resiliationPourcentage',
+  'doubleRemuneration',
+] as const;
+
+export type CleDefaut = (typeof CLES_DEFAUTS)[number];
 
 /* ------------------------------------------------------------------ */
 /*  Bornes                                                             */

@@ -75,6 +75,9 @@ src/
 | `/api/profil-cosigner` | API | Signature (ou désaccord) d'un co-emprunteur via son lien nominatif |
 | `/api/contrat-acces` | API | Ouverture de session sur `/contrat` (mot de passe partagé → cookie signé) |
 | `/api/contrat-creer` | API | Création du contrat de courtage — estampe le modèle, ou ouvre un dossier de signature |
+| `/api/contrat-apercu` | API | Sert le contrat intégral (PDF) au signataire, via son jeton — sans le consommer |
+| `/api/contrat-previsualiser` | API | Aperçu PDF du contrat en cours de saisie, pour la courtière — rien n'est envoyé ni stocké |
+| `/api/contrat-reglages` | API | Signature mémorisée et valeurs par défaut de la courtière (GET/PUT/DELETE) |
 | `/api/contrat-signer` | API | Signature (ou refus) d'un emprunteur via son lien nominatif |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
@@ -239,6 +242,11 @@ est identique au modèle au pixel près.
 | `src/components/SignaturePad.astro` + `src/scripts/signaturePad.ts` | Bloc de signature (canevas, recadrage sur l'encre, repli « nom tapé ») |
 
 **Règles :**
+- **Le modèle ne doit porter aucune annotation.** Un contrat rempli cache ses valeurs dans
+  le flux de contenu *et* parfois dans des annotations (`/Stamp`, `/FreeText`) qui survivent
+  au nettoyage du contenu et s'impriment quand même — c'est ainsi que la signature de la
+  courtière s'était retrouvée dans le modèle embarqué. Un test de `contratPdfService.test.ts`
+  verrouille l'absence d'annotations.
 - **Rien n'est ajouté au PDF hors des champs du modèle.** La trace de preuve (horodatage serveur,
   IP, navigateur, empreintes) vit dans le courriel interne, jamais dans le document.
 - **Le PDF ne sort que vers la courtière.** Seul le courriel interne le porte en pièce jointe : les
@@ -276,15 +284,32 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
 | `src/services/contratDossierService.ts` | Dossiers en attente de signature (Netlify Blobs, jetons hachés) |
 | `src/services/contratCourriels.ts` | Courriels + **trace de preuve** des signatures |
 | `src/services/accesCourtiere.ts` | Mot de passe partagé + cookie signé de `/contrat` |
+| `src/services/reglagesCourtiere.ts` | Signature mémorisée + valeurs par défaut du formulaire |
+| `src/utils/detourageSignature.ts` + `src/scripts/importSignature.ts` | Import d'une signature photographiée : fond retiré, recadrage sur l'encre |
 | `src/services/dossierStockage.ts` | Socle commun au profil et au contrat : stockage Blobs, jetons, purge |
 
 **Règles :**
 - **Rien n'est ajouté au PDF hors des champs du modèle.** La trace de preuve (horodatage
   serveur, IP, navigateur, empreintes) vit dans le courriel interne, jamais dans le document.
-- **Le PDF ne sort que vers la courtière.** Les emprunteurs reçoivent un accusé sans pièce
-  jointe ; les endpoints ne renvoient jamais le document au navigateur.
+- **On ne signe pas ce qu'on n'a pas lu.** `/signer-contrat` affiche les 4 pages du contrat
+  intégral (`/api/contrat-apercu`), pas un résumé. Le texte de `TEXTE_ATTESTATION` doit rester
+  vrai de ce que l'écran montre — une attestation qui affirme plus que ce qui a été présenté
+  ruinerait la preuve qu'elle constitue.
+- **Le PDF *signé* ne sort que vers la courtière.** Les emprunteurs reçoivent un accusé sans
+  pièce jointe, et c'est Stéphanie qui leur remet copie. L'aperçu avant signature, lui, est
+  un droit : il est servi au signataire par son propre jeton, qui n'est pas consommé.
 - **La courtière signe à la création.** Un contrat envoyé sans sa signature est refusé —
-  ce serait un brouillon, pas un contrat.
+  ce serait un brouillon, pas un contrat. Elle dessine son tracé **une seule fois** : il est
+  mémorisé (`reglagesCourtiere`) et apposé automatiquement ensuite. La page n'envoie donc
+  plus de signature à `/api/contrat-creer` — le serveur prend celle qui est enregistrée.
+  Elle peut la **dessiner** ou **importer une photo** de sa signature manuscrite : le
+  détourage mesure le niveau du papier sur l'image plutôt que de supposer du blanc, sans
+  quoi une photo prise en pénombre ne donnerait rien.
+- **Le tracé mémorisé est la donnée la plus sensible du site.** Il vit derrière la même porte
+  que `/contrat` : qui a le mot de passe peut émettre un contrat signé de sa main.
+- **`CLES_DEFAUTS` ne doit contenir que des champs du cabinet**, jamais un champ propre au
+  client : une valeur mémorisée est reportée d'un dossier au suivant sans que personne ne le
+  remarque. Un test verrouille cette règle.
 - Les initiales ne sont estampées que pour les emprunteurs **ayant effectivement signé** :
   des initiales sans signature laisseraient croire qu'une clause a été acceptée.
 - Les jetons de signature sont à usage unique, stockés hachés (SHA-256), comparés à temps

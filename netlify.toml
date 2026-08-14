@@ -24,7 +24,17 @@
     # (SEO JSON-LD : LocalBusiness, FAQ, AggregateRating dynamique). Les scripts exécutables inline ont été
     # externalisés dans /js/. Pour retirer 'unsafe-inline' complètement, il faudrait passer aux nonces
     # via une edge function Netlify (computer le nonce par requête et l'injecter dans chaque <script>).
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cloud.umami.is https://api-gateway.umami.dev https://www.googletagmanager.com https://googleads.g.doubleclick.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://cloud.umami.is https://api-gateway.umami.dev https://gateway.umami.is https://www.googleadservices.com https://googleads.g.doubleclick.net https://ad.doubleclick.net https://pagead2.googlesyndication.com https://analytics.google.com https://*.google-analytics.com https://www.google.com; frame-src https://outlook.office.com https://bookings.cloud.microsoft; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cloud.umami.is https://api-gateway.umami.dev https://www.googletagmanager.com https://googleads.g.doubleclick.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://cloud.umami.is https://api-gateway.umami.dev https://gateway.umami.is https://www.googleadservices.com https://googleads.g.doubleclick.net https://ad.doubleclick.net https://pagead2.googlesyndication.com https://analytics.google.com https://*.google-analytics.com https://www.google.com; frame-src 'self' https://outlook.office.com https://bookings.cloud.microsoft; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+# L'aperçu du contrat doit pouvoir s'afficher dans le cadre de /signer-contrat.
+# Le reste du site conserve X-Frame-Options: DENY — on n'ouvre que ce chemin, et
+# seulement à notre propre origine (l'endpoint pose aussi frame-ancestors 'self').
+[[headers]]
+  for = "/api/contrat-apercu"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    Cache-Control = "no-store, private"
+    X-Robots-Tag = "noindex, nofollow"
 
 [[redirects]]
   from = "/outils/penalite"

@@ -10,6 +10,13 @@
  * pas de répertoire courant fiable, et un binaire importé via Vite l'est encore moins. Un
  * module TypeScript est empaqueté avec la fonction, point. Voir §4 de PLAN-profil-emprunteurs.md.
  *
+ * ⚠️ AVANT D'ENCODER : le PDF doit être un modèle **vierge**, annotations comprises.
+ * Un contrat rempli porte ses valeurs dans le flux de contenu, mais aussi parfois dans des
+ * **annotations** (/Stamp, /Widget, /FreeText) qui survivent à tout nettoyage du contenu et
+ * s'impriment quand même. C'est ainsi que la signature de la courtière s'était retrouvée
+ * embarquée dans le modèle. Vérifier avec `qpdf --show-object=trailer` ou pypdf que
+ * `/Annots` est absent de chaque page. Un test le verrouille désormais côté code.
+ *
  * Les PDF sources ne sont volontairement pas versionnés : quand Hypotheca révise un
  * formulaire, c'est un nouveau document qui arrive par courriel, pas une modification de
  * l'ancien. Après régénération, il faut réextraire les coordonnées des champs (voir

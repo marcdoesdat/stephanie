@@ -23,6 +23,7 @@ import {
   type ResendEnv,
 } from './emailService';
 import { loadSiteConfig } from '../config';
+import { formatDateHeureLong } from '../utils/formatters';
 import { TEXTE_ATTESTATION, resumerReponses, type ReponsesProfil } from '../utils/profilEmprunteurs';
 
 /** Ce qu'on peut démontrer a posteriori sur une signature donnée. */
@@ -88,8 +89,8 @@ function sectionPreuves(preuves: readonly PreuveSignature[]): string {
         `Signature ${index + 1} — ${escapeHtml(preuve.nom)}`,
         renderDataRows([
           ['Courriel', escapeHtml(preuve.courriel)],
-          ['Signé le', escapeHtml(new Date(preuve.signeLe).toLocaleString('fr-CA', { timeZone: 'America/Toronto' }))],
-          ['Horodatage UTC', escapeHtml(preuve.signeLe)],
+          ['Signé le', escapeHtml(formatDateHeureLong(preuve.signeLe))],
+          ['Horodatage serveur (UTC)', escapeHtml(preuve.signeLe)],
           ['Voie', escapeHtml(LIBELLE_VOIE[preuve.voie])],
           ['Adresse IP', escapeHtml(preuve.ip)],
           ['Navigateur', escapeHtml(preuve.agent.slice(0, 200))],
