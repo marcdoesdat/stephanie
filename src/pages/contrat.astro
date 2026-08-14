@@ -115,6 +115,25 @@ const RANGS = [0, 1, 2];
 
               <div class="ct-signature-saisie" hidden={signatureEnregistree !== null}>
                 <SignaturePad id="ct-signature" nom={config.nom} />
+
+                {/* Signer sur une feuille et la photographier donne un tracé bien plus
+                    fidèle qu'un doigt sur un écran. Le fond est retiré automatiquement. */}
+                <div class="ct-import">
+                  <span class="ct-import-ou">ou</span>
+                  <label class="ct-import-bouton">
+                    <input type="file" accept="image/png,image/jpeg,image/webp" data-fichier-signature />
+                    Importer une photo de ma signature
+                  </label>
+                  <p class="ct-aide">
+                    Signez une feuille blanche, photographiez-la bien à plat et sans ombre. Le
+                    fond est effacé automatiquement. JPEG, PNG ou WebP — pas de HEIC.
+                  </p>
+                  <div class="ct-import-apercu" data-import-apercu hidden>
+                    <span>Aperçu :</span>
+                    <img data-import-image alt="Aperçu de la signature importée" />
+                  </div>
+                </div>
+
                 <div class="ct-signature-actions">
                   <button type="button" class="btn btn-primary ct-bouton-petit" data-enregistrer-signature>
                     Enregistrer ma signature
@@ -708,6 +727,58 @@ const RANGS = [0, 1, 2];
     margin-top: 0.9rem;
   }
 
+  .ct-import {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px dashed var(--line, #e3d9cc);
+  }
+
+  .ct-import-ou {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .ct-import-bouton {
+    display: inline-block;
+    padding: 0.5rem 0.9rem;
+    border: 1px dashed var(--line, #c9bba8);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--accent, #a85f38);
+    cursor: pointer;
+  }
+
+  .ct-import-bouton:hover {
+    border-color: var(--accent, #a85f38);
+  }
+
+  .ct-import-bouton input {
+    display: none;
+  }
+
+  .ct-import-apercu {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: 0.8rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .ct-import-apercu img {
+    height: 40px;
+    width: auto;
+    max-width: 220px;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 6px;
+    background: #fff;
+  }
+
   .ct-signature-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1005,6 +1076,7 @@ const RANGS = [0, 1, 2];
 
 <script>
   import type { SignaturePadElement } from '../scripts/signaturePad';
+  import { ErreurImport, importerSignature } from '../scripts/importSignature';
 
   /* ---------------- Écran de connexion ---------------- */
 
@@ -1067,15 +1139,45 @@ const RANGS = [0, 1, 2];
       if (saisieSignature) saisieSignature.hidden = true;
     });
 
+    // Une signature importée prend le pas sur le canevas : c'est le dernier geste posé
+    // qui compte, et l'aperçu montre laquelle sera enregistrée.
+    let signatureImportee: string | null = null;
+
+    formulaire.querySelector<HTMLInputElement>('[data-fichier-signature]')?.addEventListener('change', async (evenement) => {
+      const entree = evenement.currentTarget as HTMLInputElement;
+      const fichier = entree.files?.[0];
+      if (!fichier) return;
+      if (erreurSignature) erreurSignature.hidden = true;
+
+      try {
+        signatureImportee = await importerSignature(fichier);
+        const bloc = formulaire.querySelector<HTMLElement>('[data-import-apercu]');
+        const image = formulaire.querySelector<HTMLImageElement>('[data-import-image]');
+        if (image) image.src = signatureImportee;
+        if (bloc) bloc.hidden = false;
+      } catch (err) {
+        signatureImportee = null;
+        if (erreurSignature) {
+          erreurSignature.textContent =
+            err instanceof ErreurImport ? err.message : 'Image illisible. Essayez une autre photo.';
+          erreurSignature.hidden = false;
+        }
+      } finally {
+        // Permet de reprendre le même fichier après une correction.
+        entree.value = '';
+      }
+    });
+
     formulaire.querySelector('[data-enregistrer-signature]')?.addEventListener('click', async (evenement) => {
       const bouton = evenement.currentTarget as HTMLButtonElement;
       if (erreurSignature) erreurSignature.hidden = true;
 
       const pad = document.getElementById('ct-signature') as SignaturePadElement | null;
-      const png = pad?.versPng();
+      const png = signatureImportee ?? pad?.versPng();
       if (!png) {
         if (erreurSignature) {
-          erreurSignature.textContent = 'Dessinez votre signature dans le cadre.';
+          erreurSignature.textContent =
+            'Dessinez votre signature dans le cadre, ou importez-en une photo.';
           erreurSignature.hidden = false;
         }
         return;

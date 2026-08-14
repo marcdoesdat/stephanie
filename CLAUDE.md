@@ -280,6 +280,7 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
 | `src/services/contratCourriels.ts` | Courriels + **trace de preuve** des signatures |
 | `src/services/accesCourtiere.ts` | Mot de passe partagé + cookie signé de `/contrat` |
 | `src/services/reglagesCourtiere.ts` | Signature mémorisée + valeurs par défaut du formulaire |
+| `src/utils/detourageSignature.ts` + `src/scripts/importSignature.ts` | Import d'une signature photographiée : fond retiré, recadrage sur l'encre |
 | `src/services/dossierStockage.ts` | Socle commun au profil et au contrat : stockage Blobs, jetons, purge |
 
 **Règles :**
@@ -296,6 +297,9 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   ce serait un brouillon, pas un contrat. Elle dessine son tracé **une seule fois** : il est
   mémorisé (`reglagesCourtiere`) et apposé automatiquement ensuite. La page n'envoie donc
   plus de signature à `/api/contrat-creer` — le serveur prend celle qui est enregistrée.
+  Elle peut la **dessiner** ou **importer une photo** de sa signature manuscrite : le
+  détourage mesure le niveau du papier sur l'image plutôt que de supposer du blanc, sans
+  quoi une photo prise en pénombre ne donnerait rien.
 - **Le tracé mémorisé est la donnée la plus sensible du site.** Il vit derrière la même porte
   que `/contrat` : qui a le mot de passe peut émettre un contrat signé de sa main.
 - **`CLES_DEFAUTS` ne doit contenir que des champs du cabinet**, jamais un champ propre au
