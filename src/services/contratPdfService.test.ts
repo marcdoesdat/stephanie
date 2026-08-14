@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { deflateSync } from 'node:zlib';
 import { PDFDocument } from 'pdf-lib';
 import { genererContratPdf, nomFichierContrat, empreinteSha256 } from './contratPdfService';
-import { MODELE_SHA256 } from '../data/contratCourtageModele';
+import { MODELE_BASE64, MODELE_SHA256 } from '../data/contratCourtageModele';
 import {
   PAGE_HAUTEUR,
   PAGE_LARGEUR,
@@ -150,6 +150,46 @@ function donnees(): DonneesContrat {
 /* ------------------------------------------------------------------ */
 /*  Tests                                                              */
 /* ------------------------------------------------------------------ */
+
+describe('le modèle embarqué', () => {
+  /**
+   * Régression : le contrat d'exemple fourni par la courtière portait sa signature sous
+   * forme d'**annotation** `/Stamp`, et non dans le flux de contenu. Le nettoyage initial
+   * ne retirait que les calques de remplissage : la signature avait survécu, et chaque
+   * contrat généré la portait — sans que rien ne le signale, puisque le texte extrait, lui,
+   * était propre.
+   *
+   * Une annotation dans le modèle, c'est du contenu qu'on ne contrôle pas et qui s'imprime
+   * quand même. Le modèle ne doit donc en porter aucune.
+   */
+  it('ne contient aucune annotation', async () => {
+    const pdf = await PDFDocument.load(MODELE_BASE64);
+    for (const [index, page] of pdf.getPages().entries()) {
+      const annotations = page.node.Annots();
+      expect(annotations?.size() ?? 0, `page ${index + 1}`).toBe(0);
+    }
+  });
+
+  it('ne laisse fuiter aucune donnée du contrat d’exemple', async () => {
+    // Le modèle a été reconstitué depuis un contrat rempli : rien de ce client ne doit
+    // subsister, ni en texte, ni en objet embarqué.
+    const pdf = await PDFDocument.load(MODELE_BASE64);
+    const octets = await pdf.save();
+    const brut = Buffer.from(octets).toString('latin1');
+    for (const trace of ['Poulin', 'Gignac', 'Marie-Victorin', 'CIBC', '418-559']) {
+      expect(brut).not.toContain(trace);
+    }
+  });
+
+  it('porte quatre pages au format légal du modèle', async () => {
+    const pdf = await PDFDocument.load(MODELE_BASE64);
+    expect(pdf.getPageCount()).toBe(4);
+    for (const page of pdf.getPages()) {
+      expect(Math.round(page.getWidth())).toBe(PAGE_LARGEUR);
+      expect(Math.round(page.getHeight())).toBe(PAGE_HAUTEUR);
+    }
+  });
+});
 
 describe('genererContratPdf', () => {
   it('produit un PDF de 4 pages au format du modèle', async () => {

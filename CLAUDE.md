@@ -242,6 +242,11 @@ est identique au modèle au pixel près.
 | `src/components/SignaturePad.astro` + `src/scripts/signaturePad.ts` | Bloc de signature (canevas, recadrage sur l'encre, repli « nom tapé ») |
 
 **Règles :**
+- **Le modèle ne doit porter aucune annotation.** Un contrat rempli cache ses valeurs dans
+  le flux de contenu *et* parfois dans des annotations (`/Stamp`, `/FreeText`) qui survivent
+  au nettoyage du contenu et s'impriment quand même — c'est ainsi que la signature de la
+  courtière s'était retrouvée dans le modèle embarqué. Un test de `contratPdfService.test.ts`
+  verrouille l'absence d'annotations.
 - **Rien n'est ajouté au PDF hors des champs du modèle.** La trace de preuve (horodatage serveur,
   IP, navigateur, empreintes) vit dans le courriel interne, jamais dans le document.
 - **Le PDF ne sort que vers la courtière.** Seul le courriel interne le porte en pièce jointe : les
