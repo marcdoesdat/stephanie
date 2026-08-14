@@ -375,9 +375,8 @@ export interface DonneesContrat {
   readonly preteurMajoritaire: string;
   readonly autresLogiciels: string;
 
-  /* Collaborateur et PPV */
+  /* Collaborateur */
   readonly collaborateur: string;
-  readonly ppv: 'oui' | 'non';
 
   /* Financement */
   readonly adresseProjet: string;
@@ -406,12 +405,103 @@ export interface DonneesContrat {
   readonly resiliationPourcentage: string;
 
   /* Confirmation */
-  readonly transfertCabinet: 'oui' | 'non';
   readonly consentementsValidesJusquau: string;
 
   /* Vérification d'identité — réservée à la courtière */
   readonly identite: Readonly<Record<LigneIdentiteId, readonly string[]>>;
   readonly dateVerification: string;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Ce que l'emprunteur répond lui-même                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Deux questions du contrat ne sont pas des données du dossier : ce sont des réponses qui
+ * appartiennent à l'emprunteur.
+ *
+ *  • **PPV** — « Veuillez indiquer si l'une des situations suivantes s'applique à l'un des
+ *    emprunteurs ». Laisser la courtière déclarer à leur place qu'ils ne sont pas
+ *    politiquement vulnérables n'a aucune valeur : elle n'en sait rien.
+ *  • **Transfert au nouveau cabinet** — c'est un consentement, pas un fait.
+ *
+ * S'y ajoute la confirmation des coordonnées : la courtière les saisit souvent de mémoire ou
+ * d'après un échange téléphonique, et l'emprunteur est le seul à pouvoir les corriger.
+ *
+ * C'est parce que ces réponses arrivent **après** l'envoi que la courtière signe en dernier :
+ * elle voit le contrat définitif avant de s'engager.
+ */
+export interface ReponsesEmprunteur {
+  readonly ppv: 'oui' | 'non';
+  readonly transfertCabinet: 'oui' | 'non';
+  /** Corrigées par l'emprunteur ; vides s'il n'a rien changé à ce que la courtière a saisi. */
+  readonly telephone: string;
+  readonly adresse: string;
+}
+
+/**
+ * Le contrat ne porte qu'**une** case PPV pour tout le monde, et la question est posée au
+ * pluriel : « … s'applique à l'un des emprunteurs ». Il suffit donc d'un seul « oui » pour
+ * que la case « Oui » soit cochée. Répondre « Non » parce que deux emprunteurs sur trois
+ * l'ont dit serait une fausse déclaration.
+ *
+ * `null` tant que personne n'a répondu : cocher « Non » d'office reviendrait à déclarer, au
+ * nom de gens à qui on n'a rien demandé, qu'ils ne sont pas politiquement vulnérables. Une
+ * case vide se voit ; une fausse déclaration, non.
+ */
+export function agregerPpv(
+  reponses: ReadonlyArray<ReponsesEmprunteur | null | undefined>,
+): 'oui' | 'non' | null {
+  const donnees = reponses.filter((r): r is ReponsesEmprunteur => r != null);
+  if (donnees.length === 0) return null;
+  return donnees.some((r) => r.ppv === 'oui') ? 'oui' : 'non';
+}
+
+/**
+ * Le transfert au nouveau cabinet est un **consentement collectif** : le refus d'un seul
+ * emprunteur doit primer. Un dossier où l'un dit non et l'autre oui se coche « Non ».
+ *
+ * Tant qu'aucune réponse n'est parvenue, on ne coche rien — d'où le `null`.
+ */
+export function agregerTransfert(
+  reponses: ReadonlyArray<ReponsesEmprunteur | null | undefined>,
+): 'oui' | 'non' | null {
+  // `!= null` et non `!== null` : un dossier écrit par une version antérieure n'a pas de
+  // champ `reponses`, et laisser passer `undefined` ici faisait planter la finalisation.
+  const donnees = reponses.filter((r): r is ReponsesEmprunteur => r != null);
+  if (donnees.length === 0) return null;
+  return donnees.some((r) => r.transfertCabinet === 'non') ? 'non' : 'oui';
+}
+
+/**
+ * Valide les réponses d'un emprunteur reçues au moment de signer. Retourne `null` à la
+ * moindre valeur inconnue — comme partout ailleurs, le catalogue fait office de whitelist.
+ */
+export function parserReponsesEmprunteur(payload: unknown): ReponsesEmprunteur | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const brut = payload as Record<string, unknown>;
+
+  const ppv = optionParmi(brut.ppv, ['oui', 'non'] as const);
+  const transfertCabinet = optionParmi(brut.transfertCabinet, ['oui', 'non'] as const);
+  if (!ppv || !transfertCabinet) return null;
+
+  return {
+    ppv,
+    transfertCabinet,
+    telephone: chaine(brut.telephone, 40),
+    adresse: chaine(brut.adresse, 160),
+  };
+}
+
+/** Libellé lisible des réponses d'un emprunteur — courriels et trace de preuve. */
+export function resumerReponsesEmprunteur(reponses: ReponsesEmprunteur): Array<[string, string]> {
+  const paires: Array<[string, string]> = [
+    ['Personne politiquement vulnérable', reponses.ppv === 'oui' ? 'Oui' : 'Non'],
+    ['Consent au transfert au nouveau cabinet', reponses.transfertCabinet === 'oui' ? 'Oui' : 'Non'],
+  ];
+  if (reponses.telephone) paires.push(['Téléphone confirmé', reponses.telephone]);
+  if (reponses.adresse) paires.push(['Adresse confirmée', reponses.adresse]);
+  return paires;
 }
 
 /* ------------------------------------------------------------------ */
@@ -573,12 +663,6 @@ export function parserDonneesContrat(payload: unknown): DonneesContrat | null {
   const emprunteurs = parserEmprunteurs(brut.emprunteurs);
   if (!emprunteurs) return null;
 
-  const ppv = optionParmi(brut.ppv, ['oui', 'non'] as const);
-  if (!ppv) return null;
-
-  const transfertCabinet = optionParmi(brut.transfertCabinet, ['oui', 'non'] as const);
-  if (!transfertCabinet) return null;
-
   // Type de taux et double rémunération sont facultatifs : une préautorisation peut être
   // signée avant qu'un taux soit arrêté, et un contrat sans honoraires n'a pas à trancher
   // la divulgation additionnelle.
@@ -623,7 +707,6 @@ export function parserDonneesContrat(payload: unknown): DonneesContrat | null {
     autresLogiciels: chaine(brut.autresLogiciels),
 
     collaborateur: chaine(brut.collaborateur),
-    ppv,
 
     adresseProjet: chaine(brut.adresseProjet, 200),
     typesFinancement,
@@ -649,7 +732,6 @@ export function parserDonneesContrat(payload: unknown): DonneesContrat | null {
     resiliationMontant: chaine(brut.resiliationMontant, 20),
     resiliationPourcentage: chaine(brut.resiliationPourcentage, 10),
 
-    transfertCabinet,
     consentementsValidesJusquau: chaine(brut.consentementsValidesJusquau, 40),
 
     identite,
@@ -734,8 +816,6 @@ export function resumerContrat(donnees: DonneesContrat): Array<[string, string]>
     ]);
   }
 
-  paires.push(['Personne politiquement vulnérable', donnees.ppv === 'oui' ? 'Oui' : 'Non']);
-  paires.push(['Transfert au nouveau cabinet', donnees.transfertCabinet === 'oui' ? 'Oui' : 'Non']);
   if (donnees.collaborateur) paires.push(['Collaborateur (assurances)', donnees.collaborateur]);
   if (donnees.consentementsValidesJusquau) {
     paires.push(['Consentements valides jusqu’au', donnees.consentementsValidesJusquau]);

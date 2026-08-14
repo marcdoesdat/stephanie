@@ -7,7 +7,7 @@
  * que ce soit dès qu'un emprunteur refuse.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DonneesContrat } from '../utils/contratCourtage';
+import type { DonneesContrat, ReponsesEmprunteur } from '../utils/contratCourtage';
 import type { SignatureEnregistree } from './dossierStockage';
 
 /** Le contenu des Blobs, partagé entre « instances » — c'est tout l'intérêt du store. */
@@ -46,7 +46,6 @@ function donnees(...courriels: string[]): DonneesContrat {
     preteurMajoritaire: '',
     autresLogiciels: '',
     collaborateur: '',
-    ppv: 'non',
     adresseProjet: '',
     typesFinancement: [],
     autresPrecisions: '',
@@ -69,7 +68,6 @@ function donnees(...courriels: string[]): DonneesContrat {
     raisonDoubleRemuneration: '',
     resiliationMontant: '',
     resiliationPourcentage: '',
-    transfertCabinet: 'oui',
     consentementsValidesJusquau: '',
     identite: {
       dossier_credit_numero: [],
@@ -85,6 +83,10 @@ function donnees(...courriels: string[]): DonneesContrat {
     },
     dateVerification: '',
   };
+}
+
+function reponses(ppv: 'oui' | 'non' = 'non', transfert: 'oui' | 'non' = 'oui'): ReponsesEmprunteur {
+  return { ppv, transfertCabinet: transfert, telephone: '', adresse: '' };
 }
 
 function signature(voie: 'presence' | 'distance' = 'distance'): SignatureEnregistree {
@@ -105,71 +107,84 @@ beforeEach(() => {
 });
 
 describe('creerDossier', () => {
-  it('émet une invitation par emprunteur restant à signer', async () => {
+  it('n’émet un jeton que pour le premier signataire', async () => {
+    // Un seul contrat circule : le suivant n'a rien tant que le précédent n'a pas signé.
+    // C'est ce qui rend l'ordre structurel — il ne repose sur aucune convention.
     const service = await chargerService();
-    const { dossier, invitations } = await service.creerDossier(
-      donnees('ana@exemple.ca', 'bo@exemple.ca'),
-      signature('presence'),
-      new Map(),
-    );
+    const { dossier, invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
 
-    expect(invitations).toHaveLength(2);
-    expect(invitations.map((i) => i.courriel)).toEqual(['ana@exemple.ca', 'bo@exemple.ca']);
+    expect(invitation.courriel).toBe('ana@exemple.ca');
+    expect(dossier.emprunteurs[0]!.jetonHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(dossier.emprunteurs[1]!.jetonHash).toBeNull();
     expect(dossier.statut).toBe('en_attente');
-    expect(dossier.signatureCourtiere).not.toBeNull();
   });
 
-  it('n’invite pas un emprunteur qui a déjà signé en présence', async () => {
+  it('retient le mode de signature', async () => {
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(
-      donnees('ana@exemple.ca', 'bo@exemple.ca'),
-      signature('presence'),
-      new Map([[0, signature('presence')]]),
-    );
-    expect(invitations).toHaveLength(1);
-    expect(invitations[0]!.courriel).toBe('bo@exemple.ca');
+    const distance = await service.creerDossier(donnees('ana@exemple.ca'));
+    const presence = await service.creerDossier(donnees('bo@exemple.ca'), 'presence');
+    expect(distance.dossier.mode).toBe('distance');
+    expect(presence.dossier.mode).toBe('presence');
+  });
+
+  it('ne porte aucune signature à la création, pas même celle de la courtière', async () => {
+    // Elle signe en dernier : signer d'abord reviendrait à couvrir de sa signature des
+    // réponses d'emprunteurs qu'elle n'a pas encore vues.
+    const service = await chargerService();
+    const { dossier } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    expect(dossier.signatureCourtiere).toBeNull();
+    expect(dossier.emprunteurs.every((e) => e.signature === null)).toBe(true);
+    expect(dossier.emprunteurs.every((e) => e.reponses === null)).toBe(true);
   });
 
   it('ne stocke jamais le jeton en clair', async () => {
     const service = await chargerService();
-    const { dossier, invitations } = await service.creerDossier(
-      donnees('ana@exemple.ca'),
-      signature('presence'),
-      new Map(),
-    );
+    const { dossier, invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
     const brut = blobs.get(dossier.id)!;
-    expect(brut).not.toContain(invitations[0]!.jeton);
+    expect(brut).not.toContain(invitation.jeton);
     expect(dossier.emprunteurs[0]!.jetonHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('donne à chaque dossier un identifiant distinct et non devinable', async () => {
     const service = await chargerService();
-    const a = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());
-    const b = await service.creerDossier(donnees('bo@exemple.ca'), null, new Map());
+    const a = await service.creerDossier(donnees('ana@exemple.ca'));
+    const b = await service.creerDossier(donnees('bo@exemple.ca'));
     expect(a.dossier.id).not.toBe(b.dossier.id);
     expect(a.dossier.id.length).toBeGreaterThan(15);
   });
 });
 
 describe('ouvrirParJeton', () => {
-  it('ouvre le dossier à la bonne place pour le bon jeton', async () => {
+  it('ouvre le dossier à la place du signataire courant', async () => {
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(
-      donnees('ana@exemple.ca', 'bo@exemple.ca'),
-      null,
-      new Map(),
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+
+    const ouvert = await service.ouvrirParJeton(invitation.dossierId, invitation.jeton);
+    expect(ouvert?.index).toBe(0);
+    expect(ouvert?.dossier.emprunteurs[0]!.emprunteur.courriel).toBe('ana@exemple.ca');
+  });
+
+  it('ouvre la place du suivant une fois le premier passé', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+
+    const premier = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    const { suivante } = await service.enregistrerSignature(
+      premier.dossier,
+      premier.index,
+      signature(),
+      reponses(),
     );
 
-    const second = invitations[1]!;
-    const ouvert = await service.ouvrirParJeton(second.dossierId, second.jeton);
-    expect(ouvert?.index).toBe(1);
-    expect(ouvert?.dossier.emprunteurs[1]!.emprunteur.courriel).toBe('bo@exemple.ca');
+    expect(suivante?.courriel).toBe('bo@exemple.ca');
+    const second = (await service.ouvrirParJeton(suivante!.dossierId, suivante!.jeton))!;
+    expect(second.index).toBe(1);
   });
 
   it('refuse un jeton inconnu, un dossier inconnu ou une charge mal formée', async () => {
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());
-    const { dossierId, jeton } = invitations[0]!;
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const { dossierId, jeton } = invitation;
 
     expect(await service.ouvrirParJeton(dossierId, 'mauvais-jeton')).toBeNull();
     expect(await service.ouvrirParJeton('dossier-inexistant', jeton)).toBeNull();
@@ -181,13 +196,9 @@ describe('ouvrirParJeton', () => {
 
   it('refuse le jeton d’un emprunteur pour signer à la place d’un autre', async () => {
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(
-      donnees('ana@exemple.ca', 'bo@exemple.ca'),
-      null,
-      new Map(),
-    );
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
     // Le jeton d'Ana ouvre l'index 0 et rien d'autre : il n'y a pas de place à choisir.
-    const ouvert = await service.ouvrirParJeton(invitations[0]!.dossierId, invitations[0]!.jeton);
+    const ouvert = await service.ouvrirParJeton(invitation.dossierId, invitation.jeton);
     expect(ouvert?.index).toBe(0);
   });
 
@@ -195,8 +206,8 @@ describe('ouvrirParJeton', () => {
     // /api/contrat-apercu s'appuie là-dessus : l'emprunteur doit pouvoir relire le contrat
     // autant de fois qu'il le souhaite avant de se décider, sans tuer son propre lien.
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());
-    const { dossierId, jeton } = invitations[0]!;
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const { dossierId, jeton } = invitation;
 
     expect(await service.ouvrirParJeton(dossierId, jeton)).not.toBeNull();
     expect(await service.ouvrirParJeton(dossierId, jeton)).not.toBeNull();
@@ -205,13 +216,13 @@ describe('ouvrirParJeton', () => {
 
   it('refuse un dossier expiré et le supprime au passage', async () => {
     const service = await chargerService();
-    const { dossier, invitations } = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());
+    const { dossier, invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
 
     const perime = JSON.parse(blobs.get(dossier.id)!);
     perime.expireLe = new Date(Date.now() - 1000).toISOString();
     blobs.set(dossier.id, JSON.stringify(perime));
 
-    expect(await service.ouvrirParJeton(dossier.id, invitations[0]!.jeton)).toBeNull();
+    expect(await service.ouvrirParJeton(dossier.id, invitation.jeton)).toBeNull();
     expect(blobs.has(dossier.id)).toBe(false);
   });
 });
@@ -219,63 +230,288 @@ describe('ouvrirParJeton', () => {
 describe('enregistrerSignature', () => {
   it('consomme le jeton : le lien ne rouvre plus', async () => {
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());
-    const { dossierId, jeton } = invitations[0]!;
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const { dossierId, jeton } = invitation;
 
     const ouvert = (await service.ouvrirParJeton(dossierId, jeton))!;
-    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature());
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
 
     expect(await service.ouvrirParJeton(dossierId, jeton)).toBeNull();
   });
 
   it('ne déclare le dossier complet qu’à la dernière signature', async () => {
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(
-      donnees('ana@exemple.ca', 'bo@exemple.ca'),
-      null,
-      new Map(),
-    );
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
 
-    const premier = (await service.ouvrirParJeton(invitations[0]!.dossierId, invitations[0]!.jeton))!;
-    const apresUn = await service.enregistrerSignature(premier.dossier, premier.index, signature());
+    const premier = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    const apresUn = await service.enregistrerSignature(premier.dossier, premier.index, signature(), reponses());
     expect(apresUn.complet).toBe(false);
+    expect(apresUn.suivante).not.toBeNull();
 
-    const second = (await service.ouvrirParJeton(invitations[1]!.dossierId, invitations[1]!.jeton))!;
-    const apresDeux = await service.enregistrerSignature(second.dossier, second.index, signature());
+    const second = (await service.ouvrirParJeton(apresUn.suivante!.dossierId, apresUn.suivante!.jeton))!;
+    const apresDeux = await service.enregistrerSignature(second.dossier, second.index, signature(), reponses());
     expect(apresDeux.complet).toBe(true);
+    expect(apresDeux.suivante).toBeNull();
   });
 
   it('est complet dès la première signature quand il n’y a qu’un emprunteur', async () => {
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());
-    const ouvert = (await service.ouvrirParJeton(invitations[0]!.dossierId, invitations[0]!.jeton))!;
-    const { complet } = await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature());
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    const { complet } = await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
     expect(complet).toBe(true);
+  });
+});
+
+describe('séquence des signatures', () => {
+  it('un seul jeton est vivant à la fois', async () => {
+    const service = await chargerService();
+    const { dossier, invitation } = await service.creerDossier(
+      donnees('ana@exemple.ca', 'bo@exemple.ca', 'cam@exemple.ca'),
+    );
+    const avecJeton = (d: typeof dossier) => d.emprunteurs.filter((e) => e.jetonHash !== null).length;
+    expect(avecJeton(dossier)).toBe(1);
+
+    const premier = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    const { dossier: apres } = await service.enregistrerSignature(
+      premier.dossier,
+      premier.index,
+      signature(),
+      reponses(),
+    );
+    // Le jeton du premier est consommé, celui du deuxième vient d'être émis : toujours un.
+    expect(avecJeton(apres)).toBe(1);
+    expect(apres.emprunteurs[1]!.jetonHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(apres.emprunteurs[2]!.jetonHash).toBeNull();
+  });
+
+  it('respecte l’ordre de saisie des emprunteurs', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(
+      donnees('ana@exemple.ca', 'bo@exemple.ca', 'cam@exemple.ca'),
+    );
+
+    const passages: string[] = [];
+    let courante: { dossierId: string; jeton: string } | null = invitation;
+    while (courante) {
+      const ouvert = (await service.ouvrirParJeton(courante.dossierId, courante.jeton))!;
+      passages.push(ouvert.dossier.emprunteurs[ouvert.index]!.emprunteur.courriel);
+      const { suivante } = await service.enregistrerSignature(
+        ouvert.dossier,
+        ouvert.index,
+        signature(),
+        reponses(),
+      );
+      courante = suivante;
+    }
+
+    expect(passages).toEqual(['ana@exemple.ca', 'bo@exemple.ca', 'cam@exemple.ca']);
+  });
+
+  it('réémettre un lien invalide le précédent', async () => {
+    // Sert quand un lien s'est perdu ou qu'une adresse était mal saisie : deux liens vivants
+    // pour la même place ouvriraient la porte à une signature en double.
+    const service = await chargerService();
+    const { dossier, invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+
+    const nouvelle = (await service.reemettreLienCourant(dossier.id))!;
+    expect(nouvelle.jeton).not.toBe(invitation.jeton);
+    expect(await service.ouvrirParJeton(invitation.dossierId, invitation.jeton)).toBeNull();
+    expect(await service.ouvrirParJeton(nouvelle.dossierId, nouvelle.jeton)).not.toBeNull();
+  });
+
+  it('ne réémet rien sur un dossier gelé ou déjà complet', async () => {
+    const service = await chargerService();
+    const { dossier, invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.marquerRefus(ouvert.dossier, ouvert.index, 'non');
+    expect(await service.reemettreLienCourant(dossier.id)).toBeNull();
+  });
+});
+
+describe('listerDossiers', () => {
+  it('ne laisse fuiter ni jeton ni tracé de signature', async () => {
+    // Ce résumé descend jusqu'au navigateur : y embarquer les tracés ferait voyager la
+    // donnée la plus sensible du système pour afficher une liste.
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const serialise = JSON.stringify(await service.listerDossiers());
+    expect(serialise).not.toContain(invitation.jeton);
+    expect(serialise).not.toContain('tracePngBase64');
+    expect(serialise).not.toContain('AAAA'); // le tracé factice
+    expect(serialise).not.toContain('jetonHash');
+  });
+
+  it('dit qui a signé et de qui c’est le tour', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const [resume] = await service.listerDossiers();
+    expect(resume!.emprunteurs[0]!.signeLe).not.toBeNull();
+    expect(resume!.emprunteurs[1]!.signeLe).toBeNull();
+    expect(resume!.courant?.courriel).toBe('bo@exemple.ca');
+  });
+
+  it('n’annonce plus personne quand le dossier attend la courtière', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const [resume] = await service.listerDossiers();
+    expect(resume!.statut).toBe('a_finaliser');
+    expect(resume!.courant).toBeNull();
+  });
+
+  it('signale un dossier gelé et qui l’a refusé', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.marquerRefus(ouvert.dossier, ouvert.index, 'Le montant ne correspond pas.');
+
+    const [resume] = await service.listerDossiers();
+    expect(resume!.statut).toBe('gele');
+    expect(resume!.refusePar).toBe('Ana Tremblay');
+    expect(resume!.courant).toBeNull();
+  });
+
+  it('écarte les dossiers périmés', async () => {
+    const service = await chargerService();
+    const { dossier } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const perime = JSON.parse(blobs.get(dossier.id)!);
+    perime.expireLe = new Date(Date.now() - 1000).toISOString();
+    blobs.set(dossier.id, JSON.stringify(perime));
+
+    expect(await service.listerDossiers()).toHaveLength(0);
+  });
+
+  it('classe du plus récent au plus ancien', async () => {
+    const service = await chargerService();
+    const a = await service.creerDossier(donnees('ana@exemple.ca'));
+    // Un dossier écrit après doit remonter en tête, même à horodatage voisin.
+    const vieilli = JSON.parse(blobs.get(a.dossier.id)!);
+    vieilli.creeLe = new Date(Date.now() - 86_400_000).toISOString();
+    blobs.set(a.dossier.id, JSON.stringify(vieilli));
+    const b = await service.creerDossier(donnees('bo@exemple.ca'));
+
+    const resumes = await service.listerDossiers();
+    expect(resumes.map((r) => r.id)).toEqual([b.dossier.id, a.dossier.id]);
+  });
+});
+
+describe('finalisation par la courtière', () => {
+  /** Déroule toute la chaîne : chaque jeton n'existe qu'une fois le précédent consommé. */
+  async function toutSigner(service: typeof import('./contratDossierService'), ...courriels: string[]) {
+    const { invitation } = await service.creerDossier(donnees(...courriels));
+    let courante: { dossierId: string; jeton: string } | null = invitation;
+    while (courante) {
+      const ouvert = (await service.ouvrirParJeton(courante.dossierId, courante.jeton))!;
+      const { suivante } = await service.enregistrerSignature(
+        ouvert.dossier,
+        ouvert.index,
+        signature(),
+        reponses(),
+      );
+      courante = suivante;
+    }
+    return invitation.dossierId;
+  }
+
+  it('bascule en « à finaliser » quand le dernier emprunteur a signé', async () => {
+    const service = await chargerService();
+    const id = await toutSigner(service, 'ana@exemple.ca', 'bo@exemple.ca');
+    const dossier = await service.ouvrirPourFinalisation(id);
+    expect(dossier?.statut).toBe('a_finaliser');
+  });
+
+  it('conserve les réponses de chaque emprunteur', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses('oui', 'non'));
+
+    const dossier = await service.ouvrirPourFinalisation(invitation.dossierId);
+    expect(dossier?.emprunteurs[0]!.reponses).toEqual({
+      ppv: 'oui',
+      transfertCabinet: 'non',
+      telephone: '',
+      adresse: '',
+    });
+  });
+
+  it('repart pour un délai complet quand la balle passe à la courtière', async () => {
+    // Sinon les signatures déjà recueillies seraient perdues parce que le délai initial,
+    // consommé par l'attente des emprunteurs, expire pendant qu'elle relit.
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const avant = JSON.parse(blobs.get(invitation.dossierId)!).expireLe as string;
+
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const apres = JSON.parse(blobs.get(invitation.dossierId)!).expireLe as string;
+    expect(Date.parse(apres)).toBeGreaterThanOrEqual(Date.parse(avant));
+  });
+
+  it('n’ouvre pas un dossier encore en attente de signatures', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    // Un seul des deux a signé : rien à finaliser.
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+    expect(await service.ouvrirPourFinalisation(invitation.dossierId)).toBeNull();
+  });
+
+  it('refuse un identifiant mal formé sans même lire le stockage', async () => {
+    const service = await chargerService();
+    expect(await service.ouvrirPourFinalisation('../../secret')).toBeNull();
+    expect(await service.ouvrirPourFinalisation(null)).toBeNull();
+    expect(await service.ouvrirPourFinalisation(undefined)).toBeNull();
+  });
+
+  it('appose la signature de la courtière', async () => {
+    const service = await chargerService();
+    const id = await toutSigner(service, 'ana@exemple.ca');
+    const dossier = (await service.ouvrirPourFinalisation(id))!;
+    await service.signerParLaCourtiere(dossier, signature('presence'));
+
+    const relu = JSON.parse(blobs.get(id)!);
+    expect(relu.signatureCourtiere).not.toBeNull();
+    expect(relu.signatureCourtiere.voie).toBe('presence');
+  });
+
+  it('ne se laisse pas finaliser si un emprunteur a refusé', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.marquerRefus(ouvert.dossier, ouvert.index, 'Le montant ne correspond pas.');
+    expect(await service.ouvrirPourFinalisation(invitation.dossierId)).toBeNull();
   });
 });
 
 describe('marquerRefus', () => {
   it('gèle le dossier et invalide les liens restants', async () => {
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(
-      donnees('ana@exemple.ca', 'bo@exemple.ca'),
-      null,
-      new Map(),
-    );
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
 
-    const premier = (await service.ouvrirParJeton(invitations[0]!.dossierId, invitations[0]!.jeton))!;
+    const premier = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
     const gele = await service.marquerRefus(premier.dossier, premier.index, 'Le montant ne correspond pas.');
 
     expect(gele.statut).toBe('gele');
     expect(gele.refus?.motif).toBe('Le montant ne correspond pas.');
     // Le second emprunteur ne doit plus pouvoir signer un contrat contesté.
-    expect(await service.ouvrirParJeton(invitations[1]!.dossierId, invitations[1]!.jeton)).toBeNull();
+    expect(await service.ouvrirParJeton(invitation.dossierId, invitation.jeton)).toBeNull();
   });
 
   it('plafonne le motif conservé', async () => {
     const service = await chargerService();
-    const { invitations } = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());
-    const ouvert = (await service.ouvrirParJeton(invitations[0]!.dossierId, invitations[0]!.jeton))!;
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
     const gele = await service.marquerRefus(ouvert.dossier, ouvert.index, 'x'.repeat(2000));
     expect(gele.refus!.motif.length).toBe(500);
   });
@@ -284,19 +520,20 @@ describe('marquerRefus', () => {
 describe('emprunteursEnAttente et supprimerDossier', () => {
   it('liste ceux qui n’ont pas signé', async () => {
     const service = await chargerService();
-    const { dossier } = await service.creerDossier(
-      donnees('ana@exemple.ca', 'bo@exemple.ca'),
-      null,
-      new Map([[0, signature('presence')]]),
-    );
-    const restants = service.emprunteursEnAttente(dossier);
+    const { dossier, invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    expect(service.emprunteursEnAttente(dossier)).toHaveLength(2);
+
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const restants = service.emprunteursEnAttente(ouvert.dossier);
     expect(restants).toHaveLength(1);
     expect(restants[0]!.emprunteur.courriel).toBe('bo@exemple.ca');
   });
 
   it('supprime le dossier — les tracés ne restent pas au repos', async () => {
     const service = await chargerService();
-    const { dossier } = await service.creerDossier(donnees('ana@exemple.ca'), null, new Map());
+    const { dossier } = await service.creerDossier(donnees('ana@exemple.ca'));
     expect(blobs.has(dossier.id)).toBe(true);
     await service.supprimerDossier(dossier.id);
     expect(blobs.has(dossier.id)).toBe(false);

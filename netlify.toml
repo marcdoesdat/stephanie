@@ -30,7 +30,7 @@
 # Le reste du site conserve X-Frame-Options: DENY — on n'ouvre que ce chemin, et
 # seulement à notre propre origine (l'endpoint pose aussi frame-ancestors 'self').
 [[headers]]
-  for = "/api/contrat-apercu"
+  for = "/api/contrat-apercu*"
   [headers.values]
     X-Frame-Options = "SAMEORIGIN"
     Cache-Control = "no-store, private"

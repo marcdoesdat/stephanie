@@ -47,7 +47,8 @@ src/
 | `/profil-emprunteur` | Statique | Formulaire AMF « Profil des emprunteurs » en tuiles + signature dessinée (noindex, sans Nav/Footer) |
 | `/signer` | SSR | Co-signature à distance par lien nominatif (noindex, sans Nav/Footer) |
 | `/contrat` | SSR | Générateur du contrat de courtage — réservé à la courtière, protégé par mot de passe (noindex) |
-| `/signer-contrat` | SSR | Signature du contrat de courtage par lien nominatif (noindex, sans Nav/Footer) |
+| `/signer-contrat` | SSR | Lecture, réponses et signature du contrat par lien nominatif (noindex, sans Nav/Footer) |
+| `/finaliser-contrat` | SSR | Relecture et signature finale par la courtière (noindex, protégé par mot de passe) |
 | `/refinancement` | Statique | Landing publicitaire V1 (funnel quiz 4 étapes, noindex, sans Nav/Footer) |
 | `/refinancement-v2` | Statique | Landing publicitaire V2 (funnel 5 étapes sans chiffre exact, noindex, sans Nav/Footer) |
 | `/refinancement/merci` | Statique | Page de remerciement du funnel V2 (noindex, sans Nav/Footer) |
@@ -78,7 +79,11 @@ src/
 | `/api/contrat-apercu` | API | Sert le contrat intégral (PDF) au signataire, via son jeton — sans le consommer |
 | `/api/contrat-previsualiser` | API | Aperçu PDF du contrat en cours de saisie, pour la courtière — rien n'est envoyé ni stocké |
 | `/api/contrat-reglages` | API | Signature mémorisée et valeurs par défaut de la courtière (GET/PUT/DELETE) |
-| `/api/contrat-signer` | API | Signature (ou refus) d'un emprunteur via son lien nominatif |
+| `/api/contrat-signer` | API | Réponses, signature (ou refus) d'un emprunteur via son lien nominatif |
+| `/api/contrat-apercu-courtiere` | API | Aperçu d'un dossier à finaliser, servi à la courtière par mot de passe |
+| `/api/contrat-finaliser` | API | Signature finale de la courtière — produit le PDF, l'envoie, supprime le dossier |
+| `/api/contrat-dossiers` | API | Résumés des contrats en cours, pour l'écran de suivi de `/contrat` |
+| `/api/contrat-relancer` | API | Réémet le lien du signataire courant — l'ancien cesse aussitôt de valoir |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
 prérend chaque page au build sauf si elle déclare `export const prerender = false`.
@@ -303,8 +308,33 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
 - **Le PDF *signé* ne sort que vers la courtière.** Les emprunteurs reçoivent un accusé sans
   pièce jointe, et c'est Stéphanie qui leur remet copie. L'aperçu avant signature, lui, est
   un droit : il est servi au signataire par son propre jeton, qui n'est pas consommé.
-- **La courtière signe à la création.** Un contrat envoyé sans sa signature est refusé —
-  ce serait un brouillon, pas un contrat. Elle dessine son tracé **une seule fois** : il est
+- **Un seul contrat, signé en séquence.** Le document ne se dédouble jamais : il passe d'un
+  signataire au suivant, chacun le voyant porter les signatures déjà apposées. **Un seul jeton
+  est vivant à la fois** — celui de la personne dont c'est le tour ; le suivant n'est émis
+  qu'une fois le précédent consommé, ce qui rend l'ordre structurel plutôt que conventionnel.
+- **Deux modes d'acheminement, un seul ordre.** À distance, chacun reçoit son lien par
+  courriel quand son tour vient. En présentiel, le lien du signataire courant est rendu à
+  l'écran de la courtière, qui tend l'appareil — le jeton ne transite alors par aucune boîte
+  tierce. À distance, il ne redescend **jamais** au navigateur de celui qui vient de signer.
+- **`ResumeDossier` ne porte ni jeton ni tracé.** C'est ce qui le rend transmissible au
+  navigateur pour l'écran de suivi : un résumé qui embarquerait les tracés ferait redescendre
+  au client la donnée la plus sensible du système, pour afficher une liste. Un test le vérifie.
+- `reemettreLienCourant(id)` relit le dossier plutôt que de croire l'objet reçu : réémettre un
+  lien sur un dossier gelé entre-temps par un refus serait exactement le cas où plus aucun
+  lien ne doit vivre.
+- **La courtière signe en dernier.** Deux questions du contrat appartiennent à l'emprunteur
+  — la PPV (« s'applique-t-elle à l'un des emprunteurs ? ») et le consentement au transfert
+  de cabinet — et il confirme aussi ses coordonnées. Ces réponses arrivant après l'envoi,
+  signer d'abord reviendrait à couvrir de sa signature des déclarations qu'elle n'a pas vues.
+  Le dossier passe donc en `a_finaliser`, elle est prévenue, relit et signe d'un clic. **Le
+  PDF n'existe qu'à ce moment-là.**
+- **Agrégation des réponses** (`agregerPpv`, `agregerTransfert`) : le modèle n'a qu'une case
+  pour tout le monde. Un seul « oui » suffit à cocher PPV ; un seul refus suffit à cocher
+  « Non » au transfert — un consentement ne se déduit pas d'une majorité. Rien n'est coché
+  tant que personne n'a répondu.
+- Sa signature mémorisée est exigée **dès la création**, bien qu'elle ne serve qu'à la fin :
+  la découvrir absente une fois tout le monde signé laisserait un dossier impossible à clore.
+- Elle dessine son tracé **une seule fois** : il est
   mémorisé (`reglagesCourtiere`) et apposé automatiquement ensuite. La page n'envoie donc
   plus de signature à `/api/contrat-creer` — le serveur prend celle qui est enregistrée.
   Elle peut la **dessiner** ou **importer une photo** de sa signature manuscrite : le

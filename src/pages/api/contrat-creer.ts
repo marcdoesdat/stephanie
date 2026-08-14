@@ -1,18 +1,20 @@
 // Création d'un contrat de courtage (/contrat) — réservé à la courtière.
 //
-// Deux issues selon la voie choisie :
+// Stéphanie prépare le contrat et l'envoie. **Un seul contrat existe, et il se signe en
+// séquence** : le premier emprunteur reçoit un lien nominatif à usage unique, et ce n'est
+// qu'une fois qu'il a signé que le suivant reçoit le sien. Chacun voit donc le document avec
+// les signatures déjà apposées, comme une feuille qu'on se passe.
 //
-//   • « distance » (le cas normal) — Stéphanie signe, un dossier en attente est créé et
-//     chaque emprunteur reçoit un lien nominatif à usage unique. Aucun PDF n'existe tant
-//     que le dernier n'a pas signé : c'est /api/contrat-signer qui clôt le dossier.
+// En présentiel, l'acheminement change mais pas l'ordre : le lien du signataire courant est
+// remis à l'écran de la courtière plutôt qu'envoyé par courriel.
 //
-//   • « presence » — tout le monde signe sur le même appareil. Le contrat est produit ici
-//     et envoyé à la seule courtière ; les emprunteurs reçoivent un accusé sans pièce
-//     jointe. Le document ne redescend jamais au navigateur. Rien n'est stocké.
+// **Aucune signature n'est apposée ici, pas même la sienne.** Les réponses des emprunteurs
+// modifient le document : signer avant de les connaître reviendrait à couvrir de sa
+// signature des déclarations qu'elle n'a pas vues. Elle signe en dernier, via
+// /api/contrat-finaliser. Aucun PDF n'existe avant.
 //
 // Rien de ce que le navigateur envoie n'est repris tel quel : les données sont validées
-// contre le catalogue de src/utils/contratCourtage.ts, et chaque PNG de signature est
-// vérifié avant d'approcher pdf-lib.
+// contre le catalogue de src/utils/contratCourtage.ts.
 //
 // Variables d'environnement : CONTRAT_MOT_DE_PASSE (accès) + RESEND_* (voir emailService).
 
@@ -25,36 +27,12 @@ import {
   jsonResponse,
   loadResendEnv,
 } from '../../services/emailService';
-import {
-  envoyerAvisEnAttente,
-  envoyerDossierComplet,
-  envoyerInvitations,
-  type InvitationCourriel,
-  type PreuveSignature,
-} from '../../services/contratCourriels';
+import { envoyerAvisEnAttente, envoyerInvitation } from '../../services/contratCourriels';
 import { creerDossier } from '../../services/contratDossierService';
 import { lireReglages, traceEnregistree } from '../../services/reglagesCourtiere';
-import type { SignatureEnregistree } from '../../services/dossierStockage';
-import {
-  empreinteSha256,
-  genererContratPdf,
-  nomFichierContrat,
-  type SignatureEstampee,
-} from '../../services/contratPdfService';
-import { nomComplet, parserDonneesContrat } from '../../utils/contratCourtage';
-import { decoderTraceSignature } from '../../utils/traceSignature';
+import { parserDonneesContrat } from '../../utils/contratCourtage';
 
 export const prerender = false;
-
-/** Encode des octets en base64 — format attendu par les pièces jointes Resend. */
-function versBase64(octets: Uint8Array): string {
-  let binaire = '';
-  const TRANCHE = 0x8000; // évite de dépasser la limite d'arguments de String.fromCharCode
-  for (let i = 0; i < octets.length; i += TRANCHE) {
-    binaire += String.fromCharCode(...octets.subarray(i, i + TRANCHE));
-  }
-  return btoa(binaire);
-}
 
 /** Construit le lien de signature envoyé à un emprunteur. */
 function lienSignature(dossierId: string, jeton: string): string {
@@ -62,14 +40,7 @@ function lienSignature(dossierId: string, jeton: string): string {
   return `${base}/signer-contrat?d=${encodeURIComponent(dossierId)}&j=${encodeURIComponent(jeton)}`;
 }
 
-/**
- * Étapes qui peuvent échouer après validation. Un message générique unique rendrait le
- * diagnostic impossible depuis l'écran : on nomme l'étape fautive, côté serveur (log
- * complet) comme côté client (message + code).
- */
 const ECHECS = {
-  pdf: 'Le contrat n’a pas pu être produit. Réessayez ; si ça persiste, vérifiez les champs saisis.',
-  courriel: 'Le contrat a été produit mais l’envoi par courriel a échoué. Réessayez dans quelques minutes.',
   dossier: 'Le dossier n’a pas pu être enregistré. Réessayez dans quelques minutes.',
   invitation: 'Impossible d’envoyer l’invitation à signer. Vérifiez les adresses courriel saisies.',
 } as const;
@@ -95,186 +66,84 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const clientIp = clientIpFromRequest(request);
-  const agent = request.headers.get('user-agent') ?? 'inconnu';
-
   if (!(await checkRateLimit(clientIp, 'contrat-creer'))) {
     return jsonResponse({ error: 'Trop de demandes. Veuillez réessayer dans une heure.' }, 429);
   }
 
-  /* ---------- Validation ---------- */
-
   const donnees = parserDonneesContrat(payload.donnees);
-  const voie = payload.voie === 'presence' ? 'presence' : 'distance';
-
   if (!donnees) {
     return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
   }
 
-  const maintenant = new Date();
-
-  // La courtière signe à la création : un contrat qui part en signature sans la signature
-  // du courtier n'est pas un contrat, c'est un brouillon.
-  //
-  // Le tracé vient d'ordinaire des réglages mémorisés — elle l'a dessiné une fois pour
-  // toutes. Un tracé envoyé dans la requête (première utilisation, ou remplacement) a la
-  // priorité. L'exigence, elle, ne bouge pas : sans signature, on refuse.
-  const traceCourtiere =
-    decoderTraceSignature(payload.signatureCourtiere) ?? traceEnregistree(await lireReglages());
-  if (!traceCourtiere) {
+  // On exige la signature mémorisée **dès maintenant**, alors qu'elle ne servira qu'à la
+  // finalisation : découvrir son absence une fois que tous les emprunteurs ont signé
+  // laisserait un dossier impossible à clore.
+  if (!traceEnregistree(await lireReglages())) {
     return jsonResponse(
       { error: 'Aucune signature enregistrée. Dessinez la vôtre dans « Ma signature ».', code: 'signature' },
       400,
     );
   }
-  const signatureCourtiere: SignatureEnregistree = {
-    tracePngBase64: versBase64(traceCourtiere),
-    signeLe: maintenant.toISOString(),
-    voie: 'presence',
-    ip: clientIp,
-    agent,
-    empreinteTrace: await empreinteSha256(traceCourtiere),
-  };
-
-  // Les tracés des emprunteurs arrivent indexés par position : { "0": "data:image/png…" }.
-  const tracesBrutes = (payload.signatures ?? {}) as Record<string, unknown>;
-  const signatures = new Map<number, SignatureEnregistree>();
-  const tracesDecodees = new Map<number, Uint8Array>();
-
-  if (voie === 'presence') {
-    for (const [index] of donnees.emprunteurs.entries()) {
-      const trace = decoderTraceSignature(tracesBrutes[String(index)]);
-      if (!trace) return jsonResponse({ error: 'Signature manquante ou illisible' }, 400);
-      tracesDecodees.set(index, trace);
-      signatures.set(index, {
-        tracePngBase64: versBase64(trace),
-        signeLe: maintenant.toISOString(),
-        voie: 'presence',
-        ip: clientIp,
-        agent,
-        empreinteTrace: await empreinteSha256(trace),
-      });
-    }
-  }
-
-  /**
-   * La complétude se déduit des signatures réellement reçues, jamais de la voie annoncée
-   * par le navigateur.
-   */
-  const toutSigne = signatures.size === donnees.emprunteurs.length;
-
-  /* ---------- Environnement Resend ---------- */
 
   const resendEnv = loadResendEnv();
   if (!resendEnv && !import.meta.env.DEV) {
     console.error('[contrat-creer] Variables Resend manquantes.');
     return jsonResponse({ error: 'Service temporairement indisponible' }, 502);
   }
-  // En développement sans Resend, tout le reste s'exécute quand même — dossier compris —
-  // et seuls les envois sont remplacés par des logs. C'est la seule façon de dérouler la
-  // chaîne de signature en local : le lien à ouvrir est imprimé dans la console.
-  const simule = resendEnv === null;
 
-  const preuves: PreuveSignature[] = donnees.emprunteurs
-    .map((emprunteur, index) => {
-      const signature = signatures.get(index);
-      if (!signature) return null;
-      return {
-        nom: nomComplet(emprunteur),
-        courriel: emprunteur.courriel,
-        signeLe: signature.signeLe,
-        voie: signature.voie,
-        ip: signature.ip,
-        agent: signature.agent,
-        empreinteTrace: signature.empreinteTrace,
-      } satisfies PreuveSignature;
-    })
-    .filter((p): p is PreuveSignature => p !== null);
+  const mode = payload.mode === 'presence' ? 'presence' : 'distance';
 
-  /* ---------- Tout le monde a signé sur place : dossier clos tout de suite ---------- */
-
-  if (toutSigne) {
-    const nomFichier = nomFichierContrat(nomComplet(donnees.emprunteurs[0]!), maintenant);
-    let pdf: Uint8Array;
-    try {
-      const aEstamper = new Map<number, SignatureEstampee>();
-      for (const [index, emprunteur] of donnees.emprunteurs.entries()) {
-        aEstamper.set(index, {
-          nom: nomComplet(emprunteur),
-          trace: tracesDecodees.get(index)!,
-          signeLe: maintenant,
-        });
-      }
-      pdf = await genererContratPdf(donnees, aEstamper, {
-        nom: loadSiteConfig().nom,
-        trace: traceCourtiere,
-        signeLe: maintenant,
-      });
-    } catch (err) {
-      return echec('pdf', err);
-    }
-
-    try {
-      if (resendEnv) {
-        await envoyerDossierComplet(resendEnv, {
-          donnees,
-          preuves,
-          pdfBase64: versBase64(pdf),
-          empreintePdf: await empreinteSha256(pdf),
-          nomFichier,
-        });
-      } else {
-        console.log('[contrat-creer] ⚠️  Resend non configuré — envoi du contrat simulé :', nomFichier);
-      }
-    } catch (err) {
-      return echec('courriel', err);
-    }
-
-    // Le PDF n'est jamais renvoyé au navigateur : il ne part qu'à la courtière, par courriel.
-    return jsonResponse(
-      {
-        ok: true,
-        ...(simule ? { dev: true } : {}),
-        copies: donnees.emprunteurs.map((e) => e.courriel),
-      },
-      200,
-    );
-  }
-
-  /* ---------- Signature à distance : dossier en attente + invitations ---------- */
-
-  let aEnvoyer: InvitationCourriel[];
+  let premier: { nom: string; courriel: string; lien: string };
   try {
-    const { invitations } = await creerDossier(donnees, signatureCourtiere, signatures);
-    aEnvoyer = invitations.map((invitation) => ({
+    const { invitation } = await creerDossier(donnees, mode);
+    premier = {
       nom: invitation.nom,
       courriel: invitation.courriel,
       lien: lienSignature(invitation.dossierId, invitation.jeton),
-    }));
+    };
   } catch (err) {
     return echec('dossier', err);
   }
 
-  const enAttente = aEnvoyer.map((i) => ({ nom: i.nom, courriel: i.courriel }));
+  // L'ordre de passage, pour que l'écran de confirmation le rappelle.
+  const ordre = donnees.emprunteurs.map((e) => ({
+    nom: `${e.prenom} ${e.nom}`.trim(),
+    courriel: e.courriel,
+  }));
 
+  // En présentiel, le lien ne part pas par courriel : il est remis à la courtière, qui tend
+  // l'appareil au premier signataire. Le jeton ne transite donc jamais par une boîte tierce.
+  if (mode === 'presence') {
+    if (resendEnv) {
+      try {
+        await envoyerAvisEnAttente(resendEnv, donnees, ordre, mode);
+      } catch (err) {
+        console.error('[contrat-creer] Notification interne non envoyée :', err);
+      }
+    }
+    return jsonResponse({ ok: true, mode, ordre, lien: premier.lien }, 200);
+  }
+
+  // En développement sans Resend, le dossier est créé quand même et le lien est imprimé dans
+  // la console : c'est la seule façon de dérouler la chaîne en local.
   if (!resendEnv) {
-    console.log('[contrat-creer] ⚠️  Resend non configuré — invitations simulées. Liens à ouvrir :');
-    for (const invitation of aEnvoyer) console.log(`  ${invitation.nom} → ${invitation.lien}`);
-    return jsonResponse({ ok: true, dev: true, enAttente }, 200);
+    console.log(`[contrat-creer] ⚠️  Resend non configuré — lien pour ${premier.nom} : ${premier.lien}`);
+    return jsonResponse({ ok: true, dev: true, mode, ordre }, 200);
   }
 
   // L'invitation est ce qui débloque la suite : si elle part, le dossier vit, même si la
   // notification interne échoue. On ne fait donc échouer la soumission que sur l'invitation.
-  const [invitationsEnvoyees, avisInterne] = await Promise.allSettled([
-    envoyerInvitations(resendEnv, aEnvoyer),
-    envoyerAvisEnAttente(resendEnv, donnees, preuves, aEnvoyer),
+  const [invitationEnvoyee, avisInterne] = await Promise.allSettled([
+    envoyerInvitation(resendEnv, premier, 1, donnees.emprunteurs.length),
+    envoyerAvisEnAttente(resendEnv, donnees, ordre, mode),
   ]);
 
-  if (invitationsEnvoyees.status === 'rejected') {
-    return echec('invitation', invitationsEnvoyees.reason);
+  if (invitationEnvoyee.status === 'rejected') {
+    return echec('invitation', invitationEnvoyee.reason);
   }
   if (avisInterne.status === 'rejected') {
-    console.error('[contrat-creer] Invitations parties, mais la notification interne a échoué :', avisInterne.reason);
+    console.error('[contrat-creer] Invitation partie, mais la notification interne a échoué :', avisInterne.reason);
   }
 
-  return jsonResponse({ ok: true, enAttente }, 200);
+  return jsonResponse({ ok: true, mode, ordre }, 200);
 };

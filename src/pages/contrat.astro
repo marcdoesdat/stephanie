@@ -97,8 +97,8 @@ const RANGS = [0, 1, 2];
                     <img src={signatureEnregistree} alt="Votre signature enregistrée" />
                   </div>
                   <p class="ct-signature-note">
-                    Elle sera apposée automatiquement sur chaque contrat. Vous n’avez plus à la
-                    dessiner.
+                    Elle sera apposée quand vous finaliserez un contrat, une fois les
+                    emprunteurs signés. Vous n’avez plus à la dessiner.
                   </p>
                   <button type="button" class="ct-lien" data-remplacer-signature>
                     Remplacer ma signature
@@ -107,8 +107,8 @@ const RANGS = [0, 1, 2];
               ) : (
                 <>
                   <p class="ct-signature-note ct-signature-invite">
-                    <strong>Une seule fois :</strong> dessinez votre signature. Elle sera
-                    ensuite apposée automatiquement sur tous vos contrats.
+                    <strong>Une seule fois :</strong> dessinez votre signature. Elle servira à
+                    finaliser vos contrats, une fois les emprunteurs signés.
                   </p>
                 </>
               )}
@@ -147,6 +147,19 @@ const RANGS = [0, 1, 2];
                 <p class="ct-erreur" data-erreur-signature hidden />
               </div>
             </div>
+
+            {/* ---------------- Contrats en cours ---------------- */}
+
+            <details class="ct-repliable" id="ct-suivi">
+              <summary>
+                <span class="ct-repliable-titre">Contrats en cours</span>
+                <span class="ct-repliable-note" data-suivi-compte>ouvrez pour charger</span>
+              </summary>
+              <div class="ct-repliable-corps">
+                <p class="ct-aide" data-suivi-etat>Chargement…</p>
+                <div data-suivi-liste></div>
+              </div>
+            </details>
 
             {/* ---------------- Emprunteurs ---------------- */}
 
@@ -294,28 +307,6 @@ const RANGS = [0, 1, 2];
               </label>
               <textarea id="ct-exigences" class="cform-input" rows="3" maxlength="600" />
               <p class="ct-aide">4 lignes disponibles sur le contrat ; le surplus est tronqué.</p>
-            </fieldset>
-
-            {/* ---------------- Le dossier ---------------- */}
-
-            <fieldset class="ct-section">
-              <legend>Ce dossier</legend>
-              <div class="ct-grille">
-                <div>
-                  <label class="cform-label" for="ct-ppv">Personne politiquement vulnérable</label>
-                  <select id="ct-ppv" class="cform-input">
-                    <option value="non">Non</option>
-                    <option value="oui">Oui</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-transfert">Transfert au nouveau cabinet</label>
-                  <select id="ct-transfert" class="cform-input">
-                    <option value="oui">Oui</option>
-                    <option value="non">Non</option>
-                  </select>
-                </div>
-              </div>
             </fieldset>
 
             {/* ---------------- Frais et honoraires (mémorisés) ---------------- */}
@@ -558,29 +549,42 @@ const RANGS = [0, 1, 2];
             {/* ---------------- Envoi ---------------- */}
 
             <fieldset class="ct-section">
-              <legend>Envoi</legend>
-              <label class="ct-case ct-case-large">
-                <input type="radio" name="ct-voie" value="distance" checked />
-                <span>
-                  <strong>Par courriel</strong> — chaque emprunteur reçoit un lien personnel pour
-                  lire et signer le contrat. Vous le recevez signé quand tout le monde a signé.
-                </span>
-              </label>
-              <label class="ct-case ct-case-large">
-                <input type="radio" name="ct-voie" value="presence" />
-                <span>
-                  <strong>Ici, maintenant</strong> — les emprunteurs sont avec vous et signent sur
-                  cet appareil.
-                </span>
-              </label>
+              <legend>Ce qui va se passer</legend>
+              <ol class="ct-etapes">
+                <li>
+                  Le <strong>premier</strong> emprunteur lit le contrat en entier, répond aux
+                  deux questions qui lui reviennent — fonction politiquement vulnérable,
+                  transfert de cabinet — confirme ses coordonnées, et signe.
+                </li>
+                <li>
+                  Le suivant prend le relais et voit le contrat portant déjà la signature du
+                  précédent. Un seul document circule, signé l’un après l’autre.
+                </li>
+                <li>
+                  Quand tous ont signé, vous relisez le contrat — qui porte alors leurs
+                  réponses — et vous le signez d’un clic.
+                </li>
+              </ol>
+              <p class="ct-aide">
+                Le contrat n’est produit qu’à cette dernière étape. C’est ce qui garantit que
+                votre signature ne couvre rien que vous n’ayez vu.
+              </p>
 
-              <div id="ct-presence" hidden>
-                {RANGS.map((rang) => (
-                  <div class="ct-signature-emprunteur" data-signature-bloc={rang} hidden>
-                    <SignaturePad id={`ct-signature-${rang}`} />
-                  </div>
-                ))}
-              </div>
+              <p class="cform-label ct-espace">Comment signent-ils ?</p>
+              <label class="ct-case ct-case-large">
+                <input type="radio" name="ct-mode" value="distance" checked />
+                <span>
+                  <strong>À distance</strong> — le premier reçoit son lien par courriel ; le
+                  suivant reçoit le sien dès que le précédent a signé.
+                </span>
+              </label>
+              <label class="ct-case ct-case-large">
+                <input type="radio" name="ct-mode" value="presence" />
+                <span>
+                  <strong>En personne</strong> — ils sont avec vous. Vous leur tendez cet
+                  appareil chacun à leur tour ; aucun lien ne part par courriel.
+                </span>
+              </label>
             </fieldset>
 
             <p class="ct-erreur" data-erreur hidden />
@@ -923,8 +927,69 @@ const RANGS = [0, 1, 2];
     color: var(--muted);
   }
 
-  .ct-signature-emprunteur {
-    margin-top: 1.1rem;
+  .ct-dossier {
+    padding: 0.8rem 0.9rem;
+    margin-bottom: 0.7rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 0.87rem;
+  }
+
+  .ct-dossier-titre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 0.8rem;
+    margin: 0 0 0.4rem;
+    font-weight: 700;
+  }
+
+  .ct-etat {
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .ct-etat[data-etat='en_attente'] {
+    background: #fdf2e7;
+    color: #8a5320;
+  }
+
+  .ct-etat[data-etat='a_finaliser'] {
+    background: #eaf5ec;
+    color: #26603a;
+  }
+
+  .ct-etat[data-etat='gele'] {
+    background: #fdeceb;
+    color: #8f2f28;
+  }
+
+  .ct-dossier-signataires {
+    margin: 0 0 0.5rem;
+    padding-left: 1.1rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .ct-dossier-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    align-items: center;
+  }
+
+  .ct-etapes {
+    margin: 0 0 0.5rem;
+    padding-left: 1.2rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .ct-etapes li {
+    margin-bottom: 0.4rem;
   }
 
   .ct-memoriser {
@@ -1220,26 +1285,9 @@ const RANGS = [0, 1, 2];
     /* ---------------- Emprunteurs et signatures en présence ---------------- */
 
     function rafraichir(): void {
-      const presence =
-        formulaire.querySelector<HTMLInputElement>('input[name="ct-voie"]:checked')?.value === 'presence';
-      const zone = document.getElementById('ct-presence');
-      if (zone) zone.hidden = !presence;
-
-      const nombre = visibles().length;
-      for (const bloc of formulaire.querySelectorAll<HTMLElement>('[data-signature-bloc]')) {
-        const rang = Number(bloc.dataset.signatureBloc);
-        bloc.hidden = !presence || rang >= nombre;
-        const qui = bloc.querySelector<HTMLElement>('[data-sig-qui]');
-        if (qui) {
-          const complet = `${valeur(`ct-prenom-${rang}`)} ${valeur(`ct-nom-${rang}`)}`.trim();
-          qui.textContent = complet ? `Signature de ${complet}` : `Signature de l’emprunteur ${rang + 1}`;
-        }
-      }
-
       // Le bouton « Ajouter » disparaît quand les trois blocs du modèle sont utilisés.
       const ajouter = formulaire.querySelector<HTMLElement>('[data-ajouter]');
-      if (ajouter) ajouter.hidden = nombre >= blocs().length;
-
+      if (ajouter) ajouter.hidden = visibles().length >= blocs().length;
       majResume();
     }
 
@@ -1281,9 +1329,6 @@ const RANGS = [0, 1, 2];
       });
     }
 
-    for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="ct-voie"]')) {
-      radio.addEventListener('change', rafraichir);
-    }
     formulaire.addEventListener('input', () => rafraichir());
     formulaire.addEventListener('change', () => rafraichir());
     rafraichir();
@@ -1316,6 +1361,159 @@ const RANGS = [0, 1, 2];
         }
       } finally {
         bouton.disabled = false;
+      }
+    });
+
+    /* ---------------- Suivi des contrats en cours ---------------- */
+
+    const suivi = document.getElementById('ct-suivi') as HTMLDetailsElement | null;
+    let suiviCharge = false;
+
+    function texteEtat(statut: string): string {
+      if (statut === 'a_finaliser') return 'à signer par vous';
+      if (statut === 'gele') return 'gelé';
+      return 'en attente';
+    }
+
+    async function chargerSuivi(): Promise<void> {
+      const etat = formulaire.querySelector<HTMLElement>('[data-suivi-etat]');
+      const liste = formulaire.querySelector<HTMLElement>('[data-suivi-liste]');
+      const compte = formulaire.querySelector<HTMLElement>('[data-suivi-compte]');
+      if (!liste || !etat) return;
+
+      etat.textContent = 'Chargement…';
+      liste.innerHTML = '';
+
+      try {
+        const reponse = await fetch('/api/contrat-dossiers');
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+        if (!reponse.ok) {
+          etat.textContent = String(data.error ?? 'Chargement impossible.');
+          return;
+        }
+
+        const dossiers = (data.dossiers ?? []) as Array<{
+          id: string;
+          statut: string;
+          mode: string;
+          emprunteurs: Array<{ nom: string; courriel: string; signeLe: string | null }>;
+          courant: { nom: string; courriel: string } | null;
+          refusePar: string | null;
+        }>;
+
+        if (compte) compte.textContent = dossiers.length === 0 ? 'aucun' : `${dossiers.length}`;
+        if (dossiers.length === 0) {
+          etat.textContent = 'Aucun contrat en cours. Ceux qui sont signés et envoyés sont supprimés.';
+          return;
+        }
+        etat.textContent = '';
+
+        for (const dossier of dossiers) {
+          const bloc = document.createElement('div');
+          bloc.className = 'ct-dossier';
+
+          const titre = document.createElement('p');
+          titre.className = 'ct-dossier-titre';
+          titre.append(dossier.emprunteurs.map((e) => e.nom).join(', '));
+          const etiquette = document.createElement('span');
+          etiquette.className = 'ct-etat';
+          etiquette.dataset.etat = dossier.statut;
+          etiquette.textContent = texteEtat(dossier.statut);
+          titre.append(etiquette);
+          bloc.append(titre);
+
+          const signataires = document.createElement('ul');
+          signataires.className = 'ct-dossier-signataires';
+          for (const e of dossier.emprunteurs) {
+            const li = document.createElement('li');
+            li.textContent = e.signeLe
+              ? `${e.nom} — signé`
+              : dossier.courant?.courriel === e.courriel
+                ? `${e.nom} — c’est son tour`
+                : `${e.nom} — en attente de son tour`;
+            signataires.append(li);
+          }
+          bloc.append(signataires);
+
+          const actions = document.createElement('div');
+          actions.className = 'ct-dossier-actions';
+
+          if (dossier.statut === 'a_finaliser') {
+            const finaliser = document.createElement('a');
+            finaliser.href = `/finaliser-contrat?d=${encodeURIComponent(dossier.id)}`;
+            finaliser.textContent = 'Relire et signer →';
+            finaliser.style.fontWeight = '700';
+            actions.append(finaliser);
+          } else if (dossier.statut === 'en_attente' && dossier.courant) {
+            const relancer = document.createElement('button');
+            relancer.type = 'button';
+            relancer.className = 'ct-lien';
+            relancer.textContent =
+              dossier.mode === 'presence'
+                ? `Rouvrir le lien de ${dossier.courant.nom}`
+                : `Renvoyer le lien à ${dossier.courant.nom}`;
+            relancer.addEventListener('click', () => relancer1(dossier.id, relancer, actions));
+            actions.append(relancer);
+          } else if (dossier.refusePar) {
+            const note = document.createElement('span');
+            note.style.color = 'var(--muted)';
+            note.textContent = `Refusé par ${dossier.refusePar} — préparez un nouveau contrat.`;
+            actions.append(note);
+          }
+
+          bloc.append(actions);
+          liste.append(bloc);
+        }
+      } catch {
+        etat.textContent = 'Connexion impossible. Vérifiez votre réseau.';
+      }
+    }
+
+    /** Réémet le lien du signataire courant ; l'ancien cesse aussitôt de valoir. */
+    async function relancer1(id: string, bouton: HTMLButtonElement, actions: HTMLElement): Promise<void> {
+      bouton.disabled = true;
+      const libelle = bouton.textContent;
+      bouton.textContent = 'Envoi…';
+
+      try {
+        const reponse = await fetch('/api/contrat-relancer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ d: id }),
+        });
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+
+        const message = document.createElement('span');
+        if (!reponse.ok) {
+          message.style.color = '#8f2f28';
+          message.textContent = String(data.error ?? 'La relance a échoué.');
+          bouton.disabled = false;
+          bouton.textContent = libelle;
+        } else if (data.mode === 'presence' && typeof data.lien === 'string') {
+          const lien = document.createElement('a');
+          lien.href = data.lien;
+          lien.textContent = `Faire signer ${String(data.nom ?? '')} →`;
+          lien.style.fontWeight = '700';
+          message.append(lien);
+          bouton.remove();
+        } else {
+          message.style.color = '#26603a';
+          message.textContent = `Nouveau lien envoyé à ${String(data.courriel ?? data.nom ?? '')}. L’ancien ne fonctionne plus.`;
+          bouton.remove();
+        }
+        actions.append(message);
+      } catch {
+        bouton.disabled = false;
+        bouton.textContent = libelle;
+      }
+    }
+
+    // Chargé à l'ouverture seulement : inutile d'interroger le stockage à chaque visite de
+    // la page, alors que la plupart du temps elle vient y saisir un nouveau contrat.
+    suivi?.addEventListener('toggle', () => {
+      if (suivi.open && !suiviCharge) {
+        suiviCharge = true;
+        void chargerSuivi();
       }
     });
 
@@ -1359,7 +1557,6 @@ const RANGS = [0, 1, 2];
         preteurMajoritaire: valeur('ct-preteur-majoritaire'),
         autresLogiciels: valeur('ct-autres-logiciels'),
         collaborateur: valeur('ct-collaborateur'),
-        ppv: valeur('ct-ppv'),
         adresseProjet: valeur('ct-adresse-projet'),
         typesFinancement,
         autresPrecisions: valeur('ct-precisions'),
@@ -1382,7 +1579,6 @@ const RANGS = [0, 1, 2];
         raisonDoubleRemuneration: valeur('ct-raison-double'),
         resiliationMontant: valeur('ct-resiliation'),
         resiliationPourcentage: valeur('ct-resiliation-pct'),
-        transfertCabinet: valeur('ct-transfert'),
         consentementsValidesJusquau: valeur('ct-validite'),
         identite,
         dateVerification: valeur('ct-date-verification'),
@@ -1468,25 +1664,13 @@ const RANGS = [0, 1, 2];
       const donnees = collecter();
       if (!emprunteursValides(donnees)) return;
 
+      const mode =
+        formulaire.querySelector<HTMLInputElement>('input[name="ct-mode"]:checked')?.value ?? 'distance';
+
       if (!signatureEnregistree) {
         montrerErreur('Enregistrez d’abord votre signature, en haut de la page.');
         barreSignature?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
-      }
-
-      const emprunteurs = donnees.emprunteurs as Array<Record<string, string>>;
-      const voie = formulaire.querySelector<HTMLInputElement>('input[name="ct-voie"]:checked')?.value ?? 'distance';
-      const signatures: Record<string, string> = {};
-      if (voie === 'presence') {
-        for (const [rang] of emprunteurs.entries()) {
-          const pad = document.getElementById(`ct-signature-${rang}`) as SignaturePadElement | null;
-          const png = pad?.versPng();
-          if (!png) {
-            montrerErreur(`Il manque la signature de l’emprunteur ${rang + 1}.`);
-            return;
-          }
-          signatures[String(rang)] = png;
-        }
       }
 
       if (bouton) {
@@ -1498,9 +1682,9 @@ const RANGS = [0, 1, 2];
         const reponse = await fetch('/api/contrat-creer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          // La signature de la courtière n'est pas transmise : le serveur prend celle qui
-          // est mémorisée. Une seule source de vérité, et rien de sensible qui circule.
-          body: JSON.stringify({ donnees, voie, signatures }),
+          // Aucune signature ne circule : la sienne est mémorisée côté serveur et n'entrera
+          // en jeu qu'à la finalisation ; celles des emprunteurs n'existent pas encore.
+          body: JSON.stringify({ donnees, mode }),
         });
         const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
 
@@ -1517,11 +1701,28 @@ const RANGS = [0, 1, 2];
           return;
         }
 
-        const enAttente = (data.enAttente ?? []) as Array<{ nom: string; courriel: string }>;
+        const ordre = (data.ordre ?? []) as Array<{ nom: string; courriel: string }>;
         if (succes) {
-          succes.textContent = enAttente.length
-            ? `Contrat envoyé. En attente de signature : ${enAttente.map((e) => `${e.nom} (${e.courriel})`).join(', ')}.`
-            : 'Contrat signé par toutes les parties et envoyé dans votre boîte courriel.';
+          if (data.mode === 'presence' && typeof data.lien === 'string') {
+            // En présentiel, le lien ne part nulle part : il est remis ici, et la courtière
+            // tend l'appareil au premier signataire.
+            succes.innerHTML = '';
+            succes.append(
+              `Ordre de signature : ${ordre.map((e, i) => `${i + 1}. ${e.nom}`).join(' · ')}. `,
+            );
+            const lien = document.createElement('a');
+            lien.href = data.lien;
+            lien.textContent = `Faire signer ${ordre[0]?.nom ?? 'le premier emprunteur'} →`;
+            lien.style.fontWeight = '700';
+            succes.append(lien);
+          } else {
+            const premier = ordre[0];
+            succes.textContent = `Contrat envoyé à ${premier?.nom ?? 'l’emprunteur'} (${premier?.courriel ?? ''}). ${
+              ordre.length > 1
+                ? `Le suivant recevra son lien dès qu’il aura signé. Ordre : ${ordre.map((e) => e.nom).join(' · ')}.`
+                : ''
+            } Vous serez prévenue pour finaliser.`;
+          }
           succes.hidden = false;
           succes.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
