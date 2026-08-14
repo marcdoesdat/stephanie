@@ -69,6 +69,13 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 appelez au <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>,
                 {' '}{prenomCourtiere} vous en renverra un.
               </p>
+              {/* Même impasse que l'écran de fin : sans Nav ni pied de page, il n'y avait
+                  aucune sortie depuis ici. */}
+              <div class="sc-fin">
+                <a class="btn-secondary btn-secondary--sm sc-retour" href="/">
+                  Visiter le site de {prenomCourtiere} →
+                </a>
+              </div>
             </div>
           ) : (
             <div
@@ -76,6 +83,8 @@ Astro.response.headers.set('Cache-Control', 'no-store');
               data-dossier={dossierId}
               data-jeton={jeton}
               data-nom={nomComplet(entree.emprunteur)}
+              data-prenom-courtiere={prenomCourtiere}
+              data-courriel-signataire={entree.emprunteur.courriel}
             >
               <div data-ecran="lecture">
                 <h1 class="sc-titre">Votre contrat de courtage</h1>
@@ -242,13 +251,32 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 </div>
               </div>
 
+              {/* Fin de parcours. Sans Nav ni pied de page, cet écran était un cul-de-sac :
+                  il disait merci et ne menait nulle part. Il porte maintenant ce qui suit,
+                  de quoi joindre la courtière, et la sortie vers le site. */}
               <div data-ecran="merci" hidden>
+                <p class="sc-marque" data-merci-marque aria-hidden="true">✓</p>
                 <h1 class="sc-titre" data-merci-titre>Merci, c’est signé</h1>
                 <p class="sc-texte" data-merci-texte></p>
                 <p class="sc-texte" data-merci-suivant hidden></p>
-                <p class="sc-texte">
-                  Une question ? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>.
-                </p>
+
+                <ol class="sc-suite" data-merci-suite hidden></ol>
+
+                {/* Masqué pendant le relais en présentiel : l'appareil appartient alors à la
+                    courtière, et rien ne doit inviter à s'en aller visiter le site. */}
+                <div class="sc-fin" data-merci-fin>
+                  <p class="sc-texte">
+                    Une question ? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
+                    {' '}ou appelez {prenomCourtiere} au{' '}
+                    <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>.
+                  </p>
+                  <a class="btn-secondary btn-secondary--sm sc-retour" href="/">
+                    Visiter le site de {prenomCourtiere} →
+                  </a>
+                  <p class="sc-note sc-retour-note">
+                    Taux du jour, calculateurs hypothécaires et prise de rendez-vous.
+                  </p>
+                </div>
               </div>
             </div>
           )
@@ -437,6 +465,58 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     padding: 0.5rem 0;
   }
 
+  /* ---------- Écran de fin ---------- */
+
+  .sc-marque {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    margin: 0 0 1rem;
+    border-radius: 50%;
+    background: #eaf5ec;
+    color: #26603a;
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  /* Un désaccord n'est pas un échec — le message est bien parti — mais ce n'est pas
+     davantage une signature. Ni le vert de la réussite, ni le rouge de l'erreur. */
+  .sc-marque[data-ton='attention'] {
+    background: #fdf2e7;
+    color: #8a5320;
+  }
+
+  .sc-suite {
+    margin: 0 0 1.6rem;
+    padding-left: 1.2rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  /* Les étapes sont écrites en JavaScript : sans :global, la règle scopée ne les
+     atteindrait pas — Astro n'estampe sa portée que sur ce qu'il rend lui-même. */
+  .sc-suite :global(li) {
+    margin-bottom: 0.45rem;
+    padding-left: 0.2rem;
+  }
+
+  .sc-fin {
+    margin-top: 1.8rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--line, #e3d9cc);
+  }
+
+  .sc-retour {
+    margin-top: 0.3rem;
+  }
+
+  .sc-retour-note {
+    margin: 0.7rem 0 0;
+  }
+
   @media (max-width: 560px) {
     .sc-recap-ligne {
       grid-template-columns: 1fr;
@@ -458,6 +538,51 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
     const dossier = app.dataset.dossier ?? '';
     const jeton = app.dataset.jeton ?? '';
+    const prenomCourtiere = app.dataset.prenomCourtiere ?? 'votre courtière';
+    const courrielSignataire = app.dataset.courrielSignataire ?? '';
+
+    /**
+     * Compose l'écran de fin. Les étapes doivent rester vraies de ce que le système fait
+     * vraiment : le seul courriel qu'un emprunteur reçoit après avoir signé est celui du
+     * contrat complet, une fois la courtière passée. Promettre un accusé immédiat ferait
+     * attendre pour rien — et douter du reste.
+     */
+    function composerFin(options: {
+      titre: string;
+      texte: string;
+      etapes?: string[];
+      ton?: 'succes' | 'attention';
+    }): void {
+      const titre = app!.querySelector<HTMLElement>('[data-merci-titre]');
+      const texte = app!.querySelector<HTMLElement>('[data-merci-texte]');
+      const suite = app!.querySelector<HTMLElement>('[data-merci-suite]');
+      const marque = app!.querySelector<HTMLElement>('[data-merci-marque]');
+
+      if (titre) titre.textContent = options.titre;
+      if (texte) texte.textContent = options.texte;
+      if (marque) {
+        if (options.ton === 'attention') marque.dataset.ton = 'attention';
+        else delete marque.dataset.ton;
+      }
+
+      if (suite) {
+        suite.innerHTML = '';
+        const etapes = options.etapes ?? [];
+        for (const etape of etapes) {
+          const li = document.createElement('li');
+          li.textContent = etape;
+          suite.append(li);
+        }
+        suite.hidden = etapes.length === 0;
+      }
+    }
+
+    /** « à marie@exemple.com » — pour que le destinataire repère sa propre faute de frappe. */
+    function reception(): string {
+      return courrielSignataire
+        ? `Vous recevrez le contrat signé par courriel, à ${courrielSignataire}. Prévenez ${prenomCourtiere} si cette adresse n’est pas la bonne.`
+        : 'Vous recevrez le contrat signé par courriel.';
+    }
 
     function afficher(nom: string): void {
       for (const cle of ['lecture', 'refus', 'merci']) {
@@ -529,29 +654,48 @@ Astro.response.headers.set('Cache-Control', 'no-store');
           return;
         }
 
-        const titre = app.querySelector<HTMLElement>('[data-merci-titre]');
-        const texte = app.querySelector<HTMLElement>('[data-merci-texte]');
         const suivant = app.querySelector<HTMLElement>('[data-merci-suivant]');
-        if (titre) titre.textContent = 'Merci, votre signature est enregistrée';
-        if (texte) {
-          texte.textContent = data.complet
-            ? 'Tous les emprunteurs ont signé. Stéphanie signe à son tour, puis vous fera parvenir une copie du contrat.'
-            : 'Le contrat passe maintenant au signataire suivant, qui recevra son lien par courriel.';
+        const nomSuivant = String(data.suivant ?? 'le signataire suivant');
+
+        if (data.complet) {
+          composerFin({
+            titre: 'Merci, votre signature est enregistrée',
+            texte: `Tous les emprunteurs ont signé. Il ne manque plus que ${prenomCourtiere}.`,
+            etapes: [
+              `${prenomCourtiere} relit le contrat et appose sa signature — c’est la dernière.`,
+              reception(),
+            ],
+          });
+        } else {
+          composerFin({
+            titre: 'Merci, votre signature est enregistrée',
+            texte: `Le contrat passe maintenant à ${nomSuivant}, qui recevra son lien par courriel.`,
+            etapes: [
+              `${nomSuivant} lit le contrat et signe à son tour.`,
+              `Quand tout le monde aura signé, ${prenomCourtiere} signe en dernier.`,
+              reception(),
+            ],
+          });
         }
 
         // En présentiel seulement, le serveur renvoie le lien du suivant : on affiche le
         // relais pour que la courtière tende l'appareil, sans repasser par un courriel.
         if (!data.complet && typeof data.lien === 'string' && suivant) {
+          composerFin({
+            titre: 'Merci, votre signature est enregistrée',
+            texte: 'Remettez l’appareil au signataire suivant.',
+          });
           suivant.innerHTML = '';
           const bouton = document.createElement('a');
           bouton.href = data.lien;
           bouton.className = 'btn btn-primary';
-          bouton.textContent = `Passer à ${String(data.suivant ?? 'l’emprunteur suivant')} →`;
+          bouton.textContent = `Passer à ${nomSuivant} →`;
           suivant.append(bouton);
           suivant.hidden = false;
-          if (texte) {
-            texte.textContent = 'Remettez l’appareil au signataire suivant.';
-          }
+
+          // L'appareil n'est pas le sien : ni coordonnées, ni sortie vers le site.
+          const fin = app.querySelector<HTMLElement>('[data-merci-fin]');
+          if (fin) fin.hidden = true;
         }
 
         afficher('merci');
@@ -584,13 +728,15 @@ Astro.response.headers.set('Cache-Control', 'no-store');
           boutonRefus.textContent = libelleOrigine;
           return;
         }
-        const titre = app.querySelector<HTMLElement>('[data-merci-titre]');
-        const texte = app.querySelector<HTMLElement>('[data-merci-texte]');
-        if (titre) titre.textContent = 'C’est noté, rien n’a été signé';
-        if (texte) {
-          texte.textContent =
-            'Stéphanie a été prévenue. Elle vous rappellera, corrigera le contrat et vous en renverra un.';
-        }
+        composerFin({
+          titre: 'C’est noté, rien n’a été signé',
+          texte: `${prenomCourtiere} a été prévenue à l’instant. Aucun contrat ne sera produit d’ici là.`,
+          etapes: [
+            `${prenomCourtiere} vous rappelle pour comprendre ce qui ne va pas.`,
+            'Elle corrige le contrat et vous en envoie un nouveau à signer.',
+          ],
+          ton: 'attention',
+        });
         afficher('merci');
       } catch {
         montrerErreur(erreurRefus, 'Connexion impossible. Vérifiez votre réseau et réessayez.');
