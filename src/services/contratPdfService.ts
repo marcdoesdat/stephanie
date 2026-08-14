@@ -234,7 +234,7 @@ export async function genererContratPdf(
   donnees: DonneesContrat,
   signatures: ReadonlyMap<number, SignatureEstampee>,
   signatureCourtiere: SignatureEstampee | null,
-  reponses: ReadonlyArray<ReponsesEmprunteur | null> = [],
+  reponses: ReadonlyArray<ReponsesEmprunteur | null | undefined> = [],
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.load(MODELE_BASE64);
   const pages = pdf.getPages();
@@ -278,8 +278,10 @@ export async function genererContratPdf(
 
   const p2 = pageDe(pages, 2);
   ecrire(p2, COLLABORATEUR, donnees.collaborateur, font);
-  // Une seule case pour tout le monde : un seul « oui » suffit à la cocher.
-  cocherCase(pages, PPV_CASES[agregerPpv(reponses)]);
+  // Une seule case pour tout le monde : un seul « oui » suffit à la cocher. Rien n'est coché
+  // tant que personne n'a répondu — voir `agregerPpv`.
+  const ppv = agregerPpv(reponses);
+  if (ppv) cocherCase(pages, PPV_CASES[ppv]);
 
   /* ---------- Financement ---------- */
 

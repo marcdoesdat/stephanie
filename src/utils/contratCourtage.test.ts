@@ -401,9 +401,19 @@ describe('agregerPpv', () => {
     expect(agregerPpv([rep('non', 'oui'), rep('non', 'oui')])).toBe('non');
   });
 
-  it('vaut « Non » tant que personne n’a répondu', () => {
-    expect(agregerPpv([])).toBe('non');
-    expect(agregerPpv([null, null])).toBe('non');
+  it('ne coche rien tant que personne n’a répondu', () => {
+    // Cocher « Non » d'office déclarerait, au nom de gens à qui on n'a rien demandé, qu'ils
+    // ne sont pas politiquement vulnérables.
+    expect(agregerPpv([])).toBeNull();
+    expect(agregerPpv([null, null])).toBeNull();
+  });
+
+  it('tolère un dossier écrit avant l’existence des réponses', () => {
+    // Régression : un dossier créé par une version antérieure n'a pas de champ `reponses`,
+    // et `undefined` passait le filtre `!== null` — la finalisation plantait.
+    const heritage = [undefined, undefined];
+    expect(agregerPpv(heritage)).toBeNull();
+    expect(agregerTransfert(heritage)).toBeNull();
   });
 });
 

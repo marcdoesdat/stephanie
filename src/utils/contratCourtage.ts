@@ -444,9 +444,17 @@ export interface ReponsesEmprunteur {
  * pluriel : « … s'applique à l'un des emprunteurs ». Il suffit donc d'un seul « oui » pour
  * que la case « Oui » soit cochée. Répondre « Non » parce que deux emprunteurs sur trois
  * l'ont dit serait une fausse déclaration.
+ *
+ * `null` tant que personne n'a répondu : cocher « Non » d'office reviendrait à déclarer, au
+ * nom de gens à qui on n'a rien demandé, qu'ils ne sont pas politiquement vulnérables. Une
+ * case vide se voit ; une fausse déclaration, non.
  */
-export function agregerPpv(reponses: ReadonlyArray<ReponsesEmprunteur | null>): 'oui' | 'non' {
-  return reponses.some((r) => r?.ppv === 'oui') ? 'oui' : 'non';
+export function agregerPpv(
+  reponses: ReadonlyArray<ReponsesEmprunteur | null | undefined>,
+): 'oui' | 'non' | null {
+  const donnees = reponses.filter((r): r is ReponsesEmprunteur => r != null);
+  if (donnees.length === 0) return null;
+  return donnees.some((r) => r.ppv === 'oui') ? 'oui' : 'non';
 }
 
 /**
@@ -456,9 +464,11 @@ export function agregerPpv(reponses: ReadonlyArray<ReponsesEmprunteur | null>): 
  * Tant qu'aucune réponse n'est parvenue, on ne coche rien — d'où le `null`.
  */
 export function agregerTransfert(
-  reponses: ReadonlyArray<ReponsesEmprunteur | null>,
+  reponses: ReadonlyArray<ReponsesEmprunteur | null | undefined>,
 ): 'oui' | 'non' | null {
-  const donnees = reponses.filter((r): r is ReponsesEmprunteur => r !== null);
+  // `!= null` et non `!== null` : un dossier écrit par une version antérieure n'a pas de
+  // champ `reponses`, et laisser passer `undefined` ici faisait planter la finalisation.
+  const donnees = reponses.filter((r): r is ReponsesEmprunteur => r != null);
   if (donnees.length === 0) return null;
   return donnees.some((r) => r.transfertCabinet === 'non') ? 'non' : 'oui';
 }
