@@ -87,6 +87,27 @@ const RANGS = [0, 1, 2];
               </p>
             </header>
 
+            {/* ---------------- Contrats en cours ---------------- */}
+
+            {/* En tête de page, avant le formulaire : un dossier qui attend *sa* signature
+                passe avant un nouveau contrat. La liste se charge d'elle-même et s'ouvre
+                seule quand quelque chose lui revient — un suivi qu'il faut penser à ouvrir
+                pour savoir s'il se passe quelque chose ne se consulte pas. */}
+            <details class="ct-repliable ct-suivi" id="ct-suivi">
+              <summary>
+                <span class="ct-repliable-titre">Contrats en cours</span>
+                <span class="ct-repliable-note" data-suivi-compte>chargement…</span>
+              </summary>
+              <div class="ct-repliable-corps">
+                <p class="ct-aide" data-suivi-etat aria-live="polite">Chargement…</p>
+                <div data-suivi-liste></div>
+                <div class="ct-suivi-pied" data-suivi-pied hidden>
+                  <button type="button" class="ct-lien" data-suivi-actualiser>Actualiser</button>
+                  <span class="ct-suivi-horodatage" data-suivi-horodatage></span>
+                </div>
+              </div>
+            </details>
+
             {/* ---------------- Ma signature ---------------- */}
 
             <div class="ct-signature-barre" data-etat={signatureEnregistree ? 'ok' : 'manquante'}>
@@ -147,19 +168,6 @@ const RANGS = [0, 1, 2];
                 <p class="ct-erreur" data-erreur-signature hidden />
               </div>
             </div>
-
-            {/* ---------------- Contrats en cours ---------------- */}
-
-            <details class="ct-repliable" id="ct-suivi">
-              <summary>
-                <span class="ct-repliable-titre">Contrats en cours</span>
-                <span class="ct-repliable-note" data-suivi-compte>ouvrez pour charger</span>
-              </summary>
-              <div class="ct-repliable-corps">
-                <p class="ct-aide" data-suivi-etat>Chargement…</p>
-                <div data-suivi-liste></div>
-              </div>
-            </details>
 
             {/* ---------------- Emprunteurs ---------------- */}
 
@@ -927,59 +935,46 @@ const RANGS = [0, 1, 2];
     color: var(--muted);
   }
 
-  .ct-dossier {
-    padding: 0.8rem 0.9rem;
-    margin-bottom: 0.7rem;
-    border: 1px solid var(--line, #e3d9cc);
-    border-radius: 10px;
-    background: #fff;
-    font-size: 0.87rem;
-  }
+  /* ---------- Suivi des contrats en cours ---------- */
 
-  .ct-dossier-titre {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.5rem 0.8rem;
-    margin: 0 0 0.4rem;
+  /* Le compte reste discret tant qu'il n'y a rien à faire, et devient une pastille
+     lisible dès qu'un dossier attend la courtière : c'est le seul signal visible
+     quand la section est repliée. */
+  .ct-repliable-note[data-ton='action'] {
+    padding: 0.12rem 0.55rem;
+    border-radius: 999px;
+    background: #eaf5ec;
+    color: #26603a;
     font-weight: 700;
   }
 
-  .ct-etat {
-    padding: 0.1rem 0.5rem;
+  .ct-repliable-note[data-ton='alerte'] {
+    padding: 0.12rem 0.55rem;
     border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .ct-etat[data-etat='en_attente'] {
-    background: #fdf2e7;
-    color: #8a5320;
-  }
-
-  .ct-etat[data-etat='a_finaliser'] {
-    background: #eaf5ec;
-    color: #26603a;
-  }
-
-  .ct-etat[data-etat='gele'] {
     background: #fdeceb;
     color: #8f2f28;
+    font-weight: 700;
   }
 
-  .ct-dossier-signataires {
-    margin: 0 0 0.5rem;
-    padding-left: 1.1rem;
-    color: var(--muted);
-    line-height: 1.5;
+  .ct-suivi[open] {
+    border-color: #d8cbb8;
   }
 
-  .ct-dossier-actions {
+  .ct-suivi-pied {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem 1rem;
-    align-items: center;
+    align-items: baseline;
+    gap: 0.3rem 0.8rem;
+    margin-top: 0.2rem;
   }
+
+  .ct-suivi-horodatage {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  /* Les cartes de dossier, elles, sont bâties en JavaScript : leurs règles vivent dans le
+     bloc `is:global` plus bas — le style scopé d'Astro ne les atteindrait pas. */
 
   .ct-etapes {
     margin: 0 0 0.5rem;
@@ -1002,31 +997,6 @@ const RANGS = [0, 1, 2];
   .ct-memoriser-etat {
     font-size: 0.82rem;
     color: #26603a;
-  }
-
-  .ct-lien {
-    background: none;
-    border: 0;
-    padding: 0.2rem 0;
-    font: inherit;
-    font-size: 0.85rem;
-    color: var(--muted);
-    text-decoration: underline;
-    cursor: pointer;
-  }
-
-  .ct-lien:hover {
-    color: var(--ink, #1f1e1c);
-  }
-
-  .ct-bouton,
-  .ct-bouton-petit {
-    margin-top: 0.6rem;
-  }
-
-  .ct-bouton-petit {
-    padding: 0.5rem 1rem;
-    font-size: 0.88rem;
   }
 
   .ct-bouton-secondaire {
@@ -1136,6 +1106,189 @@ const RANGS = [0, 1, 2];
     .ct-barre-actions .btn {
       flex: 1 1 auto;
     }
+  }
+</style>
+
+{/*
+  Habillage des éléments construits en JavaScript — les cartes du suivi, les liens de
+  signature, les boutons discrets. Astro scope son `<style>` en ajoutant un attribut de
+  portée aux éléments qu'il rend lui-même ; ceux que `document.createElement` fabrique ne le
+  portent pas, et une règle scopée ne les atteint jamais. D'où ce bloc global, tenu à
+  l'intérieur de `#ct-form` / `#ct-suivi` pour qu'il ne déborde pas de la page.
+*/}
+<style is:global>
+  #ct-form .ct-lien {
+    background: none;
+    border: 0;
+    padding: 0.2rem 0;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  #ct-form .ct-lien:hover {
+    color: var(--ink, #1f1e1c);
+  }
+
+  #ct-form .ct-bouton,
+  #ct-form .ct-bouton-petit {
+    margin-top: 0.6rem;
+  }
+
+  #ct-form .ct-bouton-petit {
+    padding: 0.5rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  #ct-suivi .ct-dossier {
+    padding: 0.8rem 0.9rem;
+    margin-bottom: 0.7rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 0.87rem;
+  }
+
+  /* Celui qui attend une action d'elle se distingue au premier coup d'œil. */
+  #ct-suivi .ct-dossier[data-statut='a_finaliser'] {
+    border-color: #9dc4a9;
+    box-shadow: inset 3px 0 0 #26603a;
+  }
+
+  #ct-suivi .ct-dossier[data-statut='gele'] {
+    background: #fffbfb;
+    border-color: #e8c9c6;
+    box-shadow: inset 3px 0 0 #8f2f28;
+  }
+
+  #ct-suivi .ct-dossier-titre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.7rem;
+    margin: 0 0 0.25rem;
+    font-weight: 700;
+  }
+
+  #ct-suivi .ct-etat {
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  #ct-suivi .ct-etat[data-etat='en_attente'] {
+    background: #fdf2e7;
+    color: #8a5320;
+  }
+
+  #ct-suivi .ct-etat[data-etat='a_finaliser'] {
+    background: #eaf5ec;
+    color: #26603a;
+  }
+
+  #ct-suivi .ct-etat[data-etat='gele'] {
+    background: #fdeceb;
+    color: #8f2f28;
+  }
+
+  #ct-suivi .ct-dossier-meta {
+    margin: 0 0 0.5rem;
+    font-size: 0.79rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  #ct-suivi .ct-urgent {
+    color: #8f2f28;
+    font-weight: 700;
+  }
+
+  #ct-suivi .ct-dossier-signataires {
+    margin: 0 0 0.6rem;
+    padding: 0;
+    list-style: none;
+    line-height: 1.45;
+  }
+
+  #ct-suivi .ct-dossier-signataires li {
+    display: grid;
+    grid-template-columns: 1rem minmax(0, 1fr);
+    gap: 0.5rem;
+    padding: 0.12rem 0;
+    color: var(--muted);
+  }
+
+  #ct-suivi .ct-etape-corps {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1rem 0.45rem;
+  }
+
+  /* La personne dont c'est le tour est celle sur qui agir : elle reste en pleine encre. */
+  #ct-suivi .ct-dossier-signataires li[data-etape='courant'] {
+    color: var(--ink, #1f1e1c);
+    font-weight: 600;
+  }
+
+  #ct-suivi .ct-puce {
+    flex: 0 0 1rem;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+
+  #ct-suivi li[data-etape='signe'] .ct-puce {
+    color: #26603a;
+  }
+
+  #ct-suivi li[data-etape='courant'] .ct-puce {
+    color: var(--accent, #a85f38);
+  }
+
+  #ct-suivi li[data-etape='attente'] .ct-puce {
+    color: #c9bba8;
+  }
+
+  #ct-suivi li[data-etape='refus'] .ct-puce {
+    color: #8f2f28;
+  }
+
+  #ct-suivi .ct-etape-note {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  #ct-suivi .ct-dossier-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1rem;
+    align-items: center;
+  }
+
+  /* Un lien de signature en présentiel : c'est le seul endroit où le jeton apparaît. Il doit
+     se voir, et pouvoir partir par texto sans être recopié à la main. */
+  #ct-form .ct-lien-signature {
+    font-weight: 700;
+  }
+
+  #ct-form .ct-note-action {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  #ct-form .ct-note-succes {
+    font-size: 0.82rem;
+    color: #26603a;
+  }
+
+  #ct-form .ct-note-echec {
+    font-size: 0.82rem;
+    color: #8f2f28;
   }
 </style>
 
@@ -1366,51 +1519,268 @@ const RANGS = [0, 1, 2];
 
     /* ---------------- Suivi des contrats en cours ---------------- */
 
+    interface ResumeDossier {
+      readonly id: string;
+      readonly creeLe: string;
+      readonly expireLe: string;
+      readonly statut: string;
+      readonly mode: string;
+      readonly emprunteurs: Array<{ nom: string; courriel: string; signeLe: string | null }>;
+      readonly courant: { nom: string; courriel: string } | null;
+      readonly refusePar: string | null;
+    }
+
     const suivi = document.getElementById('ct-suivi') as HTMLDetailsElement | null;
     let suiviCharge = false;
+    let suiviOuvertAuto = false;
 
-    function texteEtat(statut: string): string {
-      if (statut === 'a_finaliser') return 'à signer par vous';
-      if (statut === 'gele') return 'gelé';
-      return 'en attente';
+    const RELATIF = new Intl.RelativeTimeFormat('fr-CA', { numeric: 'auto' });
+    const DATE_COMPLETE = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
+
+    /**
+     * « hier », « dans 6 jours » — au grain qui parle : l'heure sous une journée, le jour
+     * au-delà. Un horodatage exact demande un calcul mental que « expire demain » épargne.
+     */
+    function relatif(iso: string): string {
+      const cible = Date.parse(iso);
+      if (Number.isNaN(cible)) return '';
+      const ecart = cible - Date.now();
+
+      const minutes = Math.round(ecart / 60000);
+      if (Math.abs(minutes) < 1) return 'à l’instant';
+      if (Math.abs(minutes) < 60) return RELATIF.format(minutes, 'minute');
+
+      const heures = Math.round(ecart / 3600000);
+      if (Math.abs(heures) < 24) return RELATIF.format(heures, 'hour');
+      return RELATIF.format(Math.round(ecart / 86400000), 'day');
+    }
+
+    function dateComplete(iso: string): string {
+      const instant = Date.parse(iso);
+      return Number.isNaN(instant) ? '' : DATE_COMPLETE.format(new Date(instant));
+    }
+
+    /** Le délai de 10 jours se referme : c'est le moment de relancer, pas d'attendre. */
+    function bientotPerime(iso: string): boolean {
+      const instant = Date.parse(iso);
+      return !Number.isNaN(instant) && instant - Date.now() < 2 * 86400000;
+    }
+
+    /** Un dossier qui attend un geste d'elle — ce sont ceux qui font ouvrir la section. */
+    function reclameSonAttention(dossier: ResumeDossier): boolean {
+      return (
+        dossier.statut === 'a_finaliser' ||
+        dossier.statut === 'gele' ||
+        (dossier.statut === 'en_attente' && bientotPerime(dossier.expireLe))
+      );
+    }
+
+    function texteEtat(dossier: ResumeDossier): string {
+      if (dossier.statut === 'a_finaliser') return 'à signer par vous';
+      if (dossier.statut === 'gele') return 'refusé';
+      return dossier.mode === 'presence' ? 'à faire signer' : 'en attente';
+    }
+
+    /** Une ligne de contexte : depuis quand, où en est la séquence, jusqu'à quand. */
+    function construireMeta(dossier: ResumeDossier): HTMLParagraphElement {
+      const meta = document.createElement('p');
+      meta.className = 'ct-dossier-meta';
+
+      const total = dossier.emprunteurs.length;
+      const signes = dossier.emprunteurs.filter((e) => e.signeLe).length;
+      const progression =
+        total === 1
+          ? signes === 1
+            ? 'signé'
+            : 'pas encore signé'
+          : `${signes} signature${signes > 1 ? 's' : ''} sur ${total}`;
+      const depart = dossier.mode === 'presence' ? 'Créé' : 'Envoyé';
+
+      const debut = document.createElement('span');
+      debut.textContent = `${depart} ${relatif(dossier.creeLe)} · ${progression}`;
+      debut.title = `Créé le ${dateComplete(dossier.creeLe)}`;
+      meta.append(debut);
+
+      if (dossier.statut !== 'gele') {
+        const echeance = document.createElement('span');
+        if (bientotPerime(dossier.expireLe)) echeance.className = 'ct-urgent';
+        echeance.textContent = ` · expire ${relatif(dossier.expireLe)}`;
+        echeance.title = `Les liens cessent de valoir le ${dateComplete(dossier.expireLe)}.`;
+        meta.append(echeance);
+      }
+
+      return meta;
+    }
+
+    /**
+     * La séquence de signature, un signataire par ligne. Le tour de chacun se lit d'un
+     * coup d'œil : c'est la question qu'on se pose en ouvrant cet écran.
+     */
+    function construireSignataires(dossier: ResumeDossier): HTMLOListElement {
+      const signataires = document.createElement('ol');
+      signataires.className = 'ct-dossier-signataires';
+
+      for (const emprunteur of dossier.emprunteurs) {
+        const ligne = document.createElement('li');
+        const estCourant =
+          dossier.statut === 'en_attente' && dossier.courant?.courriel === emprunteur.courriel;
+        const aRefuse = dossier.statut === 'gele' && emprunteur.nom === dossier.refusePar;
+        ligne.dataset.etape = emprunteur.signeLe
+          ? 'signe'
+          : aRefuse
+            ? 'refus'
+            : estCourant
+              ? 'courant'
+              : 'attente';
+
+        const puce = document.createElement('span');
+        puce.className = 'ct-puce';
+        puce.setAttribute('aria-hidden', 'true');
+        puce.textContent = emprunteur.signeLe ? '✓' : aRefuse ? '✕' : estCourant ? '▸' : '○';
+        ligne.append(puce);
+
+        // Nom et note dans une même colonne : sur un écran étroit, la note qui déborde
+        // revient sous le nom plutôt que sous la puce.
+        const corps = document.createElement('span');
+        corps.className = 'ct-etape-corps';
+        ligne.append(corps);
+
+        const nom = document.createElement('span');
+        nom.textContent = emprunteur.nom;
+        corps.append(nom);
+
+        const note = document.createElement('span');
+        note.className = 'ct-etape-note';
+        if (emprunteur.signeLe) {
+          note.textContent = `signé ${relatif(emprunteur.signeLe)}`;
+          note.title = dateComplete(emprunteur.signeLe);
+        } else if (dossier.statut === 'gele') {
+          note.textContent = aRefuse ? 'a refusé de signer' : 'n’a pas signé';
+        } else if (estCourant) {
+          // L'adresse est montrée là où elle compte. Une faute de frappe ne se manifeste
+          // autrement que par un silence qu'on prend pour de la lenteur.
+          note.textContent =
+            dossier.mode === 'presence' ? 'c’est son tour — sur place' : `c’est son tour — ${emprunteur.courriel}`;
+        } else {
+          note.textContent = 'recevra son lien à son tour';
+        }
+        corps.append(note);
+
+        signataires.append(ligne);
+      }
+
+      return signataires;
+    }
+
+    function construireActions(dossier: ResumeDossier): HTMLDivElement {
+      const actions = document.createElement('div');
+      actions.className = 'ct-dossier-actions';
+
+      if (dossier.statut === 'a_finaliser') {
+        const finaliser = document.createElement('a');
+        finaliser.href = `/finaliser-contrat?d=${encodeURIComponent(dossier.id)}`;
+        finaliser.className = 'btn btn-primary ct-bouton-petit';
+        finaliser.textContent = 'Relire et signer →';
+        actions.append(finaliser);
+      } else if (dossier.statut === 'en_attente' && dossier.courant) {
+        const relancer = document.createElement('button');
+        relancer.type = 'button';
+        relancer.className = 'ct-lien';
+        relancer.textContent =
+          dossier.mode === 'presence'
+            ? `Rouvrir le lien de ${dossier.courant.nom}`
+            : `Renvoyer le lien à ${dossier.courant.nom}`;
+        relancer.title = 'L’ancien lien cesse aussitôt de fonctionner.';
+        relancer.addEventListener('click', () => relancerLien(dossier.id, relancer, actions));
+        actions.append(relancer);
+      } else if (dossier.refusePar) {
+        const note = document.createElement('span');
+        note.className = 'ct-note-action';
+        note.textContent = `Refusé par ${dossier.refusePar} — aucun contrat ne sera produit. Préparez-en un nouveau.`;
+        actions.append(note);
+      }
+
+      return actions;
+    }
+
+    /** Le compte replié : discret quand tout suit son cours, pastille quand elle est attendue. */
+    function resumerEnTete(compte: HTMLElement | null, dossiers: ResumeDossier[]): void {
+      if (!compte) return;
+
+      const aFinaliser = dossiers.filter((d) => d.statut === 'a_finaliser').length;
+      const refuses = dossiers.filter((d) => d.statut === 'gele').length;
+      const attendus = dossiers.length - aFinaliser - refuses;
+
+      const parties: string[] = [];
+      if (aFinaliser > 0) parties.push(`${aFinaliser} à signer par vous`);
+      if (refuses > 0) parties.push(refuses > 1 ? `${refuses} refusés` : '1 refusé');
+      if (attendus > 0) parties.push(`${attendus} en attente de signature`);
+
+      if (aFinaliser > 0) compte.dataset.ton = 'action';
+      else if (refuses > 0) compte.dataset.ton = 'alerte';
+      else delete compte.dataset.ton;
+
+      compte.textContent = parties.length === 0 ? 'aucun' : parties.join(' · ');
     }
 
     async function chargerSuivi(): Promise<void> {
       const etat = formulaire.querySelector<HTMLElement>('[data-suivi-etat]');
       const liste = formulaire.querySelector<HTMLElement>('[data-suivi-liste]');
       const compte = formulaire.querySelector<HTMLElement>('[data-suivi-compte]');
+      const pied = formulaire.querySelector<HTMLElement>('[data-suivi-pied]');
+      const horodatage = formulaire.querySelector<HTMLElement>('[data-suivi-horodatage]');
       if (!liste || !etat) return;
 
       etat.textContent = 'Chargement…';
+      etat.hidden = false;
       liste.innerHTML = '';
 
       try {
         const reponse = await fetch('/api/contrat-dossiers');
         const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
         if (!reponse.ok) {
-          etat.textContent = String(data.error ?? 'Chargement impossible.');
+          suiviCharge = false; // Un échec ne doit pas figer la section sur son message d'erreur.
+          if (compte) {
+            compte.dataset.ton = 'alerte';
+            compte.textContent = 'indisponible';
+          }
+          etat.textContent =
+            data.code === 'acces'
+              ? 'Votre session a expiré. Rechargez la page pour vous reconnecter.'
+              : String(data.error ?? 'Chargement impossible.');
+          if (pied) pied.hidden = false;
           return;
         }
 
-        const dossiers = (data.dossiers ?? []) as Array<{
-          id: string;
-          statut: string;
-          mode: string;
-          emprunteurs: Array<{ nom: string; courriel: string; signeLe: string | null }>;
-          courant: { nom: string; courriel: string } | null;
-          refusePar: string | null;
-        }>;
+        const dossiers = (data.dossiers ?? []) as ResumeDossier[];
 
-        if (compte) compte.textContent = dossiers.length === 0 ? 'aucun' : `${dossiers.length}`;
+        // Le serveur trie du plus récent au plus ancien. Ici, c'est l'urgence qui commande :
+        // ce qui l'attend en premier, puis, à statut égal, ce qui expire le plus tôt.
+        const PRIORITE: Record<string, number> = { a_finaliser: 0, gele: 1, en_attente: 2 };
+        dossiers.sort(
+          (a, b) =>
+            (PRIORITE[a.statut] ?? 3) - (PRIORITE[b.statut] ?? 3) ||
+            Date.parse(a.expireLe) - Date.parse(b.expireLe),
+        );
+
+        resumerEnTete(compte, dossiers);
+
+        if (pied) pied.hidden = false;
+        if (horodatage) {
+          horodatage.textContent = `à jour à ${new Intl.DateTimeFormat('fr-CA', { timeStyle: 'short' }).format(new Date())}`;
+        }
+
         if (dossiers.length === 0) {
-          etat.textContent = 'Aucun contrat en cours. Ceux qui sont signés et envoyés sont supprimés.';
+          etat.textContent =
+            'Aucun contrat en cours. Ceux qui sont signés et envoyés sont retirés d’ici automatiquement.';
           return;
         }
-        etat.textContent = '';
+        etat.hidden = true;
 
         for (const dossier of dossiers) {
           const bloc = document.createElement('div');
           bloc.className = 'ct-dossier';
+          bloc.dataset.statut = dossier.statut;
 
           const titre = document.createElement('p');
           titre.className = 'ct-dossier-titre';
@@ -1418,59 +1788,55 @@ const RANGS = [0, 1, 2];
           const etiquette = document.createElement('span');
           etiquette.className = 'ct-etat';
           etiquette.dataset.etat = dossier.statut;
-          etiquette.textContent = texteEtat(dossier.statut);
+          etiquette.textContent = texteEtat(dossier);
           titre.append(etiquette);
-          bloc.append(titre);
 
-          const signataires = document.createElement('ul');
-          signataires.className = 'ct-dossier-signataires';
-          for (const e of dossier.emprunteurs) {
-            const li = document.createElement('li');
-            li.textContent = e.signeLe
-              ? `${e.nom} — signé`
-              : dossier.courant?.courriel === e.courriel
-                ? `${e.nom} — c’est son tour`
-                : `${e.nom} — en attente de son tour`;
-            signataires.append(li);
-          }
-          bloc.append(signataires);
-
-          const actions = document.createElement('div');
-          actions.className = 'ct-dossier-actions';
-
-          if (dossier.statut === 'a_finaliser') {
-            const finaliser = document.createElement('a');
-            finaliser.href = `/finaliser-contrat?d=${encodeURIComponent(dossier.id)}`;
-            finaliser.textContent = 'Relire et signer →';
-            finaliser.style.fontWeight = '700';
-            actions.append(finaliser);
-          } else if (dossier.statut === 'en_attente' && dossier.courant) {
-            const relancer = document.createElement('button');
-            relancer.type = 'button';
-            relancer.className = 'ct-lien';
-            relancer.textContent =
-              dossier.mode === 'presence'
-                ? `Rouvrir le lien de ${dossier.courant.nom}`
-                : `Renvoyer le lien à ${dossier.courant.nom}`;
-            relancer.addEventListener('click', () => relancer1(dossier.id, relancer, actions));
-            actions.append(relancer);
-          } else if (dossier.refusePar) {
-            const note = document.createElement('span');
-            note.style.color = 'var(--muted)';
-            note.textContent = `Refusé par ${dossier.refusePar} — préparez un nouveau contrat.`;
-            actions.append(note);
-          }
-
-          bloc.append(actions);
+          bloc.append(titre, construireMeta(dossier), construireSignataires(dossier), construireActions(dossier));
           liste.append(bloc);
         }
+
+        // S'ouvrir d'elle-même quand un dossier lui revient : le seul cas où l'écran de
+        // suivi est plus urgent que le formulaire qu'elle est venue remplir.
+        if (suivi && !suivi.open && !suiviOuvertAuto && dossiers.some(reclameSonAttention)) {
+          suiviOuvertAuto = true;
+          suivi.open = true;
+        }
       } catch {
-        etat.textContent = 'Connexion impossible. Vérifiez votre réseau.';
+        suiviCharge = false;
+        etat.textContent = 'Connexion impossible. Vérifiez votre réseau, puis actualisez.';
+        if (pied) pied.hidden = false;
       }
     }
 
+    /**
+     * Affiche un lien de signature en présentiel. C'est le seul endroit où ce jeton
+     * apparaît — il doit se voir, et pouvoir partir par texto sans être recopié à la main.
+     */
+    function ajouterLienPresence(hote: HTMLElement, url: string, nom: string): void {
+      const lien = document.createElement('a');
+      lien.href = url;
+      lien.className = 'ct-lien-signature';
+      lien.textContent = `Faire signer ${nom} →`;
+      hote.append(lien);
+
+      if (!navigator.clipboard) return;
+      const copier = document.createElement('button');
+      copier.type = 'button';
+      copier.className = 'ct-lien';
+      copier.textContent = 'copier le lien';
+      copier.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(new URL(url, location.origin).href);
+          copier.textContent = 'lien copié ✓';
+        } catch {
+          copier.textContent = 'copie impossible — ouvrez le lien';
+        }
+      });
+      hote.append(copier);
+    }
+
     /** Réémet le lien du signataire courant ; l'ancien cesse aussitôt de valoir. */
-    async function relancer1(id: string, bouton: HTMLButtonElement, actions: HTMLElement): Promise<void> {
+    async function relancerLien(id: string, bouton: HTMLButtonElement, actions: HTMLElement): Promise<void> {
       bouton.disabled = true;
       const libelle = bouton.textContent;
       bouton.textContent = 'Envoi…';
@@ -1483,39 +1849,54 @@ const RANGS = [0, 1, 2];
         });
         const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
 
-        const message = document.createElement('span');
         if (!reponse.ok) {
-          message.style.color = '#8f2f28';
-          message.textContent = String(data.error ?? 'La relance a échoué.');
+          const echec = document.createElement('span');
+          echec.className = 'ct-note-echec';
+          echec.textContent = String(data.error ?? 'La relance a échoué.');
+          actions.append(echec);
           bouton.disabled = false;
           bouton.textContent = libelle;
-        } else if (data.mode === 'presence' && typeof data.lien === 'string') {
-          const lien = document.createElement('a');
-          lien.href = data.lien;
-          lien.textContent = `Faire signer ${String(data.nom ?? '')} →`;
-          lien.style.fontWeight = '700';
-          message.append(lien);
-          bouton.remove();
-        } else {
-          message.style.color = '#26603a';
-          message.textContent = `Nouveau lien envoyé à ${String(data.courriel ?? data.nom ?? '')}. L’ancien ne fonctionne plus.`;
-          bouton.remove();
+          return;
         }
-        actions.append(message);
+
+        // Le bouton disparaît : le lien qu'il vient de produire est le seul valide, et
+        // relancer une seconde fois le périmerait aussitôt.
+        bouton.remove();
+
+        if (data.mode === 'presence' && typeof data.lien === 'string') {
+          ajouterLienPresence(actions, data.lien, String(data.nom ?? 'l’emprunteur'));
+        } else {
+          const succes = document.createElement('span');
+          succes.className = 'ct-note-succes';
+          succes.textContent = `Nouveau lien envoyé à ${String(data.courriel ?? data.nom ?? '')}. L’ancien ne fonctionne plus.`;
+          actions.append(succes);
+        }
       } catch {
         bouton.disabled = false;
         bouton.textContent = libelle;
       }
     }
 
-    // Chargé à l'ouverture seulement : inutile d'interroger le stockage à chaque visite de
-    // la page, alors que la plupart du temps elle vient y saisir un nouveau contrat.
-    suivi?.addEventListener('toggle', () => {
-      if (suivi.open && !suiviCharge) {
+    if (suivi) {
+      // Chargé d'emblée. Attendre qu'elle pense à ouvrir la section économisait une lecture
+      // du stockage par visite, au prix de ne rien savoir : un contrat prêt à finaliser
+      // pouvait dormir là des jours sans que rien ne le laisse voir depuis la page repliée.
+      suiviCharge = true;
+      void chargerSuivi();
+
+      // Filet : si le chargement automatique a échoué, l'ouvrir réessaie.
+      suivi.addEventListener('toggle', () => {
+        if (suivi.open && !suiviCharge) {
+          suiviCharge = true;
+          void chargerSuivi();
+        }
+      });
+
+      formulaire.querySelector('[data-suivi-actualiser]')?.addEventListener('click', () => {
         suiviCharge = true;
         void chargerSuivi();
-      }
-    });
+      });
+    }
 
     /* ---------------- Collecte ---------------- */
 
@@ -1710,11 +2091,7 @@ const RANGS = [0, 1, 2];
             succes.append(
               `Ordre de signature : ${ordre.map((e, i) => `${i + 1}. ${e.nom}`).join(' · ')}. `,
             );
-            const lien = document.createElement('a');
-            lien.href = data.lien;
-            lien.textContent = `Faire signer ${ordre[0]?.nom ?? 'le premier emprunteur'} →`;
-            lien.style.fontWeight = '700';
-            succes.append(lien);
+            ajouterLienPresence(succes, data.lien, ordre[0]?.nom ?? 'le premier emprunteur');
           } else {
             const premier = ordre[0];
             succes.textContent = `Contrat envoyé à ${premier?.nom ?? 'l’emprunteur'} (${premier?.courriel ?? ''}). ${
@@ -1727,6 +2104,11 @@ const RANGS = [0, 1, 2];
           succes.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
         if (bouton) bouton.textContent = 'Contrat envoyé';
+
+        // Le dossier qui vient de partir doit apparaître dans le suivi sans rechargement :
+        // c'est là qu'elle reviendra pour relancer ou finaliser.
+        suiviCharge = true;
+        void chargerSuivi();
       } catch {
         montrerErreur('Connexion impossible. Vérifiez votre réseau et réessayez.');
         if (bouton) {

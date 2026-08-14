@@ -322,6 +322,23 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
 - `reemettreLienCourant(id)` relit le dossier plutôt que de croire l'objet reçu : réémettre un
   lien sur un dossier gelé entre-temps par un refus serait exactement le cas où plus aucun
   lien ne doit vivre.
+- **L'écran de suivi se charge seul, et s'ouvre seul quand elle est attendue.** Il est en
+  tête de `/contrat`, avant le formulaire : un contrat prêt à finaliser passe avant un
+  nouveau contrat. Tant qu'il fallait penser à déplier la section pour savoir s'il s'y
+  passait quelque chose, un dossier pouvait y dormir des jours. Le compte replié suffit à
+  le dire ; la section ne se déplie d'elle-même que si un dossier est à finaliser, refusé,
+  ou sur le point d'expirer. Les cartes sont triées par urgence, pas par date.
+- **Les écrans de fin de `/signer-contrat` ne sont pas des culs-de-sac.** La page n'a ni Nav
+  ni pied de page : la confirmation et le lien périmé portent donc eux-mêmes les
+  coordonnées de la courtière et la sortie vers l'accueil. Ce qu'annonce « la suite » doit
+  rester vrai du système : le seul courriel qu'un emprunteur reçoit après avoir signé est
+  celui du contrat complet, une fois la courtière passée — il n'y a pas d'accusé immédiat,
+  et en promettre un ferait attendre pour rien. Pendant le relais en présentiel, ni
+  coordonnées ni lien vers le site : l'appareil n'appartient pas au signataire.
+- **Les cartes du suivi sont bâties en JavaScript, donc habillées par un bloc `is:global`**
+  (circonscrit par `#ct-form` / `#ct-suivi`). Astro scope son `<style>` en estampant un
+  attribut de portée sur les éléments qu'il rend lui-même : une règle scopée n'atteint
+  jamais un élément créé par `document.createElement`, et la section s'affichait sans style.
 - **La courtière signe en dernier.** Deux questions du contrat appartiennent à l'emprunteur
   — la PPV (« s'applique-t-elle à l'un des emprunteurs ? ») et le consentement au transfert
   de cabinet — et il confirme aussi ses coordonnées. Ces réponses arrivant après l'envoi,
