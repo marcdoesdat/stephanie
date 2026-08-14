@@ -61,6 +61,8 @@ import {
   VERSEMENT,
   ZONES_SIGNATURE_EMPRUNTEURS,
   ZONE_SIGNATURE_COURTIER,
+  agregerPpv,
+  agregerTransfert,
   initialesDe,
   repartirSurLignes,
   type Case,
@@ -68,6 +70,7 @@ import {
   type Emplacement,
   type NumeroPage,
   type PointPdf,
+  type ReponsesEmprunteur,
   type ZoneSignature,
 } from '../utils/contratCourtage';
 import { formatDateLong } from '../utils/formatters';
@@ -222,12 +225,16 @@ async function estamperSignature(
  * @param donnees             Données déjà validées par `parserDonneesContrat`.
  * @param signatures          Une entrée par emprunteur, dans l'ordre des lignes du modèle.
  *                            Les emprunteurs sans signature laissent leur ligne vierge.
- * @param signatureCourtiere  La signature de Stéphanie, apposée à la création du contrat.
+ * @param signatureCourtiere  La signature de Stéphanie, apposée à la **finalisation**, une
+ *                            fois qu'elle a vu les réponses des emprunteurs.
+ * @param reponses            Ce que chaque emprunteur a répondu en signant (PPV, transfert,
+ *                            coordonnées corrigées), indexé comme `donnees.emprunteurs`.
  */
 export async function genererContratPdf(
   donnees: DonneesContrat,
   signatures: ReadonlyMap<number, SignatureEstampee>,
   signatureCourtiere: SignatureEstampee | null,
+  reponses: ReadonlyArray<ReponsesEmprunteur | null> = [],
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.load(MODELE_BASE64);
   const pages = pdf.getPages();
@@ -250,8 +257,10 @@ export async function genererContratPdf(
     if (!lignes) break;
     ecrire(p1, lignes.prenom, emprunteur.prenom, font);
     ecrire(p1, lignes.nom, emprunteur.nom, font);
-    ecrire(p1, lignes.telephone, emprunteur.telephone, font);
-    ecrire(p1, lignes.adresse, emprunteur.adresse, font);
+    // Ce que l'emprunteur a confirmé prime sur ce que la courtière avait saisi de mémoire.
+    const repondu = reponses[index] ?? null;
+    ecrire(p1, lignes.telephone, repondu?.telephone || emprunteur.telephone, font);
+    ecrire(p1, lignes.adresse, repondu?.adresse || emprunteur.adresse, font);
     ecrire(p1, lignes.courriel, emprunteur.courriel, font);
   }
 
@@ -269,7 +278,8 @@ export async function genererContratPdf(
 
   const p2 = pageDe(pages, 2);
   ecrire(p2, COLLABORATEUR, donnees.collaborateur, font);
-  cocherCase(pages, PPV_CASES[donnees.ppv]);
+  // Une seule case pour tout le monde : un seul « oui » suffit à la cocher.
+  cocherCase(pages, PPV_CASES[agregerPpv(reponses)]);
 
   /* ---------- Financement ---------- */
 
@@ -325,7 +335,8 @@ export async function genererContratPdf(
   /* ---------- Confirmation et signatures ---------- */
 
   const p4 = pageDe(pages, 4);
-  cocherCase(pages, TRANSFERT_CABINET_CASES[donnees.transfertCabinet]);
+  const transfert = agregerTransfert(reponses);
+  if (transfert) cocherCase(pages, TRANSFERT_CABINET_CASES[transfert]);
   ecrire(p4, CONSENTEMENTS_VALIDES_JUSQUAU, donnees.consentementsValidesJusquau, font);
 
   if (signatureCourtiere) {

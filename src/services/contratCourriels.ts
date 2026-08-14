@@ -26,7 +26,15 @@ import {
 } from './emailService';
 import { loadSiteConfig } from '../config';
 import { formatDateHeureLong } from '../utils/formatters';
-import { TEXTE_ATTESTATION, resumerContrat, type DonneesContrat } from '../utils/contratCourtage';
+import {
+  TEXTE_ATTESTATION,
+  nomComplet,
+  resumerContrat,
+  resumerReponsesEmprunteur,
+  type DonneesContrat,
+  type ReponsesEmprunteur,
+} from '../utils/contratCourtage';
+import type { DossierContrat } from './contratDossierService';
 
 /** Ce qu'on peut démontrer a posteriori sur une signature donnée. */
 export interface PreuveSignature {
@@ -37,6 +45,8 @@ export interface PreuveSignature {
   readonly ip: string;
   readonly agent: string;
   readonly empreinteTrace: string;
+  /** Ce que l'emprunteur a répondu en signant — PPV, transfert, coordonnées confirmées. */
+  readonly reponses: ReponsesEmprunteur | null;
 }
 
 /**
@@ -86,6 +96,13 @@ function sectionPreuves(preuves: readonly PreuveSignature[]): string {
           ['Navigateur', escapeHtml(preuve.agent)],
           ['Empreinte SHA-256 du tracé', escapeHtml(preuve.empreinteTrace)],
           ['Attestation cochée', escapeHtml(TEXTE_ATTESTATION)],
+          // Ces réponses sont les siennes, pas celles de la courtière : la preuve doit dire
+          // qui a déclaré quoi.
+          ...(preuve.reponses
+            ? resumerReponsesEmprunteur(preuve.reponses).map(
+                ([libelle, valeur]): [string, string] => [escapeHtml(libelle), escapeHtml(valeur)],
+              )
+            : []),
         ]),
       ),
     )
@@ -236,7 +253,6 @@ export async function envoyerInvitations(
 export async function envoyerAvisEnAttente(
   env: ResendEnv,
   donnees: DonneesContrat,
-  preuves: readonly PreuveSignature[],
   enAttente: readonly InvitationCourriel[],
 ): Promise<void> {
   await sendEmail(env.apiKey, {
@@ -246,14 +262,63 @@ export async function envoyerAvisEnAttente(
     html: wrapEmailHtml(
       `<h1 style="font-size:19px;margin:0 0 6px;">Contrat envoyé en signature</h1>
        <p style="margin:0 0 18px;color:#6b6257;font-size:14px;">
-         Le contrat est en attente de signature. Aucun PDF n'existe tant que tout le monde
-         n'a pas signé.
+         Le contrat est parti. Chaque emprunteur va le lire, répondre aux questions qui lui
+         reviennent et signer. Vous signerez en dernier, quand ils auront tous répondu.
        </p>
        ${sectionContrat(donnees)}
        ${bloc(
          'En attente de signature',
          renderDataRows(enAttente.map((i) => [escapeHtml(i.nom), escapeHtml(i.courriel)])),
-       )}
+       )}`,
+    ),
+  });
+}
+
+/**
+ * Prévient la courtière que tous les emprunteurs ont signé et qu'il ne manque que sa
+ * signature. C'est le seul courriel qui lui demande une action : le lien mène à l'écran de
+ * relecture, derrière son mot de passe.
+ */
+export async function envoyerAvisAFinaliser(
+  env: ResendEnv,
+  dossier: DossierContrat,
+  lien: string,
+): Promise<void> {
+  const noms = dossier.emprunteurs.map((e) => nomComplet(e.emprunteur));
+  const preuves = dossier.emprunteurs
+    .filter((e) => e.signature !== null)
+    .map((e) => ({
+      nom: nomComplet(e.emprunteur),
+      courriel: e.emprunteur.courriel,
+      signeLe: e.signature!.signeLe,
+      voie: e.signature!.voie,
+      ip: e.signature!.ip,
+      agent: e.signature!.agent,
+      empreinteTrace: e.signature!.empreinteTrace,
+      reponses: e.reponses,
+    })) satisfies PreuveSignature[];
+
+  await sendEmail(env.apiKey, {
+    from: env.fromEmail,
+    to: env.notifyEmail,
+    subject: `À finaliser — ${noms.join(', ')} ont signé`,
+    html: wrapEmailHtml(
+      `<h1 style="font-size:19px;margin:0 0 6px;">Tout le monde a signé</h1>
+       <p style="margin:0 0 14px;font-size:14px;">
+         Il ne manque que votre signature. Relisez le contrat — il porte maintenant les
+         réponses des emprunteurs — puis signez-le d'un clic.
+       </p>
+       <p style="margin:22px 0;">
+         <a href="${escapeHtml(lien)}"
+            style="display:inline-block;background:#a85f38;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:600;">
+           Relire et signer le contrat
+         </a>
+       </p>
+       <p style="margin:0 0 18px;color:#6b6257;font-size:13px;">
+         Le contrat n'est produit qu'à ce moment-là, et vous le recevrez aussitôt. Sans votre
+         signature, le dossier expire dans 10 jours et les signatures recueillies sont perdues.
+       </p>
+       ${sectionContrat(dossier.donnees)}
        ${sectionPreuves(preuves)}`,
     ),
   });

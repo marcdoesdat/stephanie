@@ -100,10 +100,11 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
                 <h2 class="sc-sous-titre">Le contrat au complet</h2>
                 <p class="sc-texte">
-                  Voici le document intégral — les 4 pages du contrat officiel d’Hypotheca, déjà
-                  rempli et signé par {prenomCourtiere}. C’est exactement ce que votre signature
-                  viendra compléter. Prenez le temps de le lire ; si une clause vous préoccupe,
+                  Voici le document intégral — les 4 pages du contrat officiel d’Hypotheca, rempli
+                  par {prenomCourtiere}. Prenez le temps de le lire ; si une clause vous préoccupe,
                   ne signez pas et utilisez « Je ne suis pas d’accord » plus bas.
+                  {prenomCourtiere} le signera à son tour une fois que tous les emprunteurs auront
+                  signé.
                 </p>
 
                 <div class="sc-document">
@@ -126,6 +127,78 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                     Ouvrir le contrat en plein écran (PDF)
                   </a>
                 </p>
+
+                <h2 class="sc-sous-titre">Deux questions, et vos coordonnées</h2>
+                <p class="sc-texte">
+                  Ces réponses vous appartiennent — {prenomCourtiere} ne peut pas y répondre à
+                  votre place. Elles seront inscrites sur le contrat.
+                </p>
+
+                <fieldset class="sc-questions">
+                  <legend>
+                    Occupez-vous, ou avez-vous occupé, une fonction politiquement vulnérable ?
+                  </legend>
+                  <p class="sc-precision">
+                    Une fonction publique importante — au fédéral, au provincial, dans une
+                    municipalité, dans un État étranger ou une organisation internationale —
+                    au cours des cinq dernières années. Ou être le conjoint, l’enfant, le parent,
+                    le frère ou la sœur d’une telle personne. Dans le doute, répondez « Oui » :
+                    {prenomCourtiere} vous remettra le formulaire prévu.
+                  </p>
+                  <label class="sc-choix">
+                    <input type="radio" name="sc-ppv" value="non" checked />
+                    <span>Non</span>
+                  </label>
+                  <label class="sc-choix">
+                    <input type="radio" name="sc-ppv" value="oui" />
+                    <span>Oui</span>
+                  </label>
+                </fieldset>
+
+                <fieldset class="sc-questions">
+                  <legend>
+                    Si {prenomCourtiere} changeait de cabinet, acceptez-vous que votre dossier
+                    la suive ?
+                  </legend>
+                  <p class="sc-precision">
+                    Vos renseignements seraient alors communiqués à son nouveau cabinet, pour
+                    qu’elle puisse continuer à vous servir.
+                  </p>
+                  <label class="sc-choix">
+                    <input type="radio" name="sc-transfert" value="oui" checked />
+                    <span>Oui</span>
+                  </label>
+                  <label class="sc-choix">
+                    <input type="radio" name="sc-transfert" value="non" />
+                    <span>Non</span>
+                  </label>
+                </fieldset>
+
+                <div class="sc-coordonnees">
+                  <div>
+                    <label class="cform-label" for="sc-telephone">Votre téléphone</label>
+                    <input
+                      type="tel"
+                      id="sc-telephone"
+                      class="cform-input"
+                      maxlength="40"
+                      value={entree.emprunteur.telephone}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="sc-adresse">Votre adresse</label>
+                    <input
+                      type="text"
+                      id="sc-adresse"
+                      class="cform-input"
+                      maxlength="160"
+                      value={entree.emprunteur.adresse}
+                    />
+                  </div>
+                  <p class="sc-precision">
+                    Corrigez-les au besoin : c’est ce qui figurera sur le contrat.
+                  </p>
+                </div>
 
                 <label class="sc-attestation">
                   <input type="checkbox" data-attestation />
@@ -269,6 +342,47 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     font-weight: 600;
   }
 
+  .sc-questions {
+    margin: 0 0 1.2rem;
+    padding: 0.9rem 1rem 1rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 10px;
+  }
+
+  .sc-questions legend {
+    padding: 0 0.35rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+
+  .sc-precision {
+    margin: 0 0 0.7rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .sc-choix {
+    display: flex;
+    gap: 0.55rem;
+    align-items: center;
+    padding: 0.3rem 0;
+    font-size: 0.92rem;
+    cursor: pointer;
+  }
+
+  .sc-coordonnees {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem 1rem;
+    margin: 0 0 1.3rem;
+  }
+
+  .sc-coordonnees .sc-precision {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
   .sc-attestation {
     display: flex;
     gap: 0.6rem;
@@ -392,10 +506,19 @@ Astro.response.headers.set('Cache-Control', 'no-store');
       boutonSigner.textContent = 'Envoi…';
 
       try {
+        const choix = (nom: string): string =>
+          app!.querySelector<HTMLInputElement>(`input[name="${nom}"]:checked`)?.value ?? '';
+
         const { ok, data } = await envoyer({
           action: 'signature',
           attestation: true,
           signature: pad.versPng(),
+          reponses: {
+            ppv: choix('sc-ppv'),
+            transfertCabinet: choix('sc-transfert'),
+            telephone: app.querySelector<HTMLInputElement>('#sc-telephone')?.value ?? '',
+            adresse: app.querySelector<HTMLInputElement>('#sc-adresse')?.value ?? '',
+          },
         });
 
         if (!ok) {
@@ -410,7 +533,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
         if (titre) titre.textContent = 'Merci, votre signature est enregistrée';
         if (texte) {
           texte.textContent = data.complet
-            ? 'Le contrat est signé par toutes les parties. Stéphanie vous en fera parvenir une copie.'
+            ? 'Tous les emprunteurs ont signé. Stéphanie signe à son tour, puis vous fera parvenir une copie du contrat.'
             : 'Il reste des personnes à signer. Vous recevrez une confirmation quand ce sera fait.';
         }
         afficher('merci');

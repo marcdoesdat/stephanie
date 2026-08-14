@@ -41,14 +41,16 @@ import {
   parserEmprunteurs,
   repartirSurLignes,
   resumerContrat,
+  agregerPpv,
+  agregerTransfert,
+  parserReponsesEmprunteur,
   type Emplacement,
+  type ReponsesEmprunteur,
 } from './contratCourtage';
 
 /** Le minimum qu'accepte `parserDonneesContrat`. */
 const MINIMAL = {
   emprunteurs: [{ prenom: 'Ana', nom: 'Silva', courriel: 'ana@exemple.ca' }],
-  ppv: 'non',
-  transfertCabinet: 'non',
   typesFinancement: [],
 };
 
@@ -223,8 +225,6 @@ describe('parserDonneesContrat', () => {
   });
 
   it('refuse une valeur hors catalogue pour les champs à choix', () => {
-    expect(parserDonneesContrat({ ...MINIMAL, ppv: 'peut-être' })).toBeNull();
-    expect(parserDonneesContrat({ ...MINIMAL, transfertCabinet: 'oui-non' })).toBeNull();
     expect(parserDonneesContrat({ ...MINIMAL, typeTaux: 'hybride' })).toBeNull();
     expect(parserDonneesContrat({ ...MINIMAL, doubleRemuneration: 'peut-être' })).toBeNull();
   });
@@ -236,11 +236,12 @@ describe('parserDonneesContrat', () => {
     expect(donnees!.doubleRemuneration).toBeNull();
   });
 
-  it('exige ppv et transfertCabinet', () => {
-    const { ppv, ...sansPpv } = MINIMAL;
-    expect(parserDonneesContrat(sansPpv)).toBeNull();
-    const { transfertCabinet, ...sansTransfert } = MINIMAL;
-    expect(parserDonneesContrat(sansTransfert)).toBeNull();
+  it('n’attend plus PPV ni transfert de cabinet — ce sont les réponses de l’emprunteur', () => {
+    // Elles arrivent par parserReponsesEmprunteur, au moment de la signature.
+    const donnees = parserDonneesContrat(MINIMAL);
+    expect(donnees).not.toBeNull();
+    expect(donnees).not.toHaveProperty('ppv');
+    expect(donnees).not.toHaveProperty('transfertCabinet');
   });
 
   it('refuse une charge qui n’est pas un objet', () => {
@@ -333,19 +334,97 @@ describe('resumerContrat', () => {
       typesFinancement: ['refinancement'],
       tauxInteret: '4,29',
       typeTaux: 'fixe',
-      ppv: 'oui',
     })!;
     const resume = resumerContrat(donnees);
     const table = new Map(resume);
     expect(table.get('Emprunteur 1')).toContain('Ana Silva');
     expect(table.get('Type de financement')).toBe('Refinancement');
     expect(table.get('Taux d’intérêt')).toBe('4,29 % (Fixe)');
-    expect(table.get('Personne politiquement vulnérable')).toBe('Oui');
   });
 
   it('affiche un tiret plutôt qu’un vide sur les champs non remplis', () => {
     const table = new Map(resumerContrat(parserDonneesContrat(MINIMAL)!));
     expect(table.get('Montant du prêt')).toBe('—');
     expect(table.get('Type de financement')).toBe('—');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  Réponses de l'emprunteur                                           */
+/* ------------------------------------------------------------------ */
+
+function rep(ppv: 'oui' | 'non', transfert: 'oui' | 'non'): ReponsesEmprunteur {
+  return { ppv, transfertCabinet: transfert, telephone: '', adresse: '' };
+}
+
+describe('parserReponsesEmprunteur', () => {
+  it('accepte les deux réponses et normalise les coordonnées', () => {
+    const reponses = parserReponsesEmprunteur({
+      ppv: 'oui',
+      transfertCabinet: 'non',
+      telephone: '  418 555-1234 ',
+      adresse: '10  rue Principale',
+    });
+    expect(reponses).toEqual({
+      ppv: 'oui',
+      transfertCabinet: 'non',
+      telephone: '418 555-1234',
+      adresse: '10 rue Principale',
+    });
+  });
+
+  it('exige les deux réponses', () => {
+    expect(parserReponsesEmprunteur({ ppv: 'oui' })).toBeNull();
+    expect(parserReponsesEmprunteur({ transfertCabinet: 'non' })).toBeNull();
+    expect(parserReponsesEmprunteur({})).toBeNull();
+  });
+
+  it('refuse une valeur hors catalogue', () => {
+    expect(parserReponsesEmprunteur({ ppv: 'peut-être', transfertCabinet: 'oui' })).toBeNull();
+    expect(parserReponsesEmprunteur({ ppv: 'non', transfertCabinet: 'plus tard' })).toBeNull();
+  });
+
+  it('refuse autre chose qu’un objet', () => {
+    expect(parserReponsesEmprunteur(null)).toBeNull();
+    expect(parserReponsesEmprunteur('oui')).toBeNull();
+  });
+});
+
+describe('agregerPpv', () => {
+  it('coche « Oui » dès qu’un seul emprunteur répond oui', () => {
+    // Le contrat n'a qu'une case et demande si la situation s'applique « à l'un des
+    // emprunteurs » : répondre « Non » parce que deux sur trois l'ont dit serait faux.
+    expect(agregerPpv([rep('non', 'oui'), rep('oui', 'oui'), rep('non', 'oui')])).toBe('oui');
+  });
+
+  it('coche « Non » quand personne ne l’est', () => {
+    expect(agregerPpv([rep('non', 'oui'), rep('non', 'oui')])).toBe('non');
+  });
+
+  it('vaut « Non » tant que personne n’a répondu', () => {
+    expect(agregerPpv([])).toBe('non');
+    expect(agregerPpv([null, null])).toBe('non');
+  });
+});
+
+describe('agregerTransfert', () => {
+  it('le refus d’un seul emprunteur l’emporte', () => {
+    // C'est un consentement : on ne peut pas le tenir pour acquis parce que la majorité
+    // l'a donné.
+    expect(agregerTransfert([rep('non', 'oui'), rep('non', 'non')])).toBe('non');
+  });
+
+  it('vaut « Oui » quand tous consentent', () => {
+    expect(agregerTransfert([rep('non', 'oui'), rep('non', 'oui')])).toBe('oui');
+  });
+
+  it('ne coche rien tant que personne n’a répondu', () => {
+    // Cocher « Non » par défaut inscrirait un refus que personne n'a exprimé.
+    expect(agregerTransfert([])).toBeNull();
+    expect(agregerTransfert([null, null])).toBeNull();
+  });
+
+  it('ignore les emprunteurs qui n’ont pas encore répondu', () => {
+    expect(agregerTransfert([rep('non', 'oui'), null])).toBe('oui');
   });
 });

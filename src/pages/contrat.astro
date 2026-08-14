@@ -97,8 +97,8 @@ const RANGS = [0, 1, 2];
                     <img src={signatureEnregistree} alt="Votre signature enregistrée" />
                   </div>
                   <p class="ct-signature-note">
-                    Elle sera apposée automatiquement sur chaque contrat. Vous n’avez plus à la
-                    dessiner.
+                    Elle sera apposée quand vous finaliserez un contrat, une fois les
+                    emprunteurs signés. Vous n’avez plus à la dessiner.
                   </p>
                   <button type="button" class="ct-lien" data-remplacer-signature>
                     Remplacer ma signature
@@ -107,8 +107,8 @@ const RANGS = [0, 1, 2];
               ) : (
                 <>
                   <p class="ct-signature-note ct-signature-invite">
-                    <strong>Une seule fois :</strong> dessinez votre signature. Elle sera
-                    ensuite apposée automatiquement sur tous vos contrats.
+                    <strong>Une seule fois :</strong> dessinez votre signature. Elle servira à
+                    finaliser vos contrats, une fois les emprunteurs signés.
                   </p>
                 </>
               )}
@@ -294,28 +294,6 @@ const RANGS = [0, 1, 2];
               </label>
               <textarea id="ct-exigences" class="cform-input" rows="3" maxlength="600" />
               <p class="ct-aide">4 lignes disponibles sur le contrat ; le surplus est tronqué.</p>
-            </fieldset>
-
-            {/* ---------------- Le dossier ---------------- */}
-
-            <fieldset class="ct-section">
-              <legend>Ce dossier</legend>
-              <div class="ct-grille">
-                <div>
-                  <label class="cform-label" for="ct-ppv">Personne politiquement vulnérable</label>
-                  <select id="ct-ppv" class="cform-input">
-                    <option value="non">Non</option>
-                    <option value="oui">Oui</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="cform-label" for="ct-transfert">Transfert au nouveau cabinet</label>
-                  <select id="ct-transfert" class="cform-input">
-                    <option value="oui">Oui</option>
-                    <option value="non">Non</option>
-                  </select>
-                </div>
-              </div>
             </fieldset>
 
             {/* ---------------- Frais et honoraires (mémorisés) ---------------- */}
@@ -558,29 +536,22 @@ const RANGS = [0, 1, 2];
             {/* ---------------- Envoi ---------------- */}
 
             <fieldset class="ct-section">
-              <legend>Envoi</legend>
-              <label class="ct-case ct-case-large">
-                <input type="radio" name="ct-voie" value="distance" checked />
-                <span>
-                  <strong>Par courriel</strong> — chaque emprunteur reçoit un lien personnel pour
-                  lire et signer le contrat. Vous le recevez signé quand tout le monde a signé.
-                </span>
-              </label>
-              <label class="ct-case ct-case-large">
-                <input type="radio" name="ct-voie" value="presence" />
-                <span>
-                  <strong>Ici, maintenant</strong> — les emprunteurs sont avec vous et signent sur
-                  cet appareil.
-                </span>
-              </label>
-
-              <div id="ct-presence" hidden>
-                {RANGS.map((rang) => (
-                  <div class="ct-signature-emprunteur" data-signature-bloc={rang} hidden>
-                    <SignaturePad id={`ct-signature-${rang}`} />
-                  </div>
-                ))}
-              </div>
+              <legend>Ce qui va se passer</legend>
+              <ol class="ct-etapes">
+                <li>Chaque emprunteur reçoit un lien personnel pour lire le contrat en entier.</li>
+                <li>
+                  Il répond aux deux questions qui lui reviennent — fonction politiquement
+                  vulnérable, transfert de cabinet — confirme ses coordonnées, et signe.
+                </li>
+                <li>
+                  Quand tous ont signé, vous recevez un courriel. Vous relisez le contrat, qui
+                  porte alors leurs réponses, et vous le signez d’un clic.
+                </li>
+              </ol>
+              <p class="ct-aide">
+                Le contrat n’est produit qu’à cette dernière étape. C’est ce qui garantit que
+                votre signature ne couvre rien que vous n’ayez vu.
+              </p>
             </fieldset>
 
             <p class="ct-erreur" data-erreur hidden />
@@ -923,8 +894,15 @@ const RANGS = [0, 1, 2];
     color: var(--muted);
   }
 
-  .ct-signature-emprunteur {
-    margin-top: 1.1rem;
+  .ct-etapes {
+    margin: 0 0 0.5rem;
+    padding-left: 1.2rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .ct-etapes li {
+    margin-bottom: 0.4rem;
   }
 
   .ct-memoriser {
@@ -1220,26 +1198,9 @@ const RANGS = [0, 1, 2];
     /* ---------------- Emprunteurs et signatures en présence ---------------- */
 
     function rafraichir(): void {
-      const presence =
-        formulaire.querySelector<HTMLInputElement>('input[name="ct-voie"]:checked')?.value === 'presence';
-      const zone = document.getElementById('ct-presence');
-      if (zone) zone.hidden = !presence;
-
-      const nombre = visibles().length;
-      for (const bloc of formulaire.querySelectorAll<HTMLElement>('[data-signature-bloc]')) {
-        const rang = Number(bloc.dataset.signatureBloc);
-        bloc.hidden = !presence || rang >= nombre;
-        const qui = bloc.querySelector<HTMLElement>('[data-sig-qui]');
-        if (qui) {
-          const complet = `${valeur(`ct-prenom-${rang}`)} ${valeur(`ct-nom-${rang}`)}`.trim();
-          qui.textContent = complet ? `Signature de ${complet}` : `Signature de l’emprunteur ${rang + 1}`;
-        }
-      }
-
       // Le bouton « Ajouter » disparaît quand les trois blocs du modèle sont utilisés.
       const ajouter = formulaire.querySelector<HTMLElement>('[data-ajouter]');
-      if (ajouter) ajouter.hidden = nombre >= blocs().length;
-
+      if (ajouter) ajouter.hidden = visibles().length >= blocs().length;
       majResume();
     }
 
@@ -1281,9 +1242,6 @@ const RANGS = [0, 1, 2];
       });
     }
 
-    for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="ct-voie"]')) {
-      radio.addEventListener('change', rafraichir);
-    }
     formulaire.addEventListener('input', () => rafraichir());
     formulaire.addEventListener('change', () => rafraichir());
     rafraichir();
@@ -1359,7 +1317,6 @@ const RANGS = [0, 1, 2];
         preteurMajoritaire: valeur('ct-preteur-majoritaire'),
         autresLogiciels: valeur('ct-autres-logiciels'),
         collaborateur: valeur('ct-collaborateur'),
-        ppv: valeur('ct-ppv'),
         adresseProjet: valeur('ct-adresse-projet'),
         typesFinancement,
         autresPrecisions: valeur('ct-precisions'),
@@ -1382,7 +1339,6 @@ const RANGS = [0, 1, 2];
         raisonDoubleRemuneration: valeur('ct-raison-double'),
         resiliationMontant: valeur('ct-resiliation'),
         resiliationPourcentage: valeur('ct-resiliation-pct'),
-        transfertCabinet: valeur('ct-transfert'),
         consentementsValidesJusquau: valeur('ct-validite'),
         identite,
         dateVerification: valeur('ct-date-verification'),
@@ -1474,21 +1430,6 @@ const RANGS = [0, 1, 2];
         return;
       }
 
-      const emprunteurs = donnees.emprunteurs as Array<Record<string, string>>;
-      const voie = formulaire.querySelector<HTMLInputElement>('input[name="ct-voie"]:checked')?.value ?? 'distance';
-      const signatures: Record<string, string> = {};
-      if (voie === 'presence') {
-        for (const [rang] of emprunteurs.entries()) {
-          const pad = document.getElementById(`ct-signature-${rang}`) as SignaturePadElement | null;
-          const png = pad?.versPng();
-          if (!png) {
-            montrerErreur(`Il manque la signature de l’emprunteur ${rang + 1}.`);
-            return;
-          }
-          signatures[String(rang)] = png;
-        }
-      }
-
       if (bouton) {
         bouton.disabled = true;
         bouton.textContent = 'Envoi…';
@@ -1498,9 +1439,9 @@ const RANGS = [0, 1, 2];
         const reponse = await fetch('/api/contrat-creer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          // La signature de la courtière n'est pas transmise : le serveur prend celle qui
-          // est mémorisée. Une seule source de vérité, et rien de sensible qui circule.
-          body: JSON.stringify({ donnees, voie, signatures }),
+          // Aucune signature ne circule : la sienne est mémorisée côté serveur et n'entrera
+          // en jeu qu'à la finalisation ; celles des emprunteurs n'existent pas encore.
+          body: JSON.stringify({ donnees }),
         });
         const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
 
@@ -1519,9 +1460,9 @@ const RANGS = [0, 1, 2];
 
         const enAttente = (data.enAttente ?? []) as Array<{ nom: string; courriel: string }>;
         if (succes) {
-          succes.textContent = enAttente.length
-            ? `Contrat envoyé. En attente de signature : ${enAttente.map((e) => `${e.nom} (${e.courriel})`).join(', ')}.`
-            : 'Contrat signé par toutes les parties et envoyé dans votre boîte courriel.';
+          succes.textContent = `Contrat envoyé à ${enAttente
+            .map((e) => `${e.nom} (${e.courriel})`)
+            .join(', ')}. Vous recevrez un courriel quand tous auront signé, pour le finaliser.`;
           succes.hidden = false;
           succes.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }

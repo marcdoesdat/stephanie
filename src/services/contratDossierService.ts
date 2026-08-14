@@ -1,10 +1,10 @@
 /**
  * Dossiers « Contrat de courtage » en attente de signature.
  *
- * Stéphanie prépare le contrat et le signe ; chaque emprunteur signe ensuite de son côté,
- * par lien nominatif. Le dossier — données du contrat, signature de la courtière et
- * signatures déjà recueillies — vit dans Netlify Blobs le temps que tout le monde signe,
- * puis **il est supprimé dès que le PDF est produit**.
+ * Stéphanie prépare le contrat ; chaque emprunteur le lit, répond aux questions qui lui
+ * reviennent (PPV, transfert de cabinet, coordonnées) et signe par lien nominatif ; puis la
+ * courtière signe en dernier, une fois ces réponses connues. Le dossier vit dans Netlify
+ * Blobs le temps de cette chaîne, puis **il est supprimé dès que le PDF est produit**.
  *
  * Le socle (stockage, jetons, purge) est partagé avec le « Profil des emprunteurs » :
  * voir dossierStockage.ts. Ce module ne porte que ce qui est propre au contrat.
@@ -12,7 +12,7 @@
  * @module contratDossierService
  */
 
-import type { DonneesContrat, Emprunteur } from '../utils/contratCourtage';
+import type { DonneesContrat, Emprunteur, ReponsesEmprunteur } from '../utils/contratCourtage';
 import {
   creerStockage,
   egaliteConstante,
@@ -41,18 +41,28 @@ export interface EntreeEmprunteur {
   /** SHA-256 du jeton d'invitation ; `null` une fois le jeton consommé. */
   jetonHash: string | null;
   signature: SignatureEnregistree | null;
+  /** PPV, transfert et coordonnées — recueillis au moment où il signe. */
+  reponses: ReponsesEmprunteur | null;
 }
 
-export type StatutDossier = 'en_attente' | 'gele';
+/**
+ * `a_finaliser` : tous les emprunteurs ont signé, il ne manque que la signature de la
+ * courtière. C'est le seul état où le dossier attend une action de sa part.
+ */
+export type StatutDossier = 'en_attente' | 'a_finaliser' | 'gele';
 
 export interface DossierContrat {
   readonly id: string;
   readonly creeLe: string;
-  readonly expireLe: string;
+  expireLe: string;
   statut: StatutDossier;
   readonly donnees: DonneesContrat;
-  /** La courtière signe à la création : le contrat part déjà signé de son côté. */
-  readonly signatureCourtiere: SignatureEnregistree | null;
+  /**
+   * La courtière signe **en dernier**, une fois les réponses des emprunteurs connues :
+   * `null` jusque-là. Signer d'abord reviendrait à couvrir de sa signature des réponses
+   * qu'elle n'a pas vues.
+   */
+  signatureCourtiere: SignatureEnregistree | null;
   emprunteurs: EntreeEmprunteur[];
   refus?: {
     readonly nom: string;
@@ -80,16 +90,13 @@ export async function supprimerDossier(id: string): Promise<void> {
 /* ------------------------------------------------------------------ */
 
 /**
- * Crée un dossier en attente.
+ * Crée un dossier en attente. Aucune signature n'existe encore : ni celle des emprunteurs,
+ * ni celle de la courtière.
  *
- * @param signaturesPresentes Signatures recueillies sur place, indexées par la position de
- *                            l'emprunteur. Les autres reçoivent un lien nominatif.
- * @returns Le dossier et la liste des invitations à envoyer.
+ * @returns Le dossier et la liste des invitations à envoyer — une par emprunteur.
  */
 export async function creerDossier(
   donnees: DonneesContrat,
-  signatureCourtiere: SignatureEnregistree | null,
-  signaturesPresentes: ReadonlyMap<number, SignatureEnregistree>,
 ): Promise<{ dossier: DossierContrat; invitations: Invitation[] }> {
   await stockage.purgerExpires();
 
@@ -98,14 +105,9 @@ export async function creerDossier(
   const invitations: Invitation[] = [];
   const entrees: EntreeEmprunteur[] = [];
 
-  for (const [index, emprunteur] of donnees.emprunteurs.entries()) {
-    const signature = signaturesPresentes.get(index) ?? null;
-    if (signature) {
-      entrees.push({ emprunteur, jetonHash: null, signature });
-      continue;
-    }
+  for (const emprunteur of donnees.emprunteurs) {
     const jeton = nouveauJeton();
-    entrees.push({ emprunteur, jetonHash: await hacher(jeton), signature: null });
+    entrees.push({ emprunteur, jetonHash: await hacher(jeton), signature: null, reponses: null });
     invitations.push({
       nom: `${emprunteur.prenom} ${emprunteur.nom}`.trim(),
       courriel: emprunteur.courriel,
@@ -120,7 +122,7 @@ export async function creerDossier(
     expireLe: new Date(maintenant + DUREE_VIE_MS).toISOString(),
     statut: 'en_attente',
     donnees,
-    signatureCourtiere,
+    signatureCourtiere: null,
     emprunteurs: entrees,
   };
 
@@ -183,16 +185,60 @@ export async function enregistrerSignature(
   dossier: DossierContrat,
   index: number,
   signature: SignatureEnregistree,
+  reponses: ReponsesEmprunteur,
 ): Promise<{ dossier: DossierContrat; complet: boolean }> {
   const entree = dossier.emprunteurs[index];
   if (!entree) throw new Error('Emprunteur introuvable dans le dossier.');
 
   entree.signature = signature;
+  entree.reponses = reponses;
   entree.jetonHash = null; // usage unique : le lien ne rouvrira plus
 
   const complet = dossier.emprunteurs.every((e) => e.signature !== null);
+  if (complet) {
+    dossier.statut = 'a_finaliser';
+    // Le compte à rebours repart : le dossier attend désormais la courtière, et il serait
+    // absurde de perdre les signatures déjà recueillies parce que le délai initial expire.
+    dossier.expireLe = new Date(Date.now() + DUREE_VIE_MS).toISOString();
+  }
+
   await stockage.ecrire(dossier.id, JSON.stringify(dossier));
   return { dossier, complet };
+}
+
+/**
+ * Ouvre un dossier prêt à être finalisé, **sans jeton** : l'appelant doit avoir déjà
+ * vérifié l'accès de la courtière (`requeteAutorisee`). Un jeton de plus n'ajouterait rien —
+ * la porte de /contrat est la même, et un lien nominatif pour elle serait un secret de plus
+ * à faire circuler par courriel.
+ */
+export async function ouvrirPourFinalisation(id: unknown): Promise<DossierContrat | null> {
+  if (!identifiantPlausible(id, '')) return null;
+  const brut = await stockage.lire(id as string);
+  if (!brut) return null;
+
+  let dossier: DossierContrat;
+  try {
+    dossier = JSON.parse(brut) as DossierContrat;
+  } catch {
+    return null;
+  }
+
+  if (Date.parse(dossier.expireLe) < Date.now()) {
+    await supprimerDossier(dossier.id);
+    return null;
+  }
+  return dossier.statut === 'a_finaliser' ? dossier : null;
+}
+
+/** Appose la signature de la courtière — dernier geste avant la production du PDF. */
+export async function signerParLaCourtiere(
+  dossier: DossierContrat,
+  signature: SignatureEnregistree,
+): Promise<DossierContrat> {
+  dossier.signatureCourtiere = signature;
+  await stockage.ecrire(dossier.id, JSON.stringify(dossier));
+  return dossier;
 }
 
 /**
