@@ -1,8 +1,12 @@
 // Création d'un contrat de courtage (/contrat) — réservé à la courtière.
 //
-// Stéphanie prépare le contrat et l'envoie ; chaque emprunteur reçoit un lien nominatif à
-// usage unique pour le lire, répondre aux questions qui lui reviennent (PPV, transfert de
-// cabinet, coordonnées) et signer.
+// Stéphanie prépare le contrat et l'envoie. **Un seul contrat existe, et il se signe en
+// séquence** : le premier emprunteur reçoit un lien nominatif à usage unique, et ce n'est
+// qu'une fois qu'il a signé que le suivant reçoit le sien. Chacun voit donc le document avec
+// les signatures déjà apposées, comme une feuille qu'on se passe.
+//
+// En présentiel, l'acheminement change mais pas l'ordre : le lien du signataire courant est
+// remis à l'écran de la courtière plutôt qu'envoyé par courriel.
 //
 // **Aucune signature n'est apposée ici, pas même la sienne.** Les réponses des emprunteurs
 // modifient le document : signer avant de les connaître reviendrait à couvrir de sa
@@ -23,11 +27,7 @@ import {
   jsonResponse,
   loadResendEnv,
 } from '../../services/emailService';
-import {
-  envoyerAvisEnAttente,
-  envoyerInvitations,
-  type InvitationCourriel,
-} from '../../services/contratCourriels';
+import { envoyerAvisEnAttente, envoyerInvitation } from '../../services/contratCourriels';
 import { creerDossier } from '../../services/contratDossierService';
 import { lireReglages, traceEnregistree } from '../../services/reglagesCourtiere';
 import { parserDonneesContrat } from '../../utils/contratCourtage';
@@ -91,41 +91,59 @@ export const POST: APIRoute = async ({ request }) => {
     return jsonResponse({ error: 'Service temporairement indisponible' }, 502);
   }
 
-  let aEnvoyer: InvitationCourriel[];
+  const mode = payload.mode === 'presence' ? 'presence' : 'distance';
+
+  let premier: { nom: string; courriel: string; lien: string };
   try {
-    const { invitations } = await creerDossier(donnees);
-    aEnvoyer = invitations.map((invitation) => ({
+    const { invitation } = await creerDossier(donnees, mode);
+    premier = {
       nom: invitation.nom,
       courriel: invitation.courriel,
       lien: lienSignature(invitation.dossierId, invitation.jeton),
-    }));
+    };
   } catch (err) {
     return echec('dossier', err);
   }
 
-  const enAttente = aEnvoyer.map((i) => ({ nom: i.nom, courriel: i.courriel }));
+  // L'ordre de passage, pour que l'écran de confirmation le rappelle.
+  const ordre = donnees.emprunteurs.map((e) => ({
+    nom: `${e.prenom} ${e.nom}`.trim(),
+    courriel: e.courriel,
+  }));
 
-  // En développement sans Resend, le dossier est créé quand même et les liens sont imprimés
-  // dans la console : c'est la seule façon de dérouler la chaîne en local.
+  // En présentiel, le lien ne part pas par courriel : il est remis à la courtière, qui tend
+  // l'appareil au premier signataire. Le jeton ne transite donc jamais par une boîte tierce.
+  if (mode === 'presence') {
+    if (resendEnv) {
+      try {
+        await envoyerAvisEnAttente(resendEnv, donnees, ordre, mode);
+      } catch (err) {
+        console.error('[contrat-creer] Notification interne non envoyée :', err);
+      }
+    }
+    return jsonResponse({ ok: true, mode, ordre, lien: premier.lien }, 200);
+  }
+
+  // En développement sans Resend, le dossier est créé quand même et le lien est imprimé dans
+  // la console : c'est la seule façon de dérouler la chaîne en local.
   if (!resendEnv) {
-    console.log('[contrat-creer] ⚠️  Resend non configuré — invitations simulées. Liens à ouvrir :');
-    for (const invitation of aEnvoyer) console.log(`  ${invitation.nom} → ${invitation.lien}`);
-    return jsonResponse({ ok: true, dev: true, enAttente }, 200);
+    console.log(`[contrat-creer] ⚠️  Resend non configuré — lien pour ${premier.nom} : ${premier.lien}`);
+    return jsonResponse({ ok: true, dev: true, mode, ordre }, 200);
   }
 
   // L'invitation est ce qui débloque la suite : si elle part, le dossier vit, même si la
   // notification interne échoue. On ne fait donc échouer la soumission que sur l'invitation.
-  const [invitationsEnvoyees, avisInterne] = await Promise.allSettled([
-    envoyerInvitations(resendEnv, aEnvoyer),
-    envoyerAvisEnAttente(resendEnv, donnees, aEnvoyer),
+  const [invitationEnvoyee, avisInterne] = await Promise.allSettled([
+    envoyerInvitation(resendEnv, premier, 1, donnees.emprunteurs.length),
+    envoyerAvisEnAttente(resendEnv, donnees, ordre, mode),
   ]);
 
-  if (invitationsEnvoyees.status === 'rejected') {
-    return echec('invitation', invitationsEnvoyees.reason);
+  if (invitationEnvoyee.status === 'rejected') {
+    return echec('invitation', invitationEnvoyee.reason);
   }
   if (avisInterne.status === 'rejected') {
-    console.error('[contrat-creer] Invitations parties, mais la notification interne a échoué :', avisInterne.reason);
+    console.error('[contrat-creer] Invitation partie, mais la notification interne a échoué :', avisInterne.reason);
   }
 
-  return jsonResponse({ ok: true, enAttente }, 200);
+  return jsonResponse({ ok: true, mode, ordre }, 200);
 };

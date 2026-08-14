@@ -1,10 +1,15 @@
 /**
  * Dossiers « Contrat de courtage » en attente de signature.
  *
+ * **Un seul contrat, signé en séquence.** Le document ne se dédouble jamais : il passe d'un
+ * signataire au suivant, chacun ajoutant sa signature à celles déjà apposées, comme une
+ * feuille qu'on se passe. Un seul jeton est vivant à la fois — celui de la personne dont
+ * c'est le tour. Le suivant n'est émis qu'une fois le précédent consommé.
+ *
  * Stéphanie prépare le contrat ; chaque emprunteur le lit, répond aux questions qui lui
- * reviennent (PPV, transfert de cabinet, coordonnées) et signe par lien nominatif ; puis la
- * courtière signe en dernier, une fois ces réponses connues. Le dossier vit dans Netlify
- * Blobs le temps de cette chaîne, puis **il est supprimé dès que le PDF est produit**.
+ * reviennent (PPV, transfert de cabinet, coordonnées) et signe ; puis la courtière signe en
+ * dernier, une fois ces réponses connues. Le dossier vit dans Netlify Blobs le temps de
+ * cette chaîne, puis **il est supprimé dès que le PDF est produit**.
  *
  * Le socle (stockage, jetons, purge) est partagé avec le « Profil des emprunteurs » :
  * voir dossierStockage.ts. Ce module ne porte que ce qui est propre au contrat.
@@ -51,11 +56,18 @@ export interface EntreeEmprunteur {
  */
 export type StatutDossier = 'en_attente' | 'a_finaliser' | 'gele';
 
+/**
+ * Comment les emprunteurs signent — cela ne change pas l'ordre, seulement l'acheminement du
+ * lien : par courriel à distance, remis à l'écran de la courtière en présentiel.
+ */
+export type ModeSignature = 'distance' | 'presence';
+
 export interface DossierContrat {
   readonly id: string;
   readonly creeLe: string;
   expireLe: string;
   statut: StatutDossier;
+  readonly mode: ModeSignature;
   readonly donnees: DonneesContrat;
   /**
    * La courtière signe **en dernier**, une fois les réponses des emprunteurs connues :
@@ -97,42 +109,100 @@ export async function supprimerDossier(id: string): Promise<void> {
  */
 export async function creerDossier(
   donnees: DonneesContrat,
-): Promise<{ dossier: DossierContrat; invitations: Invitation[] }> {
+  mode: ModeSignature = 'distance',
+): Promise<{ dossier: DossierContrat; invitation: Invitation }> {
   await stockage.purgerExpires();
 
   const id = nouvelIdentifiant();
   const maintenant = Date.now();
-  const invitations: Invitation[] = [];
-  const entrees: EntreeEmprunteur[] = [];
 
-  for (const emprunteur of donnees.emprunteurs) {
-    const jeton = nouveauJeton();
-    entrees.push({ emprunteur, jetonHash: await hacher(jeton), signature: null, reponses: null });
-    invitations.push({
-      nom: `${emprunteur.prenom} ${emprunteur.nom}`.trim(),
-      courriel: emprunteur.courriel,
-      dossierId: id,
-      jeton,
-    });
-  }
+  const entrees: EntreeEmprunteur[] = donnees.emprunteurs.map((emprunteur) => ({
+    emprunteur,
+    jetonHash: null,
+    signature: null,
+    reponses: null,
+  }));
 
   const dossier: DossierContrat = {
     id,
     creeLe: new Date(maintenant).toISOString(),
     expireLe: new Date(maintenant + DUREE_VIE_MS).toISOString(),
     statut: 'en_attente',
+    mode,
     donnees,
     signatureCourtiere: null,
     emprunteurs: entrees,
   };
 
+  // Seul le premier reçoit un jeton : les suivants n'existent pas encore, et c'est ce qui
+  // garantit qu'on ne peut pas signer avant son tour.
+  const invitation = await emettreJeton(dossier, 0);
+
   await stockage.ecrire(id, JSON.stringify(dossier));
 
-  // Un dossier écrit mais illisible, ce sont des invitations parties vers des liens morts.
+  // Un dossier écrit mais illisible, c'est une invitation partie vers un lien mort.
   // On relit avant de laisser /api/contrat-creer envoyer quoi que ce soit.
   if (!(await stockage.lire(id))) throw stockage.erreur('dossier introuvable juste après écriture');
 
-  return { dossier, invitations };
+  return { dossier, invitation };
+}
+
+/**
+ * Fabrique le jeton d'un signataire et le pose, haché, dans le dossier **en mémoire** —
+ * l'appelant écrit. Le jeton en clair n'existe que dans la valeur retournée.
+ *
+ * Émettre un nouveau jeton pour quelqu'un invalide le précédent : c'est ce qui permet à la
+ * courtière de renvoyer un lien perdu sans laisser vivre l'ancien.
+ */
+async function emettreJeton(dossier: DossierContrat, index: number): Promise<Invitation> {
+  const entree = dossier.emprunteurs[index];
+  if (!entree) throw new Error('Emprunteur introuvable dans le dossier.');
+
+  const jeton = nouveauJeton();
+  entree.jetonHash = await hacher(jeton);
+  return {
+    nom: `${entree.emprunteur.prenom} ${entree.emprunteur.nom}`.trim(),
+    courriel: entree.emprunteur.courriel,
+    dossierId: dossier.id,
+    jeton,
+  };
+}
+
+/** Position de celui dont c'est le tour — le premier qui n'a pas signé. */
+export function indexCourant(dossier: DossierContrat): number {
+  return dossier.emprunteurs.findIndex((e) => e.signature === null);
+}
+
+/**
+ * Réémet le lien du signataire courant, à la demande de la courtière : lien perdu, adresse
+ * mal saisie, ou remise de l'appareil en présentiel. L'ancien jeton cesse aussitôt de valoir.
+ *
+ * Prend un **identifiant**, pas un dossier : l'état est relu du stockage. Se fier à un objet
+ * que l'appelant garde en mémoire laisserait réémettre un lien sur un dossier gelé entre-temps
+ * par un refus — exactement le cas où plus aucun lien ne doit vivre.
+ */
+export async function reemettreLienCourant(id: unknown): Promise<Invitation | null> {
+  if (!identifiantPlausible(id, '')) return null;
+
+  const brut = await stockage.lire(id as string);
+  if (!brut) return null;
+
+  let dossier: DossierContrat;
+  try {
+    dossier = JSON.parse(brut) as DossierContrat;
+  } catch {
+    return null;
+  }
+
+  if (dossier.statut !== 'en_attente') return null;
+  if (Date.parse(dossier.expireLe) < Date.now()) return null;
+
+  const index = indexCourant(dossier);
+  if (index === -1) return null;
+
+  const invitation = await emettreJeton(dossier, index);
+  await stockage.ecrire(dossier.id, JSON.stringify(dossier));
+  return invitation;
 }
 
 export interface DossierOuvert {
@@ -186,7 +256,7 @@ export async function enregistrerSignature(
   index: number,
   signature: SignatureEnregistree,
   reponses: ReponsesEmprunteur,
-): Promise<{ dossier: DossierContrat; complet: boolean }> {
+): Promise<{ dossier: DossierContrat; complet: boolean; suivante: Invitation | null }> {
   const entree = dossier.emprunteurs[index];
   if (!entree) throw new Error('Emprunteur introuvable dans le dossier.');
 
@@ -195,15 +265,21 @@ export async function enregistrerSignature(
   entree.jetonHash = null; // usage unique : le lien ne rouvrira plus
 
   const complet = dossier.emprunteurs.every((e) => e.signature !== null);
+
+  // Le tour passe au suivant : son jeton n'est émis que maintenant, ce qui rend l'ordre
+  // structurel plutôt que conventionnel — nul ne peut signer avant que le précédent ait fini.
+  let suivante: Invitation | null = null;
   if (complet) {
     dossier.statut = 'a_finaliser';
     // Le compte à rebours repart : le dossier attend désormais la courtière, et il serait
     // absurde de perdre les signatures déjà recueillies parce que le délai initial expire.
     dossier.expireLe = new Date(Date.now() + DUREE_VIE_MS).toISOString();
+  } else {
+    suivante = await emettreJeton(dossier, indexCourant(dossier));
   }
 
   await stockage.ecrire(dossier.id, JSON.stringify(dossier));
-  return { dossier, complet };
+  return { dossier, complet, suivante };
 }
 
 /**

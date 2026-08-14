@@ -538,20 +538,40 @@ const RANGS = [0, 1, 2];
             <fieldset class="ct-section">
               <legend>Ce qui va se passer</legend>
               <ol class="ct-etapes">
-                <li>Chaque emprunteur reçoit un lien personnel pour lire le contrat en entier.</li>
                 <li>
-                  Il répond aux deux questions qui lui reviennent — fonction politiquement
-                  vulnérable, transfert de cabinet — confirme ses coordonnées, et signe.
+                  Le <strong>premier</strong> emprunteur lit le contrat en entier, répond aux
+                  deux questions qui lui reviennent — fonction politiquement vulnérable,
+                  transfert de cabinet — confirme ses coordonnées, et signe.
                 </li>
                 <li>
-                  Quand tous ont signé, vous recevez un courriel. Vous relisez le contrat, qui
-                  porte alors leurs réponses, et vous le signez d’un clic.
+                  Le suivant prend le relais et voit le contrat portant déjà la signature du
+                  précédent. Un seul document circule, signé l’un après l’autre.
+                </li>
+                <li>
+                  Quand tous ont signé, vous relisez le contrat — qui porte alors leurs
+                  réponses — et vous le signez d’un clic.
                 </li>
               </ol>
               <p class="ct-aide">
                 Le contrat n’est produit qu’à cette dernière étape. C’est ce qui garantit que
                 votre signature ne couvre rien que vous n’ayez vu.
               </p>
+
+              <p class="cform-label ct-espace">Comment signent-ils ?</p>
+              <label class="ct-case ct-case-large">
+                <input type="radio" name="ct-mode" value="distance" checked />
+                <span>
+                  <strong>À distance</strong> — le premier reçoit son lien par courriel ; le
+                  suivant reçoit le sien dès que le précédent a signé.
+                </span>
+              </label>
+              <label class="ct-case ct-case-large">
+                <input type="radio" name="ct-mode" value="presence" />
+                <span>
+                  <strong>En personne</strong> — ils sont avec vous. Vous leur tendez cet
+                  appareil chacun à leur tour ; aucun lien ne part par courriel.
+                </span>
+              </label>
             </fieldset>
 
             <p class="ct-erreur" data-erreur hidden />
@@ -1424,6 +1444,9 @@ const RANGS = [0, 1, 2];
       const donnees = collecter();
       if (!emprunteursValides(donnees)) return;
 
+      const mode =
+        formulaire.querySelector<HTMLInputElement>('input[name="ct-mode"]:checked')?.value ?? 'distance';
+
       if (!signatureEnregistree) {
         montrerErreur('Enregistrez d’abord votre signature, en haut de la page.');
         barreSignature?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1441,7 +1464,7 @@ const RANGS = [0, 1, 2];
           headers: { 'Content-Type': 'application/json' },
           // Aucune signature ne circule : la sienne est mémorisée côté serveur et n'entrera
           // en jeu qu'à la finalisation ; celles des emprunteurs n'existent pas encore.
-          body: JSON.stringify({ donnees }),
+          body: JSON.stringify({ donnees, mode }),
         });
         const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
 
@@ -1458,11 +1481,28 @@ const RANGS = [0, 1, 2];
           return;
         }
 
-        const enAttente = (data.enAttente ?? []) as Array<{ nom: string; courriel: string }>;
+        const ordre = (data.ordre ?? []) as Array<{ nom: string; courriel: string }>;
         if (succes) {
-          succes.textContent = `Contrat envoyé à ${enAttente
-            .map((e) => `${e.nom} (${e.courriel})`)
-            .join(', ')}. Vous recevrez un courriel quand tous auront signé, pour le finaliser.`;
+          if (data.mode === 'presence' && typeof data.lien === 'string') {
+            // En présentiel, le lien ne part nulle part : il est remis ici, et la courtière
+            // tend l'appareil au premier signataire.
+            succes.innerHTML = '';
+            succes.append(
+              `Ordre de signature : ${ordre.map((e, i) => `${i + 1}. ${e.nom}`).join(' · ')}. `,
+            );
+            const lien = document.createElement('a');
+            lien.href = data.lien;
+            lien.textContent = `Faire signer ${ordre[0]?.nom ?? 'le premier emprunteur'} →`;
+            lien.style.fontWeight = '700';
+            succes.append(lien);
+          } else {
+            const premier = ordre[0];
+            succes.textContent = `Contrat envoyé à ${premier?.nom ?? 'l’emprunteur'} (${premier?.courriel ?? ''}). ${
+              ordre.length > 1
+                ? `Le suivant recevra son lien dès qu’il aura signé. Ordre : ${ordre.map((e) => e.nom).join(' · ')}.`
+                : ''
+            } Vous serez prévenue pour finaliser.`;
+          }
           succes.hidden = false;
           succes.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }

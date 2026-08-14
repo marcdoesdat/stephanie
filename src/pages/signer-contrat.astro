@@ -245,6 +245,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
               <div data-ecran="merci" hidden>
                 <h1 class="sc-titre" data-merci-titre>Merci, c’est signé</h1>
                 <p class="sc-texte" data-merci-texte></p>
+                <p class="sc-texte" data-merci-suivant hidden></p>
                 <p class="sc-texte">
                   Une question ? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>.
                 </p>
@@ -530,12 +531,29 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
         const titre = app.querySelector<HTMLElement>('[data-merci-titre]');
         const texte = app.querySelector<HTMLElement>('[data-merci-texte]');
+        const suivant = app.querySelector<HTMLElement>('[data-merci-suivant]');
         if (titre) titre.textContent = 'Merci, votre signature est enregistrée';
         if (texte) {
           texte.textContent = data.complet
             ? 'Tous les emprunteurs ont signé. Stéphanie signe à son tour, puis vous fera parvenir une copie du contrat.'
-            : 'Il reste des personnes à signer. Vous recevrez une confirmation quand ce sera fait.';
+            : 'Le contrat passe maintenant au signataire suivant, qui recevra son lien par courriel.';
         }
+
+        // En présentiel seulement, le serveur renvoie le lien du suivant : on affiche le
+        // relais pour que la courtière tende l'appareil, sans repasser par un courriel.
+        if (!data.complet && typeof data.lien === 'string' && suivant) {
+          suivant.innerHTML = '';
+          const bouton = document.createElement('a');
+          bouton.href = data.lien;
+          bouton.className = 'btn btn-primary';
+          bouton.textContent = `Passer à ${String(data.suivant ?? 'l’emprunteur suivant')} →`;
+          suivant.append(bouton);
+          suivant.hidden = false;
+          if (texte) {
+            texte.textContent = 'Remettez l’appareil au signataire suivant.';
+          }
+        }
+
         afficher('merci');
       } catch {
         montrerErreur(erreur, 'Connexion impossible. Vérifiez votre réseau et réessayez.');

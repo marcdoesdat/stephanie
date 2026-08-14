@@ -306,6 +306,17 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
 - **Le PDF *signé* ne sort que vers la courtière.** Les emprunteurs reçoivent un accusé sans
   pièce jointe, et c'est Stéphanie qui leur remet copie. L'aperçu avant signature, lui, est
   un droit : il est servi au signataire par son propre jeton, qui n'est pas consommé.
+- **Un seul contrat, signé en séquence.** Le document ne se dédouble jamais : il passe d'un
+  signataire au suivant, chacun le voyant porter les signatures déjà apposées. **Un seul jeton
+  est vivant à la fois** — celui de la personne dont c'est le tour ; le suivant n'est émis
+  qu'une fois le précédent consommé, ce qui rend l'ordre structurel plutôt que conventionnel.
+- **Deux modes d'acheminement, un seul ordre.** À distance, chacun reçoit son lien par
+  courriel quand son tour vient. En présentiel, le lien du signataire courant est rendu à
+  l'écran de la courtière, qui tend l'appareil — le jeton ne transite alors par aucune boîte
+  tierce. À distance, il ne redescend **jamais** au navigateur de celui qui vient de signer.
+- `reemettreLienCourant(id)` relit le dossier plutôt que de croire l'objet reçu : réémettre un
+  lien sur un dossier gelé entre-temps par un refus serait exactement le cas où plus aucun
+  lien ne doit vivre.
 - **La courtière signe en dernier.** Deux questions du contrat appartiennent à l'emprunteur
   — la PPV (« s'applique-t-elle à l'un des emprunteurs ? ») et le consentement au transfert
   de cabinet — et il confirme aussi ses coordonnées. Ces réponses arrivant après l'envoi,

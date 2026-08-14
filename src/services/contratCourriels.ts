@@ -199,19 +199,31 @@ export interface InvitationCourriel {
 }
 
 /**
- * Envoie à chaque emprunteur son lien de signature nominatif.
+ * Envoie à **un** emprunteur son lien de signature nominatif — celui dont c'est le tour.
  *
- * Le lien porte le jeton en clair : il ne doit jamais apparaître ailleurs (ni dans les
- * logs, ni dans la notification interne, ni dans une réponse HTTP).
+ * Un seul contrat circule, signé en séquence : les autres recevront le leur quand celui-ci
+ * aura signé. Le lien porte le jeton en clair et ne doit jamais apparaître ailleurs (ni dans
+ * les logs, ni dans la notification interne, ni dans une réponse HTTP destinée à un tiers).
+ *
+ * @param rang  Position du signataire dans la file (1 = premier), pour le lui dire.
+ * @param total Nombre d'emprunteurs au contrat.
  */
-export async function envoyerInvitations(
+export async function envoyerInvitation(
   env: ResendEnv,
-  invitations: readonly InvitationCourriel[],
+  invitation: InvitationCourriel,
+  rang: number,
+  total: number,
 ): Promise<void> {
   const config = loadSiteConfig();
+  const suite =
+    total > 1
+      ? rang === 1
+        ? `Vous signez en premier ; ${total === 2 ? 'l’autre emprunteur recevra' : 'les autres emprunteurs recevront'} le lien ensuite.`
+        : `Les signataires précédents ont signé — le contrat porte déjà leur signature.`
+      : '';
 
-  await envoyerEnSerie(
-    invitations.map((invitation) => () =>
+  await envoyerEnSerie([
+    () =>
       sendEmail(env.apiKey, {
         from: env.fromEmail,
         to: invitation.courriel,
@@ -222,8 +234,10 @@ export async function envoyerInvitations(
            <p style="margin:0 0 14px;font-size:14px;">Bonjour ${escapeHtml(invitation.nom)},</p>
            <p style="margin:0 0 14px;font-size:14px;">
              ${escapeHtml(config.nom)} a préparé votre contrat de courtage hypothécaire.
-             Le lien ci-dessous vous permet de le relire en entier, puis de le signer.
+             Le lien ci-dessous vous permet de le relire en entier, de répondre à deux
+             questions qui vous concernent, puis de le signer.
            </p>
+           ${suite ? `<p style="margin:0 0 14px;font-size:14px;">${escapeHtml(suite)}</p>` : ''}
            <p style="margin:22px 0;">
              <a href="${escapeHtml(invitation.lien)}"
                 style="display:inline-block;background:#a85f38;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:600;">
@@ -239,10 +253,9 @@ export async function envoyerInvitations(
              l'écran vous permet de le signaler, et je vous rappellerai.
            </p>
            ${renderSignatureBlock()}`,
-        ),
-      }),
-    ),
-  );
+      ),
+    }),
+  ]);
 }
 
 /* ------------------------------------------------------------------ */
@@ -253,22 +266,29 @@ export async function envoyerInvitations(
 export async function envoyerAvisEnAttente(
   env: ResendEnv,
   donnees: DonneesContrat,
-  enAttente: readonly InvitationCourriel[],
+  ordre: ReadonlyArray<{ nom: string; courriel: string }>,
+  mode: 'distance' | 'presence' = 'distance',
 ): Promise<void> {
   await sendEmail(env.apiKey, {
     from: env.fromEmail,
     to: env.notifyEmail,
-    subject: `Contrat de courtage envoyé en signature — ${enAttente.length} en attente`,
+    subject: `Contrat de courtage en signature — ${ordre.length} signataire${ordre.length > 1 ? 's' : ''}`,
     html: wrapEmailHtml(
       `<h1 style="font-size:19px;margin:0 0 6px;">Contrat envoyé en signature</h1>
        <p style="margin:0 0 18px;color:#6b6257;font-size:14px;">
-         Le contrat est parti. Chaque emprunteur va le lire, répondre aux questions qui lui
-         reviennent et signer. Vous signerez en dernier, quand ils auront tous répondu.
+         ${
+           mode === 'presence'
+             ? 'Le contrat est prêt. Tendez l’appareil au premier signataire ; les suivants passeront à leur tour, dans l’ordre ci-dessous.'
+             : 'Le contrat est parti au premier signataire. Chacun recevra son lien quand le précédent aura signé.'
+         }
+         Vous signerez en dernier, quand ils auront tous répondu.
        </p>
        ${sectionContrat(donnees)}
        ${bloc(
-         'En attente de signature',
-         renderDataRows(enAttente.map((i) => [escapeHtml(i.nom), escapeHtml(i.courriel)])),
+         'Ordre de signature',
+         renderDataRows(
+           ordre.map((i, rang) => [`${rang + 1}. ${escapeHtml(i.nom)}`, escapeHtml(i.courriel)]),
+         ),
        )}`,
     ),
   });
