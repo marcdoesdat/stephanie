@@ -329,6 +329,81 @@ describe('séquence des signatures', () => {
   });
 });
 
+describe('listerDossiers', () => {
+  it('ne laisse fuiter ni jeton ni tracé de signature', async () => {
+    // Ce résumé descend jusqu'au navigateur : y embarquer les tracés ferait voyager la
+    // donnée la plus sensible du système pour afficher une liste.
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const serialise = JSON.stringify(await service.listerDossiers());
+    expect(serialise).not.toContain(invitation.jeton);
+    expect(serialise).not.toContain('tracePngBase64');
+    expect(serialise).not.toContain('AAAA'); // le tracé factice
+    expect(serialise).not.toContain('jetonHash');
+  });
+
+  it('dit qui a signé et de qui c’est le tour', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const [resume] = await service.listerDossiers();
+    expect(resume!.emprunteurs[0]!.signeLe).not.toBeNull();
+    expect(resume!.emprunteurs[1]!.signeLe).toBeNull();
+    expect(resume!.courant?.courriel).toBe('bo@exemple.ca');
+  });
+
+  it('n’annonce plus personne quand le dossier attend la courtière', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const [resume] = await service.listerDossiers();
+    expect(resume!.statut).toBe('a_finaliser');
+    expect(resume!.courant).toBeNull();
+  });
+
+  it('signale un dossier gelé et qui l’a refusé', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.marquerRefus(ouvert.dossier, ouvert.index, 'Le montant ne correspond pas.');
+
+    const [resume] = await service.listerDossiers();
+    expect(resume!.statut).toBe('gele');
+    expect(resume!.refusePar).toBe('Ana Tremblay');
+    expect(resume!.courant).toBeNull();
+  });
+
+  it('écarte les dossiers périmés', async () => {
+    const service = await chargerService();
+    const { dossier } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const perime = JSON.parse(blobs.get(dossier.id)!);
+    perime.expireLe = new Date(Date.now() - 1000).toISOString();
+    blobs.set(dossier.id, JSON.stringify(perime));
+
+    expect(await service.listerDossiers()).toHaveLength(0);
+  });
+
+  it('classe du plus récent au plus ancien', async () => {
+    const service = await chargerService();
+    const a = await service.creerDossier(donnees('ana@exemple.ca'));
+    // Un dossier écrit après doit remonter en tête, même à horodatage voisin.
+    const vieilli = JSON.parse(blobs.get(a.dossier.id)!);
+    vieilli.creeLe = new Date(Date.now() - 86_400_000).toISOString();
+    blobs.set(a.dossier.id, JSON.stringify(vieilli));
+    const b = await service.creerDossier(donnees('bo@exemple.ca'));
+
+    const resumes = await service.listerDossiers();
+    expect(resumes.map((r) => r.id)).toEqual([b.dossier.id, a.dossier.id]);
+  });
+});
+
 describe('finalisation par la courtière', () => {
   /** Déroule toute la chaîne : chaque jeton n'existe qu'une fois le précédent consommé. */
   async function toutSigner(service: typeof import('./contratDossierService'), ...courriels: string[]) {

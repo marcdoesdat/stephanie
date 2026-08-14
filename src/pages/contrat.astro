@@ -148,6 +148,19 @@ const RANGS = [0, 1, 2];
               </div>
             </div>
 
+            {/* ---------------- Contrats en cours ---------------- */}
+
+            <details class="ct-repliable" id="ct-suivi">
+              <summary>
+                <span class="ct-repliable-titre">Contrats en cours</span>
+                <span class="ct-repliable-note" data-suivi-compte>ouvrez pour charger</span>
+              </summary>
+              <div class="ct-repliable-corps">
+                <p class="ct-aide" data-suivi-etat>Chargement…</p>
+                <div data-suivi-liste></div>
+              </div>
+            </details>
+
             {/* ---------------- Emprunteurs ---------------- */}
 
             <fieldset class="ct-section">
@@ -914,6 +927,60 @@ const RANGS = [0, 1, 2];
     color: var(--muted);
   }
 
+  .ct-dossier {
+    padding: 0.8rem 0.9rem;
+    margin-bottom: 0.7rem;
+    border: 1px solid var(--line, #e3d9cc);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 0.87rem;
+  }
+
+  .ct-dossier-titre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 0.8rem;
+    margin: 0 0 0.4rem;
+    font-weight: 700;
+  }
+
+  .ct-etat {
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .ct-etat[data-etat='en_attente'] {
+    background: #fdf2e7;
+    color: #8a5320;
+  }
+
+  .ct-etat[data-etat='a_finaliser'] {
+    background: #eaf5ec;
+    color: #26603a;
+  }
+
+  .ct-etat[data-etat='gele'] {
+    background: #fdeceb;
+    color: #8f2f28;
+  }
+
+  .ct-dossier-signataires {
+    margin: 0 0 0.5rem;
+    padding-left: 1.1rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .ct-dossier-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    align-items: center;
+  }
+
   .ct-etapes {
     margin: 0 0 0.5rem;
     padding-left: 1.2rem;
@@ -1294,6 +1361,159 @@ const RANGS = [0, 1, 2];
         }
       } finally {
         bouton.disabled = false;
+      }
+    });
+
+    /* ---------------- Suivi des contrats en cours ---------------- */
+
+    const suivi = document.getElementById('ct-suivi') as HTMLDetailsElement | null;
+    let suiviCharge = false;
+
+    function texteEtat(statut: string): string {
+      if (statut === 'a_finaliser') return 'à signer par vous';
+      if (statut === 'gele') return 'gelé';
+      return 'en attente';
+    }
+
+    async function chargerSuivi(): Promise<void> {
+      const etat = formulaire.querySelector<HTMLElement>('[data-suivi-etat]');
+      const liste = formulaire.querySelector<HTMLElement>('[data-suivi-liste]');
+      const compte = formulaire.querySelector<HTMLElement>('[data-suivi-compte]');
+      if (!liste || !etat) return;
+
+      etat.textContent = 'Chargement…';
+      liste.innerHTML = '';
+
+      try {
+        const reponse = await fetch('/api/contrat-dossiers');
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+        if (!reponse.ok) {
+          etat.textContent = String(data.error ?? 'Chargement impossible.');
+          return;
+        }
+
+        const dossiers = (data.dossiers ?? []) as Array<{
+          id: string;
+          statut: string;
+          mode: string;
+          emprunteurs: Array<{ nom: string; courriel: string; signeLe: string | null }>;
+          courant: { nom: string; courriel: string } | null;
+          refusePar: string | null;
+        }>;
+
+        if (compte) compte.textContent = dossiers.length === 0 ? 'aucun' : `${dossiers.length}`;
+        if (dossiers.length === 0) {
+          etat.textContent = 'Aucun contrat en cours. Ceux qui sont signés et envoyés sont supprimés.';
+          return;
+        }
+        etat.textContent = '';
+
+        for (const dossier of dossiers) {
+          const bloc = document.createElement('div');
+          bloc.className = 'ct-dossier';
+
+          const titre = document.createElement('p');
+          titre.className = 'ct-dossier-titre';
+          titre.append(dossier.emprunteurs.map((e) => e.nom).join(', '));
+          const etiquette = document.createElement('span');
+          etiquette.className = 'ct-etat';
+          etiquette.dataset.etat = dossier.statut;
+          etiquette.textContent = texteEtat(dossier.statut);
+          titre.append(etiquette);
+          bloc.append(titre);
+
+          const signataires = document.createElement('ul');
+          signataires.className = 'ct-dossier-signataires';
+          for (const e of dossier.emprunteurs) {
+            const li = document.createElement('li');
+            li.textContent = e.signeLe
+              ? `${e.nom} — signé`
+              : dossier.courant?.courriel === e.courriel
+                ? `${e.nom} — c’est son tour`
+                : `${e.nom} — en attente de son tour`;
+            signataires.append(li);
+          }
+          bloc.append(signataires);
+
+          const actions = document.createElement('div');
+          actions.className = 'ct-dossier-actions';
+
+          if (dossier.statut === 'a_finaliser') {
+            const finaliser = document.createElement('a');
+            finaliser.href = `/finaliser-contrat?d=${encodeURIComponent(dossier.id)}`;
+            finaliser.textContent = 'Relire et signer →';
+            finaliser.style.fontWeight = '700';
+            actions.append(finaliser);
+          } else if (dossier.statut === 'en_attente' && dossier.courant) {
+            const relancer = document.createElement('button');
+            relancer.type = 'button';
+            relancer.className = 'ct-lien';
+            relancer.textContent =
+              dossier.mode === 'presence'
+                ? `Rouvrir le lien de ${dossier.courant.nom}`
+                : `Renvoyer le lien à ${dossier.courant.nom}`;
+            relancer.addEventListener('click', () => relancer1(dossier.id, relancer, actions));
+            actions.append(relancer);
+          } else if (dossier.refusePar) {
+            const note = document.createElement('span');
+            note.style.color = 'var(--muted)';
+            note.textContent = `Refusé par ${dossier.refusePar} — préparez un nouveau contrat.`;
+            actions.append(note);
+          }
+
+          bloc.append(actions);
+          liste.append(bloc);
+        }
+      } catch {
+        etat.textContent = 'Connexion impossible. Vérifiez votre réseau.';
+      }
+    }
+
+    /** Réémet le lien du signataire courant ; l'ancien cesse aussitôt de valoir. */
+    async function relancer1(id: string, bouton: HTMLButtonElement, actions: HTMLElement): Promise<void> {
+      bouton.disabled = true;
+      const libelle = bouton.textContent;
+      bouton.textContent = 'Envoi…';
+
+      try {
+        const reponse = await fetch('/api/contrat-relancer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ d: id }),
+        });
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+
+        const message = document.createElement('span');
+        if (!reponse.ok) {
+          message.style.color = '#8f2f28';
+          message.textContent = String(data.error ?? 'La relance a échoué.');
+          bouton.disabled = false;
+          bouton.textContent = libelle;
+        } else if (data.mode === 'presence' && typeof data.lien === 'string') {
+          const lien = document.createElement('a');
+          lien.href = data.lien;
+          lien.textContent = `Faire signer ${String(data.nom ?? '')} →`;
+          lien.style.fontWeight = '700';
+          message.append(lien);
+          bouton.remove();
+        } else {
+          message.style.color = '#26603a';
+          message.textContent = `Nouveau lien envoyé à ${String(data.courriel ?? data.nom ?? '')}. L’ancien ne fonctionne plus.`;
+          bouton.remove();
+        }
+        actions.append(message);
+      } catch {
+        bouton.disabled = false;
+        bouton.textContent = libelle;
+      }
+    }
+
+    // Chargé à l'ouverture seulement : inutile d'interroger le stockage à chaque visite de
+    // la page, alors que la plupart du temps elle vient y saisir un nouveau contrat.
+    suivi?.addEventListener('toggle', () => {
+      if (suivi.open && !suiviCharge) {
+        suiviCharge = true;
+        void chargerSuivi();
       }
     });
 

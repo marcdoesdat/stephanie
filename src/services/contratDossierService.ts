@@ -341,6 +341,72 @@ export async function marquerRefus(
   return dossier;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Suivi — ce que la courtière voit de ses dossiers en cours          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Vue d'un dossier destinée à l'écran de suivi.
+ *
+ * ⚠️ Ne porte **ni jeton, ni tracé de signature** : c'est ce qui la rend transmissible au
+ * navigateur. Un résumé qui embarquerait les tracés ferait redescendre au client la donnée
+ * la plus sensible du système, pour afficher une liste.
+ */
+export interface ResumeDossier {
+  readonly id: string;
+  readonly creeLe: string;
+  readonly expireLe: string;
+  readonly statut: StatutDossier;
+  readonly mode: ModeSignature;
+  readonly emprunteurs: ReadonlyArray<{ nom: string; courriel: string; signeLe: string | null }>;
+  /** Celui dont c'est le tour, `null` si le dossier n'attend plus personne. */
+  readonly courant: { nom: string; courriel: string } | null;
+  readonly refusePar: string | null;
+}
+
+function resumer(dossier: DossierContrat): ResumeDossier {
+  const index = indexCourant(dossier);
+  const courant = dossier.statut === 'en_attente' && index !== -1 ? dossier.emprunteurs[index] : null;
+
+  return {
+    id: dossier.id,
+    creeLe: dossier.creeLe,
+    expireLe: dossier.expireLe,
+    statut: dossier.statut,
+    mode: dossier.mode,
+    emprunteurs: dossier.emprunteurs.map((e) => ({
+      nom: `${e.emprunteur.prenom} ${e.emprunteur.nom}`.trim(),
+      courriel: e.emprunteur.courriel,
+      signeLe: e.signature?.signeLe ?? null,
+    })),
+    courant: courant
+      ? {
+          nom: `${courant.emprunteur.prenom} ${courant.emprunteur.nom}`.trim(),
+          courriel: courant.emprunteur.courriel,
+        }
+      : null,
+    refusePar: dossier.refus?.nom ?? null,
+  };
+}
+
+/** Les dossiers vivants, du plus récent au plus ancien. Les périmés sont ignorés. */
+export async function listerDossiers(): Promise<ResumeDossier[]> {
+  const maintenant = Date.now();
+  const resumes: ResumeDossier[] = [];
+
+  for (const { contenu } of await stockage.lister()) {
+    try {
+      const dossier = JSON.parse(contenu) as DossierContrat;
+      if (Date.parse(dossier.expireLe) < maintenant) continue;
+      resumes.push(resumer(dossier));
+    } catch {
+      // Un dossier illisible n'est pas une raison de vider l'écran de suivi.
+    }
+  }
+
+  return resumes.sort((a, b) => Date.parse(b.creeLe) - Date.parse(a.creeLe));
+}
+
 /** Les emprunteurs qui n'ont pas encore signé. */
 export function emprunteursEnAttente(dossier: DossierContrat): EntreeEmprunteur[] {
   return dossier.emprunteurs.filter((e) => e.signature === null);

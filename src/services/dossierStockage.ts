@@ -44,6 +44,8 @@ type BlobStore = {
 
 export interface Stockage {
   lire(id: string): Promise<string | null>;
+  /** Tous les dossiers vivants, contenu brut. Sert aux écrans de suivi de la courtière. */
+  lister(): Promise<Array<{ id: string; contenu: string }>>;
   ecrire(id: string, contenu: string): Promise<void>;
   supprimer(id: string): Promise<void>;
   purgerExpires(): Promise<void>;
@@ -112,6 +114,26 @@ export function creerStockage(nomStore: string, etiquette: string): Stockage {
       } catch (err) {
         console.error(`[${etiquette}] Échec de lecture du dossier :`, err);
         return null;
+      }
+    },
+
+    async lister() {
+      const store = await chargerStore();
+      if (!store) {
+        if (!repliMemoireAutorise()) return [];
+        return [...memoire].map(([id, contenu]) => ({ id, contenu }));
+      }
+      try {
+        const { blobs } = await store.list();
+        const entrees: Array<{ id: string; contenu: string }> = [];
+        for (const { key } of blobs) {
+          const contenu = await store.get(key, { type: 'text' });
+          if (contenu) entrees.push({ id: key, contenu });
+        }
+        return entrees;
+      } catch (err) {
+        console.error(`[${etiquette}] Listage impossible :`, err);
+        return [];
       }
     },
 

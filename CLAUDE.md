@@ -82,6 +82,8 @@ src/
 | `/api/contrat-signer` | API | Réponses, signature (ou refus) d'un emprunteur via son lien nominatif |
 | `/api/contrat-apercu-courtiere` | API | Aperçu d'un dossier à finaliser, servi à la courtière par mot de passe |
 | `/api/contrat-finaliser` | API | Signature finale de la courtière — produit le PDF, l'envoie, supprime le dossier |
+| `/api/contrat-dossiers` | API | Résumés des contrats en cours, pour l'écran de suivi de `/contrat` |
+| `/api/contrat-relancer` | API | Réémet le lien du signataire courant — l'ancien cesse aussitôt de valoir |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
 prérend chaque page au build sauf si elle déclare `export const prerender = false`.
@@ -314,6 +316,9 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   courriel quand son tour vient. En présentiel, le lien du signataire courant est rendu à
   l'écran de la courtière, qui tend l'appareil — le jeton ne transite alors par aucune boîte
   tierce. À distance, il ne redescend **jamais** au navigateur de celui qui vient de signer.
+- **`ResumeDossier` ne porte ni jeton ni tracé.** C'est ce qui le rend transmissible au
+  navigateur pour l'écran de suivi : un résumé qui embarquerait les tracés ferait redescendre
+  au client la donnée la plus sensible du système, pour afficher une liste. Un test le vérifie.
 - `reemettreLienCourant(id)` relit le dossier plutôt que de croire l'objet reçu : réémettre un
   lien sur un dossier gelé entre-temps par un refus serait exactement le cas où plus aucun
   lien ne doit vivre.
