@@ -28,11 +28,35 @@ import {
 const config = loadSiteConfig();
 const prenom = config.nom.split(' ')[0];
 
-// 8 questions + récapitulatif + signataires + signature.
-const TOTAL_ETAPES = QUESTIONS.length + 3;
+// 8 questions + récapitulatif + nombre d'emprunteurs + signataires + signature.
+const TOTAL_ETAPES = QUESTIONS.length + 4;
 const ETAPE_RECAP = QUESTIONS.length + 1;
-const ETAPE_SIGNATAIRES = QUESTIONS.length + 2;
-const ETAPE_SIGNATURE = QUESTIONS.length + 3;
+const ETAPE_NOMBRE = QUESTIONS.length + 2;
+const ETAPE_SIGNATAIRES = QUESTIONS.length + 3;
+const ETAPE_SIGNATURE = QUESTIONS.length + 4;
+
+// Le nombre d'emprunteurs est demandé en tuiles, sans valeur par défaut : la liste des
+// signataires s'ouvrait sur une seule carte et un « + Ajouter » discret qu'on pouvait
+// traverser sans le voir, et le co-emprunteur se retrouvait absent d'un formulaire pourtant
+// signé « notre vision commune ». Une question à laquelle il faut répondre ne s'oublie pas.
+// Si MAX_SIGNATAIRES augmente, ajouter ici la ligne correspondante.
+const OPTIONS_NOMBRE = [
+  {
+    nombre: 1,
+    label: 'Je suis seul emprunteur',
+    precision: 'Personne d’autre ne sera inscrit au prêt.',
+  },
+  {
+    nombre: 2,
+    label: 'Nous sommes deux',
+    precision: 'Conjoint, conjointe, co-acheteur, parent qui endosse…',
+  },
+  {
+    nombre: 3,
+    label: 'Nous sommes trois',
+    precision: 'Trois personnes inscrites au même prêt.',
+  },
+].slice(0, MAX_SIGNATAIRES);
 ---
 
 <MainLayout
@@ -157,17 +181,45 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
             <ul class="profil-recap" data-recap></ul>
           </div>
 
+          {/* ---------- Nombre d'emprunteurs ---------- */}
+          <div class="quiz-step" data-etape={String(ETAPE_NOMBRE)} hidden>
+            <p class="quiz-q" id="libelle-nombre">Combien d’emprunteurs seront au prêt&nbsp;?</p>
+            <p class="quiz-q-sub">
+              Toute personne inscrite à l’hypothèque doit signer ce formulaire — même celle qui ne
+              fournit pas la mise de fonds.
+            </p>
+
+            <div class="quiz-options" role="group" aria-labelledby="libelle-nombre">
+              {
+                OPTIONS_NOMBRE.map((option) => (
+                  <button
+                    type="button"
+                    class="quiz-card"
+                    data-nombre={String(option.nombre)}
+                  >
+                    <span class="quiz-card-text">
+                      <strong>{option.label}</strong>
+                      <span>{option.precision}</span>
+                    </span>
+                  </button>
+                ))
+              }
+            </div>
+
+            <p class="profil-erreur" data-erreur role="alert" hidden></p>
+          </div>
+
           {/* ---------- Signataires ---------- */}
           <div class="quiz-step" data-etape={String(ETAPE_SIGNATAIRES)} hidden>
-            <p class="quiz-q">Qui signe&nbsp;?</p>
-            <p class="quiz-q-sub">
+            <p class="quiz-q" data-titre-signataires>Qui signe&nbsp;?</p>
+            <p class="quiz-q-sub" data-sous-signataires>
               Tous les emprunteurs au prêt doivent signer. Chacun a besoin de sa propre adresse
               courriel.
             </p>
 
             <div data-signataires></div>
 
-            <button type="button" class="profil-ajout" data-ajouter>+ Ajouter un co-emprunteur</button>
+            <button type="button" class="profil-ajout" data-ajouter>+ Ajouter un autre emprunteur</button>
 
             <fieldset class="profil-voie" data-voie-groupe hidden>
               <legend class="cform-label">Les autres emprunteurs sont-ils avec vous&nbsp;?</legend>
@@ -551,8 +603,9 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
 
   const CLE_STOCKAGE = 'sw_profil_emprunteurs_v1';
   const ETAPE_RECAP = QUESTIONS.length + 1;
-  const ETAPE_SIGNATAIRES = QUESTIONS.length + 2;
-  const ETAPE_SIGNATURE = QUESTIONS.length + 3;
+  const ETAPE_NOMBRE = QUESTIONS.length + 2;
+  const ETAPE_SIGNATAIRES = QUESTIONS.length + 3;
+  const ETAPE_SIGNATURE = QUESTIONS.length + 4;
   const TOTAL = ETAPE_SIGNATURE;
 
   interface Signataire {
@@ -571,6 +624,8 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
   interface Etat {
     reponses: Record<string, string>;
     autreMontant: string;
+    /** Nombre d'emprunteurs déclaré à l'écran dédié. `null` tant que rien n'a été choisi. */
+    nombre: number | null;
     signataires: Signataire[];
     voie: 'presence' | 'distance';
     /** Écran affiché au moment de la dernière sauvegarde — pour reprendre après un F5. */
@@ -588,6 +643,8 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
     const boutonRetour = document.querySelector<HTMLButtonElement>('[data-retour]');
     const listeRecap = formulaire.querySelector<HTMLElement>('[data-recap]');
     const conteneurSignataires = formulaire.querySelector<HTMLElement>('[data-signataires]');
+    const titreSignataires = formulaire.querySelector<HTMLElement>('[data-titre-signataires]');
+    const sousSignataires = formulaire.querySelector<HTMLElement>('[data-sous-signataires]');
     const boutonAjouter = formulaire.querySelector<HTMLButtonElement>('[data-ajouter]');
     const groupeVoie = formulaire.querySelector<HTMLElement>('[data-voie-groupe]');
 
@@ -606,6 +663,7 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
       const vide: Etat = {
         reponses: {},
         autreMontant: '',
+        nombre: null,
         signataires: [{ nom: '', courriel: '' }],
         voie: 'presence',
         etape: 0,
@@ -617,6 +675,15 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
         return {
           reponses: lu.reponses ?? {},
           autreMontant: lu.autreMontant ?? '',
+          // Une session ouverte avant l'ajout de cet écran n'a pas de nombre : elle repasse
+          // par la question plutôt que d'hériter d'un compte qu'on aurait deviné.
+          nombre:
+            typeof lu.nombre === 'number' &&
+            Number.isInteger(lu.nombre) &&
+            lu.nombre >= 1 &&
+            lu.nombre <= MAX_SIGNATAIRES
+              ? lu.nombre
+              : null,
           signataires: lu.signataires?.length ? lu.signataires : vide.signataires,
           voie: lu.voie === 'distance' ? 'distance' : 'presence',
           etape: typeof lu.etape === 'number' && Number.isInteger(lu.etape) ? lu.etape : 0,
@@ -793,9 +860,43 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
       bouton.type = 'button';
       bouton.className = 'btn-cta btn-cta--block';
       bouton.textContent = 'Tout est exact — continuer';
-      bouton.addEventListener('click', () => afficher(ETAPE_SIGNATAIRES));
+      bouton.addEventListener('click', () => afficher(ETAPE_NOMBRE));
       continuer.appendChild(bouton);
       listeRecap.appendChild(continuer);
+    }
+
+    /* ---------------- Nombre d'emprunteurs ---------------- */
+
+    function appliquerSelectionNombre(): void {
+      for (const carte of formulaire.querySelectorAll<HTMLElement>('[data-nombre]')) {
+        carte.classList.toggle('selected', Number(carte.dataset.nombre) === etat.nombre);
+      }
+    }
+
+    /**
+     * Aligne la liste des signataires sur le nombre déclaré. Les cartes déjà remplies sont
+     * conservées : on n'ajoute que les manquantes, et on ne retire que celles que le client
+     * vient lui-même de déclarer inutiles.
+     */
+    function ajusterSignataires(nombre: number): void {
+      while (etat.signataires.length < nombre) etat.signataires.push({ nom: '', courriel: '' });
+      if (etat.signataires.length > nombre) etat.signataires.length = nombre;
+    }
+
+    for (const carte of formulaire.querySelectorAll<HTMLElement>('[data-nombre]')) {
+      carte.addEventListener('click', () => {
+        const nombre = Number(carte.dataset.nombre);
+        if (!Number.isInteger(nombre) || nombre < 1 || nombre > MAX_SIGNATAIRES) return;
+
+        etat.nombre = nombre;
+        ajusterSignataires(nombre);
+        appliquerSelectionNombre();
+        rendreSignataires();
+        sauvegarder();
+
+        // Même délai que les questions : la sélection doit être vue avant que l'écran change.
+        window.setTimeout(() => afficher(ETAPE_SIGNATAIRES), 220);
+      });
     }
 
     /* ---------------- Signataires ---------------- */
@@ -820,6 +921,10 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
           retirer.textContent = 'Retirer';
           retirer.addEventListener('click', () => {
             etat.signataires.splice(index, 1);
+            // Le nombre déclaré suit la liste : sans ça, un retour à l'écran précédent
+            // rétablirait la carte qu'on vient de retirer.
+            etat.nombre = etat.signataires.length;
+            appliquerSelectionNombre();
             sauvegarder();
             rendreSignataires();
           });
@@ -845,6 +950,18 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
       // sinon un « ils signeront de leur côté » resté en session après le retrait d'un
       // co-emprunteur enverrait la soumission vers un dossier sans personne à inviter.
       const aPlusieurs = etat.signataires.length >= 2;
+
+      // Écran commun au client seul et au couple : celui qui vient de déclarer être seul
+      // ne doit pas lire qu'il lui faut réunir « tous les emprunteurs ».
+      if (titreSignataires) {
+        titreSignataires.textContent = aPlusieurs ? 'Qui signe ?' : 'Vos coordonnées';
+      }
+      if (sousSignataires) {
+        sousSignataires.textContent = aPlusieurs
+          ? 'Tous les emprunteurs au prêt doivent signer. Chacun a besoin de sa propre adresse courriel.'
+          : 'C’est à cette adresse que partira votre accusé de signature.';
+      }
+
       if (groupeVoie) groupeVoie.hidden = !aPlusieurs;
       if (!aPlusieurs && etat.voie !== 'presence') {
         etat.voie = 'presence';
@@ -883,6 +1000,8 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
     boutonAjouter?.addEventListener('click', () => {
       if (etat.signataires.length >= MAX_SIGNATAIRES) return;
       etat.signataires.push({ nom: '', courriel: '' });
+      etat.nombre = etat.signataires.length;
+      appliquerSelectionNombre();
       sauvegarder();
       rendreSignataires();
     });
@@ -1114,6 +1233,8 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
     for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="voie"]')) {
       radio.checked = radio.value === etat.voie;
     }
+    if (etat.nombre !== null) ajusterSignataires(etat.nombre);
+    appliquerSelectionNombre();
     rendreSignataires();
 
     /**
@@ -1132,6 +1253,10 @@ const ETAPE_SIGNATURE = QUESTIONS.length + 3;
       if (etat.reponses.absorption === 'autre' && !etat.autreMontant) {
         return Math.min(voulue, QUESTIONS.findIndex((q) => q.id === 'absorption') + 1);
       }
+
+      // Sans nombre déclaré, la liste des signataires n'a pas de sens : c'est justement
+      // l'écran qu'on ne veut voir personne franchir sans y répondre.
+      if (voulue >= ETAPE_SIGNATAIRES && etat.nombre === null) return ETAPE_NOMBRE;
 
       if (voulue >= ETAPE_SIGNATURE && erreurSignataires() !== null) return ETAPE_SIGNATAIRES;
 
