@@ -22,7 +22,13 @@ export interface ResendEmail {
   to: string;
   subject: string;
   html: string;
+  /** Version texte. Facultative, mais un courriel sans elle part avec un handicap de délivrabilité. */
+  text?: string;
+  /** Copie invisible — sert à déposer dans la boîte de la courtière ce qu'elle a envoyé. */
+  bcc?: string;
   reply_to?: string;
+  /** En-têtes bruts — sert au `List-Unsubscribe` des courriels d'approche. */
+  headers?: Record<string, string>;
   attachments?: ResendAttachment[];
 }
 
