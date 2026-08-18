@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BASES_CONSENTEMENT,
   CHAMPS_CONSERVES,
+  CONSENTEMENT_PAR_ORIGINE,
   DOCUMENTS,
   ETAPES,
+  ETAPE_INITIALE,
+  ORIGINES,
+  cleTelephone,
   ETAPES_CLIENT,
   ORDRE_ETAPES,
   depuisDemande,
@@ -13,6 +18,7 @@ import {
   parserDonneesDossier,
   rangEtape,
   type CleEtape,
+  type CleOrigine,
   type ProfilDemande,
 } from './dossiersClients';
 
@@ -236,7 +242,72 @@ describe('depuisDemande', () => {
     expect(resultat.valeur.profil.typeDemande).toBe('achat');
   });
 
-  it('refuse une demande sans adresse courriel exploitable', () => {
-    expect(depuisDemande({ ...DEMANDE, courriel: '' }).ok).toBe(false);
+  it('accepte une fiche sans courriel si un téléphone permet de joindre la personne', () => {
+    // Le cas des références de partenaire, qui n'arrivent qu'avec un numéro. `/demande`
+    // exige quand même une adresse — c'est l'endpoint qui le vérifie, pas ce parseur.
+    const resultat = depuisDemande({ ...DEMANDE, courriel: '' });
+    expect(resultat.ok).toBe(true);
+    if (resultat.ok) expect(resultat.valeur.courriel).toBe('');
+  });
+
+  it('refuse une fiche sans aucun moyen de joindre la personne', () => {
+    expect(depuisDemande({ ...DEMANDE, courriel: '', telephone: '' }).ok).toBe(false);
+    // Un numéro trop court n'est pas un moyen de joindre qui que ce soit.
+    expect(depuisDemande({ ...DEMANDE, courriel: '', telephone: '123' }).ok).toBe(false);
+  });
+});
+
+
+describe('origine et consentement', () => {
+  it('attache une base de consentement à chaque porte d’entrée', () => {
+    for (const origine of Object.keys(ORIGINES) as CleOrigine[]) {
+      const base = CONSENTEMENT_PAR_ORIGINE[origine];
+      expect(Object.hasOwn(BASES_CONSENTEMENT, base), origine).toBe(true);
+    }
+  });
+
+  it('ne prétend pas que le calculateur a recueilli un consentement', () => {
+    // Ce formulaire n'a aucune case à cocher : la personne a demandé un rapport, pas un appel.
+    expect(CONSENTEMENT_PAR_ORIGINE.calculateur).toBe('service_demande');
+    expect(CONSENTEMENT_PAR_ORIGINE.partenaire).toBe('tiers');
+    expect(CONSENTEMENT_PAR_ORIGINE.demande).toBe('expresse');
+  });
+
+  it('n’ouvre un vrai dossier que pour la demande de financement et la saisie manuelle', () => {
+    const dossiers = (Object.keys(ORIGINES) as CleOrigine[]).filter(
+      (origine) => ETAPE_INITIALE[origine] !== 'prospect',
+    );
+    expect(dossiers.sort()).toEqual(['demande', 'manuel']);
+  });
+});
+
+describe('étape prospect', () => {
+  it('ne montre rien au client — le portail reste fermé jusqu’à la qualification', () => {
+    expect(ETAPES.prospect.visibleClient).toBe(false);
+    expect(ETAPES_CLIENT).not.toContain('prospect');
+  });
+
+  it('ouvre la progression et mène à « nouveau »', () => {
+    expect(rangEtape('prospect')).toBe(0);
+    expect(etapeSuivante('prospect')).toBe('nouveau');
+  });
+
+  it('n’est pas une étape terminale', () => {
+    expect(etapeClot('prospect')).toBe(false);
+  });
+});
+
+describe('cleTelephone', () => {
+  it('ramène les écritures d’un même numéro à une seule clé', () => {
+    const attendu = '4505551234';
+    for (const ecriture of ['450 555-1234', '(450) 555-1234', '+1 450 555 1234', '14505551234']) {
+      expect(cleTelephone(ecriture), ecriture).toBe(attendu);
+    }
+  });
+
+  it('rejette ce qui n’est pas un numéro joignable', () => {
+    expect(cleTelephone('123')).toBe('');
+    expect(cleTelephone('')).toBe('');
+    expect(cleTelephone('poste 12')).toBe('');
   });
 });

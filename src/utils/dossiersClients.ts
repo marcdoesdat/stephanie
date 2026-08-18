@@ -34,6 +34,21 @@
  * à le traduire, et il appelle plutôt que de le faire.
  */
 export const ETAPES = {
+  /**
+   * Un contact entré par un formulaire, que Stéphanie n'a pas encore qualifié.
+   *
+   * `visibleClient: false`, et c'est tout l'intérêt : quelqu'un qui a demandé un rappel ou le
+   * calcul de son versement ne doit pas recevoir un portail annonçant « Demande reçue » avec
+   * une liste de douze pièces qu'il n'a jamais accepté de fournir. Le portail ne s'ouvre qu'à
+   * la qualification — c'est-à-dire au passage à `nouveau`, qui sème alors la checklist.
+   */
+  prospect: {
+    libelle: 'Prospect à qualifier',
+    libelleClient: 'Premier contact',
+    explicationClient: '',
+    visibleClient: false,
+    clot: false,
+  },
   nouveau: {
     libelle: 'Demande reçue',
     libelleClient: 'Demande reçue',
@@ -120,6 +135,7 @@ export type CleEtape = keyof typeof ETAPES;
  * qu'on y arrive en avançant.
  */
 export const ORDRE_ETAPES = [
+  'prospect',
   'nouveau',
   'contact',
   'documents',
@@ -148,6 +164,104 @@ export function etapeSuivante(cle: CleEtape): CleEtape | null {
 /** Vrai si le dossier n'attend plus rien — financé ou non abouti. */
 export function etapeClot(cle: CleEtape): boolean {
   return ETAPES[cle].clot;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Origine et consentement                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Par quelle porte la fiche est entrée. Fait du système, pas réponse du client — d'où sa
+ * place au premier niveau du dossier plutôt que dans `profil`.
+ *
+ * C'est aussi la seule donnée qui permette de dire, en fin de trimestre, quels formulaires
+ * produisent des clients et lesquels ne produisent que du volume.
+ */
+export const ORIGINES = {
+  demande: 'Demande de financement',
+  rappel: 'Demande de rappel',
+  contact: 'Formulaire de contact',
+  refinancement: 'Funnel refinancement',
+  refinancement_v2: 'Funnel refinancement V2',
+  partenaire: 'Référence d’un partenaire',
+  calculateur: 'Calculateur de versement',
+  penalite: 'Calculateur de pénalité',
+  outils: 'Hub d’outils',
+  manuel: 'Saisie manuelle',
+} as const;
+
+export type CleOrigine = keyof typeof ORIGINES;
+
+/**
+ * Sur quoi repose le droit de rappeler cette personne.
+ *
+ * Même question que `BASES_CONSENTEMENT` dans `reseauCourtiers.ts`, et pour la même raison :
+ * c'est ce qui répond, six mois plus tard, à « pourquoi l'appelez-vous ». Les deux carnets
+ * ne partagent pas les clés, parce qu'ils ne parlent pas des mêmes gestes — un professionnel
+ * dont l'adresse est publiée n'a rien à voir avec quelqu'un qui a rempli un formulaire.
+ */
+export const BASES_CONSENTEMENT = {
+  expresse: 'A demandé à être contacté',
+  tiers: 'Transmis par un partenaire',
+  service_demande: 'A demandé un rapport, rien de plus',
+} as const;
+
+export type CleConsentement = keyof typeof BASES_CONSENTEMENT;
+
+/**
+ * La base attachée à chaque porte d'entrée.
+ *
+ * ⚠️ `calculateur` vaut `service_demande` et non `expresse` : **ce formulaire n'a aucune case
+ * de consentement**. La personne a demandé que son calcul lui soit envoyé, pas qu'on la
+ * rappelle. La fiche l'affiche en clair pour que la distinction survive au passage du temps —
+ * une liste où tout le monde a « accepté d'être contacté » ne vaut rien le jour où il faut
+ * le prouver.
+ */
+export const CONSENTEMENT_PAR_ORIGINE = {
+  demande: 'expresse',
+  rappel: 'expresse',
+  contact: 'expresse',
+  refinancement: 'expresse',
+  refinancement_v2: 'expresse',
+  outils: 'expresse',
+  penalite: 'expresse',
+  partenaire: 'tiers',
+  calculateur: 'service_demande',
+  manuel: 'expresse',
+} as const satisfies Record<CleOrigine, CleConsentement>;
+
+/**
+ * À quelle étape une fiche naît, selon la porte par laquelle elle est entrée.
+ *
+ * `/demande` ouvre un **dossier**, pas un prospect : la personne a rempli quarante-cinq
+ * champs, déclaré sa situation d'emploi et consenti à l'enquête de crédit. La traiter comme
+ * un contact à qualifier serait lui refermer au nez le portail qu'elle a mérité.
+ *
+ * Tout le reste ouvre un **prospect**. Un nom et un téléphone laissés au bas d'un calculateur
+ * ne disent pas qu'on a un dossier ; ils disent qu'on a quelqu'un à rappeler.
+ *
+ * La saisie manuelle ouvre un dossier : si Stéphanie prend la peine de créer la fiche
+ * elle-même, la qualification a déjà eu lieu dans sa tête.
+ */
+export const ETAPE_INITIALE = {
+  demande: 'nouveau',
+  manuel: 'nouveau',
+  rappel: 'prospect',
+  contact: 'prospect',
+  refinancement: 'prospect',
+  refinancement_v2: 'prospect',
+  partenaire: 'prospect',
+  calculateur: 'prospect',
+  penalite: 'prospect',
+  outils: 'prospect',
+} as const satisfies Record<CleOrigine, CleEtape>;
+
+export function origineValide(valeur: unknown): valeur is CleOrigine {
+  return typeof valeur === 'string' && Object.hasOwn(ORIGINES, valeur);
+}
+
+export function consentementValide(valeur: unknown): valeur is CleConsentement {
+  return typeof valeur === 'string' && Object.hasOwn(BASES_CONSENTEMENT, valeur);
 }
 
 /* ------------------------------------------------------------------ */
@@ -444,6 +558,19 @@ export function normaliserCourriel(valeur: string): string {
   return valeur.trim().toLowerCase().slice(0, LONGUEURS.courriel);
 }
 
+/**
+ * Les chiffres d'un numéro, sans indicatif de pays. Clé de dédoublonnage **de repli**, pour
+ * les fiches sans adresse — une référence de partenaire ne porte qu'un téléphone.
+ *
+ * `450 555-1234`, `(450) 555-1234` et `+1 450 555 1234` donnent la même clé : sans cela, la
+ * même personne référée deux fois ferait deux fiches, ce que le dédoublonnage doit empêcher.
+ */
+export function cleTelephone(valeur: string): string {
+  const chiffres = valeur.replace(/\D/g, '');
+  const sansPays = chiffres.length === 11 && chiffres.startsWith('1') ? chiffres.slice(1) : chiffres;
+  return sansPays.length >= 7 ? sansPays : '';
+}
+
 export function etapeValide(valeur: unknown): valeur is CleEtape {
   return typeof valeur === 'string' && Object.hasOwn(ETAPES, valeur);
 }
@@ -490,7 +617,15 @@ export function extraireProfil(brut: unknown): ProfilDemande {
   return profil;
 }
 
-/** Valide une fiche soumise par `/dossiers`, ou dérivée d'une soumission `/demande`. */
+/**
+ * Valide une fiche soumise par `/dossiers`, ou dérivée d'une entrée de formulaire.
+ *
+ * **L'adresse courriel est facultative**, et c'est une concession délibérée : une référence
+ * de partenaire ne porte qu'un nom et un téléphone. Refuser cette fiche perdrait précisément
+ * le prospect qu'on cherche à ne plus perdre. Mais il faut un moyen de joindre la personne
+ * *et* de la reconnaître, d'où l'exigence d'au moins l'un des deux — une fiche sans adresse
+ * ni téléphone n'est pas un contact, c'est un nom.
+ */
 export function parserDonneesDossier(brut: unknown): Resultat<DonneesDossier> {
   if (typeof brut !== 'object' || brut === null) return { ok: false, erreur: 'Requête invalide.' };
   const source = brut as Record<string, unknown>;
@@ -498,14 +633,22 @@ export function parserDonneesDossier(brut: unknown): Resultat<DonneesDossier> {
   const nom = normaliser(source.nom, LONGUEURS.nom);
   if (nom.length < 2) return { ok: false, erreur: 'Le nom du client est requis.' };
 
-  if (!courrielValide(source.courriel)) return { ok: false, erreur: 'Adresse courriel invalide.' };
+  const courrielBrut = normaliser(source.courriel, LONGUEURS.courriel);
+  if (courrielBrut && !courrielValide(courrielBrut)) {
+    return { ok: false, erreur: 'Adresse courriel invalide.' };
+  }
+
+  const telephone = normaliser(source.telephone, LONGUEURS.telephone);
+  if (!courrielBrut && !cleTelephone(telephone)) {
+    return { ok: false, erreur: 'Il faut au moins une adresse courriel ou un téléphone.' };
+  }
 
   return {
     ok: true,
     valeur: {
       nom,
-      courriel: normaliserCourriel(source.courriel),
-      telephone: normaliser(source.telephone, LONGUEURS.telephone),
+      courriel: courrielBrut ? normaliserCourriel(courrielBrut) : '',
+      telephone,
       notes: normaliserBloc(source.notes, LONGUEURS.notes),
       profil: extraireProfil(source.profil ?? source),
     },

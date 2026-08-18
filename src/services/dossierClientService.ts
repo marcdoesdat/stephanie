@@ -27,16 +27,22 @@
  */
 
 import {
+  CONSENTEMENT_PAR_ORIGINE,
   DOCUMENTS,
   ETAPES,
+  ETAPE_INITIALE,
   ETATS_DOCUMENT,
+  ORIGINES,
+  cleTelephone,
   documentsRequis,
   etapeClot,
   normaliserCourriel,
+  type CleConsentement,
   type CleDestinataire,
   type CleDocument,
   type CleEtape,
   type CleEtatDocument,
+  type CleOrigine,
   type DonneesDossier,
   type ProfilDemande,
 } from '../utils/dossiersClients';
@@ -71,6 +77,16 @@ export interface Evenement {
   readonly type: TypeEvenement;
   /** Une ligne lisible dans le journal de la fiche. */
   readonly resume: string;
+  /**
+   * Pour un changement d'étape : les clés, en plus de la phrase française.
+   *
+   * Le `resume` dit « Demande reçue → Premier contact fait » ; l'analyser pour retrouver les
+   * clés casserait au premier libellé retouché. Les statistiques lisent donc ces deux champs,
+   * et **ignorent** les événements qui n'en ont pas — ceux écrits avant leur existence —
+   * plutôt que de deviner.
+   */
+  readonly de?: CleEtape;
+  readonly vers?: CleEtape;
 }
 
 export interface LigneDocument {
@@ -91,6 +107,12 @@ export interface DossierClient {
   /** Le bloc-notes de Stéphanie. **Ne descend jamais au portail client.** */
   notes: string;
   profil: ProfilDemande;
+  /** Par quelle porte la fiche est entrée. Ne se modifie jamais — c'est un fait, pas un champ. */
+  readonly origine: CleOrigine;
+  /** Sur quoi repose le droit de la rappeler. Affiché sur la fiche. */
+  consentement: CleConsentement;
+  /** Le contact du réseau qui a référé cette personne, s'il y en a un. */
+  refereParId: string | null;
   etape: CleEtape;
   documents: LigneDocument[];
   /** La date à laquelle elle veut y revenir. `null` tant qu'elle n'en a pas fixé. */
@@ -157,7 +179,10 @@ export function versVueClient(dossier: DossierClient): VueClient | null {
 function relire(contenu: string): DossierClient | null {
   try {
     const lu = JSON.parse(contenu) as Partial<DossierClient>;
-    if (!lu.id || !lu.courriel) return null;
+    // Le nom, et non le courriel : une fiche référée par un partenaire n'arrive qu'avec un
+    // téléphone, et la refuser ici la rendrait invisible au listage — donc au dédoublonnage,
+    // à l'écran et à la purge. Un dossier fantôme, écrit mais illisible.
+    if (!lu.id || !lu.nom) return null;
     return {
       ...(lu as DossierClient),
       // Tolérance aux dossiers écrits par une version antérieure : un carnet qui refuse de
@@ -165,6 +190,9 @@ function relire(contenu: string): DossierClient | null {
       documents: Array.isArray(lu.documents) ? lu.documents : [],
       historique: Array.isArray(lu.historique) ? lu.historique : [],
       profil: lu.profil ?? {},
+      origine: lu.origine ?? 'manuel',
+      consentement: lu.consentement ?? 'expresse',
+      refereParId: lu.refereParId ?? null,
       etape: lu.etape ?? 'nouveau',
       relanceLe: lu.relanceLe ?? null,
       clotLe: lu.clotLe ?? null,
@@ -193,8 +221,37 @@ export async function listerDossiers(): Promise<DossierClient[]> {
 /** Le dossier d'une adresse donnée. Sert au portail, qui ne connaît que le courriel. */
 export async function trouverParCourriel(courriel: string): Promise<DossierClient | null> {
   const cible = normaliserCourriel(courriel);
+  if (!cible) return null;
   const dossiers = await listerDossiers();
   return dossiers.find((d) => d.courriel === cible) ?? null;
+}
+
+/**
+ * La fiche déjà présente pour cette personne, s'il y en a une.
+ *
+ * L'adresse d'abord, le téléphone à défaut : une référence de partenaire n'a pas d'adresse,
+ * et deux fiches pour la même personne, c'est un suivi coupé en deux et deux rappels au même
+ * numéro. Le rapprochement par téléphone ne sert qu'en dernier recours — deux conjoints
+ * partagent parfois une ligne, et on préfère rater un doublon qu'en fabriquer un.
+ */
+export async function trouverExistant(
+  courriel: string,
+  telephone: string,
+): Promise<DossierClient | null> {
+  const dossiers = await listerDossiers();
+
+  const parCourriel = normaliserCourriel(courriel);
+  if (parCourriel) {
+    const trouve = dossiers.find((d) => d.courriel === parCourriel);
+    if (trouve) return trouve;
+    // Une adresse fournie qui ne correspond à rien tranche : on ne va pas chercher plus loin
+    // par téléphone, au risque de rattacher deux personnes d'un même foyer.
+    return null;
+  }
+
+  const parTelephone = cleTelephone(telephone);
+  if (!parTelephone) return null;
+  return dossiers.find((d) => cleTelephone(d.telephone) === parTelephone) ?? null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -207,8 +264,8 @@ async function ecrire(dossier: DossierClient): Promise<DossierClient> {
   return dossier;
 }
 
-function evenement(type: TypeEvenement, resume: string): Evenement {
-  return { le: new Date().toISOString(), type, resume };
+function evenement(type: TypeEvenement, resume: string, extra: Partial<Evenement> = {}): Evenement {
+  return { le: new Date().toISOString(), type, resume, ...extra };
 }
 
 function nommer(cle: CleDocument, pourQui: CleDestinataire): string {
@@ -236,19 +293,47 @@ export async function purgerClosAnciens(maintenant = Date.now()): Promise<void> 
   }
 }
 
+/** Fabrique les lignes de checklist correspondant à un profil, horodatées. */
+function semerChecklist(profil: ProfilDemande, maintenant: string): LigneDocument[] {
+  return documentsRequis(profil).map((requis) => ({
+    cle: requis.cle,
+    pourQui: requis.pourQui,
+    etat: 'a_fournir' as const,
+    ajouteLe: maintenant,
+    majLe: maintenant,
+  }));
+}
+
+/** Ce que l'appelant sait de l'entrée, et que la fiche ne peut pas déduire d'elle-même. */
+export interface ContexteCreation {
+  readonly origine: CleOrigine;
+  /** Par défaut, la base attachée à l'origine. Ne surcharger qu'en connaissance de cause. */
+  readonly consentement?: CleConsentement;
+  /** Le contact du réseau à l'origine de la référence, le cas échéant. */
+  readonly refereParId?: string;
+}
+
 /**
- * Ouvre un dossier. Refuse une adresse déjà présente : deux dossiers pour la même personne,
- * c'est un suivi coupé en deux et un client qui reçoit deux listes de documents différentes.
+ * Ouvre une fiche. Refuse un doublon : deux fiches pour la même personne, c'est un suivi
+ * coupé en deux et un client qui reçoit deux listes de documents différentes.
+ *
+ * L'étape de départ dépend de la porte d'entrée (`ETAPE_INITIALE`), et **la checklist n'est
+ * semée que pour un vrai dossier** : coller douze pièces à réunir sur quelqu'un qui a
+ * seulement demandé le calcul de son versement serait absurde, et rendrait l'écran des
+ * prospects illisible.
  */
 export async function creerDossier(
   donnees: DonneesDossier,
+  contexte: ContexteCreation = { origine: 'manuel' },
 ): Promise<DossierClient | { doublon: DossierClient }> {
-  const existant = await trouverParCourriel(donnees.courriel);
+  const existant = await trouverExistant(donnees.courriel, donnees.telephone);
   if (existant) return { doublon: existant };
 
   await purgerClosAnciens();
 
   const maintenant = new Date().toISOString();
+  const etape = ETAPE_INITIALE[contexte.origine];
+
   const dossier: DossierClient = {
     id: nouvelIdentifiant(),
     creeLe: maintenant,
@@ -258,18 +343,21 @@ export async function creerDossier(
     telephone: donnees.telephone,
     notes: donnees.notes,
     profil: donnees.profil,
-    etape: 'nouveau',
-    documents: documentsRequis(donnees.profil).map((requis) => ({
-      cle: requis.cle,
-      pourQui: requis.pourQui,
-      etat: 'a_fournir' as const,
-      ajouteLe: maintenant,
-      majLe: maintenant,
-    })),
+    origine: contexte.origine,
+    consentement: contexte.consentement ?? CONSENTEMENT_PAR_ORIGINE[contexte.origine],
+    refereParId: contexte.refereParId ?? null,
+    etape,
+    documents: etape === 'prospect' ? [] : semerChecklist(donnees.profil, maintenant),
     relanceLe: null,
     clotLe: null,
     acces: null,
-    historique: [evenement('creation', 'Dossier ouvert')],
+    historique: [
+      evenement(
+        'creation',
+        `${etape === 'prospect' ? 'Prospect entré' : 'Dossier ouvert'} — ${ORIGINES[contexte.origine]}`,
+        { vers: etape },
+      ),
+    ],
   };
 
   return ecrire(dossier);
@@ -315,7 +403,23 @@ export async function changerEtape(id: string, etape: CleEtape, note = ''): Prom
   dossier.relanceLe = null;
 
   const trace = `${ETAPES[ancienne].libelle} → ${ETAPES[etape].libelle}`;
-  dossier.historique.push(evenement('etape', note ? `${trace} · ${note}` : trace));
+  dossier.historique.push(
+    evenement('etape', note ? `${trace} · ${note}` : trace, { de: ancienne, vers: etape }),
+  );
+
+  // La qualification est le moment où la checklist prend son sens : c'est là que la fiche
+  // cesse d'être un nom et devient un dossier. On ne sème que si la liste est vide — une
+  // liste déjà travaillée à la main ne doit pas être écrasée par un aller-retour d'étape.
+  if (ancienne === 'prospect' && etape !== 'prospect' && dossier.documents.length === 0) {
+    const seme = semerChecklist(dossier.profil, new Date().toISOString());
+    if (seme.length > 0) {
+      dossier.documents = seme;
+      dossier.historique.push(
+        evenement('document', `Liste de documents établie (${seme.length} pièces)`),
+      );
+    }
+  }
+
   return ecrire(dossier);
 }
 
@@ -424,6 +528,9 @@ export interface LienMagique {
 export async function emettreLienMagique(id: string): Promise<LienMagique | null> {
   const dossier = await lireDossier(id);
   if (!dossier || !ETAPES[dossier.etape].visibleClient) return null;
+  // Sans adresse, il n'y a nulle part où envoyer le lien — le cas des fiches référées par un
+  // partenaire, qui n'arrivent qu'avec un téléphone.
+  if (!dossier.courriel) return null;
 
   const jeton = nouveauJeton();
   const expireLe = new Date(Date.now() + DUREE_LIEN_MS).toISOString();

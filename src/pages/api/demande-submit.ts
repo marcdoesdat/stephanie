@@ -172,7 +172,7 @@ export const POST: APIRoute = async ({ request }) => {
   // qui journalise et poursuit.
   try {
     const donnees = depuisDemande(payload);
-    if (donnees.ok) await creerDossier(donnees.valeur);
+    if (donnees.ok) await creerDossier(donnees.valeur, { origine: 'demande' });
     else console.warn('[demande-submit] Dossier non ouvert :', donnees.erreur);
   } catch (err) {
     console.error('[demande-submit] Ouverture du dossier de suivi impossible :', err);

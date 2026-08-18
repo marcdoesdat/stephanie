@@ -282,3 +282,108 @@ describe('purge des dossiers clos', () => {
     expect(await service.lireDossier(dossier.id)).not.toBeNull();
   });
 });
+
+
+describe('prospects', () => {
+  it('entre sans checklist et sans ouvrir le portail', async () => {
+    const service = await chargerService();
+    const prospect = await service.creerDossier(donnees(), { origine: 'rappel' });
+    if ('doublon' in prospect) throw new Error('doublon inattendu');
+
+    expect(prospect.etape).toBe('prospect');
+    expect(prospect.documents).toHaveLength(0);
+    expect(prospect.origine).toBe('rappel');
+    // Le portail ne peut rien montrer : la règle est structurelle, pas conventionnelle.
+    expect(service.versVueClient(prospect)).toBeNull();
+    expect(await service.emettreLienMagique(prospect.id)).toBeNull();
+  });
+
+  it('inscrit la base de consentement de sa porte d’entrée', async () => {
+    const service = await chargerService();
+    const capture = await service.creerDossier(donnees(), { origine: 'calculateur' });
+    if ('doublon' in capture) throw new Error('doublon inattendu');
+    expect(capture.consentement).toBe('service_demande');
+  });
+
+  it('sème la checklist au moment de la qualification, et pas avant', async () => {
+    const service = await chargerService();
+    const prospect = await service.creerDossier(donnees(), { origine: 'contact' });
+    if ('doublon' in prospect) throw new Error('doublon inattendu');
+    expect(prospect.documents).toHaveLength(0);
+
+    const qualifie = await service.changerEtape(prospect.id, 'nouveau');
+    expect(qualifie!.documents.length).toBeGreaterThan(0);
+    expect(qualifie!.documents.map((l) => l.cle)).toContain('talons_paie');
+    // Et le portail s'ouvre enfin.
+    expect(service.versVueClient(qualifie!)).not.toBeNull();
+  });
+
+  it('n’écrase pas une liste déjà travaillée à la main lors d’un aller-retour d’étape', async () => {
+    const service = await chargerService();
+    const prospect = await service.creerDossier(donnees(), { origine: 'contact' });
+    if ('doublon' in prospect) throw new Error('doublon inattendu');
+
+    await service.ajouterDocument(prospect.id, 'lettre_don', 'dossier');
+    const qualifie = await service.changerEtape(prospect.id, 'nouveau');
+    expect(qualifie!.documents).toHaveLength(1);
+    expect(qualifie!.documents[0]!.cle).toBe('lettre_don');
+  });
+
+  it('ouvre directement un dossier pour une demande de financement', async () => {
+    const service = await chargerService();
+    const dossier = await service.creerDossier(donnees(), { origine: 'demande' });
+    if ('doublon' in dossier) throw new Error('doublon inattendu');
+    expect(dossier.etape).toBe('nouveau');
+    expect(dossier.documents.length).toBeGreaterThan(0);
+  });
+});
+
+describe('fiche sans adresse courriel', () => {
+  const REFERENCE = donnees({ courriel: '', telephone: '450 555-4321', nom: 'Client référé' });
+
+  it('est acceptée, mais son portail reste fermé', async () => {
+    const service = await chargerService();
+    const fiche = await service.creerDossier(REFERENCE, { origine: 'partenaire' });
+    if ('doublon' in fiche) throw new Error('doublon inattendu');
+
+    expect(fiche.courriel).toBe('');
+    await service.changerEtape(fiche.id, 'nouveau');
+    // Même qualifiée, elle n'a nulle part où envoyer un lien.
+    expect(await service.emettreLienMagique(fiche.id)).toBeNull();
+  });
+
+  it('se dédoublonne sur le téléphone, quelle qu’en soit l’écriture', async () => {
+    const service = await chargerService();
+    await service.creerDossier(REFERENCE, { origine: 'partenaire' });
+    const second = await service.creerDossier(
+      donnees({ courriel: '', telephone: '(450) 555-4321', nom: 'Le même' }),
+      { origine: 'rappel' },
+    );
+    expect('doublon' in second).toBe(true);
+  });
+
+  it('ne rapproche pas deux personnes par téléphone quand une adresse est fournie', async () => {
+    const service = await chargerService();
+    await service.creerDossier(donnees({ telephone: '450 555-0000' }), { origine: 'rappel' });
+    // Deux conjoints, une ligne partagée : deux fiches, et c'est voulu.
+    const conjoint = await service.creerDossier(
+      donnees({ courriel: 'conjoint@exemple.ca', telephone: '450 555-0000' }),
+      { origine: 'rappel' },
+    );
+    expect('doublon' in conjoint).toBe(false);
+  });
+});
+
+describe('journal des étapes', () => {
+  it('porte les clés en plus de la phrase, pour que les chiffres ne les devinent pas', async () => {
+    const service = await chargerService();
+    const dossier = await service.creerDossier(donnees(), { origine: 'demande' });
+    if ('doublon' in dossier) throw new Error('doublon inattendu');
+
+    await service.changerEtape(dossier.id, 'contact');
+    const relu = await service.lireDossier(dossier.id);
+    const etape = relu!.historique.find((e) => e.type === 'etape');
+    expect(etape?.de).toBe('nouveau');
+    expect(etape?.vers).toBe('contact');
+  });
+});
