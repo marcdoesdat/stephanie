@@ -1,0 +1,1633 @@
+---
+// Réseau de partenaires — /reseau. Réservé à la courtière.
+//
+// `/partenaires` est la porte entrante : un professionnel arrive et réfère un client. Cette
+// page-ci sert le mouvement inverse — Stéphanie qui approche un professionnel, un par un,
+// et qui se souvient de qui elle a relancé.
+//
+// Rendu à l'exécution : la page vérifie le cookie d'accès à chaque requête et, faute de quoi,
+// ne rend que l'écran de connexion. Même porte que /contrat — c'est la même personne, et un
+// second mot de passe protégerait moins qu'il ne compliquerait. Les endpoints `reseau-*`
+// appliquent exactement le même verdict.
+//
+// Organisation de l'écran : ce qui réclame un geste aujourd'hui est en haut, avant le
+// carnet. Une relance qu'il faut chercher est une relance qui n'aura pas lieu.
+export const prerender = false;
+
+import MainLayout from '../layouts/MainLayout.astro';
+import { loadSiteConfig } from '../config';
+import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
+import { adresseDediee } from '../services/reseauCourriels';
+import {
+  BASES_CONSENTEMENT,
+  ETATS,
+  GABARITS,
+  PLAFOND_QUOTIDIEN,
+  PROFESSIONS,
+} from '../utils/reseauCourtiers';
+
+const config = loadSiteConfig();
+const autorise = await requeteAutorisee(Astro.request);
+const configureManquante = !accesConfigure() && !accesLibreEnDev();
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const professions = Object.entries(PROFESSIONS);
+const etats = Object.entries(ETATS);
+const bases = Object.entries(BASES_CONSENTEMENT);
+const gabarits = Object.entries(GABARITS).map(([cle, gabarit]) => ({
+  cle,
+  nom: gabarit.nom,
+  resume: gabarit.resume,
+}));
+
+// De quelle adresse partent les approches. Faute de second domaine vérifié dans Resend,
+// elles partent aujourd'hui de la même que les liens de signature et les accusés de rappel :
+// l'écran le dit en clair plutôt que de le taire, mais sans alarme — un avertissement qui ne
+// peut pas être suivi d'effet n'apprend qu'à ignorer les avertissements. Le jour où
+// RESEND_FROM_RESEAU sera renseignée, la ligne affichera l'adresse dédiée, ce qui rend aussi
+// une coquille visible.
+const adresseEnvoi = adresseDediee();
+---
+
+<MainLayout
+  title="Réseau de partenaires"
+  description="Outil interne de développement du réseau de référencement."
+  noindex={true}
+  sansBarreCta={true}
+>
+  <main id="main-content" class="rs-page">
+    <section class="rs-shell">
+      {
+        !autorise ? (
+          <div class="contact-form rs-connexion">
+            <h1 class="rs-titre">Réseau de partenaires</h1>
+            {configureManquante ? (
+              <p class="rs-alerte">
+                L’accès n’est pas configuré : la variable d’environnement
+                <code>CONTRAT_MOT_DE_PASSE</code> est absente ou trop courte (12 caractères
+                minimum). Ajoutez-la dans Netlify, puis redéployez.
+              </p>
+            ) : (
+              <>
+                <p class="rs-texte">Cette page est réservée à {config.nom}.</p>
+                <form id="rs-connexion-form" autocomplete="on">
+                  <label class="cform-label" for="rs-mdp">Mot de passe</label>
+                  <input
+                    type="password"
+                    id="rs-mdp"
+                    class="cform-input"
+                    autocomplete="current-password"
+                    required
+                  />
+                  <p class="rs-erreur" data-erreur-connexion hidden />
+                  <button type="submit" class="btn btn-primary rs-bouton">Entrer</button>
+                </form>
+              </>
+            )}
+          </div>
+        ) : (
+          <div id="rs-app" data-plafond={String(PLAFOND_QUOTIDIEN)}>
+            <header class="rs-entete">
+              <div>
+                <h1 class="rs-titre">Réseau de partenaires</h1>
+                <p class="rs-texte">
+                  Les professionnels que vous approchez : courtiers immobiliers, notaires,
+                  comptables, planificateurs. Un courriel personnalisé, et le suivi qui va avec.
+                </p>
+              </div>
+              <p class="rs-quota" data-quota hidden />
+            </header>
+
+            {adresseEnvoi ? (
+              <p class="rs-expediteur">
+                Les approches partent de <strong>{adresseEnvoi}</strong>. Les réponses arrivent
+                dans votre boîte&nbsp;: {config.courriel}.
+              </p>
+            ) : (
+              <p class="rs-expediteur">
+                Les approches partent de l’adresse d’envoi commune du site, celle des liens de
+                signature et des accusés de rappel. Les réponses arrivent dans votre
+                boîte&nbsp;: {config.courriel}. Espacez vos envois plutôt que de vider le
+                carnet en une matinée&nbsp;: une plainte pour pourriel toucherait aussi vos
+                courriels de contrat.
+              </p>
+            )}
+
+            {/* ---------------- À faire aujourd'hui ---------------- */}
+            <section class="rs-urgences" id="rs-urgences" aria-live="polite">
+              <h2 class="rs-h2">À faire aujourd’hui</h2>
+              <div data-urgences />
+            </section>
+
+            {/* ---------------- Barre d'outils ---------------- */}
+            <section class="rs-outils">
+              <div class="rs-filtres">
+                <label class="rs-champ-recherche">
+                  <span class="sr-only">Rechercher un contact</span>
+                  <input
+                    type="search"
+                    id="rs-recherche"
+                    placeholder="Rechercher un nom, une agence…"
+                    autocomplete="off"
+                  />
+                </label>
+                <select id="rs-filtre-etat" aria-label="Filtrer par état">
+                  <option value="">Tous les états</option>
+                  {etats.map(([cle, libelle]) => (
+                    <option value={cle}>{libelle}</option>
+                  ))}
+                </select>
+                <select id="rs-filtre-profession" aria-label="Filtrer par profession">
+                  <option value="">Toutes les professions</option>
+                  {professions.map(([cle, libelle]) => (
+                    <option value={cle}>{libelle}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="rs-actions-globales">
+                <button type="button" class="btn-secondary btn-secondary--sm" data-ouvrir-formulaire>
+                  + Nouveau contact
+                </button>
+                <button type="button" class="rs-lien" data-ouvrir-import>Importer une liste</button>
+                <button type="button" class="rs-lien" data-exporter>Exporter (CSV)</button>
+              </div>
+            </section>
+
+            {/* ---------------- Nouveau contact / correction ---------------- */}
+            <form class="contact-form rs-panneau" id="rs-formulaire" hidden>
+              <h2 class="rs-h2" data-formulaire-titre>Nouveau contact</h2>
+              <input type="hidden" data-formulaire-id />
+
+              <div class="rs-grille">
+                <div>
+                  <label class="cform-label" for="rs-nom">Nom <span class="cform-required">*</span></label>
+                  <input type="text" id="rs-nom" required maxlength="120" autocomplete="off" />
+                </div>
+                <div>
+                  <label class="cform-label" for="rs-courriel">
+                    Courriel <span class="cform-required">*</span>
+                  </label>
+                  <input type="email" id="rs-courriel" required maxlength="200" autocomplete="off" />
+                </div>
+                <div>
+                  <label class="cform-label" for="rs-telephone">Téléphone</label>
+                  <input type="tel" id="rs-telephone" maxlength="40" autocomplete="off" />
+                </div>
+                <div>
+                  <label class="cform-label" for="rs-profession">
+                    Profession <span class="cform-required">*</span>
+                  </label>
+                  <select id="rs-profession" required>
+                    {professions.map(([cle, libelle]) => (
+                      <option value={cle}>{libelle}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label class="cform-label" for="rs-agence">Agence / cabinet</label>
+                  <input type="text" id="rs-agence" maxlength="120" autocomplete="off" />
+                </div>
+                <div>
+                  <label class="cform-label" for="rs-secteur">Secteur</label>
+                  <input type="text" id="rs-secteur" maxlength="120" autocomplete="off" placeholder={config.region} />
+                </div>
+              </div>
+
+              <fieldset class="rs-consentement">
+                <legend class="cform-label">
+                  D’où vient cette adresse ? <span class="cform-required">*</span>
+                </legend>
+                <p class="rs-aide">
+                  La loi anti-pourriel exige de pouvoir dire, un an plus tard, pourquoi vous
+                  aviez le droit d’écrire. C’est aussi ce qui vous protège.
+                </p>
+                <select id="rs-consentement-base" required>
+                  {bases.map(([cle, libelle]) => (
+                    <option value={cle}>{libelle}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  id="rs-consentement-source"
+                  maxlength="200"
+                  required
+                  placeholder="Ex. : adresse publiée sur le site de son agence"
+                />
+              </fieldset>
+
+              <label class="cform-label" for="rs-notes">Notes</label>
+              <textarea id="rs-notes" maxlength="2000" rows="3" placeholder="Ce qu’il faut se rappeler avant de l’appeler." />
+
+              <p class="rs-erreur" data-erreur-formulaire hidden />
+              <div class="rs-panneau-actions">
+                <button type="submit" class="btn-cta">Enregistrer</button>
+                <button type="button" class="rs-lien" data-fermer-formulaire>Annuler</button>
+              </div>
+            </form>
+
+            {/* ---------------- Import en lot ---------------- */}
+            <form class="contact-form rs-panneau" id="rs-import" hidden>
+              <h2 class="rs-h2">Importer une liste</h2>
+              <p class="rs-aide">
+                Collez une colonne par tabulation ou point-virgule :
+                <code>nom ; courriel ; agence ; secteur</code>. Les adresses déjà au carnet
+                sont ignorées. La profession et l’origine s’appliquent à tout le lot.
+              </p>
+              <textarea id="rs-import-texte" rows="6" placeholder="Marie Tremblay ; marie@agence.ca ; RE/MAX Repentigny" />
+
+              <div class="rs-grille">
+                <div>
+                  <label class="cform-label" for="rs-import-profession">Profession du lot</label>
+                  <select id="rs-import-profession">
+                    {professions.map(([cle, libelle]) => (
+                      <option value={cle}>{libelle}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label class="cform-label" for="rs-import-base">Origine des adresses</label>
+                  <select id="rs-import-base">
+                    {bases.map(([cle, libelle]) => (
+                      <option value={cle}>{libelle}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <label class="cform-label" for="rs-import-source">Précisez la source</label>
+              <input
+                type="text"
+                id="rs-import-source"
+                maxlength="200"
+                placeholder="Ex. : bottin public des courtiers de Repentigny, août 2026"
+              />
+
+              <p class="rs-erreur" data-erreur-import hidden />
+              <div class="rs-panneau-actions">
+                <button type="submit" class="btn-cta">Importer</button>
+                <button type="button" class="rs-lien" data-fermer-import>Annuler</button>
+              </div>
+            </form>
+
+            {/* ---------------- Le carnet ---------------- */}
+            <section class="rs-carnet">
+              <h2 class="rs-h2">
+                Le carnet <span class="rs-compte" data-compte />
+              </h2>
+              <div class="rs-liste" data-liste />
+            </section>
+
+            {/* ---------------- Fiche ---------------- */}
+            <section class="rs-fiche" id="rs-fiche" hidden aria-live="polite">
+              <div class="rs-fiche-entete">
+                <div data-fiche-identite />
+                <button type="button" class="rs-lien" data-fermer-fiche>Fermer</button>
+              </div>
+
+              <div class="rs-fiche-actions">
+                <select data-fiche-etat aria-label="État du contact">
+                  {etats.map(([cle, libelle]) => (
+                    <option value={cle}>{libelle}</option>
+                  ))}
+                </select>
+                <label class="rs-fiche-relance">
+                  <span>Revenir le</span>
+                  <input type="date" data-fiche-relance />
+                </label>
+                <button type="button" class="btn-secondary btn-secondary--sm" data-fiche-modifier>
+                  Corriger la fiche
+                </button>
+                <button type="button" class="rs-lien rs-lien--danger" data-fiche-supprimer>
+                  Supprimer
+                </button>
+              </div>
+
+              <div class="rs-fiche-note">
+                <label class="cform-label" for="rs-note-rapide">Ajouter une note</label>
+                <div class="rs-note-ligne">
+                  <input
+                    type="text"
+                    id="rs-note-rapide"
+                    maxlength="2000"
+                    placeholder="« Rappelé, veut qu'on se voie en septembre »"
+                  />
+                  <button type="button" class="btn-secondary btn-secondary--sm" data-ajouter-note>
+                    Noter
+                  </button>
+                </div>
+              </div>
+
+              {/* ---------------- Composition ---------------- */}
+              <div class="rs-composer" data-composer>
+                <h3 class="rs-h3">Écrire</h3>
+                <label class="cform-label" for="rs-gabarit">Gabarit</label>
+                <select id="rs-gabarit">
+                  {gabarits.map((gabarit) => (
+                    <option value={gabarit.cle} title={gabarit.resume}>
+                      {gabarit.nom} — {gabarit.resume}
+                    </option>
+                  ))}
+                </select>
+
+                <label class="cform-label" for="rs-objet">Objet</label>
+                <input type="text" id="rs-objet" maxlength="200" />
+
+                <label class="cform-label" for="rs-corps">Message</label>
+                <textarea id="rs-corps" rows="16" maxlength="6000" />
+                <p class="rs-aide">
+                  Votre signature, vos coordonnées, votre numéro AMF et le lien de retrait
+                  sont ajoutés automatiquement au bas du courriel. Relisez, retouchez : un
+                  message qu’on n’a pas retouché se reconnaît à dix mètres.
+                </p>
+
+                <p class="rs-erreur" data-erreur-envoi hidden />
+                <div class="rs-panneau-actions">
+                  <button type="button" class="btn-cta" data-envoyer>Envoyer</button>
+                  <span class="rs-etat-envoi" data-etat-envoi hidden />
+                </div>
+              </div>
+
+              <div class="rs-historique">
+                <h3 class="rs-h3">Historique</h3>
+                <ol data-historique />
+              </div>
+            </section>
+          </div>
+        )
+      }
+    </section>
+  </main>
+</MainLayout>
+
+<style>
+  .rs-page {
+    background: var(--sand);
+    min-height: 100vh;
+    padding: 2.5rem 1.25rem 5rem;
+  }
+
+  .rs-shell {
+    max-width: 62rem;
+    margin: 0 auto;
+  }
+
+  /* global.css donne à tout `section` la respiration d'une section de page vitrine
+     (jusqu'à 4rem de padding). Ici, les sections sont les blocs d'un tableau de bord :
+     cette respiration les désaligne et étire l'écran sur deux fois sa hauteur utile. */
+  .rs-page section {
+    padding: 0;
+  }
+
+  .rs-connexion {
+    max-width: 27rem;
+    margin: 3rem auto;
+  }
+
+  .rs-titre {
+    font-size: 1.6rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .rs-h2 {
+    font-size: 1.05rem;
+    margin: 0 0 0.85rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .rs-h3 {
+    font-size: 0.95rem;
+    margin: 0 0 0.75rem;
+  }
+
+  .rs-texte {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0;
+    max-width: 46ch;
+  }
+
+  .rs-alerte {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    background: #fdf3ec;
+    border: 1px solid var(--clay);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+
+  .rs-note {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    background: #fdf3ec;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    margin: 0 0 1.5rem;
+    color: var(--muted);
+  }
+
+  .rs-note code,
+  .rs-alerte code {
+    font-size: 0.82em;
+    background: var(--white);
+    padding: 0.1rem 0.35rem;
+    border-radius: 5px;
+  }
+
+  .rs-erreur {
+    font-size: 0.85rem;
+    color: #b3261e;
+    margin: 0.5rem 0 0;
+  }
+
+  .rs-expediteur {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0 0 1.5rem;
+  }
+
+  .rs-expediteur strong {
+    color: var(--ink);
+  }
+
+  .rs-entete {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .rs-quota {
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .rs-urgences {
+    margin-bottom: 1.75rem;
+  }
+
+  .rs-outils {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .rs-filtres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .rs-filtres input,
+  .rs-filtres select {
+    padding: 0.55rem 0.9rem;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: var(--ink);
+  }
+
+  .rs-champ-recherche input {
+    min-width: 15rem;
+  }
+
+  .rs-actions-globales {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .rs-lien {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--clay);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .rs-lien--danger {
+    color: #b3261e;
+  }
+
+  .rs-panneau {
+    margin-bottom: 1.75rem;
+  }
+
+  .rs-grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 0 1rem;
+  }
+
+  .rs-consentement {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.1rem 0.4rem;
+    margin: 0 0 1.2rem;
+  }
+
+  .rs-aide {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+  }
+
+  .rs-panneau-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .rs-compte {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .rs-fiche {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .rs-fiche-entete {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .rs-fiche-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rs-fiche-actions select,
+  .rs-fiche-relance input {
+    padding: 0.5rem 0.75rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+
+  .rs-fiche-relance {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .rs-fiche-note {
+    margin: 1.25rem 0;
+  }
+
+  .rs-note-ligne {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .rs-note-ligne input {
+    flex: 1;
+    padding: 0.6rem 0.9rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: var(--ink);
+  }
+
+  .rs-composer {
+    border-top: 1px solid var(--border);
+    padding-top: 1.25rem;
+  }
+
+  .rs-composer select,
+  .rs-composer input,
+  .rs-composer textarea {
+    width: 100%;
+    padding: 0.7rem 0.95rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--ink);
+    margin-bottom: 1rem;
+  }
+
+  .rs-composer textarea {
+    line-height: 1.6;
+    resize: vertical;
+  }
+
+  .rs-etat-envoi {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .rs-historique {
+    border-top: 1px solid var(--border);
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+  }
+
+  @media (max-width: 640px) {
+    .rs-page {
+      padding: 1.5rem 0.9rem 4rem;
+    }
+
+    .rs-fiche {
+      padding: 1.25rem;
+    }
+  }
+</style>
+
+<style is:global>
+  /* Les cartes du carnet, les urgences et l'historique sont bâties en JavaScript : le style
+     scopé d'Astro ne les atteindrait pas — il n'estampe son attribut de portée que sur les
+     éléments qu'il rend lui-même. D'où ce bloc global, circonscrit à `#rs-app`. */
+
+  #rs-app .rs-carte {
+    width: 100%;
+    text-align: left;
+    display: block;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 0.6rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+
+  #rs-app .rs-carte:hover {
+    border-color: var(--clay);
+    transform: translateY(-1px);
+  }
+
+  #rs-app .rs-carte[data-actif='oui'] {
+    border-color: var(--clay);
+    box-shadow: 0 0 0 1px var(--clay);
+  }
+
+  #rs-app .rs-carte-titre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  #rs-app .rs-carte-agence {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  #rs-app .rs-carte-meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0.35rem 0 0;
+  }
+
+  #rs-app .rs-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    background: var(--sand);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  #rs-app .rs-badge[data-etat='a_contacter'] {
+    background: #eef3fb;
+    border-color: #c6d6ec;
+    color: #2f5d99;
+  }
+
+  #rs-app .rs-badge[data-etat='partenaire'] {
+    background: #eaf6ee;
+    border-color: #b8dcc4;
+    color: #2b6b41;
+  }
+
+  #rs-app .rs-badge[data-etat='refuse'] {
+    background: #f6eeee;
+    border-color: #e0c4c4;
+    color: #8c3a34;
+  }
+
+  #rs-app .rs-badge[data-etat='en_discussion'] {
+    background: #fdf3ec;
+    border-color: #edd0ba;
+    color: #a85f38;
+  }
+
+  #rs-app .rs-urgent {
+    color: #b3261e;
+    font-weight: 600;
+  }
+
+  #rs-app .rs-vide {
+    font-size: 0.88rem;
+    color: var(--muted);
+    background: var(--white);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    margin: 0;
+  }
+
+  #rs-app .rs-fiche-nom {
+    font-size: 1.2rem;
+    margin: 0 0 0.3rem;
+  }
+
+  #rs-app .rs-fiche-coord {
+    font-size: 0.88rem;
+    color: var(--muted);
+    margin: 0 0 0.2rem;
+    line-height: 1.6;
+  }
+
+  #rs-app .rs-fiche-coord a {
+    color: var(--clay);
+  }
+
+  #rs-app .rs-fiche-consentement {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin: 0.5rem 0 0;
+  }
+
+  #rs-app .rs-historique ol,
+  #rs-app ol[data-historique] {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #rs-app ol[data-historique] li {
+    border-left: 2px solid var(--border);
+    padding: 0 0 0.9rem 0.9rem;
+    margin: 0;
+    position: relative;
+  }
+
+  #rs-app ol[data-historique] li:last-child {
+    padding-bottom: 0;
+  }
+
+  #rs-app .rs-evenement-date {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  #rs-app .rs-evenement-texte {
+    font-size: 0.88rem;
+    color: var(--ink);
+    margin: 0.15rem 0 0;
+  }
+
+  #rs-app .rs-evenement-corps {
+    font-size: 0.82rem;
+    color: var(--muted);
+    white-space: pre-wrap;
+    background: var(--sand);
+    border-radius: 10px;
+    padding: 0.7rem 0.85rem;
+    margin: 0.5rem 0 0;
+  }
+
+  #rs-app details.rs-evenement-detail > summary {
+    font-size: 0.78rem;
+    color: var(--clay);
+    cursor: pointer;
+    margin-top: 0.3rem;
+  }
+</style>
+
+<script>
+  import {
+    BASES_CONSENTEMENT,
+    DELAI_SANS_REPONSE_JOURS,
+    ETATS,
+    PROFESSIONS,
+  } from '../utils/reseauCourtiers';
+
+  /* ---------------- Écran de connexion ---------------- */
+
+  const connexion = document.getElementById('rs-connexion-form') as HTMLFormElement | null;
+  connexion?.addEventListener('submit', async (evenement) => {
+    evenement.preventDefault();
+    const erreur = document.querySelector<HTMLElement>('[data-erreur-connexion]');
+    const champ = document.getElementById('rs-mdp') as HTMLInputElement | null;
+    if (erreur) erreur.hidden = true;
+
+    try {
+      const reponse = await fetch('/api/contrat-acces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motDePasse: champ?.value ?? '' }),
+      });
+      if (reponse.ok) {
+        window.location.reload();
+        return;
+      }
+      const data = (await reponse.json().catch(() => ({}))) as { error?: string };
+      if (erreur) {
+        erreur.textContent = data.error ?? 'Connexion impossible.';
+        erreur.hidden = false;
+      }
+    } catch {
+      if (erreur) {
+        erreur.textContent = 'Connexion impossible. Vérifiez votre réseau.';
+        erreur.hidden = false;
+      }
+    }
+  });
+
+  /* ---------------- L'application ---------------- */
+
+  interface Evenement {
+    readonly le: string;
+    readonly type: string;
+    readonly resume: string;
+    readonly objet?: string;
+    readonly corps?: string;
+  }
+
+  interface Fiche {
+    readonly id: string;
+    readonly creeLe: string;
+    readonly majLe: string;
+    readonly nom: string;
+    readonly courriel: string;
+    readonly telephone: string;
+    readonly agence: string;
+    readonly secteur: string;
+    readonly profession: string;
+    readonly notes: string;
+    readonly etat: string;
+    readonly consentement: { base: string; source: string; le: string };
+    readonly relanceLe: string | null;
+    readonly dernierEnvoiLe: string | null;
+    readonly historique: Evenement[];
+  }
+
+  const app = document.getElementById('rs-app');
+
+  if (app) {
+    let contacts: Fiche[] = [];
+    let selection: string | null = null;
+    let envoisFaits = 0;
+    const plafond = Number(app.dataset.plafond ?? '25');
+
+    const $ = <T extends HTMLElement>(selecteur: string): T | null =>
+      app.querySelector<T>(selecteur);
+
+    const liste = $<HTMLElement>('[data-liste]');
+    const urgences = $<HTMLElement>('[data-urgences]');
+    const fiche = document.getElementById('rs-fiche');
+    const formulaire = document.getElementById('rs-formulaire') as HTMLFormElement | null;
+    const panneauImport = document.getElementById('rs-import') as HTMLFormElement | null;
+
+    const RELATIF = new Intl.RelativeTimeFormat('fr-CA', { numeric: 'auto' });
+    const DATE_COURTE = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'medium' });
+    const DATE_COMPLETE = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
+
+    function relatif(iso: string): string {
+      const cible = Date.parse(iso);
+      if (Number.isNaN(cible)) return '';
+      const ecart = cible - Date.now();
+      const heures = Math.round(ecart / 3600000);
+      if (Math.abs(heures) < 24) return RELATIF.format(heures, 'hour');
+      return RELATIF.format(Math.round(ecart / 86400000), 'day');
+    }
+
+    function dateComplete(iso: string): string {
+      const instant = Date.parse(iso);
+      return Number.isNaN(instant) ? '' : DATE_COMPLETE.format(new Date(instant));
+    }
+
+    function joursDepuis(iso: string | null): number | null {
+      if (!iso) return null;
+      const instant = Date.parse(iso);
+      if (Number.isNaN(instant)) return null;
+      return Math.floor((Date.now() - instant) / 86400000);
+    }
+
+    function libelleEtat(cle: string): string {
+      return (ETATS as Record<string, string>)[cle] ?? cle;
+    }
+
+    function libelleProfession(cle: string): string {
+      return (PROFESSIONS as Record<string, string>)[cle] ?? cle;
+    }
+
+    /* ---------------- Appels réseau ---------------- */
+
+    /**
+     * Une session expirée ne doit pas se manifester par un bouton qui ne fait rien : on
+     * recharge, et la page rend son écran de connexion.
+     */
+    async function api<T>(url: string, init?: RequestInit): Promise<T | null> {
+      const reponse = await fetch(url, init);
+      if (reponse.status === 401) {
+        window.location.reload();
+        return null;
+      }
+      const data = (await reponse.json().catch(() => ({}))) as T & { error?: string };
+      if (!reponse.ok) throw new Error(data.error ?? 'Opération impossible.');
+      return data;
+    }
+
+    async function charger(): Promise<void> {
+      try {
+        const data = await api<{ contacts: Fiche[]; envoisDuJour: number }>('/api/reseau-contacts');
+        if (!data) return;
+        contacts = data.contacts;
+        envoisFaits = data.envoisDuJour;
+        rendre();
+      } catch (err) {
+        if (liste) {
+          liste.replaceChildren(
+            texte('p', 'rs-vide', err instanceof Error ? err.message : 'Chargement impossible.'),
+          );
+        }
+      }
+    }
+
+    /* ---------------- Fabrique d'éléments ---------------- */
+
+    function texte<K extends keyof HTMLElementTagNameMap>(
+      balise: K,
+      classe: string,
+      contenu: string,
+    ): HTMLElementTagNameMap[K] {
+      const element = document.createElement(balise);
+      if (classe) element.className = classe;
+      element.textContent = contenu;
+      return element;
+    }
+
+    function badge(etat: string): HTMLSpanElement {
+      const element = texte('span', 'rs-badge', libelleEtat(etat));
+      element.dataset.etat = etat;
+      return element;
+    }
+
+    /* ---------------- Urgences ---------------- */
+
+    interface Urgence {
+      readonly rang: number;
+      readonly texte: string;
+    }
+
+    /**
+     * Ce qui réclame un geste aujourd'hui. Un partenaire acquis et un contact retiré n'en
+     * sont jamais : le premier n'attend rien, le second a demandé qu'on le laisse.
+     */
+    function urgence(contact: Fiche): Urgence | null {
+      if (contact.etat === 'refuse' || contact.etat === 'partenaire') return null;
+
+      if (contact.relanceLe) {
+        const jour = Date.parse(`${contact.relanceLe}T23:59:59`);
+        if (!Number.isNaN(jour) && jour <= Date.now()) {
+          return { rang: 0, texte: `Relance prévue ${relatif(contact.relanceLe)}` };
+        }
+      }
+
+      const attente = joursDepuis(contact.dernierEnvoiLe);
+      if (
+        (contact.etat === 'contacte' || contact.etat === 'relance') &&
+        attente !== null &&
+        attente >= DELAI_SANS_REPONSE_JOURS
+      ) {
+        return { rang: 1, texte: `Sans réponse depuis ${attente} jours` };
+      }
+
+      return null;
+    }
+
+    function rendreUrgences(): void {
+      if (!urgences) return;
+
+      const pressants = contacts
+        .map((contact) => ({ contact, urgence: urgence(contact) }))
+        .filter((entree): entree is { contact: Fiche; urgence: Urgence } => entree.urgence !== null)
+        .sort((a, b) => a.urgence.rang - b.urgence.rang);
+
+      const aContacter = contacts.filter((contact) => contact.etat === 'a_contacter').length;
+
+      if (pressants.length === 0) {
+        const message =
+          aContacter > 0
+            ? `Rien à relancer aujourd’hui. ${aContacter} contact${aContacter > 1 ? 's' : ''} n’${aContacter > 1 ? 'ont' : 'a'} jamais été approché${aContacter > 1 ? 's' : ''}.`
+            : 'Rien à relancer aujourd’hui.';
+        urgences.replaceChildren(texte('p', 'rs-vide', message));
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      for (const { contact, urgence: motif } of pressants) {
+        fragment.append(carte(contact, motif.texte));
+      }
+      urgences.replaceChildren(fragment);
+    }
+
+    /* ---------------- Carnet ---------------- */
+
+    function carte(contact: Fiche, motif?: string): HTMLButtonElement {
+      const bouton = document.createElement('button');
+      bouton.type = 'button';
+      bouton.className = 'rs-carte';
+      bouton.dataset.id = contact.id;
+      if (selection === contact.id) bouton.dataset.actif = 'oui';
+
+      const titre = document.createElement('p');
+      titre.className = 'rs-carte-titre';
+      titre.append(document.createTextNode(contact.nom));
+      if (contact.agence) titre.append(texte('span', 'rs-carte-agence', contact.agence));
+      titre.append(badge(contact.etat));
+
+      const morceaux = [libelleProfession(contact.profession)];
+      if (contact.secteur) morceaux.push(contact.secteur);
+      if (contact.dernierEnvoiLe) morceaux.push(`écrit ${relatif(contact.dernierEnvoiLe)}`);
+
+      const meta = texte('p', 'rs-carte-meta', morceaux.join(' · '));
+      if (motif) {
+        meta.append(document.createTextNode(' · '));
+        meta.append(texte('span', 'rs-urgent', motif));
+      }
+
+      bouton.append(titre, meta);
+      bouton.addEventListener('click', () => ouvrirFiche(contact.id));
+      return bouton;
+    }
+
+    function filtres(): Fiche[] {
+      const recherche = ($<HTMLInputElement>('#rs-recherche')?.value ?? '').trim().toLowerCase();
+      const etat = $<HTMLSelectElement>('#rs-filtre-etat')?.value ?? '';
+      const profession = $<HTMLSelectElement>('#rs-filtre-profession')?.value ?? '';
+
+      return contacts.filter((contact) => {
+        if (etat && contact.etat !== etat) return false;
+        if (profession && contact.profession !== profession) return false;
+        if (!recherche) return true;
+        return `${contact.nom} ${contact.agence} ${contact.courriel} ${contact.secteur}`
+          .toLowerCase()
+          .includes(recherche);
+      });
+    }
+
+    function rendreListe(): void {
+      if (!liste) return;
+      const visibles = filtres();
+
+      const compte = $<HTMLElement>('[data-compte]');
+      if (compte) {
+        compte.textContent =
+          visibles.length === contacts.length
+            ? `${contacts.length} contact${contacts.length > 1 ? 's' : ''}`
+            : `${visibles.length} sur ${contacts.length}`;
+      }
+
+      if (visibles.length === 0) {
+        liste.replaceChildren(
+          texte(
+            'p',
+            'rs-vide',
+            contacts.length === 0
+              ? 'Le carnet est vide. Ajoutez un premier contact, ou importez une liste.'
+              : 'Aucun contact ne correspond à ce filtre.',
+          ),
+        );
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      for (const contact of visibles) fragment.append(carte(contact));
+      liste.replaceChildren(fragment);
+    }
+
+    function rendreQuota(): void {
+      const quota = $<HTMLElement>('[data-quota]');
+      if (!quota) return;
+      const reste = Math.max(0, plafond - envoisFaits);
+      quota.textContent = `${envoisFaits} envoi${envoisFaits > 1 ? 's' : ''} aujourd’hui · ${reste} restant${reste > 1 ? 's' : ''}`;
+      quota.hidden = false;
+    }
+
+    function rendre(): void {
+      rendreQuota();
+      rendreUrgences();
+      rendreListe();
+      if (selection) rendreFiche();
+    }
+
+    /* ---------------- Fiche ---------------- */
+
+    function contactCourant(): Fiche | null {
+      return contacts.find((contact) => contact.id === selection) ?? null;
+    }
+
+    function ouvrirFiche(id: string): void {
+      selection = id;
+      rendreListe();
+      rendreUrgences();
+      rendreFiche();
+      fiche?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function rendreFiche(): void {
+      const contact = contactCourant();
+      if (!fiche || !contact) {
+        if (fiche) fiche.hidden = true;
+        return;
+      }
+      fiche.hidden = false;
+
+      const identite = fiche.querySelector<HTMLElement>('[data-fiche-identite]');
+      if (identite) {
+        const nom = texte('h2', 'rs-fiche-nom', contact.nom);
+
+        const coord = document.createElement('p');
+        coord.className = 'rs-fiche-coord';
+        const courriel = document.createElement('a');
+        courriel.href = `mailto:${contact.courriel}`;
+        courriel.textContent = contact.courriel;
+        coord.append(courriel);
+        if (contact.telephone) coord.append(document.createTextNode(` · ${contact.telephone}`));
+
+        const detail = [libelleProfession(contact.profession), contact.agence, contact.secteur]
+          .filter(Boolean)
+          .join(' · ');
+
+        const consentement = texte(
+          'p',
+          'rs-fiche-consentement',
+          `${(BASES_CONSENTEMENT as Record<string, string>)[contact.consentement.base] ?? contact.consentement.base} — ${contact.consentement.source} (noté le ${DATE_COURTE.format(new Date(contact.consentement.le))})`,
+        );
+
+        const enfants: HTMLElement[] = [nom, coord];
+        if (detail) enfants.push(texte('p', 'rs-fiche-coord', detail));
+        if (contact.notes) enfants.push(texte('p', 'rs-fiche-coord', contact.notes));
+        enfants.push(consentement);
+        identite.replaceChildren(...enfants);
+      }
+
+      const selecteurEtat = fiche.querySelector<HTMLSelectElement>('[data-fiche-etat]');
+      if (selecteurEtat) selecteurEtat.value = contact.etat;
+
+      const relance = fiche.querySelector<HTMLInputElement>('[data-fiche-relance]');
+      if (relance) relance.value = contact.relanceLe ?? '';
+
+      // Un contact retiré : on retire aussi les moyens de lui écrire. Laisser le bloc de
+      // composition ouvert serait une invitation à contourner sa demande.
+      const composer = fiche.querySelector<HTMLElement>('[data-composer]');
+      if (composer) composer.hidden = contact.etat === 'refuse';
+
+      rendreHistorique(contact);
+    }
+
+    function rendreHistorique(contact: Fiche): void {
+      const cible = fiche?.querySelector<HTMLElement>('[data-historique]');
+      if (!cible) return;
+
+      const fragment = document.createDocumentFragment();
+      for (const evenement of [...contact.historique].reverse()) {
+        const ligne = document.createElement('li');
+        ligne.append(texte('span', 'rs-evenement-date', dateComplete(evenement.le)));
+        ligne.append(texte('p', 'rs-evenement-texte', evenement.resume));
+
+        // Le texte réellement envoyé, replié : c'est ce qui permet de dire, un an plus tard,
+        // ce qui a été écrit — sans encombrer la lecture courante.
+        if (evenement.corps) {
+          const detail = document.createElement('details');
+          detail.className = 'rs-evenement-detail';
+          detail.append(texte('summary', '', 'Voir le message'));
+          detail.append(texte('p', 'rs-evenement-corps', evenement.corps));
+          ligne.append(detail);
+        }
+        fragment.append(ligne);
+      }
+      cible.replaceChildren(fragment);
+    }
+
+    fiche?.querySelector('[data-fermer-fiche]')?.addEventListener('click', () => {
+      selection = null;
+      fiche.hidden = true;
+      rendreListe();
+    });
+
+    /* ---------------- Actions sur la fiche ---------------- */
+
+    async function agir(corps: Record<string, unknown>, erreurCible?: HTMLElement | null): Promise<void> {
+      try {
+        const data = await api<{ contact?: Fiche }>('/api/reseau-contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(corps),
+        });
+        if (!data) return;
+        await charger();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Opération impossible.';
+        if (erreurCible) {
+          erreurCible.textContent = message;
+          erreurCible.hidden = false;
+        } else {
+          window.alert(message);
+        }
+      }
+    }
+
+    fiche?.querySelector('[data-fiche-etat]')?.addEventListener('change', (evenement) => {
+      const selecteur = evenement.currentTarget as HTMLSelectElement;
+      if (!selection) return;
+      void agir({ action: 'etat', id: selection, etat: selecteur.value });
+    });
+
+    fiche?.querySelector('[data-fiche-relance]')?.addEventListener('change', (evenement) => {
+      const champ = evenement.currentTarget as HTMLInputElement;
+      if (!selection) return;
+      void agir({ action: 'relance', id: selection, date: champ.value || null });
+    });
+
+    fiche?.querySelector('[data-ajouter-note]')?.addEventListener('click', () => {
+      const champ = document.getElementById('rs-note-rapide') as HTMLInputElement | null;
+      const valeur = champ?.value.trim() ?? '';
+      if (!selection || valeur.length < 2) return;
+      if (champ) champ.value = '';
+      void agir({ action: 'note', id: selection, texte: valeur });
+    });
+
+    fiche?.querySelector('[data-fiche-supprimer]')?.addEventListener('click', async () => {
+      const contact = contactCourant();
+      if (!contact) return;
+      if (!window.confirm(`Supprimer définitivement la fiche de ${contact.nom} ? L’historique part avec.`)) {
+        return;
+      }
+      selection = null;
+      if (fiche) fiche.hidden = true;
+      await agir({ action: 'supprimer', id: contact.id });
+    });
+
+    /* ---------------- Formulaire de contact ---------------- */
+
+    const champs = {
+      id: () => $<HTMLInputElement>('[data-formulaire-id]'),
+      nom: () => document.getElementById('rs-nom') as HTMLInputElement | null,
+      courriel: () => document.getElementById('rs-courriel') as HTMLInputElement | null,
+      telephone: () => document.getElementById('rs-telephone') as HTMLInputElement | null,
+      profession: () => document.getElementById('rs-profession') as HTMLSelectElement | null,
+      agence: () => document.getElementById('rs-agence') as HTMLInputElement | null,
+      secteur: () => document.getElementById('rs-secteur') as HTMLInputElement | null,
+      base: () => document.getElementById('rs-consentement-base') as HTMLSelectElement | null,
+      source: () => document.getElementById('rs-consentement-source') as HTMLInputElement | null,
+      notes: () => document.getElementById('rs-notes') as HTMLTextAreaElement | null,
+    };
+
+    function ouvrirFormulaire(contact: Fiche | null): void {
+      if (!formulaire) return;
+      formulaire.hidden = false;
+      if (panneauImport) panneauImport.hidden = true;
+
+      const titre = formulaire.querySelector<HTMLElement>('[data-formulaire-titre]');
+      if (titre) titre.textContent = contact ? `Corriger — ${contact.nom}` : 'Nouveau contact';
+
+      const valeurs = {
+        id: contact?.id ?? '',
+        nom: contact?.nom ?? '',
+        courriel: contact?.courriel ?? '',
+        telephone: contact?.telephone ?? '',
+        profession: contact?.profession ?? 'courtier-immobilier',
+        agence: contact?.agence ?? '',
+        secteur: contact?.secteur ?? '',
+        base: contact?.consentement.base ?? 'tacite_publie',
+        source: contact?.consentement.source ?? '',
+        notes: contact?.notes ?? '',
+      };
+
+      for (const [cle, valeur] of Object.entries(valeurs)) {
+        const champ = champs[cle as keyof typeof champs]();
+        if (champ) champ.value = valeur;
+      }
+
+      const erreur = formulaire.querySelector<HTMLElement>('[data-erreur-formulaire]');
+      if (erreur) erreur.hidden = true;
+      formulaire.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      champs.nom()?.focus();
+    }
+
+    app.querySelector('[data-ouvrir-formulaire]')?.addEventListener('click', () => ouvrirFormulaire(null));
+    fiche?.querySelector('[data-fiche-modifier]')?.addEventListener('click', () => {
+      const contact = contactCourant();
+      if (contact) ouvrirFormulaire(contact);
+    });
+    formulaire?.querySelector('[data-fermer-formulaire]')?.addEventListener('click', () => {
+      formulaire.hidden = true;
+    });
+
+    formulaire?.addEventListener('submit', async (evenement) => {
+      evenement.preventDefault();
+      const erreur = formulaire.querySelector<HTMLElement>('[data-erreur-formulaire]');
+      if (erreur) erreur.hidden = true;
+
+      const id = champs.id()?.value ?? '';
+      const contact = {
+        nom: champs.nom()?.value ?? '',
+        courriel: champs.courriel()?.value ?? '',
+        telephone: champs.telephone()?.value ?? '',
+        profession: champs.profession()?.value ?? '',
+        agence: champs.agence()?.value ?? '',
+        secteur: champs.secteur()?.value ?? '',
+        notes: champs.notes()?.value ?? '',
+        consentement: {
+          base: champs.base()?.value ?? '',
+          source: champs.source()?.value ?? '',
+        },
+      };
+
+      try {
+        const data = await api<{ contact: Fiche }>('/api/reseau-contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(id ? { action: 'modifier', id, contact } : { action: 'creer', contact }),
+        });
+        if (!data) return;
+        formulaire.hidden = true;
+        await charger();
+        ouvrirFiche(data.contact.id);
+      } catch (err) {
+        if (erreur) {
+          erreur.textContent = err instanceof Error ? err.message : 'Enregistrement impossible.';
+          erreur.hidden = false;
+        }
+      }
+    });
+
+    /* ---------------- Import ---------------- */
+
+    app.querySelector('[data-ouvrir-import]')?.addEventListener('click', () => {
+      if (!panneauImport) return;
+      panneauImport.hidden = false;
+      if (formulaire) formulaire.hidden = true;
+      panneauImport.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    panneauImport?.querySelector('[data-fermer-import]')?.addEventListener('click', () => {
+      panneauImport.hidden = true;
+    });
+
+    /** Une ligne collée depuis un tableur : tabulation, point-virgule ou virgule. */
+    function lireLignes(brut: string): Array<Record<string, string>> {
+      return brut
+        .split('\n')
+        .map((ligne) => ligne.trim())
+        .filter(Boolean)
+        .map((ligne) => {
+          const colonnes = ligne.split(/\t|;|,/).map((colonne) => colonne.trim());
+          return {
+            nom: colonnes[0] ?? '',
+            courriel: colonnes[1] ?? '',
+            agence: colonnes[2] ?? '',
+            secteur: colonnes[3] ?? '',
+          };
+        });
+    }
+
+    panneauImport?.addEventListener('submit', async (evenement) => {
+      evenement.preventDefault();
+      const erreur = panneauImport.querySelector<HTMLElement>('[data-erreur-import]');
+      if (erreur) erreur.hidden = true;
+
+      const brut = (document.getElementById('rs-import-texte') as HTMLTextAreaElement | null)?.value ?? '';
+      const lignes = lireLignes(brut);
+      if (lignes.length === 0) {
+        if (erreur) {
+          erreur.textContent = 'Rien à importer.';
+          erreur.hidden = false;
+        }
+        return;
+      }
+
+      try {
+        const data = await api<{ crees: number; ignores: number; rejets: string[] }>(
+          '/api/reseau-contact',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'importer',
+              lignes,
+              profession:
+                (document.getElementById('rs-import-profession') as HTMLSelectElement | null)?.value ?? '',
+              consentement: {
+                base: (document.getElementById('rs-import-base') as HTMLSelectElement | null)?.value ?? '',
+                source:
+                  (document.getElementById('rs-import-source') as HTMLInputElement | null)?.value ?? '',
+              },
+            }),
+          },
+        );
+        if (!data) return;
+
+        const bilan = [
+          `${data.crees} contact${data.crees > 1 ? 's' : ''} ajouté${data.crees > 1 ? 's' : ''}`,
+          data.ignores ? `${data.ignores} déjà au carnet` : '',
+          data.rejets.length ? `${data.rejets.length} ligne(s) illisible(s) : ${data.rejets.join(', ')}` : '',
+        ]
+          .filter(Boolean)
+          .join(' · ');
+
+        panneauImport.hidden = true;
+        await charger();
+        window.alert(bilan);
+      } catch (err) {
+        if (erreur) {
+          erreur.textContent = err instanceof Error ? err.message : 'Import impossible.';
+          erreur.hidden = false;
+        }
+      }
+    });
+
+    /* ---------------- Composition et envoi ---------------- */
+
+    const selecteurGabarit = document.getElementById('rs-gabarit') as HTMLSelectElement | null;
+    const champObjet = document.getElementById('rs-objet') as HTMLInputElement | null;
+    const champCorps = document.getElementById('rs-corps') as HTMLTextAreaElement | null;
+
+    /**
+     * Le rendu vient du serveur : le catalogue de gabarits n'existe qu'à un seul endroit, et
+     * ce que l'écran montre est exactement ce que le serveur sait produire.
+     */
+    async function chargerGabarit(): Promise<void> {
+      if (!selection || !selecteurGabarit) return;
+      const erreur = fiche?.querySelector<HTMLElement>('[data-erreur-envoi]');
+      if (erreur) erreur.hidden = true;
+
+      try {
+        const data = await api<{ objet: string; corps: string }>(
+          `/api/reseau-envoi?id=${encodeURIComponent(selection)}&gabarit=${encodeURIComponent(selecteurGabarit.value)}`,
+        );
+        if (!data) return;
+        if (champObjet) champObjet.value = data.objet;
+        if (champCorps) champCorps.value = data.corps;
+      } catch (err) {
+        if (erreur) {
+          erreur.textContent = err instanceof Error ? err.message : 'Gabarit indisponible.';
+          erreur.hidden = false;
+        }
+      }
+    }
+
+    selecteurGabarit?.addEventListener('change', () => void chargerGabarit());
+
+    fiche?.querySelector('[data-envoyer]')?.addEventListener('click', async (evenement) => {
+      const bouton = evenement.currentTarget as HTMLButtonElement;
+      const contact = contactCourant();
+      const erreur = fiche.querySelector<HTMLElement>('[data-erreur-envoi]');
+      const etat = fiche.querySelector<HTMLElement>('[data-etat-envoi]');
+      if (!contact || !selecteurGabarit) return;
+      if (erreur) erreur.hidden = true;
+
+      if (!window.confirm(`Envoyer ce courriel à ${contact.nom} (${contact.courriel}) ?`)) return;
+
+      bouton.disabled = true;
+      if (etat) {
+        etat.textContent = 'Envoi…';
+        etat.hidden = false;
+      }
+
+      try {
+        const data = await api<{ dev?: boolean; envoisDuJour?: number }>('/api/reseau-envoi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: contact.id,
+            gabarit: selecteurGabarit.value,
+            objet: champObjet?.value ?? '',
+            corps: champCorps?.value ?? '',
+          }),
+        });
+        if (!data) return;
+        if (etat) etat.textContent = data.dev ? 'Simulé (Resend absent)' : 'Envoyé ✓';
+        await charger();
+      } catch (err) {
+        if (etat) etat.hidden = true;
+        if (erreur) {
+          erreur.textContent = err instanceof Error ? err.message : 'Envoi impossible.';
+          erreur.hidden = false;
+        }
+      } finally {
+        bouton.disabled = false;
+      }
+    });
+
+    /* ---------------- Export ---------------- */
+
+    /**
+     * Le carnet ne vit que dans Netlify Blobs. Un export en un clic est une assurance à coût
+     * nul contre la seule chose qu'on ne saurait pas réparer : sa perte.
+     */
+    app.querySelector('[data-exporter]')?.addEventListener('click', () => {
+      const colonnes = [
+        'Nom',
+        'Courriel',
+        'Téléphone',
+        'Agence',
+        'Secteur',
+        'Profession',
+        'État',
+        'Relance',
+        'Dernier envoi',
+        'Consentement',
+        'Source',
+        'Notes',
+      ];
+
+      const echapper = (valeur: string): string => `"${valeur.replace(/"/g, '""')}"`;
+      const lignes = contacts.map((contact) =>
+        [
+          contact.nom,
+          contact.courriel,
+          contact.telephone,
+          contact.agence,
+          contact.secteur,
+          libelleProfession(contact.profession),
+          libelleEtat(contact.etat),
+          contact.relanceLe ?? '',
+          contact.dernierEnvoiLe ?? '',
+          (BASES_CONSENTEMENT as Record<string, string>)[contact.consentement.base] ?? '',
+          contact.consentement.source,
+          contact.notes,
+        ]
+          .map(echapper)
+          .join(';'),
+      );
+
+      // Le BOM et le point-virgule : sans eux, Excel en français ouvre le fichier en une
+      // seule colonne et massacre les accents.
+      const csv = `﻿${[colonnes.map(echapper).join(';'), ...lignes].join('\r\n')}`;
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      const lien = document.createElement('a');
+      lien.href = url;
+      lien.download = `reseau-${new Date().toISOString().slice(0, 10)}.csv`;
+      lien.click();
+      URL.revokeObjectURL(url);
+    });
+
+    /* ---------------- Filtres ---------------- */
+
+    for (const selecteur of ['#rs-recherche', '#rs-filtre-etat', '#rs-filtre-profession']) {
+      $<HTMLElement>(selecteur)?.addEventListener('input', () => rendreListe());
+    }
+
+    void charger();
+  }
+</script>

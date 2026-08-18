@@ -49,6 +49,7 @@ src/
 | `/contrat` | SSR | Générateur du contrat de courtage — réservé à la courtière, protégé par mot de passe (noindex) |
 | `/signer-contrat` | SSR | Lecture, réponses et signature du contrat par lien nominatif (noindex, sans Nav/Footer) |
 | `/finaliser-contrat` | SSR | Relecture et signature finale par la courtière (noindex, protégé par mot de passe) |
+| `/reseau` | SSR | Carnet de prospection des partenaires — réservé à la courtière, protégé par mot de passe (noindex, sans Nav/Footer) |
 | `/refinancement` | Statique | Landing publicitaire V1 (funnel quiz 4 étapes, noindex, sans Nav/Footer) |
 | `/refinancement-v2` | Statique | Landing publicitaire V2 (funnel 5 étapes sans chiffre exact, noindex, sans Nav/Footer) |
 | `/refinancement/merci` | Statique | Page de remerciement du funnel V2 (noindex, sans Nav/Footer) |
@@ -84,6 +85,10 @@ src/
 | `/api/contrat-finaliser` | API | Signature finale de la courtière — produit le PDF, l'envoie, supprime le dossier |
 | `/api/contrat-dossiers` | API | Résumés des contrats en cours, pour l'écran de suivi de `/contrat` |
 | `/api/contrat-relancer` | API | Réémet le lien du signataire courant — l'ancien cesse aussitôt de valoir |
+| `/api/reseau-contacts` | API | Le carnet du réseau, en lecture (résumés + envois du jour) |
+| `/api/reseau-contact` | API | Écriture dans le carnet : créer, corriger, supprimer, état, note, relance, import |
+| `/api/reseau-envoi` | API | Aperçu d'un gabarit (GET) et envoi de l'approche (POST), puis journalisation |
+| `/api/reseau-retrait` | API | Désabonnement d'un contact par son lien — **la seule route du réseau qui soit publique** |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
 prérend chaque page au build sauf si elle déclare `export const prerender = false`.
@@ -376,6 +381,67 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
 - En dev sans Resend, tout s'exécute quand même (dossier compris) et les liens de signature
   sont imprimés dans la console.
 
+## Réseau de partenaires
+
+`/partenaires` est la porte **entrante** : un professionnel arrive de lui-même et réfère un
+client. `/reseau` sert le mouvement inverse — Stéphanie qui approche un professionnel, un par
+un, et qui se souvient de qui elle a relancé. Courtiers immobiliers, notaires, comptables,
+planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
+
+| Fichier | Rôle |
+|---------|------|
+| `src/utils/reseauCourtiers.ts` | Catalogues (professions, états, consentement), gabarits de courriel, rendu, validation |
+| `src/services/reseauContactService.ts` | Le carnet : Netlify Blobs, historique, retrait |
+| `src/services/reseauCourriels.ts` | Le courriel d'approche : gabarit visuel, pied de conformité LCAP, envoi Resend |
+| `src/pages/reseau.astro` | L'écran : urgences du jour, carnet, fiche, composition |
+
+**Règles :**
+- **Un contact retiré ne reçoit plus rien.** Vérifié au moment de l'envoi (`/api/reseau-envoi`),
+  pas seulement à l'affichage — et un retrait ne se défait pas depuis l'écran : `changerEtat`
+  refuse de rouvrir une fiche `refuse`. Un retrait est une volonté exprimée, pas une case
+  qu'on décoche. Des tests verrouillent les deux.
+- **Le lien de retrait est la seule route publique du réseau**, et il doit l'être : un
+  désabonnement qui demande un mot de passe n'en est pas un. `GET` rend une page de
+  confirmation, `POST` exécute — les aperçus automatiques des messageries visitent les liens
+  des courriels, et un `GET` qui retirerait directement produirait des désabonnements que
+  personne n'a demandés. Le traitement est idempotent, et la réponse ne dit jamais si
+  l'adresse existe.
+- **Le jeton de retrait est stocké en clair**, contrairement aux jetons de signature. Ce n'est
+  pas un oubli : il doit rester **reproductible** (chaque courriel le porte à nouveau) et
+  valide des mois durant. Un jeton haché ne pourrait pas être réécrit dans le message suivant,
+  et en régénérer un à chaque envoi tuerait les liens des messages déjà partis — exactement ce
+  que la loi interdit. Il n'autorise qu'à cesser de recevoir des courriels.
+- **La source du consentement est obligatoire** à la création comme à l'import. C'est ce qui
+  répond, un an plus tard, à « d'où vient mon adresse ». Facultative, elle ne serait jamais
+  remplie.
+- **Le pied de conformité part avec chaque message** : identité, organisation, adresse postale
+  (`siteConfig.adresse`), téléphone, lien de retrait, plus un en-tête `List-Unsubscribe`
+  (volontairement sans `List-Unsubscribe-Post` — le retrait en un clic sauterait la page de
+  confirmation). Un test le verrouille : ces mentions ne sont pas de la décoration qu'un
+  remaniement du gabarit visuel peut emporter.
+- **`RESEND_FROM_RESEAU` sépare l'envoi d'approche du reste** — mais elle n'est pas
+  configurée aujourd'hui : un second domaine vérifié dans Resend suppose un forfait payant
+  (décision d'août 2026). Les approches partent donc de `RESEND_FROM_EMAIL`, l'adresse des
+  liens de signature et des accusés de rappel. Trois conséquences, liées entre elles :
+  `PLAFOND_QUOTIDIEN` est **fixé bas (12)** parce que le volume est le seul garde-fou qui
+  reste ; la page affiche l'adresse réellement employée en **constat, pas en alarme** — un
+  avertissement qu'on ne peut pas suivre d'effet n'apprend qu'à ignorer les avertissements ;
+  et le jour où un sous-domaine sera vérifié, renseigner la variable suffit (le plafond peut
+  alors remonter).
+- **Les gabarits sont un point de départ, pas le texte final.** Le rendu vient du serveur
+  (`GET /api/reseau-envoi`) pour que le catalogue n'existe qu'à un seul endroit, mais c'est le
+  texte relu et retouché qui part — et c'est **lui** qui est journalisé, pas le modèle.
+- **L'historique ne se réécrit pas** : envois (avec le corps réellement expédié), notes,
+  changements d'état, retrait. Le carnet n'expire pas et n'est jamais purgé — c'est un actif,
+  pas un dossier de passage, d'où l'absence d'appel à `purgerExpires`.
+- `versFiche()` retire le jeton de retrait avant que la fiche ne redescende au navigateur.
+- Même porte que `/contrat` (`accesCourtiere`, `CONTRAT_MOT_DE_PASSE`) : c'est la même
+  personne, et chaque endpoint applique le même verdict que la page.
+- Les cartes du carnet sont bâties en JavaScript, donc habillées par un bloc `is:global`
+  circonscrit par `#rs-app` — même raison que l'écran de suivi des contrats.
+- En dev sans Resend, l'envoi est **simulé** : le message est imprimé dans la console et le
+  journal dit « simulé », plutôt que d'affirmer un envoi qui n'a pas eu lieu.
+
 ## Configuration
 
 ### `src/config/siteConfig.json`
@@ -409,6 +475,10 @@ npx vitest              # mode watch
   hors WinAnsi, champs trop longs tronqués plutôt que débordants
 - `src/services/contratDossierService.test.ts` — jetons à usage unique, expiration, gel sur refus
 - `src/services/accesCourtiere.test.ts` — porte de `/contrat` (fail closed, rotation du secret)
+- `src/utils/reseauCourtiers.test.ts` — gabarits rendus sans variable orpheline, whitelists
+- `src/services/reseauContactService.test.ts` — retrait définitif et idempotent, historique,
+  jeton absent des fiches transmises
+- `src/services/reseauCourriels.test.ts` — mentions obligatoires (LCAP) et expéditeur dédié
 - Date de référence fixe dans les tests : 2026-05-14
 
 ## Conventions
@@ -445,6 +515,7 @@ Push sur `main` → Netlify build automatique.
 | `RESEND_FROM_EMAIL` | Oui (formulaires) | Adresse d'expéditeur vérifiée dans Resend, partagée par tous les formulaires |
 | `RESEND_NOTIFY_EMAIL` | Oui (formulaires) | Adresse interne qui reçoit les notifications (boîte de la courtière) |
 | `CONTRAT_MOT_DE_PASSE` | Oui (`/contrat`) | Mot de passe partagé du générateur de contrats — 12 caractères minimum. **Absent en production = page fermée.** |
+| `RESEND_FROM_RESEAU` | Non — **non configurée** | Adresse d'expéditeur dédiée aux approches du réseau, sur un sous-domaine vérifié séparément dans Resend (`stephanie@partenaires.stephanieweyman.ca` si on y vient un jour). Laissée vide : un second domaine dans Resend suppose un forfait payant. Absente **ou mal formée** = repli sur `RESEND_FROM_EMAIL`, signalé en console et affiché sur `/reseau` |
 | `ENABLE_RATES_PROXY=1` | Non | Active le proxy r.jina.ai comme fallback de scraping |
 | `DEBUG_RATES=1` | Non | Logs détaillés du scraping des taux |
 
