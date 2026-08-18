@@ -18,6 +18,10 @@ import {
   jsonResponse,
   loadResendEnv,
 } from '../../services/emailService';
+import { creerDossier } from '../../services/dossierClientService';
+import { creerContact } from '../../services/reseauContactService';
+import { courrielValide, normaliserCourriel, professionValide } from '../../utils/reseauCourtiers';
+import { depuisPartenaire } from '../../utils/entreesProspect';
 
 export const prerender = false;
 
@@ -98,6 +102,41 @@ export const POST: APIRoute = async ({ request }) => {
   const typeProjet = asTrimmedString(payload['type-projet']);
   const notes = asTrimmedString(payload.notes);
   const contactEstCourriel = EMAIL_RE.test(contactPartenaire);
+
+  // Ouvrir les deux fiches — c'est le seul formulaire du site qui nomme deux personnes.
+  //
+  // Le professionnel a sa place au carnet du réseau, le client référé au carnet des dossiers,
+  // et le second pointe sur le premier : c'est ce qui permet de dire, six mois plus tard,
+  // d'où venait ce client. Jamais au prix de la soumission — même patron que les autres.
+  try {
+    const { referent, client } = depuisPartenaire(payload);
+
+    let refereParId: string | undefined;
+    // Le carnet du réseau sert à écrire des courriels : y inscrire quelqu'un qui n'a laissé
+    // qu'un numéro le remplirait de fiches auxquelles on ne peut rien envoyer. Sans adresse,
+    // on s'abstient — le nom et le téléphone du référent restent dans les notes du client.
+    if (referent && courrielValide(referent.contact) && professionValide(referent.profession)) {
+      const fiche = await creerContact({
+        nom: referent.nom,
+        courriel: normaliserCourriel(referent.contact),
+        telephone: '',
+        agence: '',
+        secteur: '',
+        profession: referent.profession,
+        notes: `A référé ${clientNom} via le formulaire /partenaires.`,
+        consentement: {
+          base: 'expresse',
+          source: 'A rempli le formulaire de référence /partenaires et laissé ses coordonnées',
+        },
+      });
+      refereParId = 'doublon' in fiche ? fiche.doublon.id : fiche.id;
+    }
+
+    if (client.ok) await creerDossier(client.valeur, { origine: 'partenaire', refereParId });
+    else console.warn('[partenaires-submit] Fiche client non ouverte :', client.erreur);
+  } catch (err) {
+    console.error('[partenaires-submit] Ouverture des fiches impossible :', err);
+  }
 
   const resendEnv = loadResendEnv();
   const isDev = import.meta.env.DEV;

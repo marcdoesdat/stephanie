@@ -481,7 +481,10 @@ export function documentsRequis(profil: ProfilDemande): DocumentRequis[] {
     lignes.push(...documentsEmploi(profil.coStatutEmploi, 'co_emprunteur'));
   }
 
-  if (profil.typeDemande === 'refinancement') {
+  // Un renouvellement réclame les mêmes pièces qu'un refinancement — il y a déjà une
+  // hypothèque, donc un relevé, des taxes et une évaluation. On garde les deux mots
+  // distincts dans le profil (ce ne sont pas la même démarche) et on les traite pareil ici.
+  if (profil.typeDemande === 'refinancement' || profil.typeDemande === 'renouvellement') {
     lignes.push(
       { cle: 'releve_hypothecaire', pourQui: 'dossier' },
       { cle: 'compte_taxes', pourQui: 'dossier' },
@@ -541,6 +544,22 @@ export type Resultat<T> = { ok: true; valeur: T } | { ok: false; erreur: string 
 export function normaliser(valeur: unknown, max: number): string {
   if (typeof valeur !== 'string') return '';
   return valeur.replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+/**
+ * Ramène les libellés des formulaires au vocabulaire du profil.
+ *
+ * `/rappel` envoie « Renouvellement », le quiz de l'accueil « Renouvellement / Refinancement »
+ * ou « Premier achat », `/demande` envoie déjà des clés. Sans cette traduction, un prospect
+ * qualifié plus tard se verrait semer la mauvaise liste de documents — silencieusement.
+ */
+export function normaliserTypeDemande(valeur: unknown): string {
+  const texte = normaliser(valeur, LONGUEURS.profil).toLowerCase();
+  if (!texte) return '';
+  if (texte.includes('refinanc')) return 'refinancement';
+  if (texte.includes('renouvell')) return 'renouvellement';
+  if (texte.includes('achat')) return 'achat';
+  return '';
 }
 
 /** Les notes gardent leurs retours à la ligne — c'est un bloc-notes, pas un champ. */
