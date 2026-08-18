@@ -286,6 +286,15 @@ const destinataires = Object.entries(DESTINATAIRES);
                 </div>
               </div>
             </section>
+
+            {/* ---------------- Les chiffres ---------------- */}
+            <details class="dc-chiffres">
+              <summary class="dc-chiffres-titre">Les chiffres</summary>
+              <div class="dc-chiffres-corps">
+                <p class="dc-reserve" data-reserve hidden />
+                <div data-chiffres />
+              </div>
+            </details>
           </div>
         )
       }
@@ -589,6 +598,35 @@ const destinataires = Object.entries(DESTINATAIRES);
     color: var(--muted);
   }
 
+  .dc-chiffres {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .dc-chiffres-titre {
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .dc-chiffres-corps {
+    padding-top: 1rem;
+  }
+
+  .dc-reserve {
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 0.9rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0 0 1.25rem;
+  }
+
   .btn-lien {
     background: none;
     border: none;
@@ -789,6 +827,37 @@ const destinataires = Object.entries(DESTINATAIRES);
     color: var(--ink);
   }
 
+  /* Tableaux bâtis en JavaScript par `rendreChiffres` — hors de portée du style scopé. */
+  #dc-app .dc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 1.5rem;
+    font-size: 0.88rem;
+  }
+
+  #dc-app .dc-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.4rem 0.6rem 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #dc-app .dc-table td {
+    padding: 0.5rem 0.6rem 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+    color: var(--ink);
+  }
+
+  #dc-app .dc-table th:not(:first-child),
+  #dc-app .dc-table td:not(:first-child) {
+    text-align: right;
+    width: 7rem;
+  }
+
   #dc-app .dc-historique {
     list-style: none;
     margin: 0;
@@ -832,6 +901,12 @@ const destinataires = Object.entries(DESTINATAIRES);
     type CleEtatDocument,
     type CleOrigine,
   } from '../utils/dossiersClients';
+  import {
+    SEUIL_LISIBILITE,
+    donneesSuffisantes,
+    entonnoir,
+    rendementParOrigine,
+  } from '../utils/statistiquesDossiers';
 
   /* ---------------- Écran de connexion ---------------- */
 
@@ -1349,11 +1424,92 @@ const destinataires = Object.entries(DESTINATAIRES);
       }
     }
 
+    /** Un tableau simple : un en-tête, des lignes, rien de plus. */
+    function tableau(entetes: string[], lignes: string[][]): HTMLTableElement {
+      const table = document.createElement('table');
+      table.className = 'dc-table';
+
+      const thead = document.createElement('thead');
+      const ligneEntete = document.createElement('tr');
+      for (const entete of entetes) ligneEntete.append(texte('th', '', entete));
+      thead.append(ligneEntete);
+
+      const tbody = document.createElement('tbody');
+      for (const cellules of lignes) {
+        const tr = document.createElement('tr');
+        for (const cellule of cellules) tr.append(texte('td', '', cellule));
+        tbody.append(tr);
+      }
+
+      table.append(thead, tbody);
+      return table;
+    }
+
+    /**
+     * Les chiffres, calculés ici même sur la liste déjà chargée — aucune requête de plus.
+     *
+     * La réserve n'est pas de la modestie : un taux de conversion tiré de onze fiches
+     * raconte le hasard, et affiché sans réserve il servira quand même à décider.
+     */
+    function rendreChiffres(): void {
+      const hote = $<HTMLElement>('[data-chiffres]');
+      const reserve = $<HTMLElement>('[data-reserve]');
+      if (!hote) return;
+
+      if (reserve) {
+        const mince = !donneesSuffisantes(dossiers);
+        reserve.textContent = mince
+          ? `Le carnet ne compte que ${dossiers.length} fiche${dossiers.length > 1 ? 's' : ''} : en deçà de ${SEUIL_LISIBILITE}, ces chiffres racontent surtout le hasard. À lire dans quelques mois.`
+          : 'Les durées ne se calculent que depuis les étapes franchies après la mise en service du suivi. Les dossiers ouverts avant n’y figurent pas.';
+        reserve.hidden = false;
+      }
+
+      const rendement = rendementParOrigine(dossiers);
+      const etages = entonnoir(dossiers).filter((e) => e.atteintes > 0);
+
+      const blocs: HTMLElement[] = [];
+
+      if (rendement.length > 0) {
+        blocs.push(texte('h3', 'dc-h3', 'Ce que chaque porte d’entrée produit'));
+        blocs.push(
+          tableau(
+            ['Porte d’entrée', 'Entrées', 'Qualifiés', 'Financés', 'Perdus'],
+            rendement.map((l) => [
+              l.libelle,
+              String(l.total),
+              String(l.qualifies),
+              String(l.finances),
+              String(l.perdus),
+            ]),
+          ),
+        );
+      }
+
+      if (etages.length > 0) {
+        blocs.push(texte('h3', 'dc-h3', 'Progression et durées'));
+        blocs.push(
+          tableau(
+            ['Étape', 'Fiches passées par là', 'Jours médians'],
+            etages.map((e) => [
+              e.libelle,
+              String(e.atteintes),
+              e.joursMedians === null ? '—' : String(Math.round(e.joursMedians * 10) / 10),
+            ]),
+          ),
+        );
+      }
+
+      hote.replaceChildren(
+        ...(blocs.length ? blocs : [texte('p', 'dc-vide', 'Rien à mesurer pour l’instant.')]),
+      );
+    }
+
     function rendre(): void {
       rendreOnglets();
       rendreUrgences();
       rendreListe();
       rendreFiche();
+      rendreChiffres();
     }
 
     /* ---------------- Actions ---------------- */

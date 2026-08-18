@@ -95,6 +95,7 @@ src/
 | `/api/crm-dossier` | API | Écriture d'un dossier : créer, corriger, supprimer, étape, note, relance, documents |
 | `/api/crm-prevenir` | API | Envoie au client l'état de son dossier et un lien d'accès — sur geste de la courtière |
 | `/api/dossier-acces` | API | Demande d'un lien d'accès au portail — **la seule route publique du CRM** |
+| `/api/crm-lien` | API | Ce que les autres carnets savent d'une même personne (résolution paresseuse) |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
 prérend chaque page au build sauf si elle déclare `export const prerender = false`.
@@ -462,6 +463,9 @@ le client consulte le sien sur `/mon-dossier`, sans mot de passe. Le socle est c
 | `src/services/dossierCourriels.ts` | Les deux courriels : lien d'accès, suivi |
 | `src/pages/dossiers.astro` | L'écran de la courtière : urgences, liste, fiche |
 | `src/pages/mon-dossier.astro` | Le portail du client : étape, frise, documents attendus |
+| `src/utils/entreesProspect.ts` | Un adaptateur par formulaire — absorbe la divergence des vocabulaires |
+| `src/services/ficheUnifiee.ts` | Le recoupement entre les carnets, par courriel |
+| `src/utils/statistiquesDossiers.ts` | Les chiffres : rendement par origine, entonnoir, durées |
 
 **Règles :**
 - **Le CRM porte le suivi, pas le dossier de crédit.** `CHAMPS_CONSERVES` énumère limitativement
@@ -522,6 +526,53 @@ le client consulte le sien sur `/mon-dossier`, sans mot de passe. Le socle est c
 - En dev sans Resend, tout s'exécute quand même et les liens d'accès sont imprimés dans la
   console — même convention que les liens de signature.
 
+**Les dix portes d'entrée :**
+- **Les dix formulaires du site alimentent le carnet**, chacun par son adaptateur dans
+  `entreesProspect.ts` — c'est là, et nulle part ailleurs, qu'est absorbée la divergence des
+  vocabulaires (`courriel` ou `email`, `telephone` ou `cellulaire`, un champ de nom ou deux).
+- **`ETAPE_INITIALE` dit quelle porte ouvre quoi.** `/demande` et la saisie manuelle ouvrent un
+  **dossier** ; les huit autres ouvrent un **prospect**. Quarante-cinq champs remplis et un
+  consentement à l'enquête de crédit ne sont pas un nom laissé au bas d'un calculateur.
+- **L'étape `prospect` n'est pas visible du client et ne sème aucune checklist.** La liste ne
+  s'établit qu'à la qualification, et ne s'écrase jamais si elle a déjà été travaillée à la main.
+- **`CONSENTEMENT_PAR_ORIGINE` inscrit sur quoi repose le droit de rappeler**, et la fiche
+  l'affiche. `calculateur` vaut `service_demande` : **ce formulaire n'a aucune case à cocher**,
+  la personne a demandé un rapport. Une liste où tout le monde a « accepté d'être contacté » ne
+  vaut rien le jour où il faut le prouver.
+- **Aucun chiffre déclaré ne franchit la porte.** Ni dans le profil, que `CHAMPS_CONSERVES`
+  filtre, ni dans les notes, écrites par les adaptateurs. La ligne est volontairement franche —
+  pas de montants du tout : une frontière qui demande de juger au cas par cas ce qui est « assez
+  financier » s'érode au troisième formulaire ajouté. Un test le verrouille porte par porte.
+- **Le courriel est facultatif**, à condition qu'un téléphone permette de joindre la personne —
+  une référence de partenaire n'arrive qu'avec un numéro. Le dédoublonnage bascule alors sur le
+  numéro normalisé. Une adresse fournie qui ne correspond à rien tranche, plutôt que d'aller
+  chercher par téléphone et de rattacher deux conjoints partageant une ligne. Sans adresse, le
+  portail reste fermé, et la fiche le dit.
+- **`/partenaires` alimente les deux carnets** : le professionnel au réseau, le client référé au
+  CRM, le second pointant sur le premier par `refereParId`. Un professionnel qui n'a laissé qu'un
+  numéro n'est pas inscrit au réseau — ce carnet sert à écrire des courriels.
+
+**Le recoupement entre carnets (`ficheUnifiee`) :**
+- **On unifie à la lecture, pas au stockage.** Les dossiers de signature sont éphémères (10 et
+  14 jours, supprimés dès le PDF produit) ; en faire les enfants d'une fiche permanente
+  obligerait à les garder plus longtemps ou à vivre avec des références mortes.
+- **Les lectures sont séquentielles, jamais un `Promise.all`.** Chaque service charge Netlify
+  Blobs à la demande et **retient** le résultat ; trois chargements concurrents suffisent à ce
+  que l'un échoue et bascule silencieusement ce carnet sur son repli mémoire — vide,
+  définitivement, pour la durée de vie de la fonction.
+- **Résolution paresseuse** : à l'ouverture d'une fiche, jamais au chargement d'une liste.
+- Les profils d'emprunteurs sont exclus : les lister ferait relire tous les blobs pour un objet
+  qui vit deux semaines.
+
+**Les chiffres (`statistiquesDossiers`) :**
+- Module **pur**, calculé dans le navigateur sur la liste déjà chargée — aucune requête de plus.
+- **Les clés, jamais les phrases** : les durées se lisent dans `de`/`vers`. Les événements
+  antérieurs à ces champs sont **ignorés**, pas devinés.
+- **Une fiche encore à l'étape ne compte pas dans sa durée** : l'inclure raccourcirait la médiane
+  à mesure que la file s'allonge — l'écran dirait « ça va de plus en plus vite » quand ça bloque.
+- **`donneesSuffisantes` autorise l'écran à se taire.** Un taux tiré de moins de quinze fiches
+  raconte le hasard, et affiché sans réserve il servira quand même à décider.
+
 ## Configuration
 
 ### `src/config/siteConfig.json`
@@ -567,6 +618,14 @@ npx vitest              # mode watch
   closed en production
 - `src/services/demandeSubmitRoute.test.ts` — une demande ouvre un dossier ; une panne de
   stockage ne coûte pas la soumission
+- `src/utils/entreesProspect.test.ts` — verrou anti-fuite porte par porte, mappage des champs
+  divergents, fiche sans courriel
+- `src/services/entreesRoutes.test.ts` — les dix portes ouvrent la bonne fiche ; aucune panne de
+  stockage ne coûte une soumission ; `/partenaires` alimente les deux carnets
+- `src/services/ficheUnifiee.test.ts` — recoupement par courriel, référent nommé même sans
+  adresse, ni jeton ni note interne transmis
+- `src/utils/statistiquesDossiers.test.ts` — durées ignorées faute de clés, fiche encore à
+  l'étape exclue de la médiane, rendement par origine
 - Date de référence fixe dans les tests : 2026-05-14
 
 ## Conventions
