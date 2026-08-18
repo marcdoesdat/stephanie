@@ -104,6 +104,19 @@ const destinataires = Object.entries(DESTINATAIRES);
               <div data-urgences />
             </section>
 
+            {/* ---------------- Vues ---------------- */}
+            <nav class="dc-vues" aria-label="Filtrer les fiches">
+              <button type="button" class="dc-vue" data-vue="actifs" aria-pressed="true">
+                Dossiers actifs <span class="dc-vue-compte" data-compte-actifs />
+              </button>
+              <button type="button" class="dc-vue" data-vue="prospects" aria-pressed="false">
+                Prospects <span class="dc-vue-compte" data-compte-prospects />
+              </button>
+              <button type="button" class="dc-vue" data-vue="clos" aria-pressed="false">
+                Clos <span class="dc-vue-compte" data-compte-clos />
+              </button>
+            </nav>
+
             {/* ---------------- Barre d'outils ---------------- */}
             <section class="dc-outils">
               <div class="dc-filtres">
@@ -172,6 +185,7 @@ const destinataires = Object.entries(DESTINATAIRES);
                 <div>
                   <h2 class="dc-h2" data-fiche-nom />
                   <p class="dc-fiche-coords" data-fiche-coords />
+                  <p class="dc-fiche-provenance" data-fiche-provenance />
                 </div>
                 <button type="button" class="btn-lien" data-fermer-fiche>Fermer</button>
               </header>
@@ -180,6 +194,15 @@ const destinataires = Object.entries(DESTINATAIRES);
                 {/* Étape */}
                 <div class="dc-bloc">
                   <h3 class="dc-h3">Étape</h3>
+                  <div class="dc-qualifier" data-qualifier-bloc hidden>
+                    <p class="dc-texte-petit">
+                      Ce contact n’a pas encore de dossier. Le qualifier ouvre sa liste de
+                      documents et lui donne accès à son portail.
+                    </p>
+                    <button type="button" class="btn-cta dc-mini" data-qualifier>
+                      Qualifier — ouvrir le dossier
+                    </button>
+                  </div>
                   <div class="dc-ligne-actions">
                     <select data-etape class="cform-input" aria-label="Étape du dossier">
                       {etapes.map(({ cle, libelle }) => <option value={cle}>{libelle}</option>)}
@@ -382,6 +405,54 @@ const destinataires = Object.entries(DESTINATAIRES);
 
   .dc-nouveau {
     white-space: nowrap;
+  }
+
+  .dc-vues {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dc-vue {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.6rem 0.9rem;
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--muted);
+    cursor: pointer;
+    margin-bottom: -1px;
+  }
+
+  .dc-vue[aria-pressed='true'] {
+    color: var(--ink);
+    font-weight: 600;
+    border-bottom-color: var(--clay);
+  }
+
+  .dc-vue-compte {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .dc-fiche-provenance {
+    margin: 0.3rem 0 0;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .dc-qualifier {
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .dc-qualifier .dc-texte-petit {
+    margin-bottom: 0.6rem;
   }
 
   .dc-panneau {
@@ -734,15 +805,19 @@ const destinataires = Object.entries(DESTINATAIRES);
 
 <script>
   import {
+    BASES_CONSENTEMENT,
     DELAI_SANS_MOUVEMENT_JOURS,
     DESTINATAIRES,
     DOCUMENTS,
     ETAPES,
+    ORIGINES,
     etapeSuivante,
+    type CleConsentement,
     type CleDestinataire,
     type CleDocument,
     type CleEtape,
     type CleEtatDocument,
+    type CleOrigine,
   } from '../utils/dossiersClients';
 
   /* ---------------- Écran de connexion ---------------- */
@@ -799,6 +874,9 @@ const destinataires = Object.entries(DESTINATAIRES);
     readonly courriel: string;
     readonly telephone: string;
     readonly notes: string;
+    readonly origine: CleOrigine;
+    readonly consentement: CleConsentement;
+    readonly refereParId: string | null;
     readonly etape: CleEtape;
     readonly documents: LigneDocument[];
     readonly relanceLe: string | null;
@@ -809,12 +887,16 @@ const destinataires = Object.entries(DESTINATAIRES);
   const app = document.getElementById('dc-app');
 
   if (app) {
+    type Vue = 'actifs' | 'prospects' | 'clos';
+
     let dossiers: Fiche[] = [];
     let selection: string | null = null;
     let enModification = false;
+    let vue: Vue = 'actifs';
     const delaiSansMouvement = Number(app.dataset.delai ?? String(DELAI_SANS_MOUVEMENT_JOURS));
 
     const $ = <T extends HTMLElement>(selecteur: string): T | null => app.querySelector<T>(selecteur);
+    const $$ = <T extends HTMLElement>(selecteur: string): T[] => [...app.querySelectorAll<T>(selecteur)];
 
     const liste = $<HTMLElement>('[data-liste]');
     const urgences = $<HTMLElement>('[data-urgences]');
@@ -967,11 +1049,42 @@ const destinataires = Object.entries(DESTINATAIRES);
 
     /* ---------------- Liste ---------------- */
 
+    /**
+     * Dans quelle vue une fiche se range.
+     *
+     * Trois piles plutôt qu'un filtre d'étape de plus : un prospect et un dossier ne
+     * demandent pas le même geste, et les mêler ferait de la liste des dossiers un flux
+     * où le travail réel se noie dans les curieux de passage.
+     */
+    function vueDe(dossier: Fiche): Vue {
+      if (dossier.etape === 'prospect') return 'prospects';
+      return ETAPES[dossier.etape].clot ? 'clos' : 'actifs';
+    }
+
+    function rendreOnglets(): void {
+      const comptes: Record<Vue, number> = { actifs: 0, prospects: 0, clos: 0 };
+      for (const dossier of dossiers) comptes[vueDe(dossier)] += 1;
+
+      for (const [cle, selecteur] of [
+        ['actifs', '[data-compte-actifs]'],
+        ['prospects', '[data-compte-prospects]'],
+        ['clos', '[data-compte-clos]'],
+      ] as Array<[Vue, string]>) {
+        const cible = $<HTMLElement>(selecteur);
+        if (cible) cible.textContent = comptes[cle] ? `(${comptes[cle]})` : '';
+      }
+
+      for (const onglet of $$<HTMLButtonElement>('[data-vue]')) {
+        onglet.setAttribute('aria-pressed', String(onglet.dataset.vue === vue));
+      }
+    }
+
     function filtrer(): Fiche[] {
       const terme = (recherche?.value ?? '').trim().toLowerCase();
       const etape = filtreEtape?.value ?? '';
 
       return dossiers.filter((dossier) => {
+        if (vueDe(dossier) !== vue) return false;
         if (etape && dossier.etape !== etape) return false;
         if (!terme) return true;
         return `${dossier.nom} ${dossier.courriel} ${dossier.telephone}`.toLowerCase().includes(terme);
@@ -994,8 +1107,10 @@ const destinataires = Object.entries(DESTINATAIRES);
       entete.append(etiquette);
       bouton.append(entete);
 
-      const details: string[] = [dossier.courriel];
-      if (!ETAPES[dossier.etape].clot) {
+      const details: string[] = [dossier.courriel || 'aucune adresse'];
+      if (dossier.etape === 'prospect') {
+        details.push(ORIGINES[dossier.origine]);
+      } else if (!ETAPES[dossier.etape].clot) {
         details.push(restants === 0 ? 'documents complets' : `${restants} document${restants > 1 ? 's' : ''} en attente`);
       }
       if (dossier.relanceLe) details.push(`relance ${dateCourte(dossier.relanceLe)}`);
@@ -1119,6 +1234,21 @@ const destinataires = Object.entries(DESTINATAIRES);
         coords.textContent = morceaux.join(' · ');
       }
 
+      // D'où vient la fiche et sur quoi repose le droit de rappeler. Affiché sous les
+      // coordonnées, parce que c'est ce qui décide du ton du premier appel : quelqu'un qui a
+      // demandé un rapport de calculateur n'a pas demandé qu'on le rappelle.
+      const provenance = $<HTMLElement>('[data-fiche-provenance]');
+      if (provenance) {
+        const morceaux: string[] = [ORIGINES[dossier.origine], BASES_CONSENTEMENT[dossier.consentement]];
+        if (!dossier.courriel) {
+          morceaux.push('aucune adresse — le portail restera fermé tant qu’elle manque');
+        }
+        provenance.textContent = morceaux.join(' · ');
+      }
+
+      const qualifier = $<HTMLElement>('[data-qualifier-bloc]');
+      if (qualifier) qualifier.hidden = dossier.etape !== 'prospect';
+
       const selectEtape = $<HTMLSelectElement>('[data-etape]');
       if (selectEtape) selectEtape.value = dossier.etape;
 
@@ -1154,6 +1284,7 @@ const destinataires = Object.entries(DESTINATAIRES);
     }
 
     function rendre(): void {
+      rendreOnglets();
       rendreUrgences();
       rendreListe();
       rendreFiche();
@@ -1350,10 +1481,29 @@ const destinataires = Object.entries(DESTINATAIRES);
       }
     });
 
+    /* -------- Vues -------- */
+
+    for (const onglet of $$<HTMLButtonElement>('[data-vue]')) {
+      onglet.addEventListener('click', () => {
+        vue = (onglet.dataset.vue ?? 'actifs') as Vue;
+        // Une fiche sélectionnée dans une autre pile n'a plus de raison de rester ouverte.
+        const courant = dossierSelectionne();
+        if (courant && vueDe(courant) !== vue) selection = null;
+        rendre();
+      });
+    }
+
+    $<HTMLButtonElement>('[data-qualifier]')?.addEventListener('click', () => {
+      const courant = dossierSelectionne();
+      if (!courant) return;
+      void action({ action: 'etape', id: courant.id, etape: 'nouveau' });
+    });
+
     /* -------- Filtres -------- */
 
     recherche?.addEventListener('input', rendreListe);
     filtreEtape?.addEventListener('change', rendreListe);
+
 
     void charger();
   }
