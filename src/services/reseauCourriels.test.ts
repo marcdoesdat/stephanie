@@ -8,7 +8,12 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadSiteConfig } from '../config';
-import { construireCourrielApproche, expediteurReseau, piedConformite } from './reseauCourriels';
+import {
+  adresseDediee,
+  construireCourrielApproche,
+  expediteurReseau,
+  piedConformite,
+} from './reseauCourriels';
 import type { MessageSortant } from '../utils/reseauCourtiers';
 
 const config = loadSiteConfig();
@@ -80,7 +85,25 @@ describe('expediteurReseau', () => {
   });
 
   it('respecte une variable qui porte déjà un nom d’expéditeur', () => {
-    process.env.RESEND_FROM_RESEAU = 'Stéphanie <reseau@mail.stephanieweyman.ca>';
-    expect(expediteurReseau(env)).toBe('Stéphanie <reseau@mail.stephanieweyman.ca>');
+    process.env.RESEND_FROM_RESEAU = 'Stéphanie Weyman <stephanie@partenaires.stephanieweyman.ca>';
+    expect(expediteurReseau(env)).toBe(
+      'Stéphanie Weyman <stephanie@partenaires.stephanieweyman.ca>',
+    );
+  });
+
+  // Une coquille dans Netlify ne doit pas faire échouer chaque envoi sur un 4xx de Resend :
+  // on retombe sur l'adresse commune, et /reseau réaffiche alors son avertissement — la
+  // coquille se voit à l'écran au lieu de passer pour une configuration réussie.
+  it('retombe sur l’adresse commune quand la variable est mal formée', () => {
+    for (const coquille of ['stephanie@partenaires', 'stephanie.partenaires.ca', 'stephanie@', '@partenaires.ca']) {
+      process.env.RESEND_FROM_RESEAU = coquille;
+      expect(adresseDediee()).toBeNull();
+      expect(expediteurReseau(env)).toBe(`${config.nom} <site@stephanieweyman.ca>`);
+    }
+  });
+
+  it('accepte l’adresse retenue pour la prospection', () => {
+    process.env.RESEND_FROM_RESEAU = 'stephanie@partenaires.stephanieweyman.ca';
+    expect(adresseDediee()).toBe('stephanie@partenaires.stephanieweyman.ca');
   });
 });

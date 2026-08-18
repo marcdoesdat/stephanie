@@ -30,13 +30,39 @@ import {
 import type { MessageSortant } from '../utils/reseauCourtiers';
 import type { Contact } from './reseauContactService';
 
+/** Accepte « adresse@domaine.ca » comme « Nom <adresse@domaine.ca> ». */
+function adressePlausible(valeur: string): boolean {
+  const debut = valeur.indexOf('<');
+  const fin = valeur.indexOf('>');
+  const adresse = debut >= 0 && fin > debut ? valeur.slice(debut + 1, fin) : valeur;
+  return /^[^\s@<>]+@[^\s@<>.]+(?:\.[^\s@<>.]+)+$/.test(adresse.trim());
+}
+
+/**
+ * L'adresse dédiée aux approches, si elle est configurée **et** utilisable.
+ *
+ * Une valeur mal formée (une coquille dans Netlify, un domaine oublié) retombe sur
+ * l'adresse commune plutôt que de faire échouer chaque envoi sur un 4xx de Resend — mais
+ * elle est signalée en console, et `/reseau` affiche alors l'avertissement « adresse
+ * commune » : la coquille se voit à l'écran plutôt que de passer pour une configuration
+ * réussie.
+ */
+export function adresseDediee(): string | null {
+  const brut = process.env.RESEND_FROM_RESEAU?.trim();
+  if (!brut) return null;
+  if (!adressePlausible(brut)) {
+    console.warn(`[reseauCourriels] RESEND_FROM_RESEAU illisible (« ${brut} ») — repli sur l'adresse commune.`);
+    return null;
+  }
+  return brut;
+}
+
 /**
  * L'expéditeur des courriels d'approche. `RESEND_FROM_RESEAU` si elle est configurée dans
  * Netlify (sous-domaine dédié), sinon l'adresse d'envoi commune du site.
  */
 export function expediteurReseau(env: ResendEnv): string {
-  const dedie = process.env.RESEND_FROM_RESEAU?.trim();
-  const adresse = dedie && dedie.length > 3 ? dedie : env.fromEmail;
+  const adresse = adresseDediee() ?? env.fromEmail;
   // Resend accepte « Nom <adresse> » ; si la variable porte déjà un nom, on n'y touche pas.
   if (adresse.includes('<')) return adresse;
   return `${loadSiteConfig().nom} <${adresse}>`;

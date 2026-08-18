@@ -511,7 +511,7 @@ Push sur `main` → Netlify build automatique.
 | `RESEND_FROM_EMAIL` | Oui (formulaires) | Adresse d'expéditeur vérifiée dans Resend, partagée par tous les formulaires |
 | `RESEND_NOTIFY_EMAIL` | Oui (formulaires) | Adresse interne qui reçoit les notifications (boîte de la courtière) |
 | `CONTRAT_MOT_DE_PASSE` | Oui (`/contrat`) | Mot de passe partagé du générateur de contrats — 12 caractères minimum. **Absent en production = page fermée.** |
-| `RESEND_FROM_RESEAU` | Non (`/reseau`) | Adresse d'expéditeur **dédiée aux approches du réseau**, sur un sous-domaine distinct vérifié dans Resend. Absente = repli sur `RESEND_FROM_EMAIL`, au prix de la délivrabilité des courriels transactionnels |
+| `RESEND_FROM_RESEAU` | Non (`/reseau`) | Adresse d'expéditeur **dédiée aux approches du réseau** — `Stéphanie Weyman <stephanie@partenaires.stephanieweyman.ca>`, sur le sous-domaine `partenaires.stephanieweyman.ca` vérifié séparément dans Resend. Absente **ou mal formée** = repli sur `RESEND_FROM_EMAIL` (signalé en console et à l'écran de `/reseau`), au prix de la délivrabilité des courriels transactionnels |
 | `ENABLE_RATES_PROXY=1` | Non | Active le proxy r.jina.ai comme fallback de scraping |
 | `DEBUG_RATES=1` | Non | Logs détaillés du scraping des taux |
 
