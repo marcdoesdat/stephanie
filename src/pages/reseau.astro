@@ -41,9 +41,12 @@ const gabarits = Object.entries(GABARITS).map(([cle, gabarit]) => ({
   resume: gabarit.resume,
 }));
 
-// De quelle adresse partent les approches. Sans sous-domaine dédié, elles partent de la
-// même que les liens de signature et les accusés de rappel : ça marche, mais elle doit le
-// savoir — et voir l'adresse à l'écran est aussi ce qui rend une coquille visible.
+// De quelle adresse partent les approches. Faute de second domaine vérifié dans Resend,
+// elles partent aujourd'hui de la même que les liens de signature et les accusés de rappel :
+// l'écran le dit en clair plutôt que de le taire, mais sans alarme — un avertissement qui ne
+// peut pas être suivi d'effet n'apprend qu'à ignorer les avertissements. Le jour où
+// RESEND_FROM_RESEAU sera renseignée, la ligne affichera l'adresse dédiée, ce qui rend aussi
+// une coquille visible.
 const adresseEnvoi = adresseDediee();
 ---
 
@@ -102,12 +105,12 @@ const adresseEnvoi = adresseDediee();
                 dans votre boîte&nbsp;: {config.courriel}.
               </p>
             ) : (
-              <p class="rs-note">
-                Les approches partent de l’adresse d’envoi commune du site. Pour protéger la
-                délivrabilité des liens de signature et des accusés de rappel, configurez
-                <code>RESEND_FROM_RESEAU</code> dans Netlify — par exemple
-                <code>Stéphanie Weyman &lt;stephanie@partenaires.stephanieweyman.ca&gt;</code>,
-                une fois le sous-domaine vérifié dans Resend.
+              <p class="rs-expediteur">
+                Les approches partent de l’adresse d’envoi commune du site, celle des liens de
+                signature et des accusés de rappel. Les réponses arrivent dans votre
+                boîte&nbsp;: {config.courriel}. Espacez vos envois plutôt que de vider le
+                carnet en une matinée&nbsp;: une plainte pour pourriel toucherait aussi vos
+                courriels de contrat.
               </p>
             )}
 

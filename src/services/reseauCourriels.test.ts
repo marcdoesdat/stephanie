@@ -102,7 +102,9 @@ describe('expediteurReseau', () => {
     }
   });
 
-  it('accepte l’adresse retenue pour la prospection', () => {
+  // Non configurée aujourd'hui (un second domaine Resend suppose un forfait payant) : ce
+  // test garde la voie ouverte pour le jour où elle le sera.
+  it('accepte une adresse de sous-domaine dédié', () => {
     process.env.RESEND_FROM_RESEAU = 'stephanie@partenaires.stephanieweyman.ca';
     expect(adresseDediee()).toBe('stephanie@partenaires.stephanieweyman.ca');
   });

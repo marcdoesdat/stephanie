@@ -71,8 +71,14 @@ export const DELAI_SANS_REPONSE_JOURS = 10;
  * Plafond d'envois par jour. Ce n'est pas une limite technique de Resend : c'est un
  * garde-fou de délivrabilité. Une centaine d'approches parties le même matin ressemble,
  * vue d'un filtre anti-pourriel, exactement à ce qu'on ne veut pas être.
+ *
+ * Fixé bas **parce que les approches partent du domaine commun** : tant que
+ * `RESEND_FROM_RESEAU` n'est pas configurée, une plainte pour pourriel n'atteint pas
+ * seulement la prospection, elle atteint les liens de signature et les accusés de rappel.
+ * Le volume est la seule variable qui reste sous notre contrôle. À remonter le jour où un
+ * sous-domaine d'envoi distinct sera vérifié.
  */
-export const PLAFOND_QUOTIDIEN = 25;
+export const PLAFOND_QUOTIDIEN = 12;
 
 /* ------------------------------------------------------------------ */
 /*  Longueurs maximales                                                */

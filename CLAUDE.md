@@ -419,11 +419,15 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
   (volontairement sans `List-Unsubscribe-Post` — le retrait en un clic sauterait la page de
   confirmation). Un test le verrouille : ces mentions ne sont pas de la décoration qu'un
   remaniement du gabarit visuel peut emporter.
-- **`RESEND_FROM_RESEAU` sépare l'envoi d'approche du reste.** De la prospection à froid partie
-  de la même adresse que les liens de signature et les accusés de rappel finirait par faire
-  glisser ceux-ci en indésirables. Le repli sur l'adresse commune existe pour ne pas bloquer
-  l'outil, pas parce que c'est équivalent — la page le dit à l'écran tant que la variable
-  manque. Même logique pour le plafond de `PLAFOND_QUOTIDIEN` envois par jour.
+- **`RESEND_FROM_RESEAU` sépare l'envoi d'approche du reste** — mais elle n'est pas
+  configurée aujourd'hui : un second domaine vérifié dans Resend suppose un forfait payant
+  (décision d'août 2026). Les approches partent donc de `RESEND_FROM_EMAIL`, l'adresse des
+  liens de signature et des accusés de rappel. Trois conséquences, liées entre elles :
+  `PLAFOND_QUOTIDIEN` est **fixé bas (12)** parce que le volume est le seul garde-fou qui
+  reste ; la page affiche l'adresse réellement employée en **constat, pas en alarme** — un
+  avertissement qu'on ne peut pas suivre d'effet n'apprend qu'à ignorer les avertissements ;
+  et le jour où un sous-domaine sera vérifié, renseigner la variable suffit (le plafond peut
+  alors remonter).
 - **Les gabarits sont un point de départ, pas le texte final.** Le rendu vient du serveur
   (`GET /api/reseau-envoi`) pour que le catalogue n'existe qu'à un seul endroit, mais c'est le
   texte relu et retouché qui part — et c'est **lui** qui est journalisé, pas le modèle.
@@ -511,7 +515,7 @@ Push sur `main` → Netlify build automatique.
 | `RESEND_FROM_EMAIL` | Oui (formulaires) | Adresse d'expéditeur vérifiée dans Resend, partagée par tous les formulaires |
 | `RESEND_NOTIFY_EMAIL` | Oui (formulaires) | Adresse interne qui reçoit les notifications (boîte de la courtière) |
 | `CONTRAT_MOT_DE_PASSE` | Oui (`/contrat`) | Mot de passe partagé du générateur de contrats — 12 caractères minimum. **Absent en production = page fermée.** |
-| `RESEND_FROM_RESEAU` | Non (`/reseau`) | Adresse d'expéditeur **dédiée aux approches du réseau** — `Stéphanie Weyman <stephanie@partenaires.stephanieweyman.ca>`, sur le sous-domaine `partenaires.stephanieweyman.ca` vérifié séparément dans Resend. Absente **ou mal formée** = repli sur `RESEND_FROM_EMAIL` (signalé en console et à l'écran de `/reseau`), au prix de la délivrabilité des courriels transactionnels |
+| `RESEND_FROM_RESEAU` | Non — **non configurée** | Adresse d'expéditeur dédiée aux approches du réseau, sur un sous-domaine vérifié séparément dans Resend (`stephanie@partenaires.stephanieweyman.ca` si on y vient un jour). Laissée vide : un second domaine dans Resend suppose un forfait payant. Absente **ou mal formée** = repli sur `RESEND_FROM_EMAIL`, signalé en console et affiché sur `/reseau` |
 | `ENABLE_RATES_PROXY=1` | Non | Active le proxy r.jina.ai comme fallback de scraping |
 | `DEBUG_RATES=1` | Non | Logs détaillés du scraping des taux |
 
