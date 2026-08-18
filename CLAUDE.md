@@ -50,6 +50,8 @@ src/
 | `/signer-contrat` | SSR | Lecture, réponses et signature du contrat par lien nominatif (noindex, sans Nav/Footer) |
 | `/finaliser-contrat` | SSR | Relecture et signature finale par la courtière (noindex, protégé par mot de passe) |
 | `/reseau` | SSR | Carnet de prospection des partenaires — réservé à la courtière, protégé par mot de passe (noindex, sans Nav/Footer) |
+| `/dossiers` | SSR | Suivi des dossiers clients — réservé à la courtière, protégé par mot de passe (noindex) |
+| `/mon-dossier` | SSR | Portail du client : étape de son dossier et documents attendus, accès par lien magique (noindex, sans Nav/Footer) |
 | `/refinancement` | Statique | Landing publicitaire V1 (funnel quiz 4 étapes, noindex, sans Nav/Footer) |
 | `/refinancement-v2` | Statique | Landing publicitaire V2 (funnel 5 étapes sans chiffre exact, noindex, sans Nav/Footer) |
 | `/refinancement/merci` | Statique | Page de remerciement du funnel V2 (noindex, sans Nav/Footer) |
@@ -89,6 +91,10 @@ src/
 | `/api/reseau-contact` | API | Écriture dans le carnet : créer, corriger, supprimer, état, note, relance, import |
 | `/api/reseau-envoi` | API | Aperçu d'un gabarit (GET) et envoi de l'approche (POST), puis journalisation |
 | `/api/reseau-retrait` | API | Désabonnement d'un contact par son lien — **la seule route du réseau qui soit publique** |
+| `/api/crm-dossiers` | API | Les dossiers clients, en lecture (fiches complètes pour l'écran de suivi) |
+| `/api/crm-dossier` | API | Écriture d'un dossier : créer, corriger, supprimer, étape, note, relance, documents |
+| `/api/crm-prevenir` | API | Envoie au client l'état de son dossier et un lien d'accès — sur geste de la courtière |
+| `/api/dossier-acces` | API | Demande d'un lien d'accès au portail — **la seule route publique du CRM** |
 
 **Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
 prérend chaque page au build sauf si elle déclare `export const prerender = false`.
@@ -442,6 +448,80 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
 - En dev sans Resend, l'envoi est **simulé** : le message est imprimé dans la console et le
   journal dit « simulé », plutôt que d'affirmer un envoi qui n'a pas eu lieu.
 
+## Dossiers clients et portail « Mon dossier »
+
+Une demande de financement ouvre un dossier de suivi. Stéphanie le pilote depuis `/dossiers` ;
+le client consulte le sien sur `/mon-dossier`, sans mot de passe. Le socle est celui déjà
+éprouvé par le contrat et le réseau — `dossierStockage`, `accesCourtiere`, `emailService`.
+
+| Fichier | Rôle |
+|---------|------|
+| `src/utils/dossiersClients.ts` | Catalogue : étapes, documents, semis de la checklist, whitelist de validation |
+| `src/services/dossierClientService.ts` | Le carnet : Netlify Blobs, historique, lien magique, purge |
+| `src/services/portailAcces.ts` | Session signée du client (`PORTAIL_SECRET`) |
+| `src/services/dossierCourriels.ts` | Les deux courriels : lien d'accès, suivi |
+| `src/pages/dossiers.astro` | L'écran de la courtière : urgences, liste, fiche |
+| `src/pages/mon-dossier.astro` | Le portail du client : étape, frise, documents attendus |
+
+**Règles :**
+- **Le CRM porte le suivi, pas le dossier de crédit.** `CHAMPS_CONSERVES` énumère limitativement
+  ce qu'un dossier retient d'une demande. Ni date de naissance, ni revenus, ni évaluation de
+  crédit, ni faillite, ni mise de fonds : ces champs continuent de ne vivre que dans le courriel
+  interne que `/api/demande-submit` envoie déjà. Le registre officiel du dossier est celui
+  d'Hypotheca ; ceci est un outil de suivi. **Un test verrouille la liste** — y ajouter un champ
+  sensible « juste pour l'afficher » est la façon dont un outil de suivi devient une base de
+  données nominative.
+- **Le site ne reçoit aucun document.** Le portail *liste* ce qui manque et dit comment
+  l'envoyer ; le client transmet ses pièces par ses moyens et c'est Stéphanie qui coche. Aucune
+  route d'écriture n'est ouverte au client : il lit sa liste, il ne la coche pas — un client qui
+  se déclare à jour ne l'est pas.
+- **Un dossier perdu ne l'annonce pas au client.** `versVueClient` rend `null` pour une étape
+  non destinée au client, et le portail affiche alors un écran neutre. La règle est structurelle :
+  la page ne peut pas montrer ce qu'elle n'a pas reçu. `/api/crm-prevenir` refuse de même.
+- **`versVueClient` est la frontière** — comme `ResumeDossier` (contrat) et `versFiche` (réseau).
+  Ni notes internes, ni jeton, ni relance, ni historique. Les pièces `non_requis` en sont écartées :
+  une pièce jugée inutile n'ajouterait que du doute à la liste de celui qui doit la réunir. Un
+  test le vérifie.
+- **`PORTAIL_SECRET`, jamais `CONTRAT_MOT_DE_PASSE`.** Dériver la session d'un client du mot de
+  passe administratif ferait tomber tous les portails à chaque rotation, et ferait d'un secret
+  client la fonction d'un secret à elle. L'identifiant du dossier entre dans la signature au même
+  titre que l'expiration — sans quoi un cookie valide laisserait ouvrir le dossier d'un autre.
+  Absente en production, le portail se **ferme** (fail closed) et `/dossiers` le signale là où
+  elle peut encore renoncer à envoyer.
+- **Le lien magique est à usage unique, valable 30 minutes**, stocké haché, comparé à temps
+  constant. Consommé côté serveur, la page **redirige vers l'URL nue** : le jeton ne doit rester
+  ni dans la barre d'adresse, ni dans l'historique, ni dans le `Referer`. La session qui suit
+  dure 7 jours (`SameSite=Lax`, et non `Strict` : le client arrive par un lien cliqué dans son
+  courriel, qu'un cookie `Strict` ne suivrait pas).
+- **`/api/dossier-acces` répond la même chose dans tous les cas** — adresse inconnue, plafond
+  atteint, panne d'envoi. Une réponse qui varie ferait de la route un oracle confirmant, adresse
+  par adresse, qui est client de Stéphanie. `POST` seulement (un `GET` serait déclenché par les
+  aperçus des messageries), et débit plafonné par IP **et** par adresse.
+- **Le courriel du lien ne dit rien du dossier** — ni étape, ni documents, ni même s'il en existe
+  un : un courriel de connexion qui résume le dossier le divulgue à qui contrôle la boîte, avant
+  même que le lien ne soit cliqué. Seul le courriel de suivi le décrit, et il ne part que sur
+  geste de la courtière.
+- **« Prévenir le client » est un bouton, jamais un automatisme.** Un courriel par case cochée
+  serait du bruit, et le bruit finit par être filtré — avec, dans le même dossier d'indésirables,
+  le seul message qui comptait.
+- **Chaque document porte sa raison d'être** (`pourquoi`). Une liste de pièces sans raison est
+  une corvée ; la même liste avec sa raison est une démarche.
+- **L'ouverture du dossier ne peut jamais faire échouer `/api/demande-submit`.** Elle a lieu
+  **avant** l'envoi — si Resend échoue, le prospect survit à la panne au lieu de partir en fumée —
+  et dans un `try/catch` qui journalise et poursuit. Le courriel reste la garantie, le dossier est
+  un confort. Une nouvelle tentative ne produit pas de doublon : `creerDossier` dédoublonne sur
+  l'adresse. Un test verrouille les deux.
+- **Le carnet se purge**, contrairement à celui du réseau : douze mois après la clôture, un
+  dossier est supprimé. Un contact professionnel est un actif ; un dossier client est nominatif
+  et financier.
+- **L'historique ne se réécrit pas** : étapes, documents, notes, courriels, ouvertures du portail.
+- Les cartes de `/dossiers` sont bâties en JavaScript, donc habillées par un bloc `is:global`
+  circonscrit par `#dc-app` — même raison que `#rs-app` et `#ct-suivi`.
+- L'état du dossier sur `/mon-dossier` est rendu par le serveur et se lit **sans JavaScript** ;
+  le seul script de la page sert au formulaire de demande de lien.
+- En dev sans Resend, tout s'exécute quand même et les liens d'accès sont imprimés dans la
+  console — même convention que les liens de signature.
+
 ## Configuration
 
 ### `src/config/siteConfig.json`
@@ -479,6 +559,14 @@ npx vitest              # mode watch
 - `src/services/reseauContactService.test.ts` — retrait définitif et idempotent, historique,
   jeton absent des fiches transmises
 - `src/services/reseauCourriels.test.ts` — mentions obligatoires (LCAP) et expéditeur dédié
+- `src/utils/dossiersClients.test.ts` — semis de la checklist selon le statut d'emploi, verrou
+  de `CHAMPS_CONSERVES`, étape `perdu` hors de la progression
+- `src/services/dossierClientService.test.ts` — frontière de `versVueClient`, lien magique à
+  usage unique, purge des dossiers clos
+- `src/services/portailAcces.test.ts` — session signée, identifiant lié à la signature, fail
+  closed en production
+- `src/services/demandeSubmitRoute.test.ts` — une demande ouvre un dossier ; une panne de
+  stockage ne coûte pas la soumission
 - Date de référence fixe dans les tests : 2026-05-14
 
 ## Conventions
@@ -515,6 +603,7 @@ Push sur `main` → Netlify build automatique.
 | `RESEND_FROM_EMAIL` | Oui (formulaires) | Adresse d'expéditeur vérifiée dans Resend, partagée par tous les formulaires |
 | `RESEND_NOTIFY_EMAIL` | Oui (formulaires) | Adresse interne qui reçoit les notifications (boîte de la courtière) |
 | `CONTRAT_MOT_DE_PASSE` | Oui (`/contrat`) | Mot de passe partagé du générateur de contrats — 12 caractères minimum. **Absent en production = page fermée.** |
+| `PORTAIL_SECRET` | Oui (`/mon-dossier`) | Clé de signature des sessions du portail client — 32 caractères minimum, distincte du mot de passe de la courtière. **Absente en production = portail fermé.** |
 | `RESEND_FROM_RESEAU` | Non — **non configurée** | Adresse d'expéditeur dédiée aux approches du réseau, sur un sous-domaine vérifié séparément dans Resend (`stephanie@partenaires.stephanieweyman.ca` si on y vient un jour). Laissée vide : un second domaine dans Resend suppose un forfait payant. Absente **ou mal formée** = repli sur `RESEND_FROM_EMAIL`, signalé en console et affiché sur `/reseau` |
 | `ENABLE_RATES_PROXY=1` | Non | Active le proxy r.jina.ai comme fallback de scraping |
 | `DEBUG_RATES=1` | Non | Logs détaillés du scraping des taux |

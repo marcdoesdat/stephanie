@@ -9,6 +9,8 @@
 
 import type { APIRoute } from 'astro';
 import { loadSiteConfig } from '../../config';
+import { creerDossier } from '../../services/dossierClientService';
+import { depuisDemande } from '../../utils/dossiersClients';
 import {
   sendEmail,
   escapeHtml,
@@ -156,6 +158,24 @@ export const POST: APIRoute = async ({ request }) => {
     !consentement
   ) {
     return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
+  }
+
+  // Ouvrir le dossier de suivi.
+  //
+  // **Avant** l'envoi, et non après : si Resend échoue, la soumission part aujourd'hui en
+  // fumée. Écrit d'abord, le prospect survit à la panne et Stéphanie le retrouve dans
+  // /dossiers. Une nouvelle tentative du client ne produit pas de doublon — `creerDossier`
+  // dédoublonne sur l'adresse.
+  //
+  // **Et jamais au prix de la soumission.** Le courriel reste la garantie ; le dossier est
+  // un confort. Une panne de Netlify Blobs ne doit pas coûter un client, d'où ce try/catch
+  // qui journalise et poursuit.
+  try {
+    const donnees = depuisDemande(payload);
+    if (donnees.ok) await creerDossier(donnees.valeur);
+    else console.warn('[demande-submit] Dossier non ouvert :', donnees.erreur);
+  } catch (err) {
+    console.error('[demande-submit] Ouverture du dossier de suivi impossible :', err);
   }
 
   const resendEnv = loadResendEnv();
@@ -322,6 +342,11 @@ export const POST: APIRoute = async ({ request }) => {
         <h2 style="font-size:16px;margin:24px 0 8px;color:#a85f38;">Ce qui suit</h2>
         <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
           J'analyse votre dossier et je vous contacte personnellement dans les meilleurs délais pour discuter des prochaines étapes et des documents à réunir (talons de paie, avis de cotisation, relevés bancaires, etc.).
+        </p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+          Vous pourrez suivre l'avancement de votre dossier et voir la liste des documents attendus sur
+          <a href="${escapeHtml(config.site_url.replace(/\/$/, ''))}/mon-dossier" style="color:#a85f38;">${escapeHtml(config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''))}/mon-dossier</a>&nbsp;:
+          entrez cette adresse courriel et vous recevrez un lien d'accès. Aucun mot de passe à créer.
         </p>
         <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
           Vos renseignements sont strictement confidentiels. Aucune enquête de crédit ne sera lancée sans votre consentement écrit.
