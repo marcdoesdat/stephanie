@@ -268,6 +268,12 @@ const destinataires = Object.entries(DESTINATAIRES);
                   </div>
                 </div>
 
+                {/* Cette personne, ailleurs */}
+                <div class="dc-bloc" data-liens-bloc hidden>
+                  <h3 class="dc-h3">Cette personne, ailleurs</h3>
+                  <div data-liens />
+                </div>
+
                 {/* Historique */}
                 <div class="dc-bloc">
                   <h3 class="dc-h3">Historique</h3>
@@ -776,6 +782,13 @@ const destinataires = Object.entries(DESTINATAIRES);
     color: var(--clay-dk);
   }
 
+  /* Bâti en JavaScript par `chargerLiens` — donc hors de portée du style scopé. */
+  #dc-app .dc-lien {
+    margin: 0 0 0.4rem;
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+
   #dc-app .dc-historique {
     list-style: none;
     margin: 0;
@@ -1145,7 +1158,60 @@ const destinataires = Object.entries(DESTINATAIRES);
       formulaire && (formulaire.hidden = true);
       enModification = false;
       rendre();
+      void chargerLiens(id);
       fiche?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    interface Liens {
+      readonly reseau: { nom: string; profession: string; etat: string } | null;
+      readonly contrat: { statut: string; signeLe: string | null; aSonTour: boolean } | null;
+      readonly referePar: { nom: string; profession: string } | null;
+    }
+
+    /**
+     * Ce que les autres carnets savent de la même personne.
+     *
+     * Chargé **à l'ouverture d'une fiche seulement** : la route relit trois magasins, et
+     * l'appeler pour chaque ligne de la liste coûterait le triple à chaque affichage.
+     */
+    async function chargerLiens(id: string): Promise<void> {
+      const bloc = $<HTMLElement>('[data-liens-bloc]');
+      const hote = $<HTMLElement>('[data-liens]');
+      if (!bloc || !hote) return;
+      bloc.hidden = true;
+
+      let liens: Liens;
+      try {
+        const data = await api<{ liens: Liens }>(`/api/crm-lien?id=${encodeURIComponent(id)}`);
+        if (!data || selection !== id) return; // elle a changé de fiche entre-temps
+        liens = data.liens;
+      } catch {
+        return; // un encart secondaire ne doit pas faire échouer l'écran
+      }
+
+      const lignes: HTMLElement[] = [];
+      if (liens.referePar) {
+        lignes.push(
+          texte('p', 'dc-lien', `Référé par ${liens.referePar.nom} — ${liens.referePar.profession}`),
+        );
+      }
+      if (liens.reseau) {
+        lignes.push(
+          texte('p', 'dc-lien', `Au carnet du réseau : ${liens.reseau.profession} · ${liens.reseau.etat}`),
+        );
+      }
+      if (liens.contrat) {
+        const etat = liens.contrat.signeLe
+          ? 'a signé'
+          : liens.contrat.aSonTour
+            ? 'c’est à son tour de signer'
+            : 'en attente de son tour';
+        lignes.push(texte('p', 'dc-lien', `Contrat de courtage en cours — ${etat}`));
+      }
+
+      if (lignes.length === 0) return;
+      hote.replaceChildren(...lignes);
+      bloc.hidden = false;
     }
 
     function rendreDocuments(dossier: Fiche): void {
