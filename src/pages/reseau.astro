@@ -399,6 +399,11 @@ const adresseEnvoi = adresseDediee();
                 </div>
               </div>
 
+              <div class="rs-panneau-liens" data-liens-bloc hidden>
+                <h3 class="rs-h3">Ce contact, ailleurs</h3>
+                <div data-liens />
+              </div>
+
               <div class="rs-historique">
                 <h3 class="rs-h3">Historique</h3>
                 <ol data-historique />
@@ -780,6 +785,13 @@ const adresseEnvoi = adresseDediee();
     font-size: 0.95em;
   }
 
+  .rs-panneau-liens {
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1.1rem;
+    margin: 1rem 0;
+  }
+
   .rs-historique {
     border-top: 1px solid var(--border);
     margin-top: 1.5rem;
@@ -920,6 +932,15 @@ const adresseEnvoi = adresseDediee();
     font-size: 0.78rem;
     color: var(--muted);
     margin: 0.5rem 0 0;
+  }
+
+  /* Bâti en JavaScript par `chargerLiens` — donc hors de portée du style scopé.
+     Nom distinct de `.rs-lien`, qui habille déjà les boutons-liens de la page : une règle
+     globale sur ce nom-là les aurait tous repeints. */
+  #rs-app .rs-lien-croise {
+    margin: 0 0 0.4rem;
+    font-size: 0.9rem;
+    color: var(--ink);
   }
 
   #rs-app .rs-historique ol,
@@ -1304,7 +1325,60 @@ const adresseEnvoi = adresseDediee();
       // sélecteur pour voir apparaître un texte, la zone de composition s'ouvrait vide et
       // donnait l'impression qu'il n'y avait rien à envoyer.
       if (contactCourant()?.etat !== 'refuse') void chargerGabarit();
+      void chargerLiens(id);
       fiche?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    interface Liens {
+      readonly dossier: { nom: string; etape: string; origine: string } | null;
+      readonly contrat: { signeLe: string | null; aSonTour: boolean } | null;
+    }
+
+    /**
+     * Le pendant de l'encart de /dossiers : ce professionnel est-il aussi un client ?
+     *
+     * Chargé à l'ouverture d'une fiche seulement — la route relit trois magasins, et
+     * l'appeler pour chaque ligne du carnet coûterait le triple à chaque affichage.
+     */
+    async function chargerLiens(id: string): Promise<void> {
+      const bloc = $<HTMLElement>('[data-liens-bloc]');
+      const hote = $<HTMLElement>('[data-liens]');
+      const contact = contacts.find((c) => c.id === id);
+      if (!bloc || !hote || !contact) return;
+      bloc.hidden = true;
+
+      let liens: Liens;
+      try {
+        const data = await api<{ liens: Liens }>(
+          `/api/crm-lien?courriel=${encodeURIComponent(contact.courriel)}`,
+        );
+        if (!data || selection !== id) return; // elle a changé de fiche entre-temps
+        liens = data.liens;
+      } catch {
+        return; // un encart secondaire ne doit pas faire échouer l'écran
+      }
+
+      const lignes: HTMLElement[] = [];
+      if (liens.dossier) {
+        lignes.push(
+          texte('p', 'rs-lien-croise', `A aussi un dossier client : ${liens.dossier.etape} · entré par ${liens.dossier.origine}`),
+        );
+      }
+      if (liens.contrat) {
+        lignes.push(
+          texte(
+            'p',
+            'rs-lien-croise',
+            liens.contrat.signeLe
+              ? 'A signé un contrat de courtage en cours'
+              : 'Contrat de courtage en cours — pas encore signé',
+          ),
+        );
+      }
+
+      if (lignes.length === 0) return;
+      hote.replaceChildren(...lignes);
+      bloc.hidden = false;
     }
 
     function rendreFiche(): void {

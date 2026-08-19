@@ -1,0 +1,2186 @@
+---
+// Dossiers clients — /dossiers. Réservé à la courtière.
+//
+// L'écran répond à deux questions, jamais plus : « qu'est-ce que je dois faire aujourd'hui ? »
+// et « que sais-je de cette personne, et comment je la joins ? ». Tout ce qui ne sert pas
+// l'une des deux descend ou se replie.
+//
+// Disposition : deux colonnes sur écran large — la liste à gauche, qui reste en vue, et le
+// détail à droite. Le détail n'a jamais qu'un seul contenu à la fois : les urgences du jour
+// quand rien n'est sélectionné, la fiche, ou le formulaire de création. **Les urgences sont
+// donc l'état vide du panneau**, et non une section de plus qui pousse la liste vers le bas :
+// l'écran montre toujours soit ce qu'il y a à faire, soit la personne sur qui elle travaille.
+//
+// Sur téléphone, une seule colonne : les urgences en tête, la liste dessous, et le détail qui
+// s'ouvre **par-dessus** plutôt que de s'ajouter sous une liste qu'il faudrait remonter.
+//
+// Rendu à l'exécution : la page vérifie le cookie d'accès à chaque requête et, faute de quoi,
+// ne rend que l'écran de connexion. Même porte que /contrat et /reseau — c'est la même
+// personne. Les endpoints `crm-*` appliquent exactement le même verdict.
+export const prerender = false;
+
+import MainLayout from '../layouts/MainLayout.astro';
+import { loadSiteConfig } from '../config';
+import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
+import { portailConfigure } from '../services/portailAcces';
+import {
+  DELAI_SANS_MOUVEMENT_JOURS,
+  DESTINATAIRES,
+  DOCUMENTS,
+  ETAPES,
+  ORDRE_ETAPES,
+} from '../utils/dossiersClients';
+
+const config = loadSiteConfig();
+const autorise = await requeteAutorisee(Astro.request);
+const configureManquante = !accesConfigure() && !accesLibreEnDev();
+
+// Le portail client se signe avec son propre secret. S'il manque, les liens qu'elle enverra
+// n'ouvriront rien — autant le lui dire ici, où elle peut encore ne pas les envoyer.
+const portailFerme = !portailConfigure() && !import.meta.env.DEV;
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const etapes = ORDRE_ETAPES.map((cle) => ({ cle, libelle: ETAPES[cle].libelle }));
+const documents = Object.entries(DOCUMENTS).map(([cle, doc]) => ({ cle, libelle: doc.libelle }));
+const destinataires = Object.entries(DESTINATAIRES);
+---
+
+<MainLayout
+  title="Dossiers clients"
+  description="Outil interne de suivi des dossiers clients."
+  noindex={true}
+  sansBarreCta={true}
+>
+  <main id="main-content" class="dc-page">
+    {
+      !autorise ? (
+        <div class="dc-shell-connexion">
+          <div class="contact-form dc-connexion">
+            <h1 class="dc-titre">Dossiers clients</h1>
+            {configureManquante ? (
+              <p class="dc-alerte">
+                L’accès n’est pas configuré : la variable d’environnement
+                <code>CONTRAT_MOT_DE_PASSE</code> est absente ou trop courte (12 caractères
+                minimum). Ajoutez-la dans Netlify, puis redéployez.
+              </p>
+            ) : (
+              <>
+                <p class="dc-texte">Cette page est réservée à {config.nom}.</p>
+                <form id="dc-connexion-form" autocomplete="on">
+                  <label class="cform-label" for="dc-mdp">Mot de passe</label>
+                  <input
+                    type="password"
+                    id="dc-mdp"
+                    class="cform-input"
+                    autocomplete="current-password"
+                    required
+                  />
+                  <p class="dc-erreur" data-erreur-connexion hidden />
+                  <button type="submit" class="btn btn-primary dc-bouton">Entrer</button>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div id="dc-app" data-delai={String(DELAI_SANS_MOUVEMENT_JOURS)}>
+          {/* ---------------- Barre d'en-tête ---------------- */}
+          <header class="dc-topbar">
+            <h1 class="dc-titre">Dossiers</h1>
+            <button type="button" class="btn-cta dc-mini" data-nouveau>+ Nouveau</button>
+          </header>
+
+          {portailFerme && (
+            <p class="dc-alerte">
+              Le portail client est fermé : la variable <code>PORTAIL_SECRET</code> est absente
+              ou trop courte (32 caractères minimum). Les liens que vous enverriez n’ouvriraient
+              rien. Ajoutez-la dans Netlify, puis redéployez.
+            </p>
+          )}
+
+          {/* Une seule région d'état pour toutes les écritures de l'écran. */}
+          <p class="dc-statut" data-statut role="status" aria-live="polite" hidden />
+
+          <div class="dc-grille">
+            {/* ---------------- Colonne : la liste ---------------- */}
+            <aside class="dc-colonne" data-colonne>
+              <label class="dc-recherche">
+                <span class="sr-only">Rechercher un dossier</span>
+                <input
+                  type="search"
+                  id="dc-recherche"
+                  class="cform-input"
+                  placeholder="Rechercher…  (touche /)"
+                  autocomplete="off"
+                />
+              </label>
+
+              <nav class="dc-vues" aria-label="Filtrer les fiches">
+                <button type="button" class="dc-vue" data-vue="actifs" aria-pressed="true">
+                  Actifs <span class="dc-vue-compte" data-compte-actifs />
+                </button>
+                <button type="button" class="dc-vue" data-vue="prospects" aria-pressed="false">
+                  Prospects <span class="dc-vue-compte" data-compte-prospects />
+                </button>
+                <button type="button" class="dc-vue" data-vue="clos" aria-pressed="false">
+                  Clos <span class="dc-vue-compte" data-compte-clos />
+                </button>
+              </nav>
+
+              <div class="dc-liste" data-liste />
+            </aside>
+
+            {/* ---------------- Colonne : le détail ---------------- */}
+            <section class="dc-detail" data-detail aria-live="polite">
+              {/* État vide : ce qui réclame un geste aujourd'hui. */}
+              <div class="dc-panneau-jour" data-aujourdhui>
+                <h2 class="dc-h2">À faire aujourd’hui</h2>
+                <div data-urgences />
+              </div>
+
+              {/* Formulaire de création / correction. */}
+              <form class="contact-form dc-panneau" id="dc-formulaire" hidden>
+                <div class="dc-panneau-tete">
+                  <h2 class="dc-h2" data-formulaire-titre>Nouveau dossier</h2>
+                  <button type="button" class="btn-lien" data-annuler>Annuler</button>
+                </div>
+                <div class="dc-grille-champs">
+                  <div>
+                    <label class="cform-label" for="dc-nom">Nom du client</label>
+                    <input type="text" id="dc-nom" class="cform-input" required maxlength="120" autocomplete="off" />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="dc-courriel">Courriel</label>
+                    <input type="email" id="dc-courriel" class="cform-input" maxlength="200" autocomplete="off" />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="dc-telephone">Téléphone</label>
+                    <input type="tel" id="dc-telephone" class="cform-input" maxlength="40" autocomplete="off" />
+                  </div>
+                </div>
+                <label class="cform-label" for="dc-notes">Notes internes</label>
+                <textarea
+                  id="dc-notes"
+                  class="cform-input"
+                  maxlength="4000"
+                  rows="3"
+                  placeholder="Ce qu’il faut se rappeler avant de l’appeler. Le client ne voit jamais ce champ."
+                />
+                <p class="dc-erreur" data-erreur-formulaire hidden />
+                <button type="submit" class="btn-cta">Enregistrer</button>
+              </form>
+
+              {/* La fiche. */}
+              <article class="dc-fiche" id="dc-fiche" hidden>
+                <div class="dc-fiche-barre">
+                  <button type="button" class="dc-retour" data-fermer-fiche>
+                    <span aria-hidden="true">‹</span> Retour à la liste
+                  </button>
+                </div>
+
+                <header class="dc-fiche-tete">
+                  <h2 class="dc-h2" data-fiche-nom tabindex="-1" />
+                  <p class="dc-fiche-meta" data-fiche-meta />
+                  <p class="dc-fiche-provenance" data-fiche-provenance />
+
+                  {/* Le geste le plus fréquent de la journée. */}
+                  <div class="dc-contact" data-contact />
+                  <p class="dc-avis" data-avis-adresse hidden />
+                </header>
+
+                {/* Le geste suivant — un seul bouton, qui nomme sa destination. */}
+                <section class="dc-bloc dc-bloc-geste">
+                  <button type="button" class="btn-cta dc-primaire" data-avancer />
+                  <p class="dc-note-etape" data-etape-client />
+                  <details class="dc-changer">
+                    <summary>Changer d’étape</summary>
+                    <select data-etape class="cform-input" aria-label="Étape du dossier">
+                      {etapes.map(({ cle, libelle }) => <option value={cle}>{libelle}</option>)}
+                      <option value="perdu">{ETAPES.perdu.libelle}</option>
+                    </select>
+                  </details>
+                </section>
+
+                {/* Documents. */}
+                <section class="dc-bloc">
+                  <h3 class="dc-h3">
+                    Documents <span class="dc-compte" data-compte-docs />
+                  </h3>
+                  <div class="dc-progres" data-progres hidden>
+                    <div class="dc-progres-barre" data-progres-barre />
+                  </div>
+                  <div data-documents />
+                  <details class="dc-ajout">
+                    <summary>Ajouter une pièce</summary>
+                    <div class="dc-ligne-actions">
+                      <select data-doc-cle class="cform-input" aria-label="Pièce à ajouter">
+                        {documents.map(({ cle, libelle }) => <option value={cle}>{libelle}</option>)}
+                      </select>
+                      <select data-doc-qui class="cform-input" aria-label="Pour qui">
+                        {destinataires.map(([cle, libelle]) => <option value={cle}>{libelle}</option>)}
+                      </select>
+                      <button type="button" class="btn-cta dc-mini" data-ajouter-doc>Ajouter</button>
+                    </div>
+                  </details>
+                </section>
+
+                {/* Note et relance. */}
+                <section class="dc-bloc">
+                  <h3 class="dc-h3">Note</h3>
+                  <textarea
+                    id="dc-note-rapide"
+                    class="cform-input"
+                    rows="2"
+                    maxlength="1000"
+                    placeholder="« Rappelée, elle magasine encore. »"
+                  />
+                  <button type="button" class="btn-cta dc-mini" data-noter>Ajouter la note</button>
+
+                  <h3 class="dc-h3 dc-h3--espace">Revenir à ce dossier</h3>
+                  <div class="dc-relance" data-relance-chips>
+                    <button type="button" class="dc-chip" data-relance-dans="1">Demain</button>
+                    <button type="button" class="dc-chip" data-relance-dans="3">Dans 3 jours</button>
+                    <button type="button" class="dc-chip" data-relance-lundi>Lundi prochain</button>
+                    <input type="date" data-relance class="cform-input dc-date" aria-label="Date de relance" />
+                    <button type="button" class="dc-chip dc-chip--effacer" data-relance-effacer>Effacer</button>
+                  </div>
+                  <p class="dc-relance-etat" data-relance-etat />
+                </section>
+
+                {/* Prévenir le client. */}
+                <section class="dc-bloc dc-bloc-prevenir">
+                  <h3 class="dc-h3">Prévenir le client</h3>
+                  <p class="dc-texte-petit">
+                    Envoie l’état du dossier, ce qui manque, et un lien vers son portail. Rien
+                    ne part de lui-même : c’est vous qui décidez quand il y a matière à écrire.
+                  </p>
+                  <p class="dc-erreur" data-erreur-prevenir hidden />
+                  <button type="button" class="btn-cta dc-mini" data-prevenir>Envoyer le suivi</button>
+                </section>
+
+                {/* Cette personne, ailleurs. */}
+                <section class="dc-bloc" data-liens-bloc hidden>
+                  <h3 class="dc-h3">Cette personne, ailleurs</h3>
+                  <div data-liens />
+                </section>
+
+                <details class="dc-bloc dc-repli">
+                  <summary class="dc-h3">Historique</summary>
+                  <ol class="dc-historique" data-historique />
+                </details>
+
+                <details class="dc-bloc dc-repli">
+                  <summary class="dc-h3">Autres actions</summary>
+                  <div class="dc-autres">
+                    <button type="button" class="btn-lien" data-modifier>Corriger les coordonnées</button>
+                    <div class="dc-suppression">
+                      <button type="button" class="btn-lien dc-danger" data-supprimer>Supprimer le dossier</button>
+                      <span class="dc-confirme" data-confirme-suppression hidden>
+                        Supprimer définitivement&nbsp;?
+                        <button type="button" class="btn-lien dc-danger" data-confirmer-suppression>Confirmer</button>
+                        <button type="button" class="btn-lien" data-annuler-suppression>Annuler</button>
+                      </span>
+                    </div>
+                  </div>
+                </details>
+              </article>
+            </section>
+          </div>
+
+          {/* ---------------- Les chiffres ---------------- */}
+          <details class="dc-chiffres">
+            <summary class="dc-chiffres-titre">Les chiffres</summary>
+            <div class="dc-chiffres-corps">
+              <p class="dc-reserve" data-reserve hidden />
+              <div data-chiffres />
+            </div>
+          </details>
+        </div>
+      )
+    }
+  </main>
+</MainLayout>
+
+<style>
+  /* ------------------------------------------------------------------ */
+  /*  Ossature                                                           */
+  /* ------------------------------------------------------------------ */
+
+  .dc-page {
+    background: var(--sand);
+    min-height: 100vh;
+    padding: 1.5rem 1.1rem 4rem;
+  }
+
+  /* global.css donne à tout `section` la respiration d'une section de page vitrine.
+     Ici, les sections sont les blocs d'un tableau de bord : cette respiration les
+     désaligne et étire l'écran sur deux fois sa hauteur utile. */
+  .dc-page section {
+    padding: 0;
+  }
+
+  .dc-shell-connexion {
+    max-width: 62rem;
+    margin: 0 auto;
+  }
+
+  #dc-app {
+    max-width: 80rem;
+    margin: 0 auto;
+  }
+
+  .dc-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .dc-titre {
+    font-size: 1.5rem;
+    margin: 0;
+  }
+
+  .dc-grille {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 64rem) {
+    .dc-page {
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .dc-grille {
+      grid-template-columns: 21rem minmax(0, 1fr);
+      gap: 1.75rem;
+      align-items: start;
+    }
+
+    /* La liste reste en vue et défile pour elle-même : cocher un document dans la fiche
+       ne fait plus perdre sa place dans la liste. */
+    .dc-colonne {
+      position: sticky;
+      top: 1.5rem;
+      max-height: calc(100vh - 3rem);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .dc-liste {
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      padding-right: 0.25rem;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Colonne de gauche                                                  */
+  /* ------------------------------------------------------------------ */
+
+  .dc-recherche {
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+
+  .dc-recherche .cform-input {
+    margin: 0;
+  }
+
+  .dc-vues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dc-vue {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.65rem 0.7rem;
+    min-height: 44px;
+    font: inherit;
+    font-size: 0.92rem;
+    color: var(--muted);
+    cursor: pointer;
+    margin-bottom: -1px;
+  }
+
+  .dc-vue[aria-pressed='true'] {
+    color: var(--ink);
+    font-weight: 600;
+    border-bottom-color: var(--clay);
+  }
+
+  .dc-vue-compte {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Colonne de droite                                                  */
+  /* ------------------------------------------------------------------ */
+
+  .dc-panneau-jour,
+  .dc-panneau,
+  .dc-fiche {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.35rem;
+  }
+
+  .dc-panneau-tete {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .dc-grille-champs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: 0 1rem;
+  }
+
+  /* Sur téléphone, le détail passe par-dessus la liste plutôt que de s'y ajouter. */
+  @media (max-width: 63.99rem) {
+    .dc-detail {
+      order: -1;
+    }
+
+    #dc-app.dc-app--panneau .dc-detail {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      overflow-y: auto;
+      background: var(--sand);
+      padding: 1rem 1.1rem 3rem;
+      order: 0;
+    }
+
+    #dc-app.dc-app--panneau .dc-colonne {
+      display: none;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  La fiche                                                           */
+  /* ------------------------------------------------------------------ */
+
+  .dc-fiche-barre {
+    margin-bottom: 0.75rem;
+  }
+
+  .dc-retour {
+    background: none;
+    border: none;
+    padding: 0.5rem 0.6rem 0.5rem 0;
+    min-height: 44px;
+    font: inherit;
+    font-size: 0.92rem;
+    color: var(--clay-dk);
+    cursor: pointer;
+  }
+
+  .dc-fiche-tete {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .dc-h2 {
+    font-size: 1.25rem;
+    margin: 0 0 0.3rem;
+    line-height: 1.3;
+  }
+
+  .dc-h2:focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: 3px;
+  }
+
+  .dc-h3 {
+    font-size: 0.86rem;
+    margin: 0 0 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .dc-h3--espace {
+    margin-top: 1.5rem;
+  }
+
+  .dc-fiche-meta,
+  .dc-fiche-provenance {
+    margin: 0 0 0.25rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* Joindre la personne — le geste le plus fréquent de la journée. */
+  .dc-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+  }
+
+  .dc-avis {
+    margin: 0.7rem 0 0;
+    font-size: 0.83rem;
+    color: var(--clay-dk);
+    background: #fdf3ee;
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.7rem;
+  }
+
+  .dc-bloc {
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dc-bloc:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .dc-bloc-geste {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .dc-primaire {
+    min-height: 44px;
+  }
+
+  .dc-bloc-prevenir {
+    background: var(--warm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.1rem;
+  }
+
+  .dc-changer summary,
+  .dc-ajout summary,
+  .dc-repli summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--muted);
+    padding: 0.5rem 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .dc-repli summary {
+    margin: 0;
+  }
+
+  .dc-changer select,
+  .dc-ajout .dc-ligne-actions {
+    margin-top: 0.5rem;
+  }
+
+  .dc-ligne-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .dc-ligne-actions .cform-input {
+    margin: 0;
+    flex: 1 1 min(100%, 11rem);
+    min-height: 44px;
+  }
+
+  .dc-progres {
+    height: 6px;
+    background: var(--warm);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 0 0 0.85rem;
+  }
+
+  .dc-progres-barre {
+    height: 100%;
+    background: var(--forest);
+    border-radius: 999px;
+    transition: width 0.25s ease;
+  }
+
+  .dc-relance {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+  }
+
+  .dc-chip {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.5rem 0.9rem;
+    min-height: 44px;
+    font: inherit;
+    font-size: 0.86rem;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .dc-chip:hover {
+    border-color: var(--clay);
+  }
+
+  .dc-chip--effacer {
+    color: var(--muted);
+  }
+
+  .dc-date {
+    margin: 0;
+    min-height: 44px;
+    flex: 0 1 11rem;
+  }
+
+  .dc-relance-etat {
+    margin: 0.6rem 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .dc-note-etape {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .dc-autres {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding-top: 0.5rem;
+  }
+
+  .dc-danger {
+    color: var(--muted);
+  }
+
+  .dc-confirme {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.86rem;
+    color: var(--ink);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Divers                                                             */
+  /* ------------------------------------------------------------------ */
+
+  .dc-connexion {
+    max-width: 27rem;
+    margin: 3rem auto;
+  }
+
+  .dc-texte {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+
+  .dc-texte-petit {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 0 0 0.75rem;
+  }
+
+  .dc-alerte {
+    background: #fdf3ee;
+    border: 1px solid var(--clay);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1.1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+
+  .dc-erreur {
+    color: #a5342a;
+    font-size: 0.85rem;
+    margin: 0.5rem 0 0;
+  }
+
+  /* La confirmation d'écriture : discrète, mais toujours au même endroit. */
+  .dc-statut {
+    background: #eaf1ec;
+    border: 1px solid #cadbcf;
+    color: var(--forest);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.9rem;
+    font-size: 0.88rem;
+    margin: 0 0 1rem;
+  }
+
+  .dc-compte {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .dc-mini {
+    padding: 0.55rem 1.1rem;
+    min-height: 44px;
+    font-size: 0.88rem;
+  }
+
+  .btn-lien {
+    background: none;
+    border: none;
+    padding: 0.4rem 0;
+    min-height: 44px;
+    font: inherit;
+    color: var(--clay-dk);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .btn-lien:hover {
+    color: var(--ink);
+  }
+
+  .dc-chiffres {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 1.35rem 1rem;
+    margin-top: 1.75rem;
+  }
+
+  .dc-chiffres-titre {
+    cursor: pointer;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--ink);
+    padding: 0.7rem 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .dc-reserve {
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 0.9rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0 0 1.25rem;
+  }
+</style>
+
+<style is:global>
+  /* Cartes, urgences, checklist, boutons de contact, historique et tableaux sont bâtis en
+     JavaScript : le style scopé d'Astro ne les atteindrait pas — il n'estampe son attribut de
+     portée que sur les éléments qu'il rend lui-même. D'où ce bloc global, circonscrit à
+     `#dc-app`.
+
+     ⚠️ Les noms restent propres à cet écran (`dc-`). Une règle globale posée sur un nom
+     partagé repeindrait les éléments d'une autre page — c'est arrivé avec `.rs-lien`. */
+
+  /* ---------------- Cartes de la liste ---------------- */
+
+  #dc-app .dc-carte {
+    width: 100%;
+    text-align: left;
+    display: block;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 0.9rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 44px;
+    transition: border-color 0.15s;
+  }
+
+  #dc-app .dc-carte:hover {
+    border-color: var(--clay);
+  }
+
+  #dc-app .dc-carte:focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: 2px;
+  }
+
+  #dc-app .dc-carte[aria-current='true'] {
+    border-color: var(--clay-dk);
+    background: var(--warm);
+  }
+
+  #dc-app .dc-carte-entete {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+
+  #dc-app .dc-carte-nom {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.95rem;
+  }
+
+  #dc-app .dc-carte-meta {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin: 0.25rem 0 0;
+  }
+
+  #dc-app .dc-etiquette {
+    display: inline-block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: var(--warm);
+    color: var(--muted);
+    white-space: nowrap;
+    flex: none;
+  }
+
+  #dc-app .dc-etiquette--fait {
+    background: #eaf1ec;
+    color: var(--forest);
+  }
+
+  #dc-app .dc-vide {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-style: italic;
+    margin: 0;
+  }
+
+  /* ---------------- À faire aujourd'hui ---------------- */
+
+  #dc-app .dc-urgence {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    background: #fdf3ee;
+    border: 1px solid var(--clay);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.55rem;
+    width: 100%;
+    min-height: 44px;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    font-size: 0.92rem;
+    color: var(--ink);
+  }
+
+  #dc-app .dc-urgence:focus-visible {
+    outline: 2px solid var(--clay-dk);
+    outline-offset: 2px;
+  }
+
+  #dc-app .dc-urgence-nom {
+    font-weight: 600;
+  }
+
+  #dc-app .dc-urgence-motif {
+    color: var(--clay-dk);
+    font-size: 0.83rem;
+  }
+
+  /* ---------------- Boutons de contact ---------------- */
+
+  #dc-app .dc-action-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--forest);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.6rem 1.1rem;
+    min-height: 44px;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  #dc-app .dc-action-contact:hover {
+    background: #334c3f;
+    color: #fff;
+  }
+
+  #dc-app .dc-action-contact--doux {
+    background: var(--white);
+    color: var(--ink);
+    border: 1px solid var(--border);
+  }
+
+  #dc-app .dc-action-contact--doux:hover {
+    background: var(--warm);
+    color: var(--ink);
+  }
+
+  /* ---------------- Documents ---------------- */
+
+  #dc-app .dc-doc {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  #dc-app .dc-doc:last-of-type {
+    border-bottom: none;
+  }
+
+  /* La rangée entière bascule l'état « reçu » : une case de 17 px n'est pas une cible
+     tactile, et c'est le geste que Stéphanie répète le plus souvent après un appel. */
+  #dc-app .dc-doc-bascule {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    background: none;
+    border: none;
+    padding: 0.7rem 0;
+    min-height: 44px;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    color: var(--ink);
+    min-width: 0;
+  }
+
+  #dc-app .dc-doc-bascule:focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: 2px;
+  }
+
+  #dc-app .dc-doc-case {
+    flex: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.1rem;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    line-height: 1;
+    color: #fff;
+  }
+
+  #dc-app .dc-doc--recu .dc-doc-case {
+    background: var(--forest);
+    border-color: var(--forest);
+  }
+
+  #dc-app .dc-doc-libelle {
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  #dc-app .dc-doc--recu .dc-doc-libelle {
+    color: var(--muted);
+  }
+
+  #dc-app .dc-doc--non-requis .dc-doc-libelle {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+
+  #dc-app .dc-doc-qui {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.1rem;
+  }
+
+  #dc-app .dc-doc-menu {
+    flex: none;
+    display: flex;
+    gap: 0.15rem;
+  }
+
+  #dc-app .dc-doc-action {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    font: inherit;
+    font-size: 0.76rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  #dc-app .dc-doc-action:hover {
+    color: var(--clay-dk);
+  }
+
+  /* ---------------- Liens croisés et historique ---------------- */
+
+  #dc-app .dc-lien {
+    margin: 0 0 0.4rem;
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+
+  #dc-app .dc-historique {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    max-height: 22rem;
+    overflow-y: auto;
+  }
+
+  #dc-app .dc-evenement {
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 0.86rem;
+    color: var(--ink);
+  }
+
+  #dc-app .dc-evenement:last-child {
+    border-bottom: none;
+  }
+
+  #dc-app .dc-evenement-date {
+    display: block;
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-top: 0.15rem;
+  }
+
+  /* ---------------- Tableaux des chiffres ---------------- */
+
+  /* Le conteneur défile, pas la page : cinq colonnes ne tiennent pas sur un téléphone, et
+     un débordement horizontal du document entier casse tout l'écran. */
+  #dc-app .dc-table-cadre {
+    overflow-x: auto;
+    margin: 0 0 1.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #dc-app .dc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    min-width: 26rem;
+  }
+
+  #dc-app .dc-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.4rem 0.6rem 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  #dc-app .dc-table td {
+    padding: 0.5rem 0.6rem 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+    color: var(--ink);
+  }
+
+  #dc-app .dc-table th:not(:first-child),
+  #dc-app .dc-table td:not(:first-child) {
+    text-align: right;
+  }
+</style>
+
+<script>
+  import {
+    BASES_CONSENTEMENT,
+    DELAI_SANS_MOUVEMENT_JOURS,
+    DESTINATAIRES,
+    DOCUMENTS,
+    ETAPES,
+    ORIGINES,
+    etapeSuivante,
+    type CleConsentement,
+    type CleDestinataire,
+    type CleDocument,
+    type CleEtape,
+    type CleEtatDocument,
+    type CleOrigine,
+  } from '../utils/dossiersClients';
+  import { urgences, vueDe, type Urgence, type Vue } from '../utils/dossiersEcran';
+  import {
+    SEUIL_LISIBILITE,
+    donneesSuffisantes,
+    entonnoir,
+    rendementParOrigine,
+  } from '../utils/statistiquesDossiers';
+
+  /* ---------------- Écran de connexion ---------------- */
+
+  const connexion = document.getElementById('dc-connexion-form') as HTMLFormElement | null;
+  connexion?.addEventListener('submit', async (evenement) => {
+    evenement.preventDefault();
+    const erreur = document.querySelector<HTMLElement>('[data-erreur-connexion]');
+    const champ = document.getElementById('dc-mdp') as HTMLInputElement | null;
+    if (erreur) erreur.hidden = true;
+
+    try {
+      const reponse = await fetch('/api/contrat-acces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motDePasse: champ?.value ?? '' }),
+      });
+      if (reponse.ok) {
+        window.location.reload();
+        return;
+      }
+      const data = (await reponse.json().catch(() => ({}))) as { error?: string };
+      if (erreur) {
+        erreur.textContent = data.error ?? 'Connexion impossible.';
+        erreur.hidden = false;
+      }
+    } catch {
+      if (erreur) {
+        erreur.textContent = 'Connexion impossible. Vérifiez votre réseau.';
+        erreur.hidden = false;
+      }
+    }
+  });
+
+  /* ---------------- L'application ---------------- */
+
+  interface Evenement {
+    readonly le: string;
+    readonly type: string;
+    readonly resume: string;
+  }
+
+  interface LigneDocument {
+    readonly cle: CleDocument;
+    readonly pourQui: CleDestinataire;
+    readonly etat: CleEtatDocument;
+  }
+
+  interface Fiche {
+    readonly id: string;
+    readonly creeLe: string;
+    readonly majLe: string;
+    readonly nom: string;
+    readonly courriel: string;
+    readonly telephone: string;
+    readonly notes: string;
+    readonly origine: CleOrigine;
+    readonly consentement: CleConsentement;
+    readonly refereParId: string | null;
+    readonly etape: CleEtape;
+    readonly documents: LigneDocument[];
+    readonly relanceLe: string | null;
+    readonly clotLe: string | null;
+    readonly historique: Evenement[];
+  }
+
+  const app = document.getElementById('dc-app');
+
+  if (app) {
+    type Panneau = 'jour' | 'fiche' | 'formulaire';
+
+    let dossiers: Fiche[] = [];
+    let selection: string | null = null;
+    let enModification = false;
+    let vue: Vue = 'actifs';
+    let panneau: Panneau = 'jour';
+    /** La carte d'où l'on vient, pour lui rendre le focus à la fermeture. */
+    let carteOrigine: HTMLElement | null = null;
+
+    const delaiSansMouvement = Number(app.dataset.delai ?? String(DELAI_SANS_MOUVEMENT_JOURS));
+    const OPTIONS_URGENCE = { delaiSansMouvementJours: delaiSansMouvement };
+
+    /** `app` capturé une fois : TypeScript ne rétrécit pas un `const` dans une fonction hissée. */
+    const racine = app;
+    const $ = <T extends HTMLElement>(s: string): T | null => racine.querySelector<T>(s);
+    const $$ = <T extends HTMLElement>(s: string): T[] => [...racine.querySelectorAll<T>(s)];
+
+    const liste = $<HTMLElement>('[data-liste]');
+    const zoneUrgences = $<HTMLElement>('[data-urgences]');
+    const panneauJour = $<HTMLElement>('[data-aujourdhui]');
+    const fiche = document.getElementById('dc-fiche');
+    const formulaire = document.getElementById('dc-formulaire') as HTMLFormElement | null;
+    const recherche = document.getElementById('dc-recherche') as HTMLInputElement | null;
+    const statut = $<HTMLElement>('[data-statut]');
+
+    const petitEcran = window.matchMedia('(max-width: 63.99rem)');
+
+    const DATE_COURTE = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'medium' });
+    const DATE_COMPLETE = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
+
+    function dateCourte(iso: string | null): string {
+      if (!iso) return '';
+      const instant = Date.parse(iso);
+      return Number.isNaN(instant) ? '' : DATE_COURTE.format(new Date(instant));
+    }
+
+    function dateComplete(iso: string): string {
+      const instant = Date.parse(iso);
+      return Number.isNaN(instant) ? '' : DATE_COMPLETE.format(new Date(instant));
+    }
+
+    function texte<K extends keyof HTMLElementTagNameMap>(
+      balise: K,
+      classe: string,
+      contenu: string,
+    ): HTMLElementTagNameMap[K] {
+      const element = document.createElement(balise);
+      if (classe) element.className = classe;
+      element.textContent = contenu;
+      return element;
+    }
+
+    function manquants(dossier: Fiche): number {
+      return dossier.documents.filter((l) => l.etat === 'a_fournir').length;
+    }
+
+    /* ---------------- Confirmation d'écriture ---------------- */
+
+    let effacerStatut: ReturnType<typeof setTimeout> | undefined;
+
+    /**
+     * La seule région d'état de l'écran. Toutes les écritures y passent : un geste qui ne
+     * confirme rien laisse douter, et sur une connexion lente il sera refait deux fois.
+     */
+    function signalerStatut(message: string): void {
+      if (!statut) return;
+      statut.textContent = message;
+      statut.hidden = false;
+      clearTimeout(effacerStatut);
+      effacerStatut = setTimeout(() => {
+        statut.hidden = true;
+      }, 4000);
+    }
+
+    /* ---------------- Appels réseau ---------------- */
+
+    /** Une session expirée ne doit pas se manifester par un bouton qui ne fait rien. */
+    async function api<T>(url: string, init?: RequestInit): Promise<T | null> {
+      const reponse = await fetch(url, init);
+      if (reponse.status === 401) {
+        window.location.reload();
+        return null;
+      }
+      const data = (await reponse.json().catch(() => ({}))) as T & { error?: string };
+      if (!reponse.ok) throw new Error(data.error ?? 'Opération impossible.');
+      return data;
+    }
+
+    async function agir(corps: Record<string, unknown>): Promise<Fiche | null> {
+      const data = await api<{ dossier?: Fiche }>('/api/crm-dossier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(corps),
+      });
+      return data?.dossier ?? null;
+    }
+
+    function remplacer(dossier: Fiche): void {
+      const index = dossiers.findIndex((d) => d.id === dossier.id);
+      if (index === -1) dossiers.unshift(dossier);
+      else dossiers[index] = dossier;
+      rendre();
+    }
+
+    function signaler(selecteur: string, message: string | null): void {
+      const cible = $<HTMLElement>(selecteur);
+      if (!cible) return;
+      cible.textContent = message ?? '';
+      cible.hidden = message === null;
+    }
+
+    /**
+     * Toute écriture passe par ici : le contrôle se désactive le temps de l'aller-retour —
+     * ce qui règle aussi le double-clic — et le résultat est annoncé.
+     */
+    async function action(
+      corps: Record<string, unknown>,
+      message: string,
+      declencheur?: HTMLButtonElement | HTMLSelectElement | HTMLInputElement | null,
+    ): Promise<void> {
+      if (declencheur) declencheur.disabled = true;
+      try {
+        signaler('[data-erreur-formulaire]', null);
+        const dossier = await agir(corps);
+        if (dossier) remplacer(dossier);
+        else await charger();
+        signalerStatut(message);
+      } catch (err) {
+        signalerStatut(err instanceof Error ? err.message : 'Opération impossible.');
+      } finally {
+        if (declencheur) declencheur.disabled = false;
+      }
+    }
+
+    async function charger(): Promise<void> {
+      try {
+        const data = await api<{ dossiers: Fiche[] }>('/api/crm-dossiers');
+        if (!data) return;
+        dossiers = data.dossiers;
+        rendre();
+      } catch (err) {
+        liste?.replaceChildren(
+          texte('p', 'dc-vide', err instanceof Error ? err.message : 'Chargement impossible.'),
+        );
+      }
+    }
+
+    /* ---------------- Panneaux ---------------- */
+
+    /**
+     * Le panneau de droite n'a jamais qu'un seul contenu. Sur téléphone il passe par-dessus la
+     * liste : on verrouille alors le défilement de la page pour que le retour arrière ramène
+     * bien à la liste, et non au milieu d'un document à deux étages.
+     */
+    function montrer(quoi: Panneau): void {
+      panneau = quoi;
+      if (panneauJour) panneauJour.hidden = quoi !== 'jour';
+      if (formulaire) formulaire.hidden = quoi !== 'formulaire';
+      if (fiche) fiche.hidden = quoi !== 'fiche';
+
+      const parDessus = quoi !== 'jour';
+      racine.classList.toggle('dc-app--panneau', parDessus);
+      document.body.style.overflow = parDessus && petitEcran.matches ? 'hidden' : '';
+      if (parDessus && petitEcran.matches) window.scrollTo(0, 0);
+    }
+
+    function fermerPanneau(): void {
+      selection = null;
+      enModification = false;
+      montrer('jour');
+      rendre();
+      carteOrigine?.focus();
+      carteOrigine = null;
+    }
+
+    /* ---------------- Onglets ---------------- */
+
+    function rendreOnglets(): void {
+      const comptes: Record<Vue, number> = { actifs: 0, prospects: 0, clos: 0 };
+      for (const dossier of dossiers) comptes[vueDe(dossier)] += 1;
+
+      for (const [cle, selecteur] of [
+        ['actifs', '[data-compte-actifs]'],
+        ['prospects', '[data-compte-prospects]'],
+        ['clos', '[data-compte-clos]'],
+      ] as Array<[Vue, string]>) {
+        const cible = $<HTMLElement>(selecteur);
+        if (cible) cible.textContent = comptes[cle] ? `(${comptes[cle]})` : '';
+      }
+
+      for (const onglet of $$<HTMLButtonElement>('[data-vue]')) {
+        onglet.setAttribute('aria-pressed', String(onglet.dataset.vue === vue));
+      }
+    }
+
+    /* ---------------- À faire aujourd'hui ---------------- */
+
+    function phraseUrgence(urgence: Urgence): string {
+      switch (urgence.type) {
+        case 'relance':
+          return urgence.joursDeRetard === 0
+            ? 'Relance prévue aujourd’hui'
+            : `Relance prévue il y a ${urgence.joursDeRetard} jour${urgence.joursDeRetard > 1 ? 's' : ''}`;
+        case 'documents_complets':
+          return 'Tous les documents sont reçus — le dossier attend votre prochaine étape';
+        case 'sans_mouvement':
+          return `Sans mouvement depuis ${urgence.jours} jours`;
+      }
+    }
+
+    function rendreUrgences(): void {
+      if (!zoneUrgences) return;
+
+      const cartes = urgences(dossiers, OPTIONS_URGENCE).map(({ fiche: dossier, urgence }) => {
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        bouton.className = 'dc-urgence';
+        bouton.append(
+          texte('span', 'dc-urgence-nom', dossier.nom),
+          texte('span', 'dc-urgence-motif', phraseUrgence(urgence)),
+        );
+        bouton.addEventListener('click', () => ouvrirFiche(dossier.id, bouton));
+        return bouton;
+      });
+
+      zoneUrgences.replaceChildren(
+        ...(cartes.length ? cartes : [texte('p', 'dc-vide', 'Rien ne presse aujourd’hui.')]),
+      );
+    }
+
+    /* ---------------- Liste ---------------- */
+
+    function filtrer(): Fiche[] {
+      const terme = (recherche?.value ?? '').trim().toLowerCase();
+      return dossiers.filter((dossier) => {
+        if (vueDe(dossier) !== vue) return false;
+        if (!terme) return true;
+        // Les notes sont dans le foin : c'est là qu'elle écrit « référée par Me Gagnon ».
+        return `${dossier.nom} ${dossier.courriel} ${dossier.telephone} ${dossier.notes}`
+          .toLowerCase()
+          .includes(terme);
+      });
+    }
+
+    function carte(dossier: Fiche): HTMLButtonElement {
+      const bouton = document.createElement('button');
+      bouton.type = 'button';
+      bouton.className = 'dc-carte';
+      bouton.dataset.id = dossier.id;
+      if (dossier.id === selection) bouton.setAttribute('aria-current', 'true');
+
+      const entete = document.createElement('div');
+      entete.className = 'dc-carte-entete';
+      entete.append(texte('span', 'dc-carte-nom', dossier.nom));
+
+      const etiquette = texte('span', 'dc-etiquette', ETAPES[dossier.etape].libelle);
+      if (ETAPES[dossier.etape].clot) etiquette.classList.add('dc-etiquette--fait');
+      entete.append(etiquette);
+      bouton.append(entete);
+
+      const details: string[] = [];
+      if (dossier.etape === 'prospect') details.push(ORIGINES[dossier.origine]);
+      else if (!ETAPES[dossier.etape].clot) {
+        const restants = manquants(dossier);
+        details.push(restants === 0 ? 'documents complets' : `${restants} document${restants > 1 ? 's' : ''} en attente`);
+      }
+      if (dossier.relanceLe) details.push(`relance ${dateCourte(dossier.relanceLe)}`);
+      if (details.length) bouton.append(texte('p', 'dc-carte-meta', details.join(' · ')));
+
+      bouton.addEventListener('click', () => ouvrirFiche(dossier.id, bouton));
+      return bouton;
+    }
+
+    function rendreListe(): void {
+      if (!liste) return;
+      const visibles = filtrer();
+      // La position de défilement est conservée : re-rendre la liste après avoir coché un
+      // document ne doit pas renvoyer Stéphanie en haut de son carnet.
+      const defilement = liste.scrollTop;
+
+      liste.replaceChildren(
+        ...(visibles.length ? visibles.map(carte) : [texte('p', 'dc-vide', 'Aucun dossier ne correspond.')]),
+      );
+      liste.scrollTop = defilement;
+    }
+
+    /* ---------------- La fiche ---------------- */
+
+    function dossierSelectionne(): Fiche | null {
+      return dossiers.find((d) => d.id === selection) ?? null;
+    }
+
+    function ouvrirFiche(id: string, origine?: HTMLElement): void {
+      selection = id;
+      carteOrigine = origine ?? null;
+      montrer('fiche');
+      rendre();
+      void chargerLiens(id);
+      // Le focus va au nom : sur le panneau plein écran du téléphone, sans cela le lecteur
+      // d'écran comme le clavier resteraient sur une liste qui n'est plus à l'écran.
+      $<HTMLElement>('[data-fiche-nom]')?.focus();
+    }
+
+    /**
+     * Un numéro en lien composable. Retourne `null` plutôt qu'un lien mort : proposer
+     * « Appeler » sur un numéro incomplet est pire que ne rien proposer.
+     */
+    function lienTelephone(numero: string, protocole: 'tel' | 'sms'): string | null {
+      const chiffres = numero.replace(/\D/g, '');
+      if (chiffres.length < 7) return null;
+      if (chiffres.length === 10) return `${protocole}:+1${chiffres}`;
+      if (chiffres.length === 11 && chiffres.startsWith('1')) return `${protocole}:+${chiffres}`;
+      return `${protocole}:${chiffres}`;
+    }
+
+    function actionContact(href: string, libelle: string, doux = false): HTMLAnchorElement {
+      const lien = document.createElement('a');
+      lien.className = `dc-action-contact${doux ? ' dc-action-contact--doux' : ''}`;
+      lien.href = href;
+      lien.textContent = libelle;
+      return lien;
+    }
+
+    /** Appeler, texter, écrire — le geste le plus fréquent de la journée, en un tap. */
+    function rendreContact(dossier: Fiche): void {
+      const hote = $<HTMLElement>('[data-contact]');
+      const avis = $<HTMLElement>('[data-avis-adresse]');
+      if (!hote) return;
+
+      const actions: HTMLAnchorElement[] = [];
+      const appel = lienTelephone(dossier.telephone, 'tel');
+      const texto = lienTelephone(dossier.telephone, 'sms');
+      if (appel) actions.push(actionContact(appel, 'Appeler'));
+      if (texto) actions.push(actionContact(texto, 'Texter', true));
+      if (dossier.courriel) actions.push(actionContact(`mailto:${dossier.courriel}`, 'Écrire', true));
+
+      hote.replaceChildren(
+        ...(actions.length
+          ? actions
+          : [texte('p', 'dc-vide', 'Aucune coordonnée — corrigez la fiche pour pouvoir la joindre.')]),
+      );
+
+      if (avis) {
+        avis.hidden = Boolean(dossier.courriel);
+        if (!dossier.courriel) {
+          avis.textContent =
+            'Aucune adresse courriel : le portail restera fermé, et le suivi ne peut pas être envoyé.';
+        }
+      }
+    }
+
+    function rendreGeste(dossier: Fiche): void {
+      const bouton = $<HTMLButtonElement>('[data-avancer]');
+      if (bouton) {
+        const suivante = etapeSuivante(dossier.etape);
+        if (dossier.etape === 'prospect') {
+          bouton.textContent = 'Qualifier — ouvrir le dossier';
+          bouton.hidden = false;
+        } else if (suivante) {
+          bouton.textContent = `Avancer vers ${ETAPES[suivante].libelle}`;
+          bouton.hidden = false;
+        } else {
+          bouton.hidden = true;
+        }
+      }
+
+      const select = $<HTMLSelectElement>('[data-etape]');
+      if (select) select.value = dossier.etape;
+
+      // Ce que le client lira, montré ici : faire avancer un dossier sans savoir ce que le
+      // geste annonce à l'autre bout est la façon dont un portail se met à mentir.
+      const note = $<HTMLElement>('[data-etape-client]');
+      if (note) {
+        const etape = ETAPES[dossier.etape];
+        note.textContent = etape.visibleClient
+          ? `Le client lira : « ${etape.libelleClient} — ${etape.explicationClient} »`
+          : 'Le client ne voit rien de cette étape : son portail affiche un écran neutre.';
+      }
+    }
+
+    function rendreDocuments(dossier: Fiche): void {
+      const hote = $<HTMLElement>('[data-documents]');
+      if (!hote) return;
+
+      const total = dossier.documents.filter((l) => l.etat !== 'non_requis').length;
+      const recus = dossier.documents.filter((l) => l.etat === 'recu').length;
+
+      const compte = $<HTMLElement>('[data-compte-docs]');
+      if (compte) {
+        compte.textContent = total === 0 ? '' : `${recus} de ${total} reçus`;
+      }
+
+      const progres = $<HTMLElement>('[data-progres]');
+      const barre = $<HTMLElement>('[data-progres-barre]');
+      if (progres && barre) {
+        progres.hidden = total === 0;
+        barre.style.width = `${total === 0 ? 0 : Math.round((recus / total) * 100)}%`;
+      }
+
+      if (dossier.documents.length === 0) {
+        hote.replaceChildren(texte('p', 'dc-vide', 'Aucune pièce à la liste.'));
+        return;
+      }
+
+      // Ce qui manque en premier : c'est ce qu'elle regarde.
+      const rang = { a_fournir: 0, recu: 1, non_requis: 2 } as const;
+      const ordonnees = [...dossier.documents].sort((a, b) => rang[a.etat] - rang[b.etat]);
+
+      hote.replaceChildren(
+        ...ordonnees.map((ligne) => {
+          const rangee = document.createElement('div');
+          rangee.className = `dc-doc dc-doc--${ligne.etat.replace('_', '-')}`;
+
+          const bascule = document.createElement('button');
+          bascule.type = 'button';
+          bascule.className = 'dc-doc-bascule';
+          bascule.disabled = ligne.etat === 'non_requis';
+          bascule.setAttribute('aria-pressed', String(ligne.etat === 'recu'));
+
+          const case_ = texte('span', 'dc-doc-case', ligne.etat === 'recu' ? '✓' : '');
+          case_.setAttribute('aria-hidden', 'true');
+
+          const corps = document.createElement('span');
+          corps.className = 'dc-doc-corps';
+          corps.append(texte('span', 'dc-doc-libelle', DOCUMENTS[ligne.cle].libelle));
+          if (ligne.pourQui !== 'dossier') {
+            corps.append(texte('span', 'dc-doc-qui', DESTINATAIRES[ligne.pourQui]));
+          }
+
+          bascule.append(case_, corps);
+          bascule.addEventListener('click', () => {
+            void marquer(dossier.id, ligne, ligne.etat === 'recu' ? 'a_fournir' : 'recu', bascule);
+          });
+
+          const menu = document.createElement('div');
+          menu.className = 'dc-doc-menu';
+
+          const ecarter = texte('button', 'dc-doc-action', ligne.etat === 'non_requis' ? 'Rétablir' : 'Non requis');
+          ecarter.type = 'button';
+          ecarter.addEventListener('click', () => {
+            void marquer(dossier.id, ligne, ligne.etat === 'non_requis' ? 'a_fournir' : 'non_requis', ecarter);
+          });
+
+          const retirer = texte('button', 'dc-doc-action', 'Retirer');
+          retirer.type = 'button';
+          retirer.addEventListener('click', () => {
+            void action(
+              { action: 'document-retirer', id: dossier.id, document: ligne.cle, pourQui: ligne.pourQui },
+              'Pièce retirée de la liste',
+              retirer,
+            );
+          });
+
+          menu.append(ecarter, retirer);
+          rangee.append(bascule, menu);
+          return rangee;
+        }),
+      );
+    }
+
+    async function marquer(
+      id: string,
+      ligne: LigneDocument,
+      etat: CleEtatDocument,
+      declencheur?: HTMLButtonElement,
+    ): Promise<void> {
+      const libelle = DOCUMENTS[ligne.cle].libelle;
+      const message =
+        etat === 'recu' ? `${libelle} — reçu` : etat === 'non_requis' ? `${libelle} — écarté` : `${libelle} — à fournir`;
+      await action(
+        { action: 'document-etat', id, document: ligne.cle, pourQui: ligne.pourQui, etat },
+        message,
+        declencheur,
+      );
+    }
+
+    function rendreFiche(): void {
+      const dossier = dossierSelectionne();
+      if (!fiche || !dossier) return;
+
+      const nom = $<HTMLElement>('[data-fiche-nom]');
+      if (nom) nom.textContent = dossier.nom;
+
+      const meta = $<HTMLElement>('[data-fiche-meta]');
+      if (meta) {
+        const morceaux: string[] = [ETAPES[dossier.etape].libelle, `ouvert ${dateCourte(dossier.creeLe)}`];
+        meta.textContent = morceaux.join(' · ');
+      }
+
+      const provenance = $<HTMLElement>('[data-fiche-provenance]');
+      if (provenance) {
+        provenance.textContent = `${ORIGINES[dossier.origine]} · ${BASES_CONSENTEMENT[dossier.consentement]}`;
+      }
+
+      rendreContact(dossier);
+      rendreGeste(dossier);
+      rendreDocuments(dossier);
+
+      const relance = $<HTMLInputElement>('[data-relance]');
+      if (relance) relance.value = dossier.relanceLe ?? '';
+
+      const etatRelance = $<HTMLElement>('[data-relance-etat]');
+      if (etatRelance) {
+        etatRelance.textContent = dossier.relanceLe
+          ? `Prévu le ${dateCourte(dossier.relanceLe)}`
+          : 'Aucune relance prévue.';
+      }
+
+      const prevenir = $<HTMLButtonElement>('[data-prevenir]');
+      if (prevenir) prevenir.disabled = !dossier.courriel || !ETAPES[dossier.etape].visibleClient;
+
+      // La confirmation de suppression repart fermée à chaque rendu.
+      const confirme = $<HTMLElement>('[data-confirme-suppression]');
+      const supprimer = $<HTMLElement>('[data-supprimer]');
+      if (confirme && supprimer) {
+        confirme.hidden = true;
+        supprimer.hidden = false;
+      }
+
+      const historique = $<HTMLElement>('[data-historique]');
+      if (historique) {
+        historique.replaceChildren(
+          ...[...dossier.historique].reverse().map((evenement) => {
+            const item = document.createElement('li');
+            item.className = 'dc-evenement';
+            item.append(
+              texte('span', '', evenement.resume),
+              texte('span', 'dc-evenement-date', dateComplete(evenement.le)),
+            );
+            return item;
+          }),
+        );
+      }
+    }
+
+    /* ---------------- Cette personne, ailleurs ---------------- */
+
+    interface Liens {
+      readonly reseau: { nom: string; profession: string; etat: string } | null;
+      readonly contrat: { statut: string; signeLe: string | null; aSonTour: boolean } | null;
+      readonly referePar: { nom: string; profession: string } | null;
+    }
+
+    /**
+     * Chargé **à l'ouverture d'une fiche seulement** : la route relit trois magasins, et
+     * l'appeler pour chaque ligne de la liste coûterait le triple à chaque affichage.
+     */
+    async function chargerLiens(id: string): Promise<void> {
+      const bloc = $<HTMLElement>('[data-liens-bloc]');
+      const hote = $<HTMLElement>('[data-liens]');
+      if (!bloc || !hote) return;
+      bloc.hidden = true;
+
+      let liens: Liens;
+      try {
+        const data = await api<{ liens: Liens }>(`/api/crm-lien?id=${encodeURIComponent(id)}`);
+        if (!data || selection !== id) return;
+        liens = data.liens;
+      } catch {
+        return; // un encart secondaire ne doit pas faire échouer l'écran
+      }
+
+      const lignes: HTMLElement[] = [];
+      if (liens.referePar) {
+        lignes.push(texte('p', 'dc-lien', `Référé par ${liens.referePar.nom} — ${liens.referePar.profession}`));
+      }
+      if (liens.reseau) {
+        lignes.push(texte('p', 'dc-lien', `Au carnet du réseau : ${liens.reseau.profession} · ${liens.reseau.etat}`));
+      }
+      if (liens.contrat) {
+        const etat = liens.contrat.signeLe
+          ? 'a signé'
+          : liens.contrat.aSonTour
+            ? 'c’est à son tour de signer'
+            : 'en attente de son tour';
+        lignes.push(texte('p', 'dc-lien', `Contrat de courtage en cours — ${etat}`));
+      }
+
+      if (lignes.length === 0) return;
+      hote.replaceChildren(...lignes);
+      bloc.hidden = false;
+    }
+
+    /* ---------------- Les chiffres ---------------- */
+
+    function tableau(entetes: string[], lignes: string[][]): HTMLElement {
+      const cadre = document.createElement('div');
+      cadre.className = 'dc-table-cadre';
+
+      const table = document.createElement('table');
+      table.className = 'dc-table';
+
+      const thead = document.createElement('thead');
+      const ligneEntete = document.createElement('tr');
+      for (const entete of entetes) ligneEntete.append(texte('th', '', entete));
+      thead.append(ligneEntete);
+
+      const tbody = document.createElement('tbody');
+      for (const cellules of lignes) {
+        const tr = document.createElement('tr');
+        for (const cellule of cellules) tr.append(texte('td', '', cellule));
+        tbody.append(tr);
+      }
+
+      table.append(thead, tbody);
+      cadre.append(table);
+      return cadre;
+    }
+
+    /**
+     * Calculés ici même sur la liste déjà chargée — aucune requête de plus.
+     *
+     * La réserve n'est pas de la modestie : un taux tiré de onze fiches raconte le hasard, et
+     * affiché sans réserve il servira quand même à décider.
+     */
+    function rendreChiffres(): void {
+      const hote = $<HTMLElement>('[data-chiffres]');
+      const reserve = $<HTMLElement>('[data-reserve]');
+      if (!hote) return;
+
+      if (reserve) {
+        const mince = !donneesSuffisantes(dossiers);
+        reserve.textContent = mince
+          ? `Le carnet ne compte que ${dossiers.length} fiche${dossiers.length > 1 ? 's' : ''} : en deçà de ${SEUIL_LISIBILITE}, ces chiffres racontent surtout le hasard. À lire dans quelques mois.`
+          : 'Les durées ne se calculent que depuis les étapes franchies après la mise en service du suivi. Les dossiers ouverts avant n’y figurent pas.';
+        reserve.hidden = false;
+      }
+
+      const rendement = rendementParOrigine(dossiers);
+      const etages = entonnoir(dossiers).filter((e) => e.atteintes > 0);
+      const blocs: HTMLElement[] = [];
+
+      if (rendement.length > 0) {
+        blocs.push(texte('h3', 'dc-h3', 'Ce que chaque porte d’entrée produit'));
+        blocs.push(
+          tableau(
+            ['Porte d’entrée', 'Entrées', 'Qualifiés', 'Financés', 'Perdus'],
+            rendement.map((l) => [l.libelle, String(l.total), String(l.qualifies), String(l.finances), String(l.perdus)]),
+          ),
+        );
+      }
+
+      if (etages.length > 0) {
+        blocs.push(texte('h3', 'dc-h3', 'Progression et durées'));
+        blocs.push(
+          tableau(
+            ['Étape', 'Fiches passées par là', 'Jours médians'],
+            etages.map((e) => [
+              e.libelle,
+              String(e.atteintes),
+              e.joursMedians === null ? '—' : String(Math.round(e.joursMedians * 10) / 10),
+            ]),
+          ),
+        );
+      }
+
+      hote.replaceChildren(...(blocs.length ? blocs : [texte('p', 'dc-vide', 'Rien à mesurer pour l’instant.')]));
+    }
+
+    function rendre(): void {
+      rendreOnglets();
+      rendreUrgences();
+      rendreListe();
+      rendreFiche();
+      rendreChiffres();
+    }
+
+    /* ---------------- Formulaire ---------------- */
+
+    const champs = {
+      nom: document.getElementById('dc-nom') as HTMLInputElement | null,
+      courriel: document.getElementById('dc-courriel') as HTMLInputElement | null,
+      telephone: document.getElementById('dc-telephone') as HTMLInputElement | null,
+      notes: document.getElementById('dc-notes') as HTMLTextAreaElement | null,
+    };
+
+    function ouvrirFormulaire(dossier: Fiche | null): void {
+      if (!formulaire) return;
+      enModification = dossier !== null;
+
+      const titre = $<HTMLElement>('[data-formulaire-titre]');
+      if (titre) titre.textContent = dossier ? 'Corriger les coordonnées' : 'Nouveau dossier';
+
+      if (champs.nom) champs.nom.value = dossier?.nom ?? '';
+      if (champs.courriel) champs.courriel.value = dossier?.courriel ?? '';
+      if (champs.telephone) champs.telephone.value = dossier?.telephone ?? '';
+      if (champs.notes) champs.notes.value = dossier?.notes ?? '';
+
+      signaler('[data-erreur-formulaire]', null);
+      montrer('formulaire');
+      champs.nom?.focus();
+    }
+
+    $<HTMLButtonElement>('[data-nouveau]')?.addEventListener('click', () => {
+      selection = null;
+      rendre();
+      ouvrirFormulaire(null);
+    });
+
+    $<HTMLButtonElement>('[data-annuler]')?.addEventListener('click', () => {
+      if (selection) {
+        montrer('fiche');
+        rendre();
+      } else {
+        fermerPanneau();
+      }
+    });
+
+    formulaire?.addEventListener('submit', async (evenement) => {
+      evenement.preventDefault();
+      const bouton = formulaire.querySelector<HTMLButtonElement>('button[type="submit"]');
+      const donnees = {
+        nom: champs.nom?.value ?? '',
+        courriel: champs.courriel?.value ?? '',
+        telephone: champs.telephone?.value ?? '',
+        notes: champs.notes?.value ?? '',
+      };
+
+      const courant = dossierSelectionne();
+      if (bouton) bouton.disabled = true;
+      try {
+        signaler('[data-erreur-formulaire]', null);
+        const enregistre = await agir(
+          enModification && courant
+            ? { action: 'modifier', id: courant.id, dossier: donnees }
+            : { action: 'creer', dossier: donnees },
+        );
+        if (!enregistre) return;
+        remplacer(enregistre);
+        enModification = false;
+        signalerStatut(courant ? 'Coordonnées mises à jour' : 'Dossier créé');
+        ouvrirFiche(enregistre.id);
+      } catch (err) {
+        signaler('[data-erreur-formulaire]', err instanceof Error ? err.message : 'Enregistrement impossible.');
+      } finally {
+        if (bouton) bouton.disabled = false;
+      }
+    });
+
+    /* ---------------- Actions de la fiche ---------------- */
+
+    $<HTMLButtonElement>('[data-fermer-fiche]')?.addEventListener('click', fermerPanneau);
+
+    $<HTMLButtonElement>('[data-avancer]')?.addEventListener('click', (evenement) => {
+      const courant = dossierSelectionne();
+      if (!courant) return;
+      const suivante = courant.etape === 'prospect' ? 'nouveau' : etapeSuivante(courant.etape);
+      if (!suivante) return;
+      void action(
+        { action: 'etape', id: courant.id, etape: suivante },
+        courant.etape === 'prospect' ? 'Dossier ouvert — la liste de documents est établie' : `Avancé vers ${ETAPES[suivante].libelle}`,
+        evenement.currentTarget as HTMLButtonElement,
+      );
+    });
+
+    $<HTMLSelectElement>('[data-etape]')?.addEventListener('change', (evenement) => {
+      const courant = dossierSelectionne();
+      if (!courant) return;
+      const select = evenement.currentTarget as HTMLSelectElement;
+      const etape = select.value as CleEtape;
+      void action({ action: 'etape', id: courant.id, etape }, `Étape : ${ETAPES[etape].libelle}`, select);
+    });
+
+    $<HTMLButtonElement>('[data-ajouter-doc]')?.addEventListener('click', (evenement) => {
+      const courant = dossierSelectionne();
+      if (!courant) return;
+      const cle = $<HTMLSelectElement>('[data-doc-cle]')?.value;
+      const pourQui = $<HTMLSelectElement>('[data-doc-qui]')?.value;
+      if (!cle || !pourQui) return;
+      void action(
+        { action: 'document-ajouter', id: courant.id, document: cle, pourQui },
+        'Pièce ajoutée à la liste',
+        evenement.currentTarget as HTMLButtonElement,
+      );
+    });
+
+    $<HTMLButtonElement>('[data-noter]')?.addEventListener('click', async (evenement) => {
+      const courant = dossierSelectionne();
+      const champ = document.getElementById('dc-note-rapide') as HTMLTextAreaElement | null;
+      if (!courant || !champ || champ.value.trim().length < 2) return;
+      await action(
+        { action: 'note', id: courant.id, texte: champ.value },
+        'Note ajoutée',
+        evenement.currentTarget as HTMLButtonElement,
+      );
+      champ.value = '';
+    });
+
+    /* ---------------- Relance ---------------- */
+
+    function enDate(quand: Date): string {
+      const decale = new Date(quand.getTime() - quand.getTimezoneOffset() * 60_000);
+      return decale.toISOString().slice(0, 10);
+    }
+
+    function fixerRelance(date: string | null, message: string, declencheur?: HTMLElement): void {
+      const courant = dossierSelectionne();
+      if (!courant) return;
+      void action(
+        { action: 'relance', id: courant.id, date },
+        message,
+        declencheur as HTMLButtonElement | undefined,
+      );
+    }
+
+    for (const chip of $$<HTMLButtonElement>('[data-relance-dans]')) {
+      chip.addEventListener('click', () => {
+        const jours = Number(chip.dataset.relanceDans ?? '1');
+        const cible = new Date();
+        cible.setDate(cible.getDate() + jours);
+        fixerRelance(enDate(cible), `Relance fixée au ${dateCourte(enDate(cible))}`, chip);
+      });
+    }
+
+    $<HTMLButtonElement>('[data-relance-lundi]')?.addEventListener('click', (evenement) => {
+      const cible = new Date();
+      // 1 = lundi ; on va toujours au lundi suivant, jamais à celui d'aujourd'hui.
+      const versLundi = ((8 - cible.getDay()) % 7) || 7;
+      cible.setDate(cible.getDate() + versLundi);
+      fixerRelance(enDate(cible), `Relance fixée au ${dateCourte(enDate(cible))}`, evenement.currentTarget as HTMLButtonElement);
+    });
+
+    $<HTMLInputElement>('[data-relance]')?.addEventListener('change', (evenement) => {
+      const champ = evenement.currentTarget as HTMLInputElement;
+      fixerRelance(champ.value || null, champ.value ? `Relance fixée au ${dateCourte(champ.value)}` : 'Relance effacée', champ);
+    });
+
+    $<HTMLButtonElement>('[data-relance-effacer]')?.addEventListener('click', (evenement) => {
+      fixerRelance(null, 'Relance effacée', evenement.currentTarget as HTMLButtonElement);
+    });
+
+    /* ---------------- Prévenir le client ---------------- */
+
+    $<HTMLButtonElement>('[data-prevenir]')?.addEventListener('click', async (evenement) => {
+      const courant = dossierSelectionne();
+      if (!courant) return;
+
+      const bouton = evenement.currentTarget as HTMLButtonElement;
+      signaler('[data-erreur-prevenir]', null);
+      bouton.disabled = true;
+
+      try {
+        const data = await api<{ envoye?: boolean; simule?: boolean }>('/api/crm-prevenir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: courant.id }),
+        });
+        if (data) signalerStatut(data.simule ? 'Suivi simulé (voir la console du serveur)' : 'Suivi envoyé au client');
+        await charger();
+      } catch (err) {
+        signaler('[data-erreur-prevenir]', err instanceof Error ? err.message : 'Envoi impossible.');
+      } finally {
+        bouton.disabled = false;
+      }
+    });
+
+    /* ---------------- Modifier et supprimer ---------------- */
+
+    $<HTMLButtonElement>('[data-modifier]')?.addEventListener('click', () => {
+      ouvrirFormulaire(dossierSelectionne());
+    });
+
+    /**
+     * Suppression en deux temps, dans la page.
+     *
+     * `window.confirm` posait une modale de navigateur — sur téléphone, la différence entre
+     * un geste réversible et un accident.
+     */
+    $<HTMLButtonElement>('[data-supprimer]')?.addEventListener('click', (evenement) => {
+      (evenement.currentTarget as HTMLElement).hidden = true;
+      const confirme = $<HTMLElement>('[data-confirme-suppression]');
+      if (confirme) confirme.hidden = false;
+      $<HTMLButtonElement>('[data-confirmer-suppression]')?.focus();
+    });
+
+    $<HTMLButtonElement>('[data-annuler-suppression]')?.addEventListener('click', () => {
+      const confirme = $<HTMLElement>('[data-confirme-suppression]');
+      const supprimer = $<HTMLButtonElement>('[data-supprimer]');
+      if (confirme) confirme.hidden = true;
+      if (supprimer) {
+        supprimer.hidden = false;
+        supprimer.focus();
+      }
+    });
+
+    $<HTMLButtonElement>('[data-confirmer-suppression]')?.addEventListener('click', async (evenement) => {
+      const courant = dossierSelectionne();
+      if (!courant) return;
+      const bouton = evenement.currentTarget as HTMLButtonElement;
+      bouton.disabled = true;
+
+      try {
+        await api('/api/crm-dossier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'supprimer', id: courant.id }),
+        });
+        signalerStatut(`Dossier de ${courant.nom} supprimé`);
+        selection = null;
+        montrer('jour');
+        await charger();
+      } catch (err) {
+        signalerStatut(err instanceof Error ? err.message : 'Suppression impossible.');
+      } finally {
+        bouton.disabled = false;
+      }
+    });
+
+    /* ---------------- Vues, recherche, clavier ---------------- */
+
+    for (const onglet of $$<HTMLButtonElement>('[data-vue]')) {
+      onglet.addEventListener('click', () => {
+        vue = (onglet.dataset.vue ?? 'actifs') as Vue;
+        const courant = dossierSelectionne();
+        if (courant && vueDe(courant) !== vue) {
+          selection = null;
+          montrer('jour');
+        }
+        rendre();
+      });
+    }
+
+    recherche?.addEventListener('input', rendreListe);
+
+    function dansUnChamp(cible: EventTarget | null): boolean {
+      const element = cible as HTMLElement | null;
+      if (!element) return false;
+      return ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName) || element.isContentEditable;
+    }
+
+    document.addEventListener('keydown', (evenement) => {
+      if (evenement.key === 'Escape' && panneau !== 'jour') {
+        evenement.preventDefault();
+        fermerPanneau();
+        return;
+      }
+
+      if (evenement.key === '/' && !dansUnChamp(evenement.target)) {
+        evenement.preventDefault();
+        recherche?.focus();
+        recherche?.select();
+      }
+    });
+
+    // Parcourir la liste au clavier depuis une carte.
+    liste?.addEventListener('keydown', (evenement) => {
+      if (evenement.key !== 'ArrowDown' && evenement.key !== 'ArrowUp') return;
+      const cartes = [...(liste.querySelectorAll<HTMLButtonElement>('.dc-carte') ?? [])];
+      const index = cartes.indexOf(document.activeElement as HTMLButtonElement);
+      if (index === -1) return;
+      evenement.preventDefault();
+      const suivant = cartes[index + (evenement.key === 'ArrowDown' ? 1 : -1)];
+      suivant?.focus();
+    });
+
+    // Repasser en grand écran alors qu'un panneau était ouvert doit rendre son défilement
+    // à la page : sinon le corps reste bloqué sans qu'aucun panneau ne le justifie.
+    petitEcran.addEventListener('change', () => {
+      document.body.style.overflow = panneau !== 'jour' && petitEcran.matches ? 'hidden' : '';
+    });
+
+    montrer('jour');
+    void charger();
+  }
+</script>

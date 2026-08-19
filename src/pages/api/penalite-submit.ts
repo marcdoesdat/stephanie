@@ -20,6 +20,8 @@ import {
   loadResendEnv,
   toResendAttachment,
 } from '../../services/emailService';
+import { creerDossier } from '../../services/dossierClientService';
+import { depuisPenalite } from '../../utils/entreesProspect';
 
 export const prerender = false;
 
@@ -91,6 +93,19 @@ export const POST: APIRoute = async ({ request }) => {
   const scenario = parseScenario(scenarioRaw);
   const screenshotBase64Raw = typeof payload.screenshotBase64 === 'string' ? payload.screenshotBase64 : '';
   const screenshotBase64 = screenshotBase64Raw.length <= MAX_SCREENSHOT_BASE64_LENGTH ? screenshotBase64Raw : '';
+
+  // Ouvrir la fiche au carnet.
+  //
+  // **Avant** l'envoi, et jamais à son prix : le courriel reste la garantie, la fiche est un
+  // confort. Une panne de Netlify Blobs ne doit pas coûter un prospect, d'où ce try/catch qui
+  // journalise et poursuit — même patron que /api/demande-submit.
+  try {
+    const entree = depuisPenalite(payload);
+    if (entree.ok) await creerDossier(entree.valeur, { origine: 'penalite' });
+    else console.warn('[penalite-submit] Fiche non ouverte :', entree.erreur);
+  } catch (err) {
+    console.error('[penalite-submit] Ouverture de la fiche impossible :', err);
+  }
 
   const resendEnv = loadResendEnv();
   const isDev = import.meta.env.DEV;

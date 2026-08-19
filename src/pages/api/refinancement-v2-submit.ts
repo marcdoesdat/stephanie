@@ -34,6 +34,8 @@ import {
   libelleValeur,
   type Equite,
 } from '../../utils/refinancementV2';
+import { creerDossier } from '../../services/dossierClientService';
+import { depuisRefinancementV2 } from '../../utils/entreesProspect';
 
 export const prerender = false;
 
@@ -129,6 +131,19 @@ export const POST: APIRoute = async ({ request }) => {
     equite === null
   ) {
     return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
+  }
+
+  // Ouvrir la fiche au carnet.
+  //
+  // **Avant** l'envoi, et jamais à son prix : le courriel reste la garantie, la fiche est un
+  // confort. Une panne de Netlify Blobs ne doit pas coûter un prospect, d'où ce try/catch qui
+  // journalise et poursuit — même patron que /api/demande-submit.
+  try {
+    const entree = depuisRefinancementV2({ ...payload, intention: libelleIntention(intention) });
+    if (entree.ok) await creerDossier(entree.valeur, { origine: 'refinancement_v2' });
+    else console.warn('[refinancement-v2-submit] Fiche non ouverte :', entree.erreur);
+  } catch (err) {
+    console.error('[refinancement-v2-submit] Ouverture de la fiche impossible :', err);
   }
 
   const resendEnv = loadResendEnv();

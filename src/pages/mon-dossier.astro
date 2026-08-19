@@ -1,0 +1,632 @@
+---
+// Mon dossier — /mon-dossier. La page du client.
+//
+// Ni Nav ni pied de page : le visiteur arrive par un lien reçu par courriel, pour une seule
+// chose. La page porte donc elle-même sa sortie — les coordonnées de la courtière et le
+// retour vers l'accueil figurent dans chacun de ses états, y compris ceux qui n'ont rien à
+// montrer. Une page sans navigation qui annonce un échec sans dire quoi faire est un
+// cul-de-sac.
+//
+// Trois états, tous rendus par le serveur — le contenu du dossier ne dépend d'aucun script :
+//
+//   1. sans session       → le formulaire de demande de lien ;
+//   2. avec session       → l'étape, la frise, et ce qui manque ;
+//   3. session sans vue   → un écran neutre. Un dossier « non abouti » ne s'annonce pas ici :
+//                           cela se dit de vive voix, pas par une page consultée un soir.
+//
+// Le lien magique est consommé ici même, puis la page **redirige vers l'URL nue** : le jeton
+// ne doit rester ni dans la barre d'adresse, ni dans l'historique, ni dans le `Referer` de
+// la première ressource chargée.
+export const prerender = false;
+
+import MainLayout from '../layouts/MainLayout.astro';
+import { loadSiteConfig } from '../config';
+import { consommerLienMagique, lireDossier, versVueClient } from '../services/dossierClientService';
+import {
+  creerJetonSession,
+  dossierAutorise,
+  enteteCookieFin,
+  enteteCookieSession,
+  portailConfigure,
+} from '../services/portailAcces';
+import { DOCUMENTS, ETAPES, ETAPES_CLIENT, DESTINATAIRES, rangEtape } from '../utils/dossiersClients';
+
+const config = loadSiteConfig();
+const url = new URL(Astro.request.url);
+
+/**
+ * Tout ce qui fait qu'une requête se termine par une redirection plutôt que par une page :
+ * la fermeture de session, et l'ouverture d'un lien magique.
+ *
+ * Rassemblé dans une fonction plutôt que dispersé en `return` successifs — c'est le seul
+ * endroit qui pose un cookie, et il vaut mieux qu'il tienne en un bloc qu'on relit d'un coup.
+ */
+async function traiterEntree(): Promise<{ redirection: Response } | { lienMort: boolean }> {
+  const securise = url.protocol === 'https:';
+
+  // Fermeture de session — utile sur un appareil partagé.
+  if (url.searchParams.get('fin') === '1') {
+    return {
+      redirection: new Response(null, {
+        status: 302,
+        headers: { Location: '/mon-dossier', 'Set-Cookie': enteteCookieFin(securise) },
+      }),
+    };
+  }
+
+  const jetonLien = url.searchParams.get('j');
+  const dossierLien = url.searchParams.get('d');
+  if (!jetonLien || !dossierLien) return { lienMort: false };
+
+  const ouvert = await consommerLienMagique(dossierLien, jetonLien);
+  const jetonSession = ouvert ? await creerJetonSession(ouvert.id) : null;
+  if (!jetonSession) return { lienMort: true };
+
+  // On repart vers l'URL nue : le jeton ne doit rester ni dans la barre d'adresse, ni dans
+  // l'historique, ni dans le `Referer` de la première ressource chargée.
+  return {
+    redirection: new Response(null, {
+      status: 302,
+      headers: { Location: '/mon-dossier', 'Set-Cookie': enteteCookieSession(jetonSession, securise) },
+    }),
+  };
+}
+
+const entree = await traiterEntree();
+if ('redirection' in entree) return entree.redirection;
+const lienMort = entree.lienMort;
+
+const dossierId = await dossierAutorise(Astro.request);
+const dossier = dossierId ? await lireDossier(dossierId) : null;
+const vue = dossier ? versVueClient(dossier) : null;
+
+// Sans secret en production, aucune session ne peut être signée : le dire franchement vaut
+// mieux qu'un formulaire qui n'aboutira jamais.
+const portailFerme = !portailConfigure() && !import.meta.env.DEV;
+
+const aFournir = vue?.documents.filter((ligne) => ligne.etat === 'a_fournir') ?? [];
+const recus = vue?.documents.filter((ligne) => ligne.etat === 'recu') ?? [];
+const rangCourant = vue ? rangEtape(vue.etape) : -1;
+
+const telHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+---
+
+<MainLayout
+  title="Mon dossier"
+  description="Suivi de votre dossier hypothécaire."
+  noindex={true}
+  sansBarreCta={true}
+>
+  <main id="main-content" class="md-page">
+    <section class="md-shell">
+      {
+        portailFerme ? (
+          <div class="md-carte">
+            <h1 class="md-titre">Suivi de dossier</h1>
+            <p class="md-texte">
+              Le suivi en ligne est momentanément indisponible. Écrivez ou téléphonez à
+              {' '}{config.nom} — elle vous dira où en est votre dossier.
+            </p>
+          </div>
+        ) : vue ? (
+          /* ---------------- 2. Le dossier ---------------- */
+          <>
+            <header class="md-entete">
+              <p class="md-surtitre">Votre dossier hypothécaire</p>
+              <h1 class="md-titre">{vue.nom}</h1>
+            </header>
+
+            <div class="md-carte md-carte-etape">
+              <p class="md-etape-nom">{ETAPES[vue.etape].libelleClient}</p>
+              <p class="md-texte">{ETAPES[vue.etape].explicationClient}</p>
+            </div>
+
+            {/* Frise */}
+            <ol class="md-frise" aria-label="Étapes de votre dossier">
+              {ETAPES_CLIENT.map((cle) => {
+                const rang = rangEtape(cle);
+                const etat = rang < rangCourant ? 'faite' : rang === rangCourant ? 'courante' : 'a-venir';
+                return (
+                  <li class={`md-frise-etape md-frise-etape--${etat}`}>
+                    <span class="md-frise-point" aria-hidden="true" />
+                    <span class="md-frise-libelle">{ETAPES[cle].libelleClient}</span>
+                    {etat === 'courante' && <span class="sr-only">(étape en cours)</span>}
+                  </li>
+                );
+              })}
+            </ol>
+
+            {/* Documents */}
+            {!vue.clos && (
+              <div class="md-carte">
+                <h2 class="md-h2">
+                  {aFournir.length === 0
+                    ? 'Tous vos documents sont reçus'
+                    : `Ce qu’il reste à réunir (${aFournir.length})`}
+                </h2>
+
+                {aFournir.length === 0 ? (
+                  <p class="md-texte">
+                    Rien à faire de votre côté pour l’instant. {config.nom.split(' ')[0]} vous
+                    revient dès qu’il y a du nouveau.
+                  </p>
+                ) : (
+                  <>
+                    <ul class="md-docs">
+                      {aFournir.map((ligne) => (
+                        <li class="md-doc">
+                          <p class="md-doc-titre">
+                            {DOCUMENTS[ligne.cle].libelle}
+                            {ligne.pourQui !== 'dossier' && (
+                              <span class="md-doc-qui">{DESTINATAIRES[ligne.pourQui]}</span>
+                            )}
+                          </p>
+                          <p class="md-doc-pourquoi">{DOCUMENTS[ligne.cle].pourquoi}</p>
+                          {DOCUMENTS[ligne.cle].precision && (
+                            <p class="md-doc-precision">{DOCUMENTS[ligne.cle].precision}</p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div class="md-envoi">
+                      <h3 class="md-h3">Comment les envoyer</h3>
+                      <p class="md-texte">
+                        Par courriel à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>,
+                        ou par texto au <a href={telHref}>{config.telephone}</a>. Une photo nette
+                        prise au téléphone fait l’affaire — inutile de numériser. Envoyez-les au
+                        fur et à mesure, il n’est pas nécessaire de tout réunir d’un coup.
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {recus.length > 0 && (
+                  <details class="md-recus">
+                    <summary>Déjà reçus ({recus.length})</summary>
+                    <ul class="md-docs md-docs--recus">
+                      {recus.map((ligne) => (
+                        <li class="md-doc md-doc--recu">
+                          {DOCUMENTS[ligne.cle].libelle}
+                          {ligne.pourQui !== 'dossier' && (
+                            <span class="md-doc-qui">{DESTINATAIRES[ligne.pourQui]}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            )}
+
+            <div class="md-carte md-carte-contact">
+              <h2 class="md-h2">Une question ?</h2>
+              <p class="md-texte">
+                Écrivez ou appelez {config.nom} directement — c’est elle qui suit votre dossier.
+              </p>
+              <p class="md-coords">
+                <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
+                <span aria-hidden="true"> · </span>
+                <a href={telHref}>{config.telephone}</a>
+              </p>
+            </div>
+
+            <p class="md-sortie">
+              <a href="/">Retour au site</a>
+              <span aria-hidden="true"> · </span>
+              <a href="/mon-dossier?fin=1">Fermer ma session</a>
+            </p>
+          </>
+        ) : dossierId ? (
+          /* ---------------- 3. Session valide, rien à montrer ---------------- */
+          <div class="md-carte">
+            <h1 class="md-titre">Suivi de dossier</h1>
+            <p class="md-texte">
+              Il n’y a rien à afficher ici pour le moment. {config.nom} pourra vous dire où en
+              sont les choses.
+            </p>
+            <p class="md-coords">
+              <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
+              <span aria-hidden="true"> · </span>
+              <a href={telHref}>{config.telephone}</a>
+            </p>
+            <p class="md-sortie"><a href="/">Retour au site</a></p>
+          </div>
+        ) : (
+          /* ---------------- 1. Demander un lien ---------------- */
+          <div class="md-carte">
+            <h1 class="md-titre">Suivi de votre dossier</h1>
+
+            {lienMort && (
+              <p class="md-alerte">
+                Ce lien ne fonctionne plus : il n’était valable qu’une fois, et pendant trente
+                minutes. Demandez-en un nouveau ci-dessous — c’est immédiat.
+              </p>
+            )}
+
+            <p class="md-texte">
+              Entrez l’adresse courriel que vous avez donnée à {config.nom}. Vous recevrez un
+              lien pour consulter l’état de votre dossier et la liste des documents attendus.
+            </p>
+
+            <form id="md-demande" class="contact-form md-form">
+              <label class="cform-label" for="md-courriel">Votre adresse courriel</label>
+              <input
+                type="email"
+                id="md-courriel"
+                class="cform-input"
+                required
+                maxlength="200"
+                autocomplete="email"
+                placeholder="vous@exemple.ca"
+              />
+              <p class="md-erreur" data-erreur hidden />
+              <p class="md-succes" data-succes hidden />
+              <button type="submit" class="btn btn-primary md-bouton" data-envoyer>
+                Recevoir mon lien
+              </button>
+            </form>
+
+            <p class="md-texte md-texte-petit">
+              Pas de mot de passe à créer : chaque lien ne sert qu’une fois. Si vous ne trouvez
+              pas le courriel, regardez dans vos indésirables — ou écrivez simplement à
+              {' '}<a href={`mailto:${config.courriel}`}>{config.courriel}</a>.
+            </p>
+
+            <p class="md-sortie"><a href="/">Retour au site</a></p>
+          </div>
+        )
+      }
+    </section>
+  </main>
+</MainLayout>
+
+<style>
+  .md-page {
+    background: var(--sand);
+    min-height: 100vh;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+
+  .md-shell {
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+
+  .md-page section {
+    padding: 0;
+  }
+
+  .md-entete {
+    margin-bottom: 1.5rem;
+  }
+
+  .md-surtitre {
+    margin: 0 0 0.25rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .md-titre {
+    font-size: 1.7rem;
+    margin: 0 0 0.75rem;
+    line-height: 1.25;
+  }
+
+  .md-h2 {
+    font-size: 1.1rem;
+    margin: 0 0 0.85rem;
+  }
+
+  .md-h3 {
+    font-size: 0.95rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .md-texte {
+    color: var(--muted);
+    font-size: 0.97rem;
+    line-height: 1.7;
+    margin: 0 0 1rem;
+  }
+
+  .md-texte:last-child {
+    margin-bottom: 0;
+  }
+
+  .md-texte-petit {
+    font-size: 0.87rem;
+    margin-top: 1.25rem;
+  }
+
+  .md-carte {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .md-carte-etape {
+    background: var(--forest);
+    border-color: var(--forest);
+  }
+
+  .md-carte-etape .md-texte {
+    color: rgba(255, 255, 255, 0.86);
+    margin-bottom: 0;
+  }
+
+  .md-etape-nom {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.3;
+  }
+
+  .md-carte-contact {
+    background: var(--warm);
+  }
+
+  /* ---- Frise ---- */
+
+  .md-frise {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .md-frise-etape {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+    padding: 0.4rem 0;
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+
+  /* Le trait qui relie les points : porté par l'étape, pas par un élément de plus. */
+  .md-frise-etape:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 0.34rem;
+    top: 1.5rem;
+    bottom: -0.35rem;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .md-frise-point {
+    width: 0.72rem;
+    height: 0.72rem;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--white);
+    flex: none;
+  }
+
+  .md-frise-etape--faite .md-frise-point {
+    background: var(--forest);
+    border-color: var(--forest);
+  }
+
+  .md-frise-etape--faite .md-frise-libelle {
+    color: var(--ink);
+  }
+
+  .md-frise-etape--courante .md-frise-point {
+    background: var(--clay);
+    border-color: var(--clay);
+    box-shadow: 0 0 0 4px rgba(196, 122, 82, 0.18);
+  }
+
+  .md-frise-etape--courante .md-frise-libelle {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ---- Documents ---- */
+
+  .md-docs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .md-doc {
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .md-doc:last-child {
+    border-bottom: none;
+  }
+
+  .md-doc-titre {
+    margin: 0 0 0.3rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+
+  .md-doc-qui {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    background: var(--warm);
+    border-radius: 999px;
+    padding: 0.15rem 0.5rem;
+    vertical-align: middle;
+  }
+
+  .md-doc-pourquoi {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .md-doc-precision {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--clay-dk);
+  }
+
+  .md-envoi {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .md-recus {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .md-recus summary {
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .md-docs--recus {
+    margin-top: 0.5rem;
+  }
+
+  .md-doc--recu {
+    font-size: 0.92rem;
+    color: var(--muted);
+    padding: 0.4rem 0;
+  }
+
+  /* ---- Formulaire ---- */
+
+  .md-form {
+    margin: 1.25rem 0 0;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+  }
+
+  .md-bouton {
+    margin-top: 0.75rem;
+  }
+
+  .md-alerte {
+    background: #fdf3ee;
+    border: 1px solid var(--clay);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1.1rem;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin: 0 0 1.25rem;
+  }
+
+  .md-erreur {
+    color: #a5342a;
+    font-size: 0.88rem;
+    margin: 0.6rem 0 0;
+  }
+
+  .md-succes {
+    color: var(--forest);
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin: 0.6rem 0 0;
+  }
+
+  .md-coords {
+    margin: 0.75rem 0 0;
+    font-size: 1rem;
+  }
+
+  .md-coords a {
+    color: var(--clay-dk);
+  }
+
+  .md-sortie {
+    margin: 1.5rem 0 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .md-sortie a {
+    color: var(--muted);
+  }
+
+  @media (max-width: 640px) {
+    .md-carte {
+      padding: 1.35rem;
+    }
+
+    .md-titre {
+      font-size: 1.45rem;
+    }
+  }
+</style>
+
+<script>
+  // Le seul script de la page, et il ne sert qu'à l'écran de demande de lien : l'état du
+  // dossier lui-même est rendu par le serveur et se lit sans JavaScript.
+  const formulaire = document.getElementById('md-demande') as HTMLFormElement | null;
+
+  formulaire?.addEventListener('submit', async (evenement) => {
+    evenement.preventDefault();
+
+    const champ = document.getElementById('md-courriel') as HTMLInputElement | null;
+    const erreur = formulaire.querySelector<HTMLElement>('[data-erreur]');
+    const succes = formulaire.querySelector<HTMLElement>('[data-succes]');
+    const bouton = formulaire.querySelector<HTMLButtonElement>('[data-envoyer]');
+
+    if (erreur) erreur.hidden = true;
+    if (succes) succes.hidden = true;
+    if (bouton) bouton.disabled = true;
+
+    try {
+      const reponse = await fetch('/api/dossier-acces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courriel: champ?.value ?? '' }),
+      });
+      const data = (await reponse.json().catch(() => ({}))) as { message?: string; error?: string };
+
+      if (reponse.ok) {
+        if (succes) {
+          // Le message vient du serveur : c'est lui qui tient la formulation uniforme, celle
+          // qui ne dit pas si l'adresse est connue.
+          succes.textContent = data.message ?? 'Si un dossier est associé à cette adresse, le lien vient d’y être envoyé.';
+          succes.hidden = false;
+        }
+        formulaire.reset();
+      } else if (erreur) {
+        erreur.textContent = data.error ?? 'Envoi impossible. Réessayez dans un instant.';
+        erreur.hidden = false;
+      }
+    } catch {
+      if (erreur) {
+        erreur.textContent = 'Envoi impossible. Vérifiez votre connexion.';
+        erreur.hidden = false;
+      }
+    } finally {
+      if (bouton) bouton.disabled = false;
+    }
+  });
+</script>
