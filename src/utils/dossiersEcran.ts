@@ -138,3 +138,28 @@ export function urgences<T extends FicheEcran>(
       return ecart !== 0 ? ecart : anciennete(b.urgence) - anciennete(a.urgence);
     });
 }
+
+/* ------------------------------------------------------------------ */
+/*  La phrase                                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Le motif, rédigé.
+ *
+ * La règle est structurée pour être testable, mais deux écrans la rédigent désormais —
+ * `/dossiers` et le tableau de bord. Laisser la tournure dans le script d'une page les
+ * ferait dériver l'un de l'autre sans que rien ne le signale : la même fiche dirait
+ * « Relance prévue aujourd'hui » ici et autre chose là.
+ */
+export function phraseUrgence(urgence: Urgence): string {
+  switch (urgence.type) {
+    case 'relance':
+      return urgence.joursDeRetard === 0
+        ? 'Relance prévue aujourd’hui'
+        : `Relance prévue il y a ${urgence.joursDeRetard} jour${urgence.joursDeRetard > 1 ? 's' : ''}`;
+    case 'documents_complets':
+      return 'Tous les documents sont reçus — le dossier attend votre prochaine étape';
+    case 'sans_mouvement':
+      return `Sans mouvement depuis ${urgence.jours} jours`;
+  }
+}

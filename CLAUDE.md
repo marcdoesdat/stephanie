@@ -46,6 +46,7 @@ src/
 | `/rappel` | Statique | Formulaire de prise de rappel |
 | `/profil-emprunteur` | Statique | Formulaire AMF « Profil des emprunteurs » en tuiles + signature dessinée (noindex, sans Nav/Footer) |
 | `/signer` | SSR | Co-signature à distance par lien nominatif (noindex, sans Nav/Footer) |
+| `/tableau-de-bord` | SSR | Cockpit de la courtière : ce qui presse aujourd'hui (tous carnets) + accès aux outils — réservé à la courtière, protégé par mot de passe (noindex) |
 | `/contrat` | SSR | Générateur du contrat de courtage — réservé à la courtière, protégé par mot de passe (noindex) |
 | `/signer-contrat` | SSR | Lecture, réponses et signature du contrat par lien nominatif (noindex, sans Nav/Footer) |
 | `/finaliser-contrat` | SSR | Relecture et signature finale par la courtière (noindex, protégé par mot de passe) |
@@ -115,6 +116,11 @@ Toute page du tableau ci-dessus marquée « SSR » doit donc porter `prerender =
 - `Footer.astro` — Pied de page
 - `SEO.astro` — Meta tags, JSON-LD (LocalBusiness, FAQSchema, AggregateRating)
 - `MainLayout.astro` — Layout global (Nav + Footer + scripts analytics/consent)
+- `ConnexionCourtiere.astro` — L'écran de connexion partagé par les cinq pages réservées à la
+  courtière (`/tableau-de-bord`, `/contrat`, `/finaliser-contrat`, `/reseau`, `/dossiers`).
+  Auparavant copié-collé cinq fois ; une seule copie évite qu'une page finisse par diverger.
+- `BarreCourtiere.astro` — Le bandeau de navigation entre les écrans privés, rendu seulement
+  quand l'accès est accordé. `/finaliser-contrat` le porte sans y figurer (on y arrive par lien).
 
 **Marketing :**
 - `Hero.astro`, `About.astro`, `Services.astro`, `Testimonials.astro`, `Faq.astro`
@@ -595,6 +601,43 @@ le client consulte le sien sur `/mon-dossier`, sans mot de passe. Le socle est c
   à mesure que la file s'allonge — l'écran dirait « ça va de plus en plus vite » quand ça bloque.
 - **`donneesSuffisantes` autorise l'écran à se taire.** Un taux tiré de moins de quinze fiches
   raconte le hasard, et affiché sans réserve il servira quand même à décider.
+
+## Tableau de bord
+
+`/tableau-de-bord` est le cockpit de la courtière : une porte d'entrée aux écrans privés, qui
+n'existaient dans aucun menu et n'étaient reliés par aucun lien. Il répond d'abord à « qu'est-ce
+qui presse aujourd'hui, tous carnets confondus », puis donne accès aux outils. Même porte que
+`/contrat`, `/reseau`, `/dossiers` (`accesCourtiere`, `CONTRAT_MOT_DE_PASSE`) : une session ouvre
+les cinq.
+
+| Fichier | Rôle |
+|---------|------|
+| `src/pages/tableau-de-bord.astro` | L'écran : en-tête daté, « À faire aujourd'hui », tuiles d'outils |
+| `src/utils/tableauDeBord.ts` | Module **pur** : fusionne les urgences des trois carnets en une liste triée |
+| `src/utils/tableauDeBord.test.ts` | Verrous : contact retiré exclu, tri indifférent au carnet, dossier clos absent, carnet muet toléré |
+| `src/components/BarreCourtiere.astro` | La navigation entre les écrans privés |
+| `src/components/ConnexionCourtiere.astro` | L'écran de connexion partagé |
+
+**Règles :**
+- **La règle d'urgence n'a qu'un exemplaire par carnet.** Celle des dossiers vit dans
+  `dossiersEcran.ts` (le cockpit l'**appelle**, ne la réécrit pas) ; celles du réseau et des
+  contrats ont migré depuis les scripts de `reseau.astro` et `contrat.astro` vers
+  `tableauDeBord.ts`, que les deux pages consomment désormais. `phraseUrgence` (dossiers) est
+  passée dans `dossiersEcran.ts` pour la même raison : deux écrans la rédigent, la laisser dans
+  une page les ferait diverger.
+- **Les trois `GET` partent en séquence, jamais en `Promise.all`.** Le SSR d'Astro sur Netlify
+  est une seule fonction ; trois lectures Blobs concurrentes peuvent courir la mémoïsation
+  paresseuse et basculer un carnet sur son repli mémoire vide — la panne déjà documentée pour
+  `ficheUnifiee`.
+- **Un carnet muet n'efface pas les autres.** Chaque appel dans son `try/catch` ; les carnets
+  qui ont répondu s'affichent, une ligne nomme celui qui manque. Un 401 recharge la page — c'est
+  le SSR qui rend l'écran de connexion.
+- **Le cockpit n'écrit rien.** Il indique et il ouvre ; l'écran spécialisé garde la main sur son
+  carnet. Les chiffres restent sur `/dossiers`, qui en a le contexte.
+- **Liens profonds :** `/dossiers#f=<id>` et `/reseau#f=<id>` ouvrent la fiche nommée après le
+  chargement (via l'`ouvrirFiche` déjà présent) ; `/contrat#ct-suivi` déplie la section de suivi.
+- Les cartes de tâches sont bâties en JavaScript, donc habillées par un bloc `is:global`
+  circonscrit par `#tb-app` — même raison que `#rs-app`, `#dc-app` et `#ct-suivi`.
 
 ## Configuration
 

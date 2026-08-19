@@ -9,6 +9,8 @@
 export const prerender = false;
 
 import MainLayout from '../layouts/MainLayout.astro';
+import BarreCourtiere from '../components/BarreCourtiere.astro';
+import ConnexionCourtiere from '../components/ConnexionCourtiere.astro';
 import { loadSiteConfig } from '../config';
 import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
 import { ouvrirPourFinalisation } from '../services/contratDossierService';
@@ -41,27 +43,16 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 >
   <main id="main-content" class="fc-page">
     <section class="fc-shell">
+      {/* La barre sans onglet actif : cet écran n'en a pas, on n'y arrive que par un lien
+          nominatif. Elle sert ici de sortie, pas de repère. */}
+      {autorise && <BarreCourtiere />}
       {
         !autorise ? (
-          <div class="contact-form fc-connexion">
-            <h1 class="fc-titre">Finaliser un contrat</h1>
-            {configureManquante ? (
-              <p class="fc-alerte">
-                L’accès n’est pas configuré : la variable d’environnement
-                <code>CONTRAT_MOT_DE_PASSE</code> est absente ou trop courte.
-              </p>
-            ) : (
-              <>
-                <p class="fc-texte">Cette page est réservée à {config.nom}.</p>
-                <form id="fc-connexion-form" autocomplete="on">
-                  <label class="cform-label" for="fc-mdp">Mot de passe</label>
-                  <input type="password" id="fc-mdp" class="cform-input" autocomplete="current-password" required />
-                  <p class="fc-erreur" data-erreur-connexion hidden />
-                  <button type="submit" class="btn btn-primary fc-bouton">Entrer</button>
-                </form>
-              </>
-            )}
-          </div>
+          <ConnexionCourtiere
+            titre="Finaliser un contrat"
+            configureManquante={configureManquante}
+            nom={config.nom}
+          />
         ) : !dossier ? (
           <div class="contact-form">
             <h1 class="fc-titre">Ce dossier n’est plus à finaliser</h1>
@@ -166,11 +157,6 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
   .fc-shell {
     max-width: 760px;
-    margin: 0 auto;
-  }
-
-  .fc-connexion {
-    max-width: 420px;
     margin: 0 auto;
   }
 
@@ -313,35 +299,6 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 </style>
 
 <script>
-  const connexion = document.getElementById('fc-connexion-form') as HTMLFormElement | null;
-  connexion?.addEventListener('submit', async (evenement) => {
-    evenement.preventDefault();
-    const erreur = document.querySelector<HTMLElement>('[data-erreur-connexion]');
-    const champ = document.getElementById('fc-mdp') as HTMLInputElement | null;
-    if (erreur) erreur.hidden = true;
-    try {
-      const reponse = await fetch('/api/contrat-acces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motDePasse: champ?.value ?? '' }),
-      });
-      if (reponse.ok) {
-        window.location.reload();
-        return;
-      }
-      const data = (await reponse.json().catch(() => ({}))) as { error?: string };
-      if (erreur) {
-        erreur.textContent = data.error ?? 'Connexion impossible.';
-        erreur.hidden = false;
-      }
-    } catch {
-      if (erreur) {
-        erreur.textContent = 'Connexion impossible. Vérifiez votre réseau.';
-        erreur.hidden = false;
-      }
-    }
-  });
-
   const app = document.getElementById('fc-app');
   const bouton = app?.querySelector<HTMLButtonElement>('[data-finaliser]');
 

@@ -1,0 +1,667 @@
+---
+// Tableau de bord — /tableau-de-bord. Réservé à la courtière.
+//
+// Rendu à l'exécution : la page vérifie le cookie d'accès à chaque requête et, faute de quoi,
+// ne rend que l'écran de connexion. Même porte que /contrat, /reseau et /dossiers — c'est la
+// même personne, et une session ouvre les quatre.
+//
+// Ce que cet écran sert : trois carnets vivent côte à côte, chacun sachant déjà dire ce qui
+// presse chez lui, et il fallait ouvrir trois pages pour le lire. Un contrat pouvait attendre
+// sa signature trois jours parce que la matinée s'était passée dans /dossiers. Ici, une seule
+// liste, triée par urgence et non par provenance.
+//
+// Ce qu'il ne fait pas : écrire. Aucun bouton n'y change une étape, ne coche un document ni
+// n'envoie un courriel. Il indique et il ouvre ; l'écran spécialisé garde la main sur son
+// carnet. Les chiffres restent sur /dossiers, qui en a le contexte.
+export const prerender = false;
+
+import MainLayout from '../layouts/MainLayout.astro';
+import BarreCourtiere from '../components/BarreCourtiere.astro';
+import ConnexionCourtiere from '../components/ConnexionCourtiere.astro';
+import { loadSiteConfig } from '../config';
+import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
+
+const config = loadSiteConfig();
+const autorise = await requeteAutorisee(Astro.request);
+const configureManquante = !accesConfigure() && !accesLibreEnDev();
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+// Le fuseau est explicite : la fonction SSR tourne en UTC, et sans lui la page annoncerait
+// déjà demain à partir de 20 h.
+const dateDuJour = new Intl.DateTimeFormat('fr-CA', {
+  timeZone: 'America/Toronto',
+  dateStyle: 'full',
+}).format(new Date());
+
+const prenom = config.nom.split(' ')[0] ?? config.nom;
+
+/** Un outil du tableau : ce qu'il fait, et — pour ceux qu'on envoie — son adresse complète. */
+interface Outil {
+  readonly href: string;
+  readonly titre: string;
+  /** Quand s'en servir, pas ce que c'est. */
+  readonly quand: string;
+  /** Vrai pour les pages qu'elle envoie plutôt qu'elle n'ouvre. */
+  readonly aCopier?: boolean;
+}
+
+interface Famille {
+  readonly titre: string;
+  readonly outils: readonly Outil[];
+}
+
+const FAMILLES: readonly Famille[] = [
+  {
+    titre: 'Mes carnets',
+    outils: [
+      {
+        href: '/dossiers',
+        titre: 'Dossiers clients',
+        quand: 'Où en est chaque client, ce qu’il reste à recevoir, et les chiffres du carnet.',
+      },
+      {
+        href: '/reseau',
+        titre: 'Réseau de partenaires',
+        quand: 'Les professionnels à approcher, et ceux qu’il faut relancer.',
+      },
+      {
+        href: '/contrat',
+        titre: 'Contrat de courtage',
+        quand: 'Préparer un contrat, l’envoyer à signer, suivre les dossiers en cours.',
+      },
+    ],
+  },
+  {
+    titre: 'Outils de calcul',
+    outils: [
+      {
+        href: '/outils',
+        titre: 'Simulateur, calculateur, comparateur',
+        quand: 'Capacité d’emprunt, versement, et comparaison de scénarios côte à côte.',
+      },
+      {
+        href: '/outils/calculateur-penalite-hypothecaire',
+        titre: 'Calculateur de pénalité',
+        quand: 'Avant de proposer un transfert : ce que la sortie anticipée coûtera vraiment.',
+      },
+      {
+        href: '/amortissement',
+        titre: 'Tableau d’amortissement',
+        quand: 'Montrer où va chaque versement, année par année.',
+      },
+    ],
+  },
+  {
+    titre: 'Liens à envoyer',
+    outils: [
+      {
+        href: '/profil-emprunteur',
+        titre: 'Profil des emprunteurs',
+        quand: 'Le formulaire AMF, rempli et signé à distance par tous les emprunteurs.',
+        aCopier: true,
+      },
+      {
+        href: '/demande',
+        titre: 'Demande de financement',
+        quand: 'La demande complète. Elle ouvre un dossier dans votre carnet.',
+        aCopier: true,
+      },
+      {
+        href: '/rappel',
+        titre: 'Rappel de renouvellement',
+        quand: 'Pour un client dont l’échéance approche mais qui n’est pas encore prêt.',
+        aCopier: true,
+      },
+      {
+        href: '/partenaires',
+        titre: 'Référence de partenaire',
+        quand: 'Pour un professionnel qui veut vous référer un client.',
+        aCopier: true,
+      },
+      {
+        href: '/rendez-vous',
+        titre: 'Prendre rendez-vous',
+        quand: 'La prise de rendez-vous en ligne, à glisser dans un courriel.',
+        aCopier: true,
+      },
+    ],
+  },
+];
+
+const racine = config.site_url.replace(/\/+$/, '');
+---
+
+<MainLayout
+  title="Tableau de bord"
+  description="Écran interne : ce qui demande un geste aujourd’hui, et l’accès aux outils."
+  noindex={true}
+  sansBarreCta={true}
+>
+  <main id="main-content" class="tb-page">
+    <section class="tb-shell">
+      {autorise && <BarreCourtiere actif="tableau" />}
+      {
+        !autorise ? (
+          <ConnexionCourtiere
+            titre="Tableau de bord"
+            configureManquante={configureManquante}
+            nom={config.nom}
+          />
+        ) : (
+          <div id="tb-app">
+            <header class="tb-entete">
+              <h1 class="tb-titre">Bonjour {prenom}</h1>
+              <p class="tb-date">{dateDuJour}</p>
+            </header>
+
+            {/* ---------------- À faire aujourd'hui ---------------- */}
+            <section class="tb-jour" aria-labelledby="tb-jour-titre">
+              <div class="tb-jour-tete">
+                <h2 class="tb-h2" id="tb-jour-titre">
+                  À faire aujourd’hui
+                </h2>
+                <button type="button" class="tb-lien" data-actualiser>
+                  Actualiser
+                </button>
+              </div>
+
+              <p class="tb-etat" data-etat aria-live="polite">
+                Chargement…
+              </p>
+              <div data-taches />
+
+              <p class="tb-quota" data-quota hidden />
+              <p class="tb-panne" data-panne hidden />
+            </section>
+
+            {/* ---------------- Mes outils ---------------- */}
+            <section class="tb-outils">
+              <h2 class="tb-h2">Mes outils</h2>
+
+              {FAMILLES.map((famille) => (
+                <div class="tb-famille">
+                  <h3 class="tb-h3">{famille.titre}</h3>
+                  <ul class="tb-tuiles">
+                    {famille.outils.map((outil) => (
+                      <li class="tb-tuile">
+                        <a class="tb-tuile-lien" href={outil.href}>
+                          <span class="tb-tuile-titre">{outil.titre}</span>
+                          <span class="tb-tuile-quand">{outil.quand}</span>
+                        </a>
+                        {outil.aCopier && (
+                          <button
+                            type="button"
+                            class="tb-copier"
+                            data-copier={`${racine}${outil.href}`}
+                          >
+                            Copier le lien
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </section>
+          </div>
+        )
+      }
+    </section>
+  </main>
+</MainLayout>
+
+<style>
+  .tb-page {
+    background: var(--sand);
+    min-height: 100vh;
+    padding: 2.5rem 1.25rem 5rem;
+  }
+
+  /* Neutralise le rembourrage des sections vitrine hérité de global.css. */
+  .tb-page section {
+    padding: 0;
+  }
+
+  .tb-shell {
+    max-width: 62rem;
+    margin: 0 auto;
+  }
+
+  .tb-entete {
+    margin-bottom: 1.6rem;
+  }
+
+  .tb-titre {
+    margin: 0;
+    font-size: 1.7rem;
+    line-height: 1.2;
+  }
+
+  .tb-date {
+    margin: 0.25rem 0 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+    /* Le format `dateStyle: full` rend « samedi 14 mai 2026 » — capitale d'usage. */
+    text-transform: capitalize;
+  }
+
+  .tb-h2 {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+
+  .tb-h3 {
+    margin: 0 0 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---------------- À faire aujourd'hui ---------------- */
+
+  .tb-jour {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.3rem 1.4rem;
+    margin-bottom: 2.4rem;
+  }
+
+  .tb-jour-tete {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .tb-lien {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--clay-dk);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .tb-etat,
+  .tb-quota,
+  .tb-panne {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .tb-quota {
+    margin-top: 0.9rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .tb-panne {
+    margin-top: 0.6rem;
+    color: #a5342a;
+  }
+
+  /* ---------------- Mes outils ---------------- */
+
+  .tb-famille {
+    margin-bottom: 1.8rem;
+  }
+
+  .tb-tuiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tb-tuile {
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.95rem 1.1rem;
+    transition:
+      border-color 0.15s,
+      transform 0.15s;
+  }
+
+  .tb-tuile:hover,
+  .tb-tuile:focus-within {
+    border-color: var(--clay);
+    transform: translateY(-1px);
+  }
+
+  .tb-tuile-lien {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .tb-tuile-titre {
+    display: block;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .tb-tuile-quand {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .tb-copier {
+    align-self: flex-start;
+    margin-top: 0.7rem;
+    min-height: 32px;
+    padding: 0.25rem 0.7rem;
+    background: var(--sand);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    font-family: inherit;
+    font-size: 0.76rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .tb-copier:hover,
+  .tb-copier:focus-visible {
+    border-color: var(--clay);
+    color: var(--ink);
+  }
+
+  @media (max-width: 480px) {
+    .tb-jour-tete {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+  }
+</style>
+
+{/*
+  Habillage des cartes de tâches, qui sont bâties en JavaScript. Astro scope son `<style>` en
+  estampant un attribut de portée sur les éléments qu'il rend lui-même ; ceux que
+  `document.createElement` fabrique ne le portent pas, et une règle scopée ne les atteint
+  jamais — la section s'afficherait sans style. D'où ce bloc global, tenu à l'intérieur de
+  `#tb-app` pour qu'il ne déborde pas de la page.
+
+  ⚠️ Les noms restent propres à cet écran (`tb-`) : une règle globale posée sur un nom partagé
+  repeindrait les éléments d'une autre page.
+*/}
+<style is:global>
+  #tb-app .tb-tache {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    padding: 0.7rem 0.85rem;
+    margin-bottom: 0.45rem;
+    background: var(--sand);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: inherit;
+    transition:
+      border-color 0.15s,
+      transform 0.15s;
+  }
+
+  #tb-app .tb-tache:hover,
+  #tb-app .tb-tache:focus-visible {
+    border-color: var(--clay);
+    transform: translateY(-1px);
+  }
+
+  #tb-app .tb-pastille {
+    flex: 0 0 auto;
+    padding: 0.1rem 0.5rem;
+    border-radius: 50px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  #tb-app .tb-tache[data-carnet='contrat'] .tb-pastille {
+    border-color: var(--clay);
+    color: var(--clay-dk);
+  }
+
+  #tb-app .tb-tache-corps {
+    min-width: 0;
+  }
+
+  #tb-app .tb-tache-nom {
+    display: block;
+    font-weight: 600;
+    font-size: 0.92rem;
+  }
+
+  #tb-app .tb-tache-motif {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+
+  #tb-app .tb-vide {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+</style>
+
+<script>
+  import { DELAI_SANS_MOUVEMENT_JOURS, type CleEtape, type CleEtatDocument } from '../utils/dossiersClients';
+  import { DELAI_SANS_REPONSE_JOURS } from '../utils/reseauCourtiers';
+  import {
+    tachesDuJour,
+    type Carnet,
+    type ContactEcran,
+    type ResumeEcran,
+    type Tache,
+  } from '../utils/tableauDeBord';
+
+  const app = document.getElementById('tb-app');
+
+  if (app) {
+    /* ---------------- Ce que les trois GET rendent ---------------- */
+
+    interface FicheDossier {
+      readonly id: string;
+      readonly nom: string;
+      readonly etape: CleEtape;
+      readonly majLe: string;
+      readonly relanceLe: string | null;
+      readonly documents: ReadonlyArray<{ readonly etat: CleEtatDocument }>;
+    }
+
+    const OPTIONS = {
+      delaiSansMouvementJours: DELAI_SANS_MOUVEMENT_JOURS,
+      delaiSansReponseJours: DELAI_SANS_REPONSE_JOURS,
+    };
+
+    const LIBELLE_CARNET: Record<Carnet, string> = {
+      dossier: 'Dossier',
+      reseau: 'Réseau',
+      contrat: 'Contrat',
+    };
+
+    const etat = app.querySelector<HTMLElement>('[data-etat]');
+    const zone = app.querySelector<HTMLElement>('[data-taches]');
+    const quota = app.querySelector<HTMLElement>('[data-quota]');
+    const panne = app.querySelector<HTMLElement>('[data-panne]');
+    const actualiser = app.querySelector<HTMLButtonElement>('[data-actualiser]');
+
+    function texte(balise: keyof HTMLElementTagNameMap, classe: string, contenu: string): HTMLElement {
+      const element = document.createElement(balise);
+      element.className = classe;
+      element.textContent = contenu;
+      return element;
+    }
+
+    /**
+     * Un carnet muet n'est pas une erreur fatale : les deux autres s'affichent quand même.
+     * Une session expirée, en revanche, ne se rattrape pas ici — on recharge, et c'est le
+     * rendu serveur qui rend l'écran de connexion.
+     */
+    async function charger<T>(url: string, extraire: (donnees: any) => T): Promise<T | null> {
+      try {
+        const reponse = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (reponse.status === 401) {
+          window.location.reload();
+          return null;
+        }
+        if (!reponse.ok) return null;
+        return extraire(await reponse.json());
+      } catch {
+        return null;
+      }
+    }
+
+    function rendreTaches(taches: Tache[]): void {
+      if (!zone) return;
+      if (taches.length === 0) {
+        zone.replaceChildren();
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      for (const tache of taches) {
+        const lien = document.createElement('a');
+        lien.className = 'tb-tache';
+        lien.href = tache.lien;
+        lien.dataset.carnet = tache.carnet;
+
+        const corps = document.createElement('span');
+        corps.className = 'tb-tache-corps';
+        corps.append(
+          texte('span', 'tb-tache-nom', tache.nom),
+          texte('span', 'tb-tache-motif', tache.phrase),
+        );
+
+        lien.append(texte('span', 'tb-pastille', LIBELLE_CARNET[tache.carnet]), corps);
+        fragment.append(lien);
+      }
+      zone.replaceChildren(fragment);
+    }
+
+    async function rendre(): Promise<void> {
+      if (etat) etat.textContent = 'Chargement…';
+      if (panne) panne.hidden = true;
+      if (quota) quota.hidden = true;
+
+      /*
+       * Les trois appels partent **l'un après l'autre**, jamais en `Promise.all`. Le SSR
+       * d'Astro sur Netlify est une seule fonction pour toutes les routes : trois requêtes
+       * concurrentes peuvent atterrir sur la même instance chaude et courir la mémoïsation
+       * paresseuse du store Blobs. C'est la panne déjà rencontrée par `ficheUnifiee` — un
+       * carnet bascule silencieusement sur son repli mémoire, vide, pour toute la durée de
+       * vie de la fonction.
+       */
+      const muets: string[] = [];
+
+      const dossiers = await charger<FicheDossier[]>(
+        '/api/crm-dossiers',
+        (d) => (d?.dossiers ?? []) as FicheDossier[],
+      );
+      if (!dossiers) muets.push('les dossiers');
+
+      const reseau = await charger<{
+        contacts: ContactEcran[];
+        envoisDuJour: number;
+        plafond: number;
+      }>('/api/reseau-contacts', (d) => ({
+        contacts: (d?.contacts ?? []) as ContactEcran[],
+        envoisDuJour: Number(d?.envoisDuJour ?? 0),
+        plafond: Number(d?.plafond ?? 0),
+      }));
+      if (!reseau) muets.push('le réseau');
+
+      const contrats = await charger<ResumeEcran[]>(
+        '/api/contrat-dossiers',
+        (d) => (d?.dossiers ?? []) as ResumeEcran[],
+      );
+      if (!contrats) muets.push('les contrats');
+
+      const taches = tachesDuJour(
+        {
+          dossiers: dossiers ?? [],
+          contacts: reseau?.contacts ?? [],
+          contrats: contrats ?? [],
+        },
+        OPTIONS,
+      );
+
+      rendreTaches(taches);
+
+      if (etat) {
+        if (taches.length > 0) {
+          etat.hidden = true;
+        } else {
+          etat.hidden = false;
+          // Un carnet jamais approché explique une liste vide autrement qu'un jour calme.
+          const jamais = (reseau?.contacts ?? []).filter((c) => c.etat === 'a_contacter').length;
+          etat.textContent =
+            jamais > 0
+              ? `Rien ne presse aujourd’hui. ${jamais} contact${jamais > 1 ? 's' : ''} du réseau n’${jamais > 1 ? 'ont' : 'a'} jamais été approché${jamais > 1 ? 's' : ''}.`
+              : 'Rien ne presse aujourd’hui.';
+        }
+      }
+
+      if (quota && reseau && reseau.plafond > 0) {
+        const restants = Math.max(reseau.plafond - reseau.envoisDuJour, 0);
+        quota.textContent = `Réseau : ${reseau.envoisDuJour} envoi${reseau.envoisDuJour > 1 ? 's' : ''} aujourd’hui · ${restants} restant${restants > 1 ? 's' : ''}.`;
+        quota.hidden = false;
+      }
+
+      if (panne && muets.length > 0) {
+        panne.textContent = `Impossible de joindre ${muets.join(' et ')} — cette liste est donc incomplète. Réessayez dans un instant.`;
+        panne.hidden = false;
+      }
+    }
+
+    actualiser?.addEventListener('click', () => {
+      void rendre();
+    });
+
+    void rendre();
+
+    /* ---------------- Copier un lien ---------------- */
+
+    for (const bouton of app.querySelectorAll<HTMLButtonElement>('[data-copier]')) {
+      bouton.addEventListener('click', async () => {
+        const adresse = bouton.dataset.copier ?? '';
+        const libelle = bouton.textContent;
+        try {
+          await navigator.clipboard.writeText(adresse);
+          bouton.textContent = 'Copié';
+        } catch {
+          // `navigator.clipboard` demande un contexte sécurisé et la permission : quand elle
+          // manque, on rend l'adresse visible plutôt que d'échouer en silence.
+          window.prompt('Copiez ce lien :', adresse);
+          return;
+        }
+        window.setTimeout(() => {
+          bouton.textContent = libelle;
+        }, 1600);
+      });
+    }
+  }
+</script>

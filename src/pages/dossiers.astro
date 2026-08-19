@@ -20,6 +20,8 @@
 export const prerender = false;
 
 import MainLayout from '../layouts/MainLayout.astro';
+import BarreCourtiere from '../components/BarreCourtiere.astro';
+import ConnexionCourtiere from '../components/ConnexionCourtiere.astro';
 import { loadSiteConfig } from '../config';
 import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
 import { portailConfigure } from '../services/portailAcces';
@@ -56,35 +58,16 @@ const destinataires = Object.entries(DESTINATAIRES);
     {
       !autorise ? (
         <div class="dc-shell-connexion">
-          <div class="contact-form dc-connexion">
-            <h1 class="dc-titre">Dossiers clients</h1>
-            {configureManquante ? (
-              <p class="dc-alerte">
-                L’accès n’est pas configuré : la variable d’environnement
-                <code>CONTRAT_MOT_DE_PASSE</code> est absente ou trop courte (12 caractères
-                minimum). Ajoutez-la dans Netlify, puis redéployez.
-              </p>
-            ) : (
-              <>
-                <p class="dc-texte">Cette page est réservée à {config.nom}.</p>
-                <form id="dc-connexion-form" autocomplete="on">
-                  <label class="cform-label" for="dc-mdp">Mot de passe</label>
-                  <input
-                    type="password"
-                    id="dc-mdp"
-                    class="cform-input"
-                    autocomplete="current-password"
-                    required
-                  />
-                  <p class="dc-erreur" data-erreur-connexion hidden />
-                  <button type="submit" class="btn btn-primary dc-bouton">Entrer</button>
-                </form>
-              </>
-            )}
-          </div>
+          <ConnexionCourtiere
+            titre="Dossiers clients"
+            configureManquante={configureManquante}
+            nom={config.nom}
+          />
         </div>
       ) : (
         <div id="dc-app" data-delai={String(DELAI_SANS_MOUVEMENT_JOURS)}>
+          <BarreCourtiere actif="dossiers" />
+
           {/* ---------------- Barre d'en-tête ---------------- */}
           <header class="dc-topbar">
             <h1 class="dc-titre">Dossiers</h1>
@@ -693,11 +676,6 @@ const destinataires = Object.entries(DESTINATAIRES);
   /*  Divers                                                             */
   /* ------------------------------------------------------------------ */
 
-  .dc-connexion {
-    max-width: 27rem;
-    margin: 3rem auto;
-  }
-
   .dc-texte {
     color: var(--muted);
     font-size: 0.95rem;
@@ -1143,45 +1121,13 @@ const destinataires = Object.entries(DESTINATAIRES);
     type CleEtatDocument,
     type CleOrigine,
   } from '../utils/dossiersClients';
-  import { urgences, vueDe, type Urgence, type Vue } from '../utils/dossiersEcran';
+  import { phraseUrgence, urgences, vueDe, type Vue } from '../utils/dossiersEcran';
   import {
     SEUIL_LISIBILITE,
     donneesSuffisantes,
     entonnoir,
     rendementParOrigine,
   } from '../utils/statistiquesDossiers';
-
-  /* ---------------- Écran de connexion ---------------- */
-
-  const connexion = document.getElementById('dc-connexion-form') as HTMLFormElement | null;
-  connexion?.addEventListener('submit', async (evenement) => {
-    evenement.preventDefault();
-    const erreur = document.querySelector<HTMLElement>('[data-erreur-connexion]');
-    const champ = document.getElementById('dc-mdp') as HTMLInputElement | null;
-    if (erreur) erreur.hidden = true;
-
-    try {
-      const reponse = await fetch('/api/contrat-acces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motDePasse: champ?.value ?? '' }),
-      });
-      if (reponse.ok) {
-        window.location.reload();
-        return;
-      }
-      const data = (await reponse.json().catch(() => ({}))) as { error?: string };
-      if (erreur) {
-        erreur.textContent = data.error ?? 'Connexion impossible.';
-        erreur.hidden = false;
-      }
-    } catch {
-      if (erreur) {
-        erreur.textContent = 'Connexion impossible. Vérifiez votre réseau.';
-        erreur.hidden = false;
-      }
-    }
-  });
 
   /* ---------------- L'application ---------------- */
 
@@ -1415,19 +1361,6 @@ const destinataires = Object.entries(DESTINATAIRES);
     }
 
     /* ---------------- À faire aujourd'hui ---------------- */
-
-    function phraseUrgence(urgence: Urgence): string {
-      switch (urgence.type) {
-        case 'relance':
-          return urgence.joursDeRetard === 0
-            ? 'Relance prévue aujourd’hui'
-            : `Relance prévue il y a ${urgence.joursDeRetard} jour${urgence.joursDeRetard > 1 ? 's' : ''}`;
-        case 'documents_complets':
-          return 'Tous les documents sont reçus — le dossier attend votre prochaine étape';
-        case 'sans_mouvement':
-          return `Sans mouvement depuis ${urgence.jours} jours`;
-      }
-    }
 
     function rendreUrgences(): void {
       if (!zoneUrgences) return;
@@ -2180,7 +2113,18 @@ const destinataires = Object.entries(DESTINATAIRES);
       document.body.style.overflow = panneau !== 'jour' && petitEcran.matches ? 'hidden' : '';
     });
 
+    /**
+     * Un lien du tableau de bord peut nommer une fiche par `#f=<id>` : on l'ouvre une fois la
+     * liste chargée, sinon `ouvrirFiche` n'aurait rien à montrer.
+     */
+    function ouvrirDepuisHash(): void {
+      const cible = new RegExp('^#f=(.+)$').exec(location.hash);
+      if (!cible) return;
+      const id = decodeURIComponent(cible[1] ?? '');
+      if (dossiers.some((d) => d.id === id)) ouvrirFiche(id);
+    }
+
     montrer('jour');
-    void charger();
+    void charger().then(ouvrirDepuisHash);
   }
 </script>
