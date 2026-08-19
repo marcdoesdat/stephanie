@@ -17,6 +17,8 @@ import {
   jsonResponse,
   loadResendEnv,
 } from '../../services/emailService';
+import { creerDossier } from '../../services/dossierClientService';
+import { depuisContact } from '../../utils/entreesProspect';
 
 export const prerender = false;
 
@@ -86,6 +88,19 @@ export const POST: APIRoute = async ({ request }) => {
   const paMise = asTrimmedString(payload.pa_mise);
   const message = asTrimmedString(payload.message);
   const lcapConsent = asTrimmedString(payload.lcap_consent) === 'oui';
+
+  // Ouvrir la fiche au carnet.
+  //
+  // **Avant** l'envoi, et jamais à son prix : le courriel reste la garantie, la fiche est un
+  // confort. Une panne de Netlify Blobs ne doit pas coûter un prospect, d'où ce try/catch qui
+  // journalise et poursuit — même patron que /api/demande-submit.
+  try {
+    const entree = depuisContact(payload);
+    if (entree.ok) await creerDossier(entree.valeur, { origine: 'contact' });
+    else console.warn('[contact-submit] Fiche non ouverte :', entree.erreur);
+  } catch (err) {
+    console.error('[contact-submit] Ouverture de la fiche impossible :', err);
+  }
 
   const resendEnv = loadResendEnv();
   const isDev = import.meta.env.DEV;
