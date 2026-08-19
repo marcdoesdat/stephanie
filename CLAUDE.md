@@ -428,6 +428,13 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
   avertissement qu'on ne peut pas suivre d'effet n'apprend qu'à ignorer les avertissements ;
   et le jour où un sous-domaine sera vérifié, renseigner la variable suffit (le plafond peut
   alors remonter).
+- **Le courriel d'approche n'emprunte pas l'habillage du site.** `wrapEmailHtml` et
+  `renderSignatureBlock` (fond sable, carte à bordure, liens couleur argile) conviennent à un
+  accusé de réception — qui *est* un envoi automatique et gagne à en avoir l'air. Une approche
+  est l'inverse : habillée en infolettre, elle est lue comme une infolettre, donc supprimée et
+  parfois marquée comme pourriel. `reseauCourriels.ts` a donc son enveloppe nue et sa signature
+  en texte simple, et un test interdit le retour du fond sable. Le contenu obligatoire (AMF,
+  coordonnées, pied LCAP) est identique — seule la décoration tombe.
 - **Les gabarits sont un point de départ, pas le texte final.** Le rendu vient du serveur
   (`GET /api/reseau-envoi`) pour que le catalogue n'existe qu'à un seul endroit, mais c'est le
   texte relu et retouché qui part — et c'est **lui** qui est journalisé, pas le modèle.

@@ -62,6 +62,16 @@ describe('construireCourrielApproche', () => {
     expect(html).toContain('courtière hypothécaire');
   });
 
+  // Le gabarit visuel du site (fond sable, carte à bordure) convient à un accusé de
+  // réception, qui est un envoi automatique et gagne à en avoir l'air. Une approche est
+  // l'inverse : habillée en infolettre, elle est lue comme une infolettre. Ce test existe
+  // pour qu'un futur « harmonisons les courriels » ne le défasse pas sans le voir.
+  it('n’emprunte pas l’habillage d’infolettre du site', () => {
+    const { html } = construireCourrielApproche(MESSAGE, LIEN);
+    expect(html).not.toContain('#f7f2eb'); // le fond sable de wrapEmailHtml
+    expect(html).not.toContain('border-radius');
+  });
+
   it('neutralise le HTML du texte saisi', () => {
     const { html } = construireCourrielApproche(
       { ...MESSAGE, corps: 'Bonjour <script>alert(1)</script> et <b>gras</b>.' },
