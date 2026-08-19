@@ -20,13 +20,7 @@
  */
 
 import { loadSiteConfig } from '../config';
-import {
-  escapeHtml,
-  sendEmail,
-  wrapEmailHtml,
-  renderSignatureBlock,
-  type ResendEnv,
-} from './emailService';
+import { escapeHtml, sendEmail, type ResendEnv } from './emailService';
 import type { MessageSortant } from '../utils/reseauCourtiers';
 import type { Contact } from './reseauContactService';
 
@@ -76,7 +70,7 @@ function paragraphes(corps: string): string {
     .filter(Boolean)
     .map(
       (bloc) =>
-        `<p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#1f1e1c;">${escapeHtml(bloc).replace(/\n/g, '<br>')}</p>`,
+        `<p style="margin:0 0 14px;font-size:14px;line-height:1.55;color:#222222;">${escapeHtml(bloc).replace(/\n/g, '<br>')}</p>`,
     )
     .join('\n');
 }
@@ -88,18 +82,38 @@ function paragraphes(corps: string): string {
  */
 export function piedConformite(lienDeRetrait: string): string {
   const config = loadSiteConfig();
-  return `<div style="border-top:1px solid #e3d9cc;margin-top:24px;padding-top:16px;font-size:12px;line-height:1.6;color:#6b6459;">
-      <p style="margin:0 0 8px;">
+  return `<div style="border-top:1px solid #dddddd;margin-top:22px;padding-top:12px;font-size:11px;line-height:1.5;color:#777777;">
+      <p style="margin:0 0 6px;">
         Vous recevez ce message à votre adresse professionnelle parce que nos clientèles se
         croisent. ${escapeHtml(config.nom)}, ${escapeHtml(config.titre)} — ${escapeHtml(config.organisation)},
         ${escapeHtml(config.adresse)}. Téléphone&nbsp;: ${escapeHtml(config.telephone)}.
       </p>
       <p style="margin:0;">
         Pour ne plus jamais recevoir de courriel de ma part&nbsp;:
-        <a href="${escapeHtml(lienDeRetrait)}" style="color:#a85f38;">me retirer de la liste</a>.
+        <a href="${escapeHtml(lienDeRetrait)}" style="color:#777777;">me retirer de la liste</a>.
         Le retrait est immédiat.
       </p>
     </div>`;
+}
+
+/**
+ * La signature, écrite comme on la taperait dans Outlook.
+ *
+ * `renderSignatureBlock()` du service commun est délibérément écartée : elle habille la
+ * signature aux couleurs du site, ce qui a du sens sous un accusé de réception, et aucun
+ * sous un courriel censé venir d'une personne. Le contenu, lui, est le même — c'est son
+ * identité professionnelle et son numéro de certificat, pas de la décoration.
+ */
+function signaturePersonnelle(): string {
+  const config = loadSiteConfig();
+  const hote = config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  return `<p style="margin:22px 0 0;font-size:14px;line-height:1.5;color:#222222;">
+      ${escapeHtml(config.nom)}<br>
+      ${escapeHtml(config.titre)} — ${escapeHtml(config.organisation)}<br>
+      N&deg; de certificat AMF&nbsp;: ${escapeHtml(config.amf)}<br>
+      ${escapeHtml(config.telephone)}<br>
+      <a href="${escapeHtml(config.site_url)}" style="color:#1155cc;">${escapeHtml(hote)}</a>
+    </p>`;
 }
 
 /** La version texte du message — même contenu, mêmes mentions obligatoires. */
@@ -120,16 +134,34 @@ function versionTexte(message: MessageSortant, lienDeRetrait: string): string {
   ].join('\n');
 }
 
+/**
+ * L'enveloppe HTML — délibérément nue.
+ *
+ * Les autres courriels du site passent par `wrapEmailHtml` : fond sable, colonne centrée,
+ * carte blanche à bordure. C'est le bon habillage pour un accusé de réception, qui **est**
+ * un envoi automatique et gagne à en avoir l'air.
+ *
+ * Ici, c'est l'inverse. Une approche est un message d'une personne à une autre ; habillée en
+ * infolettre, elle est lue comme une infolettre — c'est-à-dire supprimée, et parfois marquée
+ * comme pourriel. Or le taux de plainte est précisément la variable qui compte, puisque ces
+ * courriels partent (faute de sous-domaine dédié) de l'adresse qui porte aussi les liens de
+ * signature. Le gabarit visuel du site est donc un luxe qu'on ne peut pas se payer.
+ */
+function enveloppePersonnelle(contenu: string): string {
+  return `<!doctype html><html lang="fr-CA"><body style="margin:0;padding:0;background:#ffffff;">
+    <div style="max-width:34em;padding:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#222222;">
+      ${contenu}
+    </div></body></html>`;
+}
+
 export function construireCourrielApproche(
   message: MessageSortant,
   lienDeRetrait: string,
 ): { html: string; texte: string } {
-  const html = wrapEmailHtml(
-    `<div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:12px;padding:28px;">
-      ${paragraphes(message.corps)}
-      ${renderSignatureBlock()}
-      ${piedConformite(lienDeRetrait)}
-    </div>`,
+  const html = enveloppePersonnelle(
+    `${paragraphes(message.corps)}
+      ${signaturePersonnelle()}
+      ${piedConformite(lienDeRetrait)}`,
   );
   return { html, texte: versionTexte(message, lienDeRetrait) };
 }

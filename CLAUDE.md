@@ -90,6 +90,7 @@ src/
 | `/api/reseau-contacts` | API | Le carnet du réseau, en lecture (résumés + envois du jour) |
 | `/api/reseau-contact` | API | Écriture dans le carnet : créer, corriger, supprimer, état, note, relance, import |
 | `/api/reseau-envoi` | API | Aperçu d'un gabarit (GET) et envoi de l'approche (POST), puis journalisation |
+| `/api/reseau-gabarit` | API | Lecture, réécriture et retour au modèle d'origine d'un gabarit de courriel |
 | `/api/reseau-retrait` | API | Désabonnement d'un contact par son lien — **la seule route du réseau qui soit publique** |
 | `/api/crm-dossiers` | API | Les dossiers clients, en lecture (fiches complètes pour l'écran de suivi) |
 | `/api/crm-dossier` | API | Écriture d'un dossier : créer, corriger, supprimer, étape, note, relance, documents |
@@ -400,6 +401,7 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
 | `src/utils/reseauCourtiers.ts` | Catalogues (professions, états, consentement), gabarits de courriel, rendu, validation |
 | `src/services/reseauContactService.ts` | Le carnet : Netlify Blobs, historique, retrait |
 | `src/services/reseauCourriels.ts` | Le courriel d'approche : gabarit visuel, pied de conformité LCAP, envoi Resend |
+| `src/services/reseauGabaritsService.ts` | Les gabarits réécrits par la courtière, par couple (gabarit, profession) |
 | `src/pages/reseau.astro` | L'écran : urgences du jour, carnet, fiche, composition |
 
 **Règles :**
@@ -435,9 +437,30 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
   avertissement qu'on ne peut pas suivre d'effet n'apprend qu'à ignorer les avertissements ;
   et le jour où un sous-domaine sera vérifié, renseigner la variable suffit (le plafond peut
   alors remonter).
+- **Le courriel d'approche n'emprunte pas l'habillage du site.** `wrapEmailHtml` et
+  `renderSignatureBlock` (fond sable, carte à bordure, liens couleur argile) conviennent à un
+  accusé de réception — qui *est* un envoi automatique et gagne à en avoir l'air. Une approche
+  est l'inverse : habillée en infolettre, elle est lue comme une infolettre, donc supprimée et
+  parfois marquée comme pourriel. `reseauCourriels.ts` a donc son enveloppe nue et sa signature
+  en texte simple, et un test interdit le retour du fond sable. Le contenu obligatoire (AMF,
+  coordonnées, pied LCAP) est identique — seule la décoration tombe.
 - **Les gabarits sont un point de départ, pas le texte final.** Le rendu vient du serveur
   (`GET /api/reseau-envoi`) pour que le catalogue n'existe qu'à un seul endroit, mais c'est le
   texte relu et retouché qui part — et c'est **lui** qui est journalisé, pas le modèle.
+- **Les modèles eux-mêmes se réécrivent depuis l'écran**, sans déploiement : un texte
+  d'approche vieillit, et le faire corriger par un `git push` condamne l'outil à ne jamais
+  s'ajuster. Le catalogue de `reseauCourtiers.ts` reste la source des **modèles d'origine** ;
+  `reseauGabaritsService` ne pose que des surcharges par-dessus, ce qui garde « revenir au
+  modèle » possible. La portée d'une réécriture est le couple **(gabarit, profession)** — ce
+  qu'elle a sous les yeux en écrivant ; un texte retouché pour un notaire n'a pas à partir
+  ensuite à un comptable.
+- **Un modèle est validé avant d'être enregistré** (`validerModele`), et pas seulement contre
+  les variables inconnues. Une section mal fermée (`{{#agence}}` sans `{{/agence}}`) **ne lève
+  pas** au rendu : elle survit telle quelle et part dans le courriel. D'où la double sonde —
+  variables pleines puis vides — et le refus s'il reste la moindre accolade. `parserMessage`
+  applique le même filet au message final, pour la saisie à la main.
+- **Tout ce qui rend un courriel passe par `gabaritEffectif`**, jamais par `gabaritPour` :
+  rendre depuis le catalogue enverrait un texte que l'écran d'édition ne montre pas.
 - **L'historique ne se réécrit pas** : envois (avec le corps réellement expédié), notes,
   changements d'état, retrait. Le carnet n'expire pas et n'est jamais purgé — c'est un actif,
   pas un dossier de passage, d'où l'absence d'appel à `purgerExpires`.
@@ -610,6 +633,8 @@ npx vitest              # mode watch
 - `src/services/reseauContactService.test.ts` — retrait définitif et idempotent, historique,
   jeton absent des fiches transmises
 - `src/services/reseauCourriels.test.ts` — mentions obligatoires (LCAP) et expéditeur dédié
+- `src/services/reseauGabaritsService.test.ts` — réécriture des gabarits : portée par
+  profession, original récupérable, refus des modèles qui ne se rendent pas
 - `src/utils/dossiersClients.test.ts` — semis de la checklist selon le statut d'emploi, verrou
   de `CHAMPS_CONSERVES`, étape `perdu` hors de la progression
 - `src/services/dossierClientService.test.ts` — frontière de `versVueClient`, lien magique à

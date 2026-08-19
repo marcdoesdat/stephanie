@@ -304,6 +304,74 @@ export function rendreTexte(modele: string, variables: VariablesGabarit): string
   return sansSections.replace(/\{\{([a-z_]+)\}\}/g, (_tout, cle: string) => lire(cle));
 }
 
+/**
+ * Les variables qu'un gabarit peut employer, avec ce qu'elles valent — sert d'aide-mémoire
+ * à l'écran d'édition. Le libellé est là pour qu'on n'ait pas à deviner ce que rend
+ * `{{secteur}}` sur un contact dont le secteur est vide.
+ */
+export const VARIABLES_DISPONIBLES: ReadonlyArray<{ cle: keyof VariablesGabarit; aide: string }> = [
+  { cle: 'prenom', aide: 'Le prénom du contact' },
+  { cle: 'nom', aide: 'Son nom complet' },
+  { cle: 'agence', aide: 'Son agence ou cabinet — vide si inconnue' },
+  { cle: 'secteur', aide: 'Son secteur — à défaut, votre région' },
+  { cle: 'courtiere', aide: 'Votre nom' },
+  { cle: 'organisation', aide: 'Votre cabinet' },
+  { cle: 'telephone', aide: 'Votre téléphone' },
+  { cle: 'courriel', aide: 'Votre courriel' },
+  { cle: 'site', aide: 'L’adresse du site' },
+];
+
+/** Jeu d'essai pour valider un modèle : toutes les variables remplies. */
+const SONDE_PLEINE: VariablesGabarit = {
+  prenom: 'Marie',
+  nom: 'Marie Tremblay',
+  agence: 'Agence',
+  secteur: 'Repentigny',
+  courtiere: 'Stéphanie Weyman',
+  organisation: 'Hypotheca',
+  telephone: '000-000-0000',
+  courriel: 'exemple@exemple.ca',
+  site: 'exemple.ca',
+};
+
+/** Et le même, à vide : c'est le cas qui révèle les sections mal fermées. */
+const SONDE_VIDE: VariablesGabarit = {
+  ...SONDE_PLEINE,
+  agence: '',
+  secteur: '',
+};
+
+/**
+ * Valide un modèle **avant** de l'enregistrer.
+ *
+ * Deux pièges, et un seul se voit à la lecture :
+ *
+ * 1. Une variable inconnue (`{{prenon}}`) fait lever le rendu — donc, sans cette
+ *    validation, chaque aperçu de ce gabarit échouerait ensuite en 500, et le seul moyen
+ *    de s'en sortir serait de repartir du modèle d'origine.
+ * 2. Une section mal fermée (`{{#agence}}` sans `{{/agence}}`) ne lève pas : elle survit
+ *    telle quelle au rendu et **part dans le courriel**. D'où la vérification qu'il ne
+ *    reste aucune accolade, sur les deux jeux d'essai.
+ */
+export function validerModele(texte: string): Resultat<string> {
+  for (const sonde of [SONDE_PLEINE, SONDE_VIDE]) {
+    let rendu: string;
+    try {
+      rendu = rendreTexte(texte, sonde);
+    } catch (err) {
+      return { ok: false, erreur: (err as Error).message };
+    }
+    if (rendu.includes('{{') || rendu.includes('}}')) {
+      return {
+        ok: false,
+        erreur:
+          'Il reste des accolades après le rendu — une section est probablement mal fermée (il faut {{#agence}} … {{/agence}}).',
+      };
+    }
+  }
+  return { ok: true, valeur: texte };
+}
+
 /** Le gabarit à employer pour cette profession — la variante si elle existe, sinon le fond commun. */
 export function gabaritPour(
   cle: CleGabarit,
@@ -463,6 +531,15 @@ export function parserMessage(brut: unknown): Resultat<MessageSortant> {
 
   const corps = normaliserBloc(source.corps, LONGUEURS.corps);
   if (corps.length < 20) return { ok: false, erreur: 'Le message est trop court.' };
+
+  // Dernier filet avant l'envoi : le texte affiché est déjà rendu, donc une accolade qui
+  // survit ici vient d'une saisie à la main. Personne ne veut lire « Bonjour {{prenom}} ».
+  if (objet.includes('{{') || corps.includes('{{')) {
+    return {
+      ok: false,
+      erreur: 'Le texte contient encore une variable entre accolades. Remplacez-la avant d’envoyer.',
+    };
+  }
 
   return { ok: true, valeur: { gabarit: source.gabarit, objet, corps } };
 }

@@ -14,6 +14,7 @@ import {
   peutRecevoir,
   prenomDe,
   rendreTexte,
+  validerModele,
   type CleProfession,
   type VariablesGabarit,
 } from './reseauCourtiers';
@@ -237,5 +238,45 @@ describe('catalogues', () => {
       'relation_existante',
       'expresse',
     ]);
+  });
+});
+
+describe('validerModele', () => {
+  it('accepte les modèles du catalogue, pour chaque profession', () => {
+    for (const cle of CLES_GABARIT) {
+      for (const profession of Object.keys(PROFESSIONS) as CleProfession[]) {
+        const { objet, corps } = gabaritPour(cle, profession);
+        expect(validerModele(objet).ok).toBe(true);
+        expect(validerModele(corps).ok).toBe(true);
+      }
+    }
+  });
+
+  it('refuse une variable inconnue', () => {
+    expect(validerModele('Bonjour {{prenon}}').ok).toBe(false);
+  });
+
+  // Le piège silencieux : une section mal fermée ne lève pas au rendu, elle survit
+  // telle quelle jusque dans le courriel.
+  it('refuse une section mal fermée', () => {
+    const verdict = validerModele('Bonjour {{prenom}}{{#agence}} chez {{agence}}');
+    expect(verdict.ok).toBe(false);
+    if (!verdict.ok) expect(verdict.erreur).toMatch(/accolades/);
+  });
+
+  it('accepte une section correctement fermée', () => {
+    expect(validerModele('Bonjour {{prenom}}{{#agence}} chez {{agence}}{{/agence}}.').ok).toBe(true);
+  });
+});
+
+describe('parserMessage — dernier filet', () => {
+  it('refuse un message où une variable n’a pas été remplacée', () => {
+    const parse = parserMessage({
+      gabarit: 'introduction',
+      objet: 'Bonjour',
+      corps: 'Bonjour {{prenom}}, je vous écris au sujet du financement.',
+    });
+    expect(parse.ok).toBe(false);
+    if (!parse.ok) expect(parse.erreur).toMatch(/accolades/);
   });
 });
