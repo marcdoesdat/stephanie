@@ -24,6 +24,7 @@ import {
   GABARITS,
   PLAFOND_QUOTIDIEN,
   PROFESSIONS,
+  VARIABLES_DISPONIBLES,
 } from '../utils/reseauCourtiers';
 
 const config = loadSiteConfig();
@@ -320,7 +321,11 @@ const adresseEnvoi = adresseDediee();
               {/* ---------------- Composition ---------------- */}
               <div class="rs-composer" data-composer>
                 <h3 class="rs-h3">Écrire</h3>
-                <label class="cform-label" for="rs-gabarit">Gabarit</label>
+                <div class="rs-gabarit-ligne">
+                  <label class="cform-label" for="rs-gabarit">Gabarit</label>
+                  <span class="rs-gabarit-etat" data-gabarit-personnalise hidden>réécrit par vous</span>
+                  <button type="button" class="rs-lien" data-modifier-gabarit>Modifier ce gabarit</button>
+                </div>
                 <select id="rs-gabarit">
                   {gabarits.map((gabarit) => (
                     <option value={gabarit.cle} title={gabarit.resume}>
@@ -328,6 +333,51 @@ const adresseEnvoi = adresseDediee();
                     </option>
                   ))}
                 </select>
+
+                {/* ---------------- Édition du gabarit ---------------- */}
+                <div class="rs-editeur" data-editeur-gabarit hidden>
+                  <h4 class="rs-editeur-titre" data-editeur-titre />
+                  <p class="rs-aide">
+                    Vous modifiez le modèle, pas ce message-ci : il servira à toutes vos
+                    prochaines approches de cette profession. Les mots entre accolades sont
+                    remplacés à l’envoi.
+                  </p>
+
+                  <label class="cform-label" for="rs-editeur-objet">Objet du modèle</label>
+                  <input type="text" id="rs-editeur-objet" maxlength="200" />
+
+                  <label class="cform-label" for="rs-editeur-corps">Texte du modèle</label>
+                  <textarea id="rs-editeur-corps" rows="16" maxlength="6000" />
+
+                  <details class="rs-variables">
+                    <summary>Les variables disponibles</summary>
+                    <ul>
+                      {VARIABLES_DISPONIBLES.map((variable) => (
+                        <li>
+                          <code>{`{{${variable.cle}}}`}</code> — {variable.aide}
+                        </li>
+                      ))}
+                    </ul>
+                    <p class="rs-aide">
+                      Pour un passage qui ne doit paraître que si l’information existe,
+                      encadrez-le : <code>{'{{#agence}}'}</code> chez <code>{'{{agence}}'}</code>
+                      <code>{'{{/agence}}'}</code>. Sans agence connue, le passage disparaît au
+                      lieu de laisser un blanc.
+                    </p>
+                  </details>
+
+                  <p class="rs-erreur" data-erreur-editeur hidden />
+                  <div class="rs-panneau-actions">
+                    <button type="button" class="btn-secondary btn-secondary--sm" data-enregistrer-gabarit>
+                      Enregistrer le modèle
+                    </button>
+                    <button type="button" class="rs-lien" data-reinitialiser-gabarit hidden>
+                      Revenir au modèle d’origine
+                    </button>
+                    <button type="button" class="rs-lien" data-fermer-editeur>Annuler</button>
+                    <span class="rs-etat-envoi" data-etat-editeur hidden />
+                  </div>
+                </div>
 
                 <label class="cform-label" for="rs-objet">Objet</label>
                 <input type="text" id="rs-objet" maxlength="200" />
@@ -660,6 +710,74 @@ const adresseEnvoi = adresseDediee();
   .rs-etat-envoi {
     font-size: 0.85rem;
     color: var(--muted);
+  }
+
+  .rs-gabarit-ligne {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .rs-gabarit-ligne .cform-label {
+    margin-bottom: 0.6rem;
+  }
+
+  .rs-gabarit-etat {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: #fdf3ec;
+    border: 1px solid #edd0ba;
+    color: var(--clay);
+  }
+
+  .rs-editeur {
+    background: var(--sand);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    margin: 0 0 1.25rem;
+  }
+
+  .rs-editeur-titre {
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .rs-editeur input,
+  .rs-editeur textarea {
+    background: var(--white);
+  }
+
+  .rs-variables {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .rs-variables summary {
+    cursor: pointer;
+    color: var(--clay);
+  }
+
+  .rs-variables ul {
+    list-style: none;
+    padding: 0.6rem 0 0;
+    margin: 0 0 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.3rem 1rem;
+  }
+
+  .rs-variables code {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.95em;
   }
 
   .rs-historique {
@@ -1182,6 +1300,10 @@ const adresseEnvoi = adresseDediee();
       rendreListe();
       rendreUrgences();
       rendreFiche();
+      // Le message se charge à l'ouverture de la fiche : tant qu'il fallait toucher au
+      // sélecteur pour voir apparaître un texte, la zone de composition s'ouvrait vide et
+      // donnait l'impression qu'il n'y avait rien à envoyer.
+      if (contactCourant()?.etat !== 'refuse') void chargerGabarit();
       fiche?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -1514,12 +1636,13 @@ const adresseEnvoi = adresseDediee();
       if (erreur) erreur.hidden = true;
 
       try {
-        const data = await api<{ objet: string; corps: string }>(
+        const data = await api<{ objet: string; corps: string; personnalise?: boolean }>(
           `/api/reseau-envoi?id=${encodeURIComponent(selection)}&gabarit=${encodeURIComponent(selecteurGabarit.value)}`,
         );
         if (!data) return;
         if (champObjet) champObjet.value = data.objet;
         if (champCorps) champCorps.value = data.corps;
+        marquerPersonnalise(data.personnalise === true);
       } catch (err) {
         if (erreur) {
           erreur.textContent = err instanceof Error ? err.message : 'Gabarit indisponible.';
@@ -1528,7 +1651,136 @@ const adresseEnvoi = adresseDediee();
       }
     }
 
-    selecteurGabarit?.addEventListener('change', () => void chargerGabarit());
+    selecteurGabarit?.addEventListener('change', () => {
+      fermerEditeur();
+      void chargerGabarit();
+    });
+
+    /* ---------------- Édition du gabarit ---------------- */
+
+    /**
+     * Ce qu'on modifie ici, c'est le **modèle** — pas le message en cours. La portée est le
+     * couple (gabarit, profession) : c'est ce qu'elle a sous les yeux, et un texte retouché
+     * pour un notaire n'a pas à partir ensuite à un comptable. L'écran le dit en toutes
+     * lettres, faute de quoi on croit corriger une phrase et on en corrige cinquante.
+     */
+    const editeur = fiche?.querySelector<HTMLElement>('[data-editeur-gabarit]') ?? null;
+    const editeurObjet = document.getElementById('rs-editeur-objet') as HTMLInputElement | null;
+    const editeurCorps = document.getElementById('rs-editeur-corps') as HTMLTextAreaElement | null;
+
+    function fermerEditeur(): void {
+      if (editeur) editeur.hidden = true;
+    }
+
+    function marquerPersonnalise(personnalise: boolean): void {
+      const etiquette = fiche?.querySelector<HTMLElement>('[data-gabarit-personnalise]');
+      if (etiquette) etiquette.hidden = !personnalise;
+      const retour = fiche?.querySelector<HTMLElement>('[data-reinitialiser-gabarit]');
+      if (retour) retour.hidden = !personnalise;
+    }
+
+    interface ReponseGabarit {
+      readonly objet: string;
+      readonly corps: string;
+      readonly personnalise: boolean;
+      /** Le nom affichable du gabarit — seul le GET le renvoie. */
+      readonly nom?: string;
+    }
+
+    async function requeteGabarit(
+      methode: 'GET' | 'PUT' | 'DELETE',
+      corps?: Record<string, unknown>,
+    ): Promise<ReponseGabarit | null> {
+      const contact = contactCourant();
+      if (!contact || !selecteurGabarit) return null;
+      const base = { gabarit: selecteurGabarit.value, profession: contact.profession };
+
+      if (methode === 'GET') {
+        const params = new URLSearchParams(base);
+        return api<ReponseGabarit>(`/api/reseau-gabarit?${params.toString()}`);
+      }
+      return api<ReponseGabarit>('/api/reseau-gabarit', {
+        method: methode,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...base, ...corps }),
+      });
+    }
+
+    function erreurEditeur(message: string | null): void {
+      const cible = fiche?.querySelector<HTMLElement>('[data-erreur-editeur]');
+      if (!cible) return;
+      cible.textContent = message ?? '';
+      cible.hidden = message === null;
+    }
+
+    fiche?.querySelector('[data-modifier-gabarit]')?.addEventListener('click', async () => {
+      const contact = contactCourant();
+      if (!editeur || !contact) return;
+      erreurEditeur(null);
+
+      try {
+        const data = await requeteGabarit('GET');
+        if (!data) return;
+        if (editeurObjet) editeurObjet.value = data.objet;
+        if (editeurCorps) editeurCorps.value = data.corps;
+
+        const titre = editeur.querySelector<HTMLElement>('[data-editeur-titre]');
+        if (titre) {
+          titre.textContent = `Modèle « ${data.nom ?? ''} » — ${libelleProfession(contact.profession)}`;
+        }
+        marquerPersonnalise(data.personnalise);
+        editeur.hidden = false;
+        editeur.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch (err) {
+        erreurEditeur(err instanceof Error ? err.message : 'Gabarit illisible.');
+      }
+    });
+
+    fiche?.querySelector('[data-fermer-editeur]')?.addEventListener('click', fermerEditeur);
+
+    fiche?.querySelector('[data-enregistrer-gabarit]')?.addEventListener('click', async (evenement) => {
+      const bouton = evenement.currentTarget as HTMLButtonElement;
+      const etat = fiche.querySelector<HTMLElement>('[data-etat-editeur]');
+      erreurEditeur(null);
+      bouton.disabled = true;
+
+      try {
+        const data = await requeteGabarit('PUT', {
+          objet: editeurObjet?.value ?? '',
+          corps: editeurCorps?.value ?? '',
+        });
+        if (!data) return;
+        marquerPersonnalise(true);
+        if (etat) {
+          etat.textContent = 'Modèle enregistré ✓';
+          etat.hidden = false;
+        }
+        // Le message en cours est réécrit à partir du nouveau modèle : sinon elle vient
+        // d'enregistrer un texte qu'elle ne voit nulle part.
+        await chargerGabarit();
+      } catch (err) {
+        if (etat) etat.hidden = true;
+        erreurEditeur(err instanceof Error ? err.message : 'Enregistrement impossible.');
+      } finally {
+        bouton.disabled = false;
+      }
+    });
+
+    fiche?.querySelector('[data-reinitialiser-gabarit]')?.addEventListener('click', async () => {
+      if (!window.confirm('Revenir au modèle d’origine ? Votre version sera perdue.')) return;
+      erreurEditeur(null);
+
+      try {
+        const data = await requeteGabarit('DELETE');
+        if (!data) return;
+        if (editeurObjet) editeurObjet.value = data.objet;
+        if (editeurCorps) editeurCorps.value = data.corps;
+        marquerPersonnalise(false);
+        await chargerGabarit();
+      } catch (err) {
+        erreurEditeur(err instanceof Error ? err.message : 'Retour au modèle impossible.');
+      }
+    });
 
     fiche?.querySelector('[data-envoyer]')?.addEventListener('click', async (evenement) => {
       const bouton = evenement.currentTarget as HTMLButtonElement;
