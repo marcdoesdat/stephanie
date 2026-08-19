@@ -12,6 +12,8 @@
 export const prerender = false;
 
 import MainLayout from '../layouts/MainLayout.astro';
+import BarreCourtiere from '../components/BarreCourtiere.astro';
+import ConnexionCourtiere from '../components/ConnexionCourtiere.astro';
 import SignaturePad from '../components/SignaturePad.astro';
 import { loadSiteConfig } from '../config';
 import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
@@ -43,34 +45,14 @@ const RANGS = [0, 1, 2];
 >
   <main id="main-content" class="ct-page">
     <section class="ct-shell">
+      {autorise && <BarreCourtiere actif="contrat" />}
       {
         !autorise ? (
-          <div class="contact-form ct-connexion">
-            <h1 class="ct-titre">Générateur de contrat</h1>
-            {configureManquante ? (
-              <p class="ct-alerte">
-                L’accès n’est pas configuré : la variable d’environnement
-                <code>CONTRAT_MOT_DE_PASSE</code> est absente ou trop courte (12 caractères
-                minimum). Ajoutez-la dans Netlify, puis redéployez.
-              </p>
-            ) : (
-              <>
-                <p class="ct-texte">Cette page est réservée à {config.nom}.</p>
-                <form id="ct-connexion-form" autocomplete="on">
-                  <label class="cform-label" for="ct-mdp">Mot de passe</label>
-                  <input
-                    type="password"
-                    id="ct-mdp"
-                    class="cform-input"
-                    autocomplete="current-password"
-                    required
-                  />
-                  <p class="ct-erreur" data-erreur-connexion hidden />
-                  <button type="submit" class="btn btn-primary ct-bouton">Entrer</button>
-                </form>
-              </>
-            )}
-          </div>
+          <ConnexionCourtiere
+            titre="Générateur de contrat"
+            configureManquante={configureManquante}
+            nom={config.nom}
+          />
         ) : (
           <form
             id="ct-form"
@@ -1087,11 +1069,6 @@ const RANGS = [0, 1, 2];
     gap: 0.6rem;
   }
 
-  .ct-connexion {
-    max-width: 420px;
-    margin: 0 auto;
-  }
-
   @media (max-width: 620px) {
     .ct-identite-ligne {
       grid-template-columns: 1fr;
@@ -1295,38 +1272,6 @@ const RANGS = [0, 1, 2];
 <script>
   import type { SignaturePadElement } from '../scripts/signaturePad';
   import { ErreurImport, importerSignature } from '../scripts/importSignature';
-
-  /* ---------------- Écran de connexion ---------------- */
-
-  const connexion = document.getElementById('ct-connexion-form') as HTMLFormElement | null;
-  connexion?.addEventListener('submit', async (evenement) => {
-    evenement.preventDefault();
-    const erreur = document.querySelector<HTMLElement>('[data-erreur-connexion]');
-    const champ = document.getElementById('ct-mdp') as HTMLInputElement | null;
-    if (erreur) erreur.hidden = true;
-
-    try {
-      const reponse = await fetch('/api/contrat-acces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motDePasse: champ?.value ?? '' }),
-      });
-      if (reponse.ok) {
-        window.location.reload();
-        return;
-      }
-      const data = (await reponse.json().catch(() => ({}))) as { error?: string };
-      if (erreur) {
-        erreur.textContent = data.error ?? 'Connexion impossible.';
-        erreur.hidden = false;
-      }
-    } catch {
-      if (erreur) {
-        erreur.textContent = 'Connexion impossible. Vérifiez votre réseau.';
-        erreur.hidden = false;
-      }
-    }
-  });
 
   /* ---------------- Formulaire ---------------- */
 
@@ -1878,6 +1823,13 @@ const RANGS = [0, 1, 2];
     }
 
     if (suivi) {
+      // Un lien du tableau de bord vise `#ct-suivi` : la section doit alors s'ouvrir, qu'un
+      // dossier presse ou non — un `<details>` ne réagit pas seul à un fragment d'URL.
+      if (location.hash === '#ct-suivi') {
+        suivi.open = true;
+        suivi.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
       // Chargé d'emblée. Attendre qu'elle pense à ouvrir la section économisait une lecture
       // du stockage par visite, au prix de ne rien savoir : un contrat prêt à finaliser
       // pouvait dormir là des jours sans que rien ne le laisse voir depuis la page repliée.

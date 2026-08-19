@@ -15,6 +15,8 @@
 export const prerender = false;
 
 import MainLayout from '../layouts/MainLayout.astro';
+import BarreCourtiere from '../components/BarreCourtiere.astro';
+import ConnexionCourtiere from '../components/ConnexionCourtiere.astro';
 import { loadSiteConfig } from '../config';
 import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
 import { adresseDediee } from '../services/reseauCourriels';
@@ -60,34 +62,14 @@ const adresseEnvoi = adresseDediee();
     <section class="rs-shell">
       {
         !autorise ? (
-          <div class="contact-form rs-connexion">
-            <h1 class="rs-titre">Réseau de partenaires</h1>
-            {configureManquante ? (
-              <p class="rs-alerte">
-                L’accès n’est pas configuré : la variable d’environnement
-                <code>CONTRAT_MOT_DE_PASSE</code> est absente ou trop courte (12 caractères
-                minimum). Ajoutez-la dans Netlify, puis redéployez.
-              </p>
-            ) : (
-              <>
-                <p class="rs-texte">Cette page est réservée à {config.nom}.</p>
-                <form id="rs-connexion-form" autocomplete="on">
-                  <label class="cform-label" for="rs-mdp">Mot de passe</label>
-                  <input
-                    type="password"
-                    id="rs-mdp"
-                    class="cform-input"
-                    autocomplete="current-password"
-                    required
-                  />
-                  <p class="rs-erreur" data-erreur-connexion hidden />
-                  <button type="submit" class="btn btn-primary rs-bouton">Entrer</button>
-                </form>
-              </>
-            )}
-          </div>
+          <ConnexionCourtiere
+            titre="Réseau de partenaires"
+            configureManquante={configureManquante}
+            nom={config.nom}
+          />
         ) : (
           <div id="rs-app" data-plafond={String(PLAFOND_QUOTIDIEN)}>
+            <BarreCourtiere actif="reseau" />
             <header class="rs-entete">
               <div>
                 <h1 class="rs-titre">Réseau de partenaires</h1>
@@ -381,11 +363,6 @@ const adresseEnvoi = adresseDediee();
      cette respiration les désaligne et étire l'écran sur deux fois sa hauteur utile. */
   .rs-page section {
     padding: 0;
-  }
-
-  .rs-connexion {
-    max-width: 27rem;
-    margin: 3rem auto;
   }
 
   .rs-titre {
@@ -872,44 +849,8 @@ const adresseEnvoi = adresseDediee();
 </style>
 
 <script>
-  import {
-    BASES_CONSENTEMENT,
-    DELAI_SANS_REPONSE_JOURS,
-    ETATS,
-    PROFESSIONS,
-  } from '../utils/reseauCourtiers';
-
-  /* ---------------- Écran de connexion ---------------- */
-
-  const connexion = document.getElementById('rs-connexion-form') as HTMLFormElement | null;
-  connexion?.addEventListener('submit', async (evenement) => {
-    evenement.preventDefault();
-    const erreur = document.querySelector<HTMLElement>('[data-erreur-connexion]');
-    const champ = document.getElementById('rs-mdp') as HTMLInputElement | null;
-    if (erreur) erreur.hidden = true;
-
-    try {
-      const reponse = await fetch('/api/contrat-acces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motDePasse: champ?.value ?? '' }),
-      });
-      if (reponse.ok) {
-        window.location.reload();
-        return;
-      }
-      const data = (await reponse.json().catch(() => ({}))) as { error?: string };
-      if (erreur) {
-        erreur.textContent = data.error ?? 'Connexion impossible.';
-        erreur.hidden = false;
-      }
-    } catch {
-      if (erreur) {
-        erreur.textContent = 'Connexion impossible. Vérifiez votre réseau.';
-        erreur.hidden = false;
-      }
-    }
-  });
+  import { BASES_CONSENTEMENT, ETATS, PROFESSIONS, type CleEtat } from '../utils/reseauCourtiers';
+  import { phraseUrgenceReseau, urgencesReseau } from '../utils/tableauDeBord';
 
   /* ---------------- L'application ---------------- */
 
@@ -932,7 +873,9 @@ const adresseEnvoi = adresseDediee();
     readonly secteur: string;
     readonly profession: string;
     readonly notes: string;
-    readonly etat: string;
+    /* Typé sur le catalogue, et non `string` : c'est ce qui permet de passer la fiche telle
+       quelle à la règle d'urgence partagée. */
+    readonly etat: CleEtat;
     readonly consentement: { base: string; source: string; le: string };
     readonly relanceLe: string | null;
     readonly dernierEnvoiLe: string | null;
@@ -972,13 +915,6 @@ const adresseEnvoi = adresseDediee();
     function dateComplete(iso: string): string {
       const instant = Date.parse(iso);
       return Number.isNaN(instant) ? '' : DATE_COMPLETE.format(new Date(instant));
-    }
-
-    function joursDepuis(iso: string | null): number | null {
-      if (!iso) return null;
-      const instant = Date.parse(iso);
-      if (Number.isNaN(instant)) return null;
-      return Math.floor((Date.now() - instant) / 86400000);
     }
 
     function libelleEtat(cle: string): string {
@@ -1043,45 +979,16 @@ const adresseEnvoi = adresseDediee();
 
     /* ---------------- Urgences ---------------- */
 
-    interface Urgence {
-      readonly rang: number;
-      readonly texte: string;
-    }
-
-    /**
-     * Ce qui réclame un geste aujourd'hui. Un partenaire acquis et un contact retiré n'en
-     * sont jamais : le premier n'attend rien, le second a demandé qu'on le laisse.
+    /*
+     * La règle vit dans `utils/tableauDeBord.ts`, pas ici : le tableau de bord la lit aussi,
+     * et une règle en double dans le script d'une page finit par diverger sans que rien ne
+     * le signale. La page ne garde que le rendu.
      */
-    function urgence(contact: Fiche): Urgence | null {
-      if (contact.etat === 'refuse' || contact.etat === 'partenaire') return null;
-
-      if (contact.relanceLe) {
-        const jour = Date.parse(`${contact.relanceLe}T23:59:59`);
-        if (!Number.isNaN(jour) && jour <= Date.now()) {
-          return { rang: 0, texte: `Relance prévue ${relatif(contact.relanceLe)}` };
-        }
-      }
-
-      const attente = joursDepuis(contact.dernierEnvoiLe);
-      if (
-        (contact.etat === 'contacte' || contact.etat === 'relance') &&
-        attente !== null &&
-        attente >= DELAI_SANS_REPONSE_JOURS
-      ) {
-        return { rang: 1, texte: `Sans réponse depuis ${attente} jours` };
-      }
-
-      return null;
-    }
 
     function rendreUrgences(): void {
       if (!urgences) return;
 
-      const pressants = contacts
-        .map((contact) => ({ contact, urgence: urgence(contact) }))
-        .filter((entree): entree is { contact: Fiche; urgence: Urgence } => entree.urgence !== null)
-        .sort((a, b) => a.urgence.rang - b.urgence.rang);
-
+      const pressants = urgencesReseau(contacts);
       const aContacter = contacts.filter((contact) => contact.etat === 'a_contacter').length;
 
       if (pressants.length === 0) {
@@ -1095,7 +1002,7 @@ const adresseEnvoi = adresseDediee();
 
       const fragment = document.createDocumentFragment();
       for (const { contact, urgence: motif } of pressants) {
-        fragment.append(carte(contact, motif.texte));
+        fragment.append(carte(contact, phraseUrgenceReseau(motif)));
       }
       urgences.replaceChildren(fragment);
     }
@@ -1702,6 +1609,17 @@ const adresseEnvoi = adresseDediee();
       $<HTMLElement>(selecteur)?.addEventListener('input', () => rendreListe());
     }
 
-    void charger();
+    /**
+     * Un lien du tableau de bord peut nommer un contact par `#f=<id>` : on l'ouvre une fois le
+     * carnet chargé.
+     */
+    function ouvrirDepuisHash(): void {
+      const cible = new RegExp('^#f=(.+)$').exec(location.hash);
+      if (!cible) return;
+      const id = decodeURIComponent(cible[1] ?? '');
+      if (contacts.some((c) => c.id === id)) ouvrirFiche(id);
+    }
+
+    void charger().then(ouvrirDepuisHash);
   }
 </script>

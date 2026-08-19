@@ -1,0 +1,94 @@
+---
+/**
+ * La barre de navigation des écrans réservés à la courtière.
+ *
+ * Ces pages ne figurent dans aucun menu du site — c'est voulu, elles sont derrière un mot de
+ * passe et hors du sitemap. Mais rien ne les reliait entre elles non plus : passer du carnet
+ * des dossiers à celui du réseau supposait de retaper l'URL de mémoire. Une session ouvre les
+ * quatre ; la barre le rend visible.
+ *
+ * `/finaliser-contrat` porte la barre sans y figurer : on n'y arrive que par un lien
+ * nominatif portant un `?id=`, et un onglet sans identifiant n'ouvrirait rien.
+ *
+ * Rendue au SSR, et **uniquement quand l'accès est accordé** — l'écran de connexion n'a rien
+ * à proposer d'autre que le mot de passe.
+ */
+export type PageCourtiere = 'tableau' | 'dossiers' | 'reseau' | 'contrat';
+
+interface Props {
+  /** La page courante, marquée `aria-current`. `null` pour un écran hors de la barre. */
+  actif?: PageCourtiere | null;
+}
+
+const { actif = null } = Astro.props;
+
+const ONGLETS: ReadonlyArray<{ cle: PageCourtiere; href: string; libelle: string }> = [
+  { cle: 'tableau', href: '/tableau-de-bord', libelle: 'Tableau de bord' },
+  { cle: 'dossiers', href: '/dossiers', libelle: 'Dossiers' },
+  { cle: 'reseau', href: '/reseau', libelle: 'Réseau' },
+  { cle: 'contrat', href: '/contrat', libelle: 'Contrat' },
+];
+---
+
+<nav class="bc-barre" aria-label="Espace de la courtière">
+  <ul class="bc-liste">
+    {
+      ONGLETS.map((onglet) => (
+        <li>
+          <a
+            href={onglet.href}
+            class="bc-lien"
+            aria-current={onglet.cle === actif ? 'page' : undefined}
+          >
+            {onglet.libelle}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  .bc-barre {
+    margin: 0 0 1.4rem;
+  }
+
+  .bc-liste {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .bc-lien {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    background: var(--white);
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition:
+      border-color 0.15s,
+      color 0.15s;
+  }
+
+  .bc-lien:hover,
+  .bc-lien:focus-visible {
+    border-color: var(--clay);
+    color: var(--ink);
+  }
+
+  .bc-lien[aria-current='page'] {
+    border-color: var(--clay);
+    background: var(--warm);
+    color: var(--ink);
+    font-weight: 600;
+  }
+</style>

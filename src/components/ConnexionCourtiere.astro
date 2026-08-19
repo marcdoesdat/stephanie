@@ -1,0 +1,139 @@
+---
+/**
+ * L'écran de connexion des pages réservées à la courtière.
+ *
+ * Il n'y a qu'une porte — `accesCourtiere`, un mot de passe partagé, un cookie signé — mais
+ * l'écran qui la présente existait en cinq exemplaires : `/contrat`, `/finaliser-contrat`,
+ * `/reseau`, `/dossiers`, et maintenant `/tableau-de-bord`. Même carte, même formulaire,
+ * même `fetch`, au préfixe de classe près. Un correctif appliqué à quatre copies sur cinq est
+ * la façon normale dont une page finit par accepter ce que les autres refusent.
+ *
+ * La page appelante ne garde que le verdict :
+ *
+ * ```astro
+ * const autorise = await requeteAutorisee(Astro.request);
+ * const configureManquante = !accesConfigure() && !accesLibreEnDev();
+ * ```
+ *
+ * Le cookie étant `HttpOnly`, la connexion réussie ne fait que recharger : c'est le rendu
+ * serveur, au tour suivant, qui décide de ce qui s'affiche.
+ */
+interface Props {
+  /** Le nom de l'écran qu'on demande à ouvrir — « Dossiers clients », « Réseau »… */
+  titre: string;
+  /** Vrai quand `CONTRAT_MOT_DE_PASSE` manque : il n'y a alors rien à saisir. */
+  configureManquante: boolean;
+  /** Le nom de la courtière, tiré de `siteConfig`. */
+  nom: string;
+}
+
+const { titre, configureManquante, nom } = Astro.props;
+---
+
+<div class="contact-form cc-carte">
+  <h1 class="cc-titre">{titre}</h1>
+  {
+    configureManquante ? (
+      <p class="cc-alerte">
+        L’accès n’est pas configuré : la variable d’environnement
+        <code>CONTRAT_MOT_DE_PASSE</code> est absente ou trop courte (12 caractères minimum).
+        Ajoutez-la dans Netlify, puis redéployez.
+      </p>
+    ) : (
+      <>
+        <p class="cc-texte">Cette page est réservée à {nom}.</p>
+        <form id="cc-connexion-form" autocomplete="on">
+          <label class="cform-label" for="cc-mdp">
+            Mot de passe
+          </label>
+          <input
+            type="password"
+            id="cc-mdp"
+            class="cform-input"
+            autocomplete="current-password"
+            required
+          />
+          <p class="cc-erreur" data-erreur-connexion hidden />
+          <button type="submit" class="btn btn-primary cc-bouton">
+            Entrer
+          </button>
+        </form>
+      </>
+    )
+  }
+</div>
+
+<style>
+  .cc-carte {
+    max-width: 27rem;
+    margin: 3rem auto;
+  }
+
+  .cc-titre {
+    margin: 0 0 0.6rem;
+    font-size: 1.5rem;
+  }
+
+  .cc-texte {
+    margin: 0 0 1rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .cc-erreur {
+    margin: 0.5rem 0 0;
+    color: #a5342a;
+    font-size: 0.85rem;
+  }
+
+  .cc-alerte {
+    margin: 1rem 0 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: 8px;
+    background: #fdeceb;
+    color: #8f2f28;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .cc-bouton {
+    width: 100%;
+  }
+</style>
+
+<script>
+  const connexion = document.getElementById('cc-connexion-form') as HTMLFormElement | null;
+
+  connexion?.addEventListener('submit', async (evenement) => {
+    evenement.preventDefault();
+    const erreur = document.querySelector<HTMLElement>('[data-erreur-connexion]');
+    const champ = document.getElementById('cc-mdp') as HTMLInputElement | null;
+    if (erreur) erreur.hidden = true;
+
+    try {
+      const reponse = await fetch('/api/contrat-acces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motDePasse: champ?.value ?? '' }),
+      });
+
+      // Le cookie est `HttpOnly` : rien à lire ici. On recharge, et c'est le SSR qui tranche.
+      if (reponse.ok) {
+        window.location.reload();
+        return;
+      }
+
+      const data = (await reponse.json().catch(() => ({}))) as { error?: string };
+      if (erreur) {
+        erreur.textContent = data.error ?? 'Connexion impossible.';
+        erreur.hidden = false;
+      }
+    } catch {
+      if (erreur) {
+        erreur.textContent = 'Connexion impossible. Vérifiez votre réseau.';
+        erreur.hidden = false;
+      }
+    }
+  });
+</script>
