@@ -7,15 +7,29 @@
 // GET  → une page de confirmation avec un bouton. Les antivirus et aperçus de messagerie
 //        visitent les liens des courriels : un GET qui retirerait directement produirait des
 //        désabonnements que personne n'a demandés.
-// POST → le retrait lui-même, immédiat et idempotent.
+// POST → le retrait lui-même, immédiat et idempotent. Trois émetteurs, tous légitimes :
+//        le bouton de la page (formulaire), le retrait en un clic d'un fournisseur de
+//        messagerie (RFC 8058), et le lien « List-Unsubscribe » d'un client qui poste à vide.
 //
 // La réponse ne dit jamais si l'adresse existe : « c'est fait » dans tous les cas. Un lien de
 // retrait qui distingue les cas devient un moyen de tester des identifiants.
+//
+// **Mais « c'est fait » doit être vrai.** La version précédente jetait le verdict de
+// `retirerParJeton` : un identifiant abîmé en route, un jeton tombé du corps du formulaire,
+// une panne de stockage — tout aboutissait à la même page rassurante, la personne restait
+// inscrite, et personne ne l'apprenait. D'où les deux règles ci-dessous :
+//
+//   1. **`c` et `j` sont cherchés partout** — corps du formulaire, puis chaîne de requête.
+//      Un POST en un clic porte un corps `List-Unsubscribe=One-Click` et garde les
+//      paramètres dans l'URL ; ne lire que le corps revenait à les perdre.
+//   2. **Un retrait qui n'aboutit pas prévient la courtière.** La personne, elle, voit
+//      toujours la même page — c'est à nous de rattraper, pas à elle de réessayer.
 
 import type { APIRoute } from 'astro';
-import { escapeHtml } from '../../services/emailService';
+import { checkRateLimit, escapeHtml, loadResendEnv } from '../../services/emailService';
 import { loadSiteConfig } from '../../config';
-import { retirerParJeton } from '../../services/reseauContactService';
+import { alerterRetraitNonEnregistre } from '../../services/reseauCourriels';
+import { retirerParJeton, type ResultatRetrait } from '../../services/reseauContactService';
 
 export const prerender = false;
 
@@ -47,7 +61,10 @@ function page(titre: string, corps: string, bouton: { c: string; j: string } | n
       ${corps}
       ${
         bouton
-          ? `<form method="post" action="/api/reseau-retrait">
+          ? // Les paramètres restent aussi dans l'action du formulaire : si un client de
+            // messagerie ou une extension dépouille le corps du POST, la chaîne de requête
+            // porte encore de quoi retrouver la fiche.
+            `<form method="post" action="/api/reseau-retrait?c=${encodeURIComponent(bouton.c)}&amp;j=${encodeURIComponent(bouton.j)}">
                <input type="hidden" name="c" value="${escapeHtml(bouton.c)}">
                <input type="hidden" name="j" value="${escapeHtml(bouton.j)}">
                <button type="submit">Confirmer le retrait</button>
@@ -85,29 +102,72 @@ export const GET: APIRoute = ({ request }) => {
   );
 };
 
-export const POST: APIRoute = async ({ request }) => {
-  let c = '';
-  let j = '';
+/**
+ * Ce qu'un POST porte : le couple (identifiant, jeton), et s'il s'agit d'un retrait en un
+ * clic.
+ *
+ * Le bouton de la page met le couple dans le corps **et** dans l'URL ; un retrait en un clic
+ * (RFC 8058) n'a que l'URL, son corps ne portant que `List-Unsubscribe=One-Click`. Le corps
+ * a donc la priorité quand il est renseigné, et la chaîne de requête sert de filet — ne lire
+ * que l'un des deux revenait à perdre l'un des deux émetteurs.
+ */
+async function lireDemande(request: Request): Promise<{ c: string; j: string; unClic: boolean }> {
+  const params = new URL(request.url).searchParams;
+  let c = params.get('c') ?? '';
+  let j = params.get('j') ?? '';
+  let unClic = false;
 
-  // Le bouton envoie un formulaire ; le lien « List-Unsubscribe » d'un client de messagerie
-  // peut poster sans corps utile. Les deux doivent aboutir.
-  const type = request.headers.get('content-type') ?? '';
-  if (type.includes('form')) {
-    const donnees = await request.formData();
-    c = String(donnees.get('c') ?? '');
-    j = String(donnees.get('j') ?? '');
-  } else {
-    const params = new URL(request.url).searchParams;
-    c = params.get('c') ?? '';
-    j = params.get('j') ?? '';
+  const type = (request.headers.get('content-type') ?? '').toLowerCase();
+  try {
+    if (type.includes('multipart/form-data')) {
+      const donnees = await request.formData();
+      c = String(donnees.get('c') ?? '') || c;
+      j = String(donnees.get('j') ?? '') || j;
+    } else if (type.includes('urlencoded') || type.includes('text/plain')) {
+      const brut = await request.text();
+      const corps = new URLSearchParams(brut);
+      c = (corps.get('c') ?? '') || c;
+      j = (corps.get('j') ?? '') || j;
+      unClic = corps.get('List-Unsubscribe') === 'One-Click';
+    }
+  } catch {
+    // Corps illisible : la chaîne de requête suffit. Échouer ici priverait la personne de
+    // son retrait pour une raison qui ne la regarde pas.
   }
 
+  return { c, j, unClic };
+}
+
+export const POST: APIRoute = async ({ request, clientAddress }) => {
+  const { c, j, unClic } = await lireDemande(request);
   const config = loadSiteConfig();
+
+  let verdict: ResultatRetrait = 'inconnu';
+  let panne: unknown = null;
   try {
-    await retirerParJeton(c, j);
+    verdict = await retirerParJeton(c, j);
   } catch (err) {
-    // On ne le dit pas à la personne : le carnet sera de toute façon nettoyé à la main.
+    panne = err;
     console.error('[reseau-retrait] Retrait non enregistré :', err);
+  }
+
+  // Un retrait qui n'a pas abouti est un problème de conformité, pas un détail : il faut
+  // que quelqu'un le sache. La personne, elle, voit la même page dans tous les cas.
+  if (verdict === 'inconnu' || panne) {
+    console.error(
+      `[reseau-retrait] Retrait sans effet (verdict=${verdict}, id=${c.slice(0, 64)}) — la fiche reste active.`,
+    );
+    await prevenirLaCourtiere(request, c, j, verdict, panne, clientAddress);
+  }
+
+  // Un retrait en un clic est exécuté par le fournisseur de messagerie, pas par un
+  // navigateur : il attend une réponse courte, et personne n'est devant l'écran pour lire
+  // une page.
+  if (unClic) {
+    return new Response('OK', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
+    });
   }
 
   return page(
@@ -119,3 +179,60 @@ export const POST: APIRoute = async ({ request }) => {
     null,
   );
 };
+
+/**
+ * Le rattrapage : une alerte dans la boîte de la courtière, avec de quoi retrouver la fiche
+ * et la retirer à la main. Sans Resend, il ne reste que la console — mais on ne fait jamais
+ * échouer le retrait pour une panne d'alerte.
+ *
+ * Deux filtres avant d'écrire, parce que la route est publique et qu'un courriel déclenché
+ * par n'importe qui est un moyen d'inonder une boîte :
+ *
+ * 1. **Le couple doit être complet.** Un lien réellement cliqué porte toujours `c` et `j` ;
+ *    ce qui n'en porte qu'un (ou aucun) est un robot qui balaie, pas quelqu'un qui veut être
+ *    retiré. Rien à rattraper, donc rien à signaler.
+ * 2. **Un plafond global**, et non par IP : cinq alertes par heure, tous visiteurs confondus.
+ *    Une vraie série d'échecs n'a pas besoin de cinquante courriels pour se faire remarquer,
+ *    et un balayage distribué ne peut pas faire du rattrapage une nuisance.
+ */
+async function prevenirLaCourtiere(
+  request: Request,
+  c: string,
+  j: string,
+  verdict: ResultatRetrait,
+  panne: unknown,
+  ip: string | undefined,
+): Promise<void> {
+  if (!c || !j) return;
+
+  const env = loadResendEnv();
+  if (!env) {
+    console.error('[reseau-retrait] Resend absent : la courtière n’a pas pu être prévenue.');
+    return;
+  }
+
+  if (!(await checkRateLimit('global', 'retrait-alerte'))) {
+    console.error('[reseau-retrait] Plafond d’alertes atteint — voir les journaux de la fonction.');
+    return;
+  }
+  // Le jeton ne voyage pas dans l'alerte — pas plus dans le lien recopié que dans un champ
+  // à lui. Savoir s'il était présent suffit à trancher entre « lien abîmé en route » et
+  // « fiche disparue » ; le reproduire ferait vivre dans une boîte de réception ce qui n'a
+  // de raison d'être que dans le courriel de la personne.
+  const lienSansJeton = new URL(request.url);
+  if (lienSansJeton.searchParams.has('j')) lienSansJeton.searchParams.set('j', '(retiré)');
+
+  try {
+    await alerterRetraitNonEnregistre(env, {
+      identifiant: c,
+      jetonPresent: j.length > 0,
+      verdict,
+      cause: panne ? String((panne as Error)?.message ?? panne) : null,
+      url: lienSansJeton.toString(),
+      ip: ip ?? '',
+      recuLe: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('[reseau-retrait] Alerte non envoyée :', err);
+  }
+}

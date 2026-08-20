@@ -20,7 +20,7 @@
  */
 
 import { loadSiteConfig } from '../config';
-import { escapeHtml, sendEmail, type ResendEnv } from './emailService';
+import { escapeHtml, sendEmail, wrapEmailHtml, type ResendEnv } from './emailService';
 import type { MessageSortant } from '../utils/reseauCourtiers';
 import type { Contact } from './reseauContactService';
 
@@ -191,10 +191,97 @@ export async function envoyerApproche(
     text: texte,
     headers: {
       // Le bouton « Se désabonner » du client de messagerie, en plus du lien dans le corps.
-      // Volontairement sans `List-Unsubscribe-Post` : le retrait en un clic dispenserait de
-      // la page de confirmation, et les aperçus automatiques de certaines messageries
-      // produiraient des désabonnements que personne n'a demandés.
-      'List-Unsubscribe': `<mailto:${config.courriel}?subject=Desabonnement>, <${lienDeRetrait}>`,
+      //
+      // L'URL passe **avant** le `mailto:` : listé en premier, le mailto amenait Gmail et
+      // Outlook à n'offrir qu'un courriel à écrire à la main — donc un retrait que rien
+      // n'exécute tant que Stéphanie ne l'a pas lu. Un mécanisme qui attend une intervention
+      // humaine n'est pas « sans délai » au sens de la LCAP.
+      'List-Unsubscribe': `<${lienDeRetrait}>, <mailto:${config.courriel}?subject=Desabonnement>`,
+      // Le retrait en un clic (RFC 8058). La crainte qui l'avait fait écarter — les aperçus
+      // automatiques des messageries produisant des désabonnements fantômes — est
+      // précisément ce contre quoi la RFC a été écrite : un antivirus ou un aperçu **visite**
+      // le lien (GET), il ne poste pas `List-Unsubscribe=One-Click`. Le GET, lui, rend
+      // toujours la page de confirmation et ne retire personne.
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Le rattrapage : un retrait qui n'a pas abouti                      */
+/* ------------------------------------------------------------------ */
+
+export interface RetraitEnEchec {
+  /** L'identifiant tel qu'il est arrivé — abîmé ou non, c'est la seule piste. */
+  readonly identifiant: string;
+  /** Le jeton n'est pas reproduit ici : savoir s'il était là suffit à trancher la cause. */
+  readonly jetonPresent: boolean;
+  readonly verdict: string;
+  readonly cause: string | null;
+  readonly url: string;
+  readonly ip: string;
+  readonly recuLe: string;
+}
+
+/**
+ * Prévient la courtière qu'un retrait n'a **pas** été enregistré.
+ *
+ * La page dit « c'est fait » à la personne dans tous les cas, et c'est la bonne réponse à lui
+ * faire : distinguer les cas ferait du lien un moyen de tester des identifiants, et « lien
+ * invalide » est la pire chose à lire quand on vient de demander qu'on cesse de vous écrire.
+ * Mais cette promesse crée une dette — quelqu'un doit la tenir. C'est ce courriel : il porte
+ * de quoi retrouver la fiche et la retirer à la main.
+ *
+ * Il part vers la boîte interne, jamais vers la personne.
+ */
+export async function alerterRetraitNonEnregistre(
+  env: ResendEnv,
+  echec: RetraitEnEchec,
+): Promise<void> {
+  const config = loadSiteConfig();
+  const lignes: Array<[string, string]> = [
+    ['Reçu le', echec.recuLe],
+    ['Identifiant du contact', echec.identifiant || '(absent)'],
+    ['Jeton fourni', echec.jetonPresent ? 'oui' : 'non'],
+    ['Verdict', echec.verdict],
+    ['Cause technique', echec.cause ?? '—'],
+    ['Lien appelé', echec.url],
+    ['Adresse IP', echec.ip || '—'],
+  ];
+
+  const html = wrapEmailHtml(
+    `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#1f1e1c;">
+        <strong>Un désabonnement n’a pas été enregistré.</strong>
+      </p>
+      <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#1f1e1c;">
+        La personne a vu la page « c’est fait » — c’est ce qu’il fallait lui répondre. Mais sa
+        fiche est <strong>toujours active</strong> dans le carnet du réseau. Retrouvez-la sur
+        <a href="${escapeHtml(config.site_url)}/reseau" style="color:#a85f38;">/reseau</a> et
+        passez-la à « Ne plus contacter ». Tant que ce n’est pas fait, elle peut recevoir un
+        autre courriel.
+      </p>
+      <table style="border-collapse:collapse;font-size:13px;color:#1f1e1c;">
+        ${lignes
+          .map(
+            ([cle, valeur]) =>
+              `<tr><td style="padding:4px 12px 4px 0;color:#6b6459;">${escapeHtml(cle)}</td><td style="padding:4px 0;">${escapeHtml(valeur)}</td></tr>`,
+          )
+          .join('')}
+      </table>`,
+  );
+
+  await sendEmail(env.apiKey, {
+    from: `${config.nom} <${env.fromEmail}>`,
+    to: env.notifyEmail,
+    subject: '⚠️ Désabonnement non enregistré — fiche à retirer à la main',
+    html,
+    text: [
+      'Un désabonnement n’a pas été enregistré.',
+      '',
+      'La personne a vu la page « c’est fait », mais sa fiche est toujours active dans le',
+      'carnet du réseau. Passez-la à « Ne plus contacter » sur /reseau.',
+      '',
+      ...lignes.map(([cle, valeur]) => `${cle} : ${valeur}`),
+    ].join('\n'),
   });
 }
