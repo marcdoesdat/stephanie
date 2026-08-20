@@ -32,7 +32,8 @@ src/
 ├── services/         # Fetch/cache external data (taux, avis)
 ├── styles/           # global.css
 ├── types/            # Déclarations de types supplémentaires
-└── utils/            # Fonctions utilitaires pures
+├── utils/            # Fonctions utilitaires pures
+└── middleware.ts     # Vérification d'origine (CSRF) — voir « Réseau de partenaires »
 ```
 
 ## Pages et routes
@@ -409,6 +410,7 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
 | `src/services/reseauCourriels.ts` | Le courriel d'approche : gabarit visuel, pied de conformité LCAP, envoi Resend |
 | `src/services/reseauGabaritsService.ts` | Les gabarits réécrits par la courtière, par couple (gabarit, profession) |
 | `src/pages/reseau.astro` | L'écran : urgences du jour, carnet, fiche, composition |
+| `src/middleware.ts` + `src/utils/origineRequete.ts` | La vérification d'origine (CSRF), et la seule route qui en est dispensée |
 
 **Règles :**
 - **Un contact retiré ne reçoit plus rien.** Vérifié au moment de l'envoi (`/api/reseau-envoi`),
@@ -421,6 +423,27 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
   des courriels, et un `GET` qui retirerait directement produirait des désabonnements que
   personne n'a demandés. Le traitement est idempotent, et la réponse ne dit jamais si
   l'adresse existe.
+- **Trois émetteurs postent ce lien, et les trois doivent aboutir** : le bouton de la page
+  (couple dans le corps *et* dans l'URL), le retrait en un clic d'un fournisseur de
+  messagerie (RFC 8058 — corps `List-Unsubscribe=One-Click`, couple resté dans l'URL), et un
+  client qui poste à vide. `lireDemande` cherche donc `c` et `j` **dans le corps puis dans la
+  chaîne de requête** ; ne lire que le corps, comme avant, faisait échouer deux des trois en
+  répondant « c'est fait ». Un retrait en un clic reçoit `OK` en texte, pas une page :
+  personne n'est devant l'écran.
+- **`security.checkOrigin` est désactivé, et réécrit à la main dans `src/middleware.ts`.**
+  Astro refusait par 403 tout POST de formulaire sans en-tête `Origin` — c'est-à-dire
+  exactement le retrait en un clic, que les serveurs du fournisseur exécutent sans
+  navigateur. La règle d'Astro est reprise mot pour mot dans `src/utils/origineRequete.ts`
+  (module pur, testé cas par cas) et **une seule route** en est dispensée. Y ajouter une
+  route, c'est décider de la laisser sans protection CSRF ; un test verrouille la liste.
+- **« C'est fait » doit être vrai.** La réponse reste la même dans tous les cas — dire « lien
+  invalide » à qui vient de demander qu'on cesse de lui écrire est la pire réponse possible,
+  et distinguer les cas ferait du lien un moyen de tester des identifiants. Mais cette
+  promesse crée une dette : quand `retirerParJeton` ne retire personne (couple abîmé, fiche
+  disparue, panne de stockage), `alerterRetraitNonEnregistre` prévient la courtière pour
+  qu'elle retire la fiche à la main. Le jeton ne voyage pas dans l'alerte — seulement le fait
+  qu'il était présent, ce qui suffit à trancher la cause. Sans ce rattrapage, un retrait perdu
+  ne laissait de trace nulle part.
 - **Le jeton de retrait est stocké en clair**, contrairement aux jetons de signature. Ce n'est
   pas un oubli : il doit rester **reproductible** (chaque courriel le porte à nouveau) et
   valide des mois durant. Un jeton haché ne pourrait pas être réécrit dans le message suivant,
@@ -430,10 +453,17 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
   répond, un an plus tard, à « d'où vient mon adresse ». Facultative, elle ne serait jamais
   remplie.
 - **Le pied de conformité part avec chaque message** : identité, organisation, adresse postale
-  (`siteConfig.adresse`), téléphone, lien de retrait, plus un en-tête `List-Unsubscribe`
-  (volontairement sans `List-Unsubscribe-Post` — le retrait en un clic sauterait la page de
-  confirmation). Un test le verrouille : ces mentions ne sont pas de la décoration qu'un
-  remaniement du gabarit visuel peut emporter.
+  (`siteConfig.adresse`), téléphone, lien de retrait, plus les en-têtes `List-Unsubscribe` et
+  `List-Unsubscribe-Post`. Un test le verrouille : ces mentions ne sont pas de la décoration
+  qu'un remaniement du gabarit visuel peut emporter.
+- **L'URL passe avant le `mailto:` dans `List-Unsubscribe`, et le retrait en un clic est
+  déclaré.** Listé en premier, le `mailto:` amenait Gmail et Outlook à n'offrir qu'un courriel
+  à écrire à la main : leur bouton « Se désabonner » ne déclenchait rien, et le retrait
+  attendait que Stéphanie lise sa boîte. La crainte qui avait fait écarter
+  `List-Unsubscribe-Post` — des aperçus automatiques produisant des désabonnements fantômes —
+  est précisément ce contre quoi la RFC 8058 a été écrite : un antivirus **visite** le lien
+  (`GET`, qui rend la page de confirmation et ne retire personne), il ne poste pas
+  `List-Unsubscribe=One-Click`.
 - **`RESEND_FROM_RESEAU` sépare l'envoi d'approche du reste** — mais elle n'est pas
   configurée aujourd'hui : un second domaine vérifié dans Resend suppose un forfait payant
   (décision d'août 2026). Les approches partent donc de `RESEND_FROM_EMAIL`, l'adresse des
@@ -675,7 +705,13 @@ npx vitest              # mode watch
 - `src/utils/reseauCourtiers.test.ts` — gabarits rendus sans variable orpheline, whitelists
 - `src/services/reseauContactService.test.ts` — retrait définitif et idempotent, historique,
   jeton absent des fiches transmises
-- `src/services/reseauCourriels.test.ts` — mentions obligatoires (LCAP) et expéditeur dédié
+- `src/services/reseauCourriels.test.ts` — mentions obligatoires (LCAP), expéditeur dédié,
+  en-têtes de désabonnement (URL avant le `mailto:`, retrait en un clic déclaré)
+- `src/services/reseauRetraitRoute.test.ts` — les trois façons dont un retrait arrive
+  aboutissent ; un `GET` ne retire personne ; la page ne dit jamais qu'un jeton est faux ; un
+  retrait qui échoue prévient la courtière
+- `src/utils/origineRequete.test.ts` — la vérification d'origine réécrite est identique à
+  celle d'Astro, et la dispense ne couvre que `/api/reseau-retrait`
 - `src/services/reseauGabaritsService.test.ts` — réécriture des gabarits : portée par
   profession, original récupérable, refus des modèles qui ne se rendent pas
 - `src/utils/dossiersClients.test.ts` — semis de la checklist selon le statut d'emploi, verrou

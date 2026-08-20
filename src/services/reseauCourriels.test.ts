@@ -6,7 +6,7 @@
  * porter un mécanisme de retrait qui fonctionne. Ces mentions ne sont pas de la décoration
  * qu'on peut perdre au fil d'un remaniement du gabarit visuel.
  */
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadSiteConfig } from '../config';
 import {
   adresseDediee,
@@ -79,6 +79,37 @@ describe('construireCourrielApproche', () => {
     );
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
+  });
+});
+
+describe('en-têtes de désabonnement', () => {
+  const env = { apiKey: 'k', fromEmail: 'site@stephanieweyman.ca', notifyEmail: 'boite@exemple.ca' };
+  const contact = { courriel: 'partenaire@exemple.ca' } as never;
+
+  async function entetes(): Promise<Record<string, string>> {
+    const emailService = await import('./emailService');
+    const espion = vi.spyOn(emailService, 'sendEmail').mockResolvedValue();
+    const { envoyerApproche } = await import('./reseauCourriels');
+    await envoyerApproche(env, contact, MESSAGE, LIEN);
+    const envoye = espion.mock.calls[0]?.[1];
+    espion.mockRestore();
+    return envoye?.headers ?? {};
+  }
+
+  // Listé après le `mailto:`, l'URL était ignorée : Gmail et Outlook n'offraient qu'un
+  // courriel à écrire à la main, c'est-à-dire un retrait que rien n'exécute tant que
+  // Stéphanie ne l'a pas lu.
+  it('met l’URL de retrait avant le mailto', async () => {
+    const liste = (await entetes())['List-Unsubscribe'] ?? '';
+    expect(liste).toContain(LIEN);
+    expect(liste.indexOf(LIEN)).toBeLessThan(liste.indexOf('mailto:'));
+  });
+
+  // Le retrait en un clic (RFC 8058). Sans cet en-tête, le bouton « Se désabonner » du
+  // client de messagerie ne déclenche rien d'automatique. Les aperçus automatiques, eux,
+  // font des GET — et le GET rend toujours la page de confirmation sans retirer personne.
+  it('déclare le retrait en un clic', async () => {
+    expect((await entetes())['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
   });
 });
 
