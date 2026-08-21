@@ -44,6 +44,12 @@ interface Outil {
   readonly quand: string;
   /** Vrai pour les pages qu'elle envoie plutôt qu'elle n'ouvre. */
   readonly aCopier?: boolean;
+  /**
+   * L'adresse que copie le bouton, quand elle diffère de celle qu'ouvre la tuile. Le profil
+   * des emprunteurs s'ouvre sur son écran de préparation, mais ce qui se copie d'un geste
+   * reste le formulaire vierge.
+   */
+  readonly lienCopie?: string;
 }
 
 interface Famille {
@@ -96,10 +102,12 @@ const FAMILLES: readonly Famille[] = [
     titre: 'Liens à envoyer',
     outils: [
       {
-        href: '/profil-emprunteur',
+        href: '/preparer-profil',
         titre: 'Profil des emprunteurs',
-        quand: 'Le formulaire AMF, rempli et signé à distance par tous les emprunteurs.',
+        quand:
+          'Le formulaire AMF, signé par tous les emprunteurs. Préparez-le à leurs noms, ou copiez le lien vierge.',
         aCopier: true,
+        lienCopie: '/profil-emprunteur',
       },
       {
         href: '/demande',
@@ -193,9 +201,9 @@ const racine = config.site_url.replace(/\/+$/, '');
                           <button
                             type="button"
                             class="tb-copier"
-                            data-copier={`${racine}${outil.href}`}
+                            data-copier={`${racine}${outil.lienCopie ?? outil.href}`}
                           >
-                            Copier le lien
+                            {outil.lienCopie ? 'Copier le lien vierge' : 'Copier le lien'}
                           </button>
                         )}
                       </li>

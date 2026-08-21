@@ -189,6 +189,13 @@ const OPTIONS_NOMBRE = [
               fournit pas la mise de fonds.
             </p>
 
+            {/* Visible seulement quand le lien portait un préremplissage : la réponse est
+                pré-sélectionnée, mais la question reste posée — c'est le client qui la valide. */}
+            <p class="profil-prepare" data-note-preparation hidden>
+              {prenom} a préparé ce formulaire d’avance. Vérifiez que le nombre est exact&nbsp;;
+              corrigez-le au besoin.
+            </p>
+
             <div class="quiz-options" role="group" aria-labelledby="libelle-nombre">
               {
                 OPTIONS_NOMBRE.map((option) => (
@@ -215,6 +222,11 @@ const OPTIONS_NOMBRE = [
             <p class="quiz-q-sub" data-sous-signataires>
               Tous les emprunteurs au prêt doivent signer. Chacun a besoin de sa propre adresse
               courriel.
+            </p>
+
+            <p class="profil-prepare" data-note-preparation hidden>
+              Les coordonnées ci-dessous viennent de {prenom}. Corrigez-les si besoin&nbsp;: c’est
+              à ces adresses que partiront les accusés de signature.
             </p>
 
             <div data-signataires></div>
@@ -411,6 +423,19 @@ const OPTIONS_NOMBRE = [
     text-decoration: underline;
   }
 
+  /* Le liseré dit d'où vient ce qui est déjà dans les champs — sans quoi un formulaire
+     pré-rempli ressemble à un formulaire qu'on aurait déjà commencé soi-même. */
+  .profil-prepare {
+    background: var(--warm);
+    border-left: 3px solid var(--clay);
+    border-radius: 0 8px 8px 0;
+    padding: 0.7rem 0.9rem;
+    margin: 0 0 1.1rem;
+    font-size: 0.86rem;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
   /* ---- Signataires ---- */
 
   /* Cartes de signataires : également construites en JavaScript, d'où le :global. */
@@ -599,6 +624,7 @@ const OPTIONS_NOMBRE = [
 
 <script>
   import { QUESTIONS, MAX_SIGNATAIRES, estCourrielValide, resumerReponses } from '../utils/profilEmprunteurs';
+  import { PARAM_PREREMPLISSAGE, decoderPreremplissage } from '../utils/profilPreparation';
   import type { SignaturePadElement } from '../scripts/signaturePad';
 
   const CLE_STOCKAGE = 'sw_profil_emprunteurs_v1';
@@ -656,6 +682,52 @@ const OPTIONS_NOMBRE = [
     let termine = false;
 
     const etat: Etat = charger();
+
+    /* ---------------- Préremplissage ---------------- */
+
+    /**
+     * Pose dans l'état les coordonnées que la courtière a préparées dans le lien
+     * (`/preparer-profil`). Retourne vrai dès que le lien en portait — même si rien n'a été
+     * écrit — pour que les deux écrans concernés puissent le dire au client.
+     *
+     * Trois précautions, dans cet ordre :
+     *
+     *   • **une saisie déjà commencée l'emporte.** Recharger la page ne doit pas ramener une
+     *     adresse que le client venait de corriger : le préremplissage est une proposition,
+     *     et une proposition ne se réimpose pas.
+     *   • **l'URL est nettoyée aussitôt.** Des noms et des adresses n'ont rien à faire dans la
+     *     barre d'adresse, ni dans l'historique d'un appareil parfois partagé.
+     *   • **rien n'est verrouillé.** Les champs restent modifiables : la faute de frappe qu'il
+     *     faut pouvoir rattraper est justement celle qui vient d'ailleurs.
+     */
+    function appliquerPreremplissage(): boolean {
+      const emprunteurs = decoderPreremplissage(
+        new URLSearchParams(window.location.search).get(PARAM_PREREMPLISSAGE),
+      );
+      if (!emprunteurs) return false;
+
+      try {
+        window.history.replaceState(null, '', window.location.pathname);
+      } catch {
+        // Navigateur qui refuse la réécriture : le formulaire fonctionne quand même.
+      }
+
+      const dejaSaisi = etat.signataires.some((s) => s.nom !== '' || s.courriel !== '');
+      if (dejaSaisi) return true;
+
+      etat.signataires = emprunteurs.map((emprunteur) => ({
+        nom: emprunteur.nom,
+        courriel: emprunteur.courriel,
+      }));
+      // Le nombre reste **demandé** : il est seulement pré-sélectionné à l'écran, que le
+      // client doit toujours franchir d'un clic. Une valeur préparée par la courtière n'est
+      // pas un nombre deviné par le formulaire.
+      etat.nombre = emprunteurs.length;
+      sauvegarder();
+      return true;
+    }
+
+    const prerempli = appliquerPreremplissage();
 
     /* ---------------- Persistance ---------------- */
 
@@ -1236,6 +1308,12 @@ const OPTIONS_NOMBRE = [
     if (etat.nombre !== null) ajusterSignataires(etat.nombre);
     appliquerSelectionNombre();
     rendreSignataires();
+
+    if (prerempli) {
+      for (const note of formulaire.querySelectorAll<HTMLElement>('[data-note-preparation]')) {
+        note.hidden = false;
+      }
+    }
 
     /**
      * Jusqu'où l'écran mémorisé peut être rouvert. On ne fait jamais confiance au numéro

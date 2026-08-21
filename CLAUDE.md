@@ -46,6 +46,7 @@ src/
 | `/amortissement` | Statique | Tableau d'amortissement |
 | `/rappel` | Statique | Formulaire de prise de rappel |
 | `/profil-emprunteur` | Statique | Formulaire AMF « Profil des emprunteurs » en tuiles + signature dessinée (noindex, sans Nav/Footer) |
+| `/preparer-profil` | SSR | Préparation du lien « Profil des emprunteurs » avec les noms et courriels — réservé à la courtière, protégé par mot de passe (noindex) |
 | `/signer` | SSR | Co-signature à distance par lien nominatif (noindex, sans Nav/Footer) |
 | `/tableau-de-bord` | SSR | Cockpit de la courtière : ce qui presse aujourd'hui (tous carnets) + accès aux outils — réservé à la courtière, protégé par mot de passe (noindex) |
 | `/contrat` | SSR | Générateur du contrat de courtage — réservé à la courtière, protégé par mot de passe (noindex) |
@@ -262,6 +263,8 @@ est identique au modèle au pixel près.
 | `src/data/profilEmprunteursModele.ts` | Le modèle PDF en base64 — **fichier généré**, ne pas éditer |
 | `scripts/encode-modele.mjs` | Régénère le module ci-dessus : `node scripts/encode-modele.mjs <pdf>` |
 | `src/services/profilPdfService.ts` | Estampage pdf-lib + empreintes SHA-256 |
+| `src/utils/profilPreparation.ts` | Le préremplissage : encodage du lien, décodage défensif, normalisation |
+| `src/pages/preparer-profil.astro` | L'écran de la courtière : saisir les emprunteurs, obtenir le lien |
 | `src/services/profilDossierService.ts` | Dossiers en attente de co-signature (Netlify Blobs, jetons hachés) |
 | `src/services/profilCourriels.ts` | Courriels + **trace de preuve** des signatures |
 | `src/components/SignaturePad.astro` + `src/scripts/signaturePad.ts` | Bloc de signature (canevas, recadrage sur l'encre, repli « nom tapé ») |
@@ -292,6 +295,28 @@ est identique au modèle au pixel près.
   permet au client de repérer sa propre faute de frappe.
 - Les jetons de co-signature sont à usage unique, stockés hachés (SHA-256), et comparés à temps
   constant.
+- **Le préremplissage est une proposition, jamais une autorité.** Stéphanie connaît déjà les
+  noms et les adresses au moment d'envoyer le formulaire : `/preparer-profil` fabrique un lien
+  qui les porte (`?p=`, base64url, **non signé** — il n'ouvre aucun accès et n'obtient rien
+  qu'un visiteur ne puisse taper à la main). Trois conséquences tenues par le code : les champs
+  restent **modifiables** — la faute de frappe qu'il faut pouvoir rattraper est justement celle
+  qui vient d'ailleurs ; une **saisie déjà commencée l'emporte**, sinon un rechargement
+  ramènerait l'adresse que le client venait de corriger ; et l'**URL est nettoyée**
+  (`history.replaceState`) dès les champs remplis, des noms et des adresses n'ayant rien à
+  faire dans l'historique d'un appareil parfois partagé.
+- **Le décodage est tolérant par champ, jamais par confiance.** Ce qui ne tiendrait pas la
+  route côté serveur (adresse mal formée, nom d'une lettre, adresse en double) est écarté champ
+  par champ plutôt que posé dans le formulaire ; un lien tronqué par une messagerie ouvre donc
+  un formulaire **vierge**, pas un formulaire faux. La validation qui compte reste celle de
+  `/api/profil-submit` — `parserSignataires` n'a pas bougé, et rien n'a été ajouté à sa
+  confiance. `/preparer-profil` est **plus strict** que ce décodeur : une adresse douteuse doit
+  être corrigée tant qu'elle est sous les yeux de celle qui la connaît.
+- **Le nombre d'emprunteurs reste demandé.** Un lien préparé pour deux personnes
+  **pré-sélectionne** la tuile et le dit à l'écran ; il ne franchit pas l'écran à la place du
+  client. Une valeur préparée par la courtière n'est pas un nombre deviné par le formulaire.
+- **`/preparer-profil` n'envoie rien et n'enregistre rien** : pas d'endpoint, pas de dossier,
+  pas de courriel. La page ne construit qu'une URL dans le navigateur — ce qui est préparé
+  n'existe que dans le lien, et le lien n'existe que quand elle le transmet.
 - Le modèle contient déjà le nom de la courtière et son numéro AMF — ne rien y écrire.
 - En dev sans Resend, tout s'exécute quand même (dossier compris) et les liens de signature sont
   imprimés dans la console : c'est la seule façon de dérouler la chaîne en local.
@@ -697,6 +722,8 @@ npx vitest              # mode watch
 ```
 
 - `src/lib/penalite.test.ts` — 35+ cas sur la logique de pénalité (3 mois, IRD, cas limites)
+- `src/utils/profilPreparation.test.ts` — aller-retour du lien préparé (accents compris), champs
+  écartés un à un plutôt que crus, adresse en double non préremplie, paramètre abîmé → lien vierge
 - `src/utils/contratCourtage.test.ts` — géométrie du modèle PDF + whitelist de validation
 - `src/services/contratPdfService.test.ts` — estampage : 4 pages au bon format, caractères
   hors WinAnsi, champs trop longs tronqués plutôt que débordants
