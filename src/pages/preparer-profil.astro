@@ -1,0 +1,432 @@
+---
+// Préparer un « Profil des emprunteurs » — /preparer-profil. Réservé à la courtière.
+//
+// Stéphanie connaît déjà les noms et les adresses de ses emprunteurs au moment d'envoyer le
+// formulaire. Les leur faire retaper n'apporte rien et coûte cher : une adresse mal recopiée,
+// et l'accusé de signature part dans le vide ou le lien de co-signature n'arrive jamais chez
+// le conjoint. Cet écran fabrique donc un lien qui porte ces coordonnées ; le formulaire les
+// pose dans ses champs, où le client peut encore les corriger.
+//
+// **Rien n'est envoyé et rien n'est stocké ici.** La page ne fait que construire une URL, dans
+// le navigateur : pas d'endpoint, pas de dossier, pas de courriel. Ce qui est préparé n'existe
+// que dans le lien, et le lien n'existe que quand elle l'envoie. C'est aussi pourquoi le
+// paramètre n'est pas signé — il n'ouvre aucun accès, et n'obtient rien qu'un visiteur ne
+// puisse déjà taper à la main dans le formulaire.
+//
+// Rendu à l'exécution : la page vérifie le cookie d'accès à chaque requête et, faute de quoi,
+// ne rend que l'écran de connexion. Même porte que /contrat, /reseau et /dossiers — c'est la
+// même personne.
+export const prerender = false;
+
+import MainLayout from '../layouts/MainLayout.astro';
+import BarreCourtiere from '../components/BarreCourtiere.astro';
+import ConnexionCourtiere from '../components/ConnexionCourtiere.astro';
+import { loadSiteConfig } from '../config';
+import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
+import { MAX_SIGNATAIRES, NOM_MAX } from '../utils/profilEmprunteurs';
+
+const config = loadSiteConfig();
+const autorise = await requeteAutorisee(Astro.request);
+const configureManquante = !accesConfigure() && !accesLibreEnDev();
+
+const racine = config.site_url.replace(/\/+$/, '');
+const lienVierge = `${racine}/profil-emprunteur`;
+
+// Les cartes sont rendues par le serveur, pas construites en JavaScript : le nombre
+// d'emprunteurs possibles est connu au build, et des éléments rendus par Astro portent son
+// attribut de portée — le style scopé les atteint donc, sans bloc `is:global`.
+const CARTES = Array.from({ length: MAX_SIGNATAIRES }, (_, index) => ({
+  index,
+  titre: index === 0 ? 'Emprunteur 1' : `Emprunteur ${index + 1}`,
+  facultatif: index > 0,
+}));
+---
+
+<MainLayout
+  title="Préparer un profil des emprunteurs"
+  description="Écran interne : préparer le formulaire de profil avec les coordonnées des emprunteurs."
+  noindex={true}
+  sansBarreCta={true}
+>
+  <main id="main-content" class="pp-page">
+    <section class="pp-shell">
+      {autorise && <BarreCourtiere actif={null} />}
+      {
+        !autorise ? (
+          <ConnexionCourtiere
+            titre="Préparer un profil"
+            configureManquante={configureManquante}
+            nom={config.nom}
+          />
+        ) : (
+          <div id="pp-app">
+            <header class="pp-entete">
+              <h1 class="pp-titre">Préparer un profil des emprunteurs</h1>
+              <p class="pp-intro">
+                Inscrivez les emprunteurs, puis envoyez le lien obtenu. Ils retrouveront leur nom
+                et leur adresse déjà remplis&nbsp;— et pourront les corriger si vous vous êtes
+                trompée.
+              </p>
+            </header>
+
+            <form class="contact-form pp-carte" id="pp-form" novalidate>
+              {CARTES.map((carte) => (
+                <fieldset class="pp-bloc">
+                  <legend class="pp-legende">
+                    {carte.titre}
+                    {carte.facultatif && <span class="pp-facultatif">facultatif</span>}
+                  </legend>
+
+                  <label class="cform-label" for={`pp-nom-${carte.index}`}>
+                    Nom complet
+                  </label>
+                  <input
+                    type="text"
+                    id={`pp-nom-${carte.index}`}
+                    class="cform-input"
+                    data-nom={String(carte.index)}
+                    maxlength={NOM_MAX}
+                    autocomplete="off"
+                  />
+
+                  <label class="cform-label" for={`pp-courriel-${carte.index}`}>
+                    Courriel
+                  </label>
+                  <input
+                    type="email"
+                    id={`pp-courriel-${carte.index}`}
+                    class="cform-input"
+                    data-courriel={String(carte.index)}
+                    maxlength={120}
+                    autocomplete="off"
+                  />
+                </fieldset>
+              ))}
+
+              <p class="pp-aide">
+                Vous n’avez pas l’adresse d’un co-emprunteur&nbsp;? Laissez-la vide&nbsp;: le champ
+                s’ouvrira devant lui, avec son nom déjà inscrit.
+              </p>
+
+              <p class="pp-erreur" data-erreur role="alert" hidden />
+
+              <button type="submit" class="btn btn-primary pp-bouton">
+                Créer le lien
+              </button>
+            </form>
+
+            {/* Le résultat : une URL, trois façons de s'en servir. */}
+            <section class="contact-form pp-carte pp-resultat" data-resultat hidden aria-live="polite">
+              <h2 class="pp-h2">Le lien à envoyer</h2>
+              <p class="pp-recap" data-recap />
+
+              <input type="text" class="cform-input pp-lien" data-lien readonly />
+
+              <div class="pp-actions">
+                <button type="button" class="btn btn-primary" data-copier-lien>
+                  Copier le lien
+                </button>
+                <a class="pp-lien-action" data-ouvrir href="#" target="_blank" rel="noopener">
+                  Ouvrir le formulaire
+                </a>
+                <a class="pp-lien-action" data-ecrire href="#">
+                  Écrire le courriel
+                </a>
+              </div>
+
+              <p class="pp-aide">
+                Rien n’est envoyé d’ici et rien n’est enregistré&nbsp;: le lien n’existe que
+                lorsque vous le transmettez, par courriel ou par texto.
+              </p>
+            </section>
+
+            <section class="pp-vierge">
+              <h2 class="pp-h2">Ou le formulaire vierge</h2>
+              <p class="pp-aide">
+                Pour un client dont vous n’avez pas encore les coordonnées&nbsp;: il remplira tout
+                lui-même.
+              </p>
+              <button type="button" class="pp-copier-discret" data-copier={lienVierge}>
+                Copier le lien vierge
+              </button>
+            </section>
+          </div>
+        )
+      }
+    </section>
+  </main>
+</MainLayout>
+
+<style>
+  .pp-page {
+    background: var(--sand);
+    min-height: 100vh;
+    padding: clamp(1.25rem, 4vw, 2.5rem) 1rem 4rem;
+  }
+
+  .pp-shell {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .pp-entete {
+    margin-bottom: 1.4rem;
+  }
+
+  .pp-titre {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.45rem, 4vw, 1.85rem);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+
+  .pp-intro {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .pp-carte {
+    margin-bottom: 1.4rem;
+  }
+
+  .pp-bloc {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem 1.1rem;
+    margin: 0 0 1rem;
+  }
+
+  .pp-legende {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.4rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .pp-facultatif {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: lowercase;
+  }
+
+  .pp-h2 {
+    font-family: 'Lora', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+
+  .pp-aide {
+    font-size: 0.83rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0.6rem 0 0;
+  }
+
+  .pp-erreur {
+    margin: 0.9rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--clay-dk, #8a3d2a);
+  }
+
+  .pp-bouton {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .pp-recap {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-bottom: 0.7rem;
+  }
+
+  .pp-lien {
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+
+  .pp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.9rem;
+  }
+
+  .pp-lien-action {
+    font-size: 0.85rem;
+    color: var(--clay-dk, #8a3d2a);
+    text-decoration: underline;
+  }
+
+  .pp-vierge {
+    padding: 0 0.2rem;
+  }
+
+  .pp-copier-discret {
+    margin-top: 0.7rem;
+    min-height: 38px;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    background: var(--white);
+    color: var(--muted);
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+
+  .pp-copier-discret:hover,
+  .pp-copier-discret:focus-visible {
+    border-color: var(--clay);
+    color: var(--ink);
+  }
+</style>
+
+<script>
+  import { MAX_SIGNATAIRES, NOM_MIN, estCourrielValide } from '../utils/profilEmprunteurs';
+  import { lienProfilPrerempli, normaliserEmprunteurs } from '../utils/profilPreparation';
+
+  const app = document.getElementById('pp-app');
+  if (app) demarrer(app);
+
+  function demarrer(app: HTMLElement): void {
+    const formulaire = app.querySelector<HTMLFormElement>('#pp-form');
+    const resultat = app.querySelector<HTMLElement>('[data-resultat]');
+    const champLien = app.querySelector<HTMLInputElement>('[data-lien]');
+    const recap = app.querySelector<HTMLElement>('[data-recap]');
+    const ouvrir = app.querySelector<HTMLAnchorElement>('[data-ouvrir]');
+    const ecrire = app.querySelector<HTMLAnchorElement>('[data-ecrire]');
+    const zoneErreur = app.querySelector<HTMLElement>('[data-erreur]');
+
+    /** Ce qui est saisi à l'écran, dans l'ordre des cartes. */
+    function saisie(): Array<{ nom: string; courriel: string }> {
+      return Array.from({ length: MAX_SIGNATAIRES }, (_, index) => ({
+        nom: app.querySelector<HTMLInputElement>(`[data-nom="${index}"]`)?.value.trim() ?? '',
+        courriel: app.querySelector<HTMLInputElement>(`[data-courriel="${index}"]`)?.value.trim() ?? '',
+      }));
+    }
+
+    function erreur(message: string | null): void {
+      if (!zoneErreur) return;
+      zoneErreur.textContent = message ?? '';
+      zoneErreur.hidden = message === null;
+    }
+
+    /**
+     * Le premier problème bloquant, ou `null`. La validation est plus stricte ici que dans le
+     * décodeur du formulaire : une adresse mal formée qu'il écarterait en silence doit être
+     * corrigée maintenant, tant qu'elle est sous les yeux de celle qui la connaît.
+     */
+    function probleme(entrees: ReadonlyArray<{ nom: string; courriel: string }>): string | null {
+      const adresses = new Set<string>();
+
+      for (const [index, entree] of entrees.entries()) {
+        const vide = entree.nom === '' && entree.courriel === '';
+        if (vide) continue;
+
+        if (entree.nom.length < NOM_MIN) {
+          return `Il manque le nom de l’emprunteur ${index + 1}.`;
+        }
+        if (entree.courriel !== '' && !estCourrielValide(entree.courriel)) {
+          return `L’adresse de l’emprunteur ${index + 1} semble incomplète.`;
+        }
+        const normalisee = entree.courriel.toLowerCase();
+        if (normalisee !== '' && adresses.has(normalisee)) {
+          // Le formulaire refuse deux signataires qui partagent une boîte : mieux vaut le
+          // dire ici que laisser la soumission échouer chez le client, à la toute fin.
+          return 'Chaque emprunteur a besoin de sa propre adresse courriel.';
+        }
+        if (normalisee !== '') adresses.add(normalisee);
+      }
+
+      if (entrees.every((entree) => entree.nom === '' && entree.courriel === '')) {
+        return 'Inscrivez au moins un emprunteur, ou copiez le lien vierge plus bas.';
+      }
+      return null;
+    }
+
+    /** Le corps du courriel qu'ouvre « Écrire le courriel ». */
+    function messageCourriel(lien: string): string {
+      return [
+        'Bonjour,',
+        '',
+        'Voici le formulaire « Profil des emprunteurs » à remplir et à signer en ligne. Vos coordonnées y sont déjà inscrites ; corrigez-les si besoin.',
+        '',
+        lien,
+        '',
+        'Merci !',
+      ].join('\n');
+    }
+
+    formulaire?.addEventListener('submit', (evenement) => {
+      evenement.preventDefault();
+
+      const entrees = saisie();
+      const souci = probleme(entrees);
+      if (souci) {
+        erreur(souci);
+        if (resultat) resultat.hidden = true;
+        return;
+      }
+      erreur(null);
+
+      const retenus = normaliserEmprunteurs(entrees);
+      const lien = lienProfilPrerempli(window.location.origin, retenus);
+
+      if (champLien) champLien.value = lien;
+      if (ouvrir) ouvrir.href = lien;
+      if (ecrire) {
+        const destinataires = retenus.map((e) => e.courriel).filter((c) => c !== '');
+        const sujet = encodeURIComponent('Votre profil d’emprunteur à signer');
+        const corps = encodeURIComponent(messageCourriel(lien));
+        ecrire.href = `mailto:${destinataires.join(',')}?subject=${sujet}&body=${corps}`;
+        // Sans adresse, il n'y a personne à qui écrire : le lien se transmet autrement.
+        ecrire.hidden = destinataires.length === 0;
+      }
+      if (recap) {
+        // Ce que le lien porte réellement — après normalisation, pas ce qui a été tapé. Une
+        // adresse écartée doit se voir ici, pas se découvrir à l'arrivée.
+        recap.textContent = `Préparé pour ${retenus
+          .map((e) => (e.courriel ? `${e.nom || 'sans nom'} (${e.courriel})` : `${e.nom} — adresse à remplir`))
+          .join(', ')}.`;
+      }
+      if (resultat) {
+        resultat.hidden = false;
+        resultat.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      champLien?.select();
+    });
+
+    /* ---------------- Copier ---------------- */
+
+    for (const bouton of app.querySelectorAll<HTMLButtonElement>('[data-copier], [data-copier-lien]')) {
+      bouton.addEventListener('click', async () => {
+        const adresse = bouton.dataset.copier ?? champLien?.value ?? '';
+        if (!adresse) return;
+        const libelle = bouton.textContent;
+        try {
+          await navigator.clipboard.writeText(adresse);
+          bouton.textContent = 'Copié';
+        } catch {
+          // `navigator.clipboard` demande un contexte sécurisé et la permission : quand elle
+          // manque, on rend l'adresse visible plutôt que d'échouer en silence.
+          window.prompt('Copiez ce lien :', adresse);
+          return;
+        }
+        window.setTimeout(() => {
+          bouton.textContent = libelle;
+        }, 1600);
+      });
+    }
+  }
+</script>
