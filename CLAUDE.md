@@ -303,6 +303,24 @@ est identique au modèle au pixel près.
 - L'écran de confirmation affiche les adresses **renvoyées par le serveur** (`copies` = les
   destinataires de l'accusé, `enAttente`), jamais celles restées en mémoire : c'est ce qui
   permet au client de repérer sa propre faute de frappe.
+- **L'invitation part avant l'avis interne, et jamais en même temps.** Les deux envois
+  étaient lancés par un même `Promise.allSettled` : deux requêtes Resend sur le fil à la
+  milliseconde près, pour une limite de débit qui se compte à la seconde. Quand le 429 tombait
+  sur l'invitation plutôt que sur l'avis, le résultat était l'inverse exact de la priorité
+  annoncée — la courtière prévenue qu'un dossier attendait, et le co-emprunteur sans rien.
+  `envoyerEnSerie` espaçait déjà les invitations entre elles ; c'est le couple invitation/avis
+  qui court-circuitait la précaution. Même correction dans `/api/contrat-creer`, où le jeton du
+  signataire courant est le seul vivant.
+- **Un 429 n'est pas un refus, c'est « pas maintenant ».** `sendEmail` réessaie deux fois
+  (`Retry-After` respecté, plafonné à 3 s) au lieu de perdre le courriel. Les autres statuts ne
+  sont pas réessayés : un 422 sur une adresse mal formée ne changera pas d'avis.
+- **Une invitation qui échoue ne fait plus échouer la soumission.** Le dossier existe : refuser
+  ferait tout recommencer et ouvrirait un **second** dossier, donc deux liens vivants pour la
+  même signature. `envoyerInvitations` ne lève plus — l'échec du premier co-signataire ne prive
+  pas les suivants de leur lien — et rend un `BilanInvitations` que trois écrans consomment :
+  l'écran de confirmation nomme qui n'a pas pu être joint, l'avis interne porte une alerte et
+  les liens à transmettre à la main, et la route ne remonte une erreur que si **rien** n'est
+  parti, seul cas où personne d'autre ne peut l'apprendre.
 - Les jetons de co-signature sont à usage unique, stockés hachés (SHA-256), et comparés à temps
   constant.
 - **Le préremplissage est une proposition, jamais une autorité.** Stéphanie connaît déjà les
@@ -732,6 +750,8 @@ npx vitest              # mode watch
 ```
 
 - `src/lib/penalite.test.ts` — 35+ cas sur la logique de pénalité (3 mois, IRD, cas limites)
+- `src/services/emailService.test.ts` — un 429 est réessayé (`Retry-After` respecté et
+  plafonné), un 422 ne l'est pas, et l'abandon nomme le statut
 - `src/utils/profilPreparation.test.ts` — aller-retour du lien préparé (accents compris), champs
   écartés un à un plutôt que crus, adresse en double non préremplie, paramètre abîmé → lien vierge
 - `src/utils/contratCourtage.test.ts` — géométrie du modèle PDF + whitelist de validation
@@ -757,6 +777,9 @@ npx vitest              # mode watch
   usage unique, purge des dossiers clos
 - `src/services/portailAcces.test.ts` — session signée, identifiant lié à la signature, fail
   closed en production
+- `src/services/profilSubmitRoute.test.ts` — l'invitation part avant l'avis interne et jamais
+  de front ; un envoi manqué est nommé au client et à la courtière sans coûter la soumission ;
+  l'erreur ne remonte que si plus rien n'est parti
 - `src/services/demandeSubmitRoute.test.ts` — une demande ouvre un dossier ; une panne de
   stockage ne coûte pas la soumission
 - `src/utils/entreesProspect.test.ts` — verrou anti-fuite porte par porte, mappage des champs

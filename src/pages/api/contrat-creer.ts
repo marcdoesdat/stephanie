@@ -131,18 +131,25 @@ export const POST: APIRoute = async ({ request }) => {
     return jsonResponse({ ok: true, dev: true, mode, ordre }, 200);
   }
 
-  // L'invitation est ce qui débloque la suite : si elle part, le dossier vit, même si la
-  // notification interne échoue. On ne fait donc échouer la soumission que sur l'invitation.
-  const [invitationEnvoyee, avisInterne] = await Promise.allSettled([
-    envoyerInvitation(resendEnv, premier, 1, donnees.emprunteurs.length),
-    envoyerAvisEnAttente(resendEnv, donnees, ordre, mode),
-  ]);
-
-  if (invitationEnvoyee.status === 'rejected') {
-    return echec('invitation', invitationEnvoyee.reason);
+  /*
+   * En séquence, l'invitation d'abord — jamais les deux de front.
+   *
+   * Un `Promise.allSettled` posait les deux requêtes sur le fil à la même milliseconde, pour
+   * une limite de débit Resend qui se compte à la seconde. Quand le 429 tombait sur
+   * l'invitation, la courtière était prévenue qu'un contrat attendait pendant que le
+   * signataire, lui, n'avait rien reçu — l'inverse exact de la priorité annoncée. Ici le
+   * jeton du signataire courant est le **seul** vivant : son courriel passe en premier.
+   */
+  try {
+    await envoyerInvitation(resendEnv, premier, 1, donnees.emprunteurs.length);
+  } catch (err) {
+    return echec('invitation', err);
   }
-  if (avisInterne.status === 'rejected') {
-    console.error('[contrat-creer] Invitation partie, mais la notification interne a échoué :', avisInterne.reason);
+
+  try {
+    await envoyerAvisEnAttente(resendEnv, donnees, ordre, mode);
+  } catch (err) {
+    console.error('[contrat-creer] Invitation partie, mais la notification interne a échoué :', err);
   }
 
   return jsonResponse({ ok: true, mode, ordre }, 200);

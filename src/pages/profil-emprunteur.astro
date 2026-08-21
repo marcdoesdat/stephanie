@@ -647,8 +647,14 @@ const OPTIONS_NOMBRE = [
 
   /** Ce que /api/profil-submit renvoie quand la soumission a abouti. */
   interface Reponse {
-    /** Co-emprunteurs relancés par lien nominatif — voie « à distance » uniquement. */
+    /** Co-emprunteurs qui ont **réellement** reçu leur lien nominatif. */
     enAttente?: Signataire[];
+    /**
+     * Ceux dont le courriel d'invitation n'est pas parti. Le dossier vit quand même et
+     * Stéphanie a reçu leurs liens : le dire vaut mieux que laisser attendre un courriel
+     * qui ne viendra pas.
+     */
+    nonEnvoyes?: Signataire[];
     /** Adresses qui reçoivent (ou recevront) l'accusé de signature. Jamais le PDF. */
     copies?: string[];
   }
@@ -1279,19 +1285,40 @@ const OPTIONS_NOMBRE = [
       // elles qui ont réellement reçu (ou recevront) l'accusé de signature.
       const copies = donnees.copies ?? [];
 
-      if (donnees.enAttente?.length) {
-        const attendus = donnees.enAttente;
+      const manquants = donnees.nonEnvoyes ?? [];
+
+      if (donnees.enAttente?.length || manquants.length) {
+        const attendus = donnees.enAttente ?? [];
         if (titre) titre.textContent = 'Votre partie est signée';
 
-        const phrase: Array<string | Node> = ["Un lien de signature vient d'être envoyé à "];
-        attendus.forEach((personne, index) => {
-          if (index > 0) phrase.push(index === attendus.length - 1 ? ' et ' : ', ');
-          phrase.push(`${personne.nom} (`, adresse(personne.courriel), ')');
-        });
+        const phrase: Array<string | Node> = [];
+
+        if (attendus.length) {
+          phrase.push("Un lien de signature vient d'être envoyé à ");
+          attendus.forEach((personne, index) => {
+            if (index > 0) phrase.push(index === attendus.length - 1 ? ' et ' : ', ');
+            phrase.push(`${personne.nom} (`, adresse(personne.courriel), ')');
+          });
+          phrase.push('.');
+        }
+
+        // Un envoi manqué se dit, il ne se tait pas : sans cette phrase, quelqu'un attend un
+        // courriel qui ne viendra jamais. Stéphanie a reçu le lien de son côté.
+        if (manquants.length) {
+          phrase.push(attendus.length ? ' En revanche, je n’ai pas réussi à écrire à ' : 'Je n’ai pas réussi à écrire à ');
+          manquants.forEach((personne, index) => {
+            if (index > 0) phrase.push(index === manquants.length - 1 ? ' et ' : ', ');
+            phrase.push(`${personne.nom} (`, adresse(personne.courriel), ')');
+          });
+          phrase.push(
+            ' — vérifiez l’adresse. Stéphanie est prévenue et lui transmettra son lien de signature.',
+          );
+        }
+
         phrase.push(
-          attendus.length === 1
-            ? '. Le formulaire sera transmis à Stéphanie dès sa signature, et vous recevrez une confirmation'
-            : '. Le formulaire sera transmis à Stéphanie dès les dernières signatures, et vous recevrez une confirmation',
+          attendus.length + manquants.length === 1
+            ? ' Le formulaire sera transmis à Stéphanie dès sa signature, et vous recevrez une confirmation'
+            : ' Le formulaire sera transmis à Stéphanie dès les dernières signatures, et vous recevrez une confirmation',
         );
         // copies[0] est l'emprunteur qui vient de remplir : c'est son adresse à lui qu'on
         // lui confirme, pas celle de tout le monde.

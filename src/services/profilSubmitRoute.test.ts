@@ -49,6 +49,37 @@ function installerFauxResend(): Array<Record<string, unknown>> {
   return envois;
 }
 
+interface AppelResend {
+  corps: Record<string, unknown>;
+  /** Nombre de requêtes en vol au moment de celle-ci. Deux, c'est déjà trop pour Resend. */
+  simultanes: number;
+}
+
+/**
+ * Faux Resend qui mesure la concurrence et peut refuser certaines adresses. Le 422 imite une
+ * adresse que Resend rejette — une faute de frappe, typiquement — plutôt qu'un 429, qui lui
+ * serait réessayé.
+ */
+function installerResendMesure(verdict: (destinataire: string) => boolean = () => true): AppelResend[] {
+  const appels: AppelResend[] = [];
+  let enVol = 0;
+
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string | URL | Request, options?: RequestInit) => {
+      enVol += 1;
+      const corps = JSON.parse(String(options?.body)) as Record<string, unknown>;
+      appels.push({ corps, simultanes: enVol });
+      await new Promise((resoudre) => setTimeout(resoudre, 20));
+      enVol -= 1;
+      const accepte = verdict(String(corps.to));
+      return { ok: accepte, status: accepte ? 200 : 422, text: async () => 'refusé' } as Response;
+    }),
+  );
+
+  return appels;
+}
+
 beforeEach(() => {
   process.env.RESEND_API_KEY = 'clé-de-test';
   process.env.RESEND_FROM_EMAIL = 'steph@exemple.ca';
@@ -118,6 +149,60 @@ describe('POST /api/profil-submit', () => {
     expect(corps.copies).toEqual(['marc@exemple.ca', 'julie@exemple.ca']);
     // Une invitation à Julie, un avis à la courtière — rien au demandeur.
     expect(envois.map((e) => e.to)).toEqual(['julie@exemple.ca', 'interne@exemple.ca']);
+  });
+
+  it('envoie l’invitation avant l’avis interne, et jamais deux courriels de front', async () => {
+    // Les deux partaient d'un même `Promise.allSettled` : deux requêtes sur le fil à la même
+    // milliseconde, pour une limite de débit qui se compte à la seconde. Quand le 429 tombait
+    // sur l'invitation, la courtière était prévenue et le co-emprunteur n'avait rien reçu.
+    const appels = installerResendMesure();
+
+    const reponse = await soumettre({
+      signataires: [MARC, JULIE],
+      voie: 'distance',
+      signatures: { '0': TRACE_PNG },
+    });
+
+    expect(reponse.status).toBe(200);
+    expect(appels.map((a) => a.corps.to)).toEqual(['julie@exemple.ca', 'interne@exemple.ca']);
+    expect(Math.max(...appels.map((a) => a.simultanes))).toBe(1);
+  });
+
+  it('une invitation qui ne part pas ne coûte pas la soumission, et elle est nommée', async () => {
+    // Refuser la soumission ferait tout recommencer et ouvrirait un **second** dossier :
+    // deux liens vivants pour la même signature. On répond « c'est fait » en disant qui
+    // n'a pas pu être joint.
+    const appels = installerResendMesure((destinataire) => destinataire !== 'julie@exemple.ca');
+
+    const reponse = await soumettre({
+      signataires: [MARC, JULIE],
+      voie: 'distance',
+      signatures: { '0': TRACE_PNG },
+    });
+    const corps = (await reponse.json()) as Record<string, unknown>;
+
+    expect(reponse.status).toBe(200);
+    expect(corps.enAttente).toEqual([]);
+    expect(corps.nonEnvoyes).toEqual([JULIE]);
+
+    // La courtière doit repartir de ce courriel avec de quoi rattraper : l'alerte et le lien.
+    const avis = appels.find((a) => a.corps.to === 'interne@exemple.ca');
+    expect(String(avis?.corps.html)).toContain('Envoi manqué');
+    expect(String(avis?.corps.html)).toContain('/signer?d=');
+  });
+
+  it('ne remonte l’erreur que si plus rien n’est parti — personne d’autre ne peut le savoir', async () => {
+    installerResendMesure(() => false);
+
+    const reponse = await soumettre({
+      signataires: [MARC, JULIE],
+      voie: 'distance',
+      signatures: { '0': TRACE_PNG },
+    });
+    const corps = (await reponse.json()) as Record<string, unknown>;
+
+    expect(reponse.status).toBe(502);
+    expect(corps.code).toBe('invitation');
   });
 
   it('refuse une voie « en présence » à laquelle il manque un tracé', async () => {
