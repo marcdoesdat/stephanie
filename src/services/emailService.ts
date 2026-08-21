@@ -32,18 +32,47 @@ export interface ResendEmail {
   attachments?: ResendAttachment[];
 }
 
+/**
+ * Resend limite le débit à quelques requêtes par seconde et répond 429 au-delà. Un 429 n'est
+ * pas un refus, c'est « pas maintenant » : le laisser remonter perdait le courriel — y
+ * compris l'invitation à signer, qui est la seule chose capable de débloquer un dossier en
+ * attente. Deux relances suffisent : la limite se mesure à la seconde, pas à la minute.
+ */
+const RELANCES_MAX = 2;
+
+/** Attente par défaut entre deux tentatives, quand Resend n'indique pas `Retry-After`. */
+const ATTENTE_RELANCE_MS = 1100;
+
+/** Plafond de l'attente : au-delà, la fonction SSR expirerait avant d'avoir réessayé. */
+const ATTENTE_RELANCE_MAX_MS = 3000;
+
+function attenteRelance(enTete: string | null | undefined): number {
+  const secondes = Number(enTete);
+  if (!Number.isFinite(secondes) || secondes <= 0) return ATTENTE_RELANCE_MS;
+  return Math.min(secondes * 1000, ATTENTE_RELANCE_MAX_MS);
+}
+
 export async function sendEmail(apiKey: string, email: ResendEmail): Promise<void> {
-  const res = await fetch(RESEND_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(email),
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) {
+  for (let tentative = 0; ; tentative += 1) {
+    const res = await fetch(RESEND_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(email),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (res.ok) return;
+
     const detail = await res.text().catch(() => '');
+    if (res.status === 429 && tentative < RELANCES_MAX) {
+      // `headers` peut manquer sur une réponse simulée : on ne le lit qu'avec précaution.
+      const attente = attenteRelance(res.headers?.get?.('retry-after'));
+      console.warn(`[email] Resend a répondu 429 — nouvelle tentative dans ${attente} ms.`);
+      await new Promise((resoudre) => setTimeout(resoudre, attente));
+      continue;
+    }
     throw new Error(`Resend HTTP ${res.status}: ${detail.slice(0, 300)}`);
   }
 }

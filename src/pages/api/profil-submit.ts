@@ -241,28 +241,59 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Nom **et** adresse : l'écran de confirmation nomme la personne relancée et montre où le
   // lien est parti, sans jamais divulguer le lien lui-même.
-  const enAttente = aEnvoyer.map((i) => ({ nom: i.nom, courriel: i.courriel }));
+  const sansLien = (invitations: readonly InvitationCourriel[]) =>
+    invitations.map((i) => ({ nom: i.nom, courriel: i.courriel }));
   const copies = signataires.map((signataire) => signataire.courriel);
 
   if (!resendEnv) {
     console.log('[profil-submit] ⚠️  Resend non configuré — invitations simulées. Liens à ouvrir :');
     for (const invitation of aEnvoyer) console.log(`  ${invitation.nom} → ${invitation.lien}`);
-    return jsonResponse({ ok: true, dev: true, enAttente, copies }, 200);
+    return jsonResponse({ ok: true, dev: true, enAttente: sansLien(aEnvoyer), copies }, 200);
   }
 
-  // L'invitation est ce qui débloque la suite : si elle part, le dossier vit, même si la
-  // notification interne échoue. On ne fait donc échouer la soumission que sur l'invitation.
-  const [invitationsEnvoyees, avisInterne] = await Promise.allSettled([
-    envoyerInvitations(resendEnv, aEnvoyer, signataires[0]!.nom),
-    envoyerAvisEnAttente(resendEnv, reponses, preuves[0]!, aEnvoyer),
-  ]);
+  /*
+   * Les deux envois partent **en séquence, l'invitation d'abord**, et jamais de front.
+   *
+   * Ils étaient lancés ensemble par un `Promise.allSettled` : deux requêtes Resend sur le fil
+   * à la même milliseconde, pour une limite de débit qui se compte à la seconde. Quand le 429
+   * tombait sur l'invitation plutôt que sur l'avis interne, le résultat était exactement
+   * l'inverse de la priorité annoncée — la courtière était prévenue, et le co-emprunteur, lui,
+   * n'a jamais reçu son lien. `envoyerEnSerie` espaçait déjà les invitations entre elles ;
+   * c'est le couple invitation/avis qui court-circuitait cette précaution.
+   *
+   * L'invitation est ce qui débloque la suite : elle passe donc la première, et l'avis interne
+   * — qui porte désormais le bilan — ne part qu'ensuite.
+   */
+  const bilan = await envoyerInvitations(resendEnv, aEnvoyer, signataires[0]!.nom);
 
-  if (invitationsEnvoyees.status === 'rejected') {
-    return echec('invitation', invitationsEnvoyees.reason);
-  }
-  if (avisInterne.status === 'rejected') {
-    console.error('[profil-submit] Invitations parties, mais la notification interne a échoué :', avisInterne.reason);
+  let avisEnvoye = true;
+  try {
+    await envoyerAvisEnAttente(resendEnv, reponses, preuves[0]!, bilan);
+  } catch (err) {
+    avisEnvoye = false;
+    console.error('[profil-submit] La notification interne a échoué :', err);
   }
 
-  return jsonResponse({ ok: true, enAttente, copies }, 200);
+  /*
+   * Le dossier existe : la soumission a abouti, et la refuser ferait recommencer tout le
+   * parcours pour ouvrir un **second** dossier — deux liens vivants pour la même signature.
+   * On répond donc « c'est fait », en nommant qui n'a pas pu être joint : le client le sait,
+   * la courtière l'a reçu avec les liens, et elle peut rattraper.
+   *
+   * Une seule exception : quand rien n'est parti du tout, personne n'est au courant. C'est le
+   * seul cas où l'erreur doit remonter à l'écran, faute d'un autre canal.
+   */
+  if (bilan.envoyees.length === 0 && !avisEnvoye) {
+    return echec('invitation', new Error('Aucun courriel n’a pu être envoyé (invitations et avis interne).'));
+  }
+
+  return jsonResponse(
+    {
+      ok: true,
+      enAttente: sansLien(bilan.envoyees),
+      ...(bilan.echecs.length ? { nonEnvoyes: sansLien(bilan.echecs) } : {}),
+      copies,
+    },
+    200,
+  );
 };

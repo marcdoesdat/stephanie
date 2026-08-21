@@ -202,14 +202,32 @@ export interface InvitationCourriel {
   readonly lien: string;
 }
 
-/** Invite chaque co-signataire manquant à ouvrir son lien nominatif. */
+/**
+ * Ce qu'il est advenu de chaque invitation. Une invitation qui ne part pas laisse un dossier
+ * que personne ne peut débloquer : on ne peut ni l'ignorer, ni laisser la première défaillance
+ * emporter les suivantes.
+ */
+export interface BilanInvitations {
+  readonly envoyees: readonly InvitationCourriel[];
+  readonly echecs: readonly InvitationCourriel[];
+}
+
+/**
+ * Invite chaque co-signataire manquant à ouvrir son lien nominatif.
+ *
+ * **Ne lève pas.** Chaque envoi est tenté pour lui-même : sur trois co-signataires, l'échec du
+ * premier ne doit pas priver les deux autres de leur lien. Le bilan remonte à l'appelant, qui
+ * en informe le client et la courtière — c'est elle qui rattrapera, elle a les liens.
+ */
 export async function envoyerInvitations(
   env: ResendEnv,
   invitations: readonly InvitationCourriel[],
   initiateur: string,
-): Promise<void> {
+): Promise<BilanInvitations> {
   const config = loadSiteConfig();
   const prenomCourtiere = config.nom.split(' ')[0];
+  const envoyees: InvitationCourriel[] = [];
+  const echecs: InvitationCourriel[] = [];
 
   await envoyerEnSerie(
     invitations.map((invitation) => () => {
@@ -248,9 +266,19 @@ export async function envoyerInvitations(
         subject: `${prenomCourtiere} Weyman — votre signature est requise`,
         html,
         reply_to: env.notifyEmail,
-      });
+      }).then(
+        () => {
+          envoyees.push(invitation);
+        },
+        (err: unknown) => {
+          console.error(`[profil] Invitation non envoyée à ${invitation.courriel} :`, err);
+          echecs.push(invitation);
+        },
+      );
     }),
   );
+
+  return { envoyees, echecs };
 }
 
 /** Prévient la courtière qu'un dossier attend des signatures, avec les liens pour relancer. */
@@ -258,23 +286,37 @@ export async function envoyerAvisEnAttente(
   env: ResendEnv,
   reponses: ReponsesProfil,
   initiateur: PreuveSignature,
-  invitations: readonly InvitationCourriel[],
+  bilan: BilanInvitations,
 ): Promise<void> {
-  const attendus = renderDataRows(
-    invitations.map((i) => [
-      escapeHtml(i.nom),
-      `${escapeHtml(i.courriel)}<br /><a href="${escapeHtml(i.lien)}" style="color:#a85f38;font-size:12px;">lien de signature (à renvoyer au besoin)</a>`,
-    ]),
-  );
+  const lignes = (invitations: readonly InvitationCourriel[]) =>
+    renderDataRows(
+      invitations.map((i) => [
+        escapeHtml(i.nom),
+        `${escapeHtml(i.courriel)}<br /><a href="${escapeHtml(i.lien)}" style="color:#a85f38;font-size:12px;">lien de signature (à renvoyer au besoin)</a>`,
+      ]),
+    );
+
+  // Un envoi manqué ne doit pas se lire entre les lignes d'une liste d'attente : c'est le
+  // seul point du dossier qui exige un geste d'elle, et elle est la seule à pouvoir le faire.
+  const alerte = bilan.echecs.length
+    ? `<p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fbeae3;border:1px solid #a85f38;color:#a85f38;">
+        <strong>Le courriel d'invitation n'a pas pu être envoyé</strong> à
+        ${escapeHtml(bilan.echecs.map((i) => `${i.nom} (${i.courriel})`).join(', '))}.
+        Le dossier et le lien restent valides : transmettez-le-lui vous-même depuis le tableau
+        « Envoi manqué » ci-dessous. Vérifiez l'adresse au passage.
+      </p>`
+    : '';
 
   const html = wrapEmailHtml(`
       <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Profil des emprunteurs — en attente de signature</h1>
       <p style="margin:0 0 12px;color:#6a5f50;font-size:14px;"><strong>${escapeHtml(initiateur.nom)}</strong> a rempli et signé.</p>
+      ${alerte}
       <p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#f7f2eb;border:1px solid #e3d9cc;color:#6a5f50;">
         Aucun PDF n'est produit tant que tout le monde n'a pas signé. Vous recevrez le document
         complet automatiquement à la dernière signature.
       </p>
-      ${bloc('En attente', attendus)}
+      ${bloc('Envoi manqué — à transmettre vous-même', lignes(bilan.echecs))}
+      ${bloc('En attente', lignes(bilan.envoyees))}
       ${sectionReponses(reponses)}
       ${sectionPreuves([initiateur])}
   `);

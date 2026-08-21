@@ -233,20 +233,26 @@ const OPTIONS_NOMBRE = [
 
             <button type="button" class="profil-ajout" data-ajouter>+ Ajouter un autre emprunteur</button>
 
+            {/* Aucune réponse n'est pré-cochée. C'est cette question, et elle seule, qui décide
+                si un lien de signature part vers les autres emprunteurs : pré-cocher « ils sont
+                avec moi » faisait traverser sans la voir la branche où personne ne reçoit rien,
+                et un co-emprunteur pouvait attendre indéfiniment un courriel jamais dû. Même
+                raison que l'écran du nombre d'emprunteurs. */}
             <fieldset class="profil-voie" data-voie-groupe hidden>
-              <legend class="cform-label">Les autres emprunteurs sont-ils avec vous&nbsp;?</legend>
+              <legend class="cform-label">Les autres emprunteurs sont-ils avec vous maintenant&nbsp;?</legend>
               <label class="profil-voie-choix">
-                <input type="radio" name="voie" value="presence" checked />
+                <input type="radio" name="voie" value="presence" />
                 <span>
                   <strong>Oui, ils sont avec moi</strong>
-                  Chacun signera sur cet appareil, l'un après l'autre.
+                  Chacun signera sur cet appareil, l'un après l'autre. Aucun lien ne sera envoyé.
                 </span>
               </label>
               <label class="profil-voie-choix">
                 <input type="radio" name="voie" value="distance" />
                 <span>
                   <strong>Non, ils signeront de leur côté</strong>
-                  Chacun recevra un lien personnel par courriel pour lire et signer.
+                  Chacun recevra par courriel son propre lien pour lire et signer, à l'adresse
+                  indiquée ci-dessus.
                 </span>
               </label>
             </fieldset>
@@ -265,6 +271,11 @@ const OPTIONS_NOMBRE = [
             <p class="quiz-q" data-titre-signature>Votre signature</p>
             <p class="quiz-q-sub" data-sous-signature>
               Signez dans le cadre, comme sur papier.
+            </p>
+
+            <p class="profil-prepare" data-note-effacee hidden>
+              La liste des emprunteurs a changé depuis votre passage ici&nbsp;: les signatures
+              concernées ont été effacées. Chacun doit signer dans son propre cadre.
             </p>
 
             {
@@ -641,8 +652,14 @@ const OPTIONS_NOMBRE = [
 
   /** Ce que /api/profil-submit renvoie quand la soumission a abouti. */
   interface Reponse {
-    /** Co-emprunteurs relancés par lien nominatif — voie « à distance » uniquement. */
+    /** Co-emprunteurs qui ont **réellement** reçu leur lien nominatif. */
     enAttente?: Signataire[];
+    /**
+     * Ceux dont le courriel d'invitation n'est pas parti. Le dossier vit quand même et
+     * Stéphanie a reçu leurs liens : le dire vaut mieux que laisser attendre un courriel
+     * qui ne viendra pas.
+     */
+    nonEnvoyes?: Signataire[];
     /** Adresses qui reçoivent (ou recevront) l'accusé de signature. Jamais le PDF. */
     copies?: string[];
   }
@@ -653,7 +670,11 @@ const OPTIONS_NOMBRE = [
     /** Nombre d'emprunteurs déclaré à l'écran dédié. `null` tant que rien n'a été choisi. */
     nombre: number | null;
     signataires: Signataire[];
-    voie: 'presence' | 'distance';
+    /**
+     * Réponse à « les autres emprunteurs sont-ils avec vous ? ». `null` tant que rien n'a été
+     * choisi — cette question n'a pas de défaut, voir `voieSoumise()`.
+     */
+    voie: 'presence' | 'distance' | null;
     /** Écran affiché au moment de la dernière sauvegarde — pour reprendre après un F5. */
     etape: number;
   }
@@ -737,7 +758,7 @@ const OPTIONS_NOMBRE = [
         autreMontant: '',
         nombre: null,
         signataires: [{ nom: '', courriel: '' }],
-        voie: 'presence',
+        voie: null,
         etape: 0,
       };
       try {
@@ -757,7 +778,9 @@ const OPTIONS_NOMBRE = [
               ? lu.nombre
               : null,
           signataires: lu.signataires?.length ? lu.signataires : vide.signataires,
-          voie: lu.voie === 'distance' ? 'distance' : 'presence',
+          // Une session ouverte avant que la question cesse d'avoir un défaut peut porter
+          // n'importe quoi : tout ce qui n'est pas un choix explicite repasse par la question.
+          voie: lu.voie === 'distance' ? 'distance' : lu.voie === 'presence' ? 'presence' : null,
           etape: typeof lu.etape === 'number' && Number.isInteger(lu.etape) ? lu.etape : 0,
         };
       } catch {
@@ -1034,14 +1057,21 @@ const OPTIONS_NOMBRE = [
           : 'C’est à cette adresse que partira votre accusé de signature.';
       }
 
+      // Seul, la question ne se pose pas — `voieSoumise()` s'en charge. On se garde bien de
+      // pousser « presence » dans l'état au passage : un client qui déclare être seul, puis
+      // ajoute un co-emprunteur, retrouverait une réponse qu'il n'a jamais donnée.
       if (groupeVoie) groupeVoie.hidden = !aPlusieurs;
-      if (!aPlusieurs && etat.voie !== 'presence') {
-        etat.voie = 'presence';
-        for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="voie"]')) {
-          radio.checked = radio.value === 'presence';
-        }
-        sauvegarder();
-      }
+    }
+
+    /**
+     * La voie réellement soumise, ou `null` s'il manque encore la réponse.
+     *
+     * Un emprunteur seul signe forcément sur cet appareil : la question ne lui est pas posée,
+     * et « en présence » est ici un constat, pas un défaut. Dès qu'ils sont deux, en revanche,
+     * rien n'est supposé — c'est cette réponse qui décide si un lien part.
+     */
+    function voieSoumise(): 'presence' | 'distance' | null {
+      return etat.signataires.length >= 2 ? etat.voie : 'presence';
     }
 
     function champ(
@@ -1082,6 +1112,7 @@ const OPTIONS_NOMBRE = [
       radio.addEventListener('change', () => {
         if (!radio.checked) return;
         etat.voie = radio.value === 'distance' ? 'distance' : 'presence';
+        masquerErreurs();
         sauvegarder();
       });
     }
@@ -1111,6 +1142,12 @@ const OPTIONS_NOMBRE = [
         erreur(probleme);
         return;
       }
+      if (voieSoumise() === null) {
+        erreur(
+          'Dites-moi si les autres emprunteurs sont avec vous : c’est ce qui décide s’ils reçoivent un lien pour signer de leur côté.',
+        );
+        return;
+      }
       preparerSignatures();
       afficher(ETAPE_SIGNATURE);
     });
@@ -1118,11 +1155,31 @@ const OPTIONS_NOMBRE = [
     /* ---------------- Signatures ---------------- */
 
     function blocsActifs(): number {
-      return etat.voie === 'distance' ? 1 : etat.signataires.length;
+      return voieSoumise() === 'distance' ? 1 : etat.signataires.length;
+    }
+
+    /**
+     * À qui appartient le tracé qui se trouve dans chaque cadre.
+     *
+     * Les cadres sont rendus une fois pour toutes et survivent aux allers-retours ; la liste
+     * des signataires, elle, bouge. Retirer le deuxième de trois emprunteurs décale le
+     * troisième dans le cadre du deuxième — et le tracé déjà dessiné y restait, attestation
+     * cochée, sous le nom de quelqu'un d'autre. Un formulaire de conformité serait alors parti
+     * portant la signature d'une personne au nom d'une autre.
+     */
+    const proprietaireTrace = new Map<number, string>();
+
+    /** Ce qui identifie un signataire pour ce seul usage : ni le nom seul, ni le rang. */
+    function identiteSignataire(index: number): string | null {
+      const signataire = etat.signataires[index];
+      if (!signataire) return null;
+      return `${signataire.nom}\u0000${signataire.courriel}`.toLowerCase();
     }
 
     function preparerSignatures(): void {
       const actifs = blocsActifs();
+      let effacee = false;
+
       for (let index = 0; index < MAX_SIGNATAIRES; index += 1) {
         const bloc = formulaire.querySelector<HTMLElement>(`[data-bloc-signature="${index}"]`);
         if (!bloc) continue;
@@ -1130,14 +1187,34 @@ const OPTIONS_NOMBRE = [
         const rappel = bloc.querySelector<HTMLElement>('[data-sig-qui]');
         const nom = etat.signataires[index]?.nom ?? '';
         if (rappel) rappel.textContent = nom ? `Signature de ${nom}` : '';
+
+        // Le cadre a changé d'occupant : ce qu'il contient ne vaut plus rien. On l'efface —
+        // y compris l'attestation, qui est un engagement personnel et ne se transmet pas.
+        const identite = identiteSignataire(index);
+        if ((proprietaireTrace.get(index) ?? null) !== identite) {
+          const pad = formulaire.querySelector<SignaturePadElement>(`#signature-${index}`);
+          // L'élément personnalisé peut ne pas encore être défini au tout premier passage.
+          if (typeof pad?.effacer === 'function') {
+            if (pad.versPng() !== null) effacee = true;
+            pad.effacer();
+          }
+          const attestation = formulaire.querySelector<HTMLInputElement>(`[data-attestation="${index}"]`);
+          if (attestation) attestation.checked = false;
+
+          if (identite === null) proprietaireTrace.delete(index);
+          else proprietaireTrace.set(index, identite);
+        }
       }
+
+      const note = formulaire.querySelector<HTMLElement>('[data-note-effacee]');
+      if (note) note.hidden = !effacee;
 
       const titre = formulaire.querySelector<HTMLElement>('[data-titre-signature]');
       const sous = formulaire.querySelector<HTMLElement>('[data-sous-signature]');
       if (titre) titre.textContent = actifs > 1 ? 'Vos signatures' : 'Votre signature';
       if (sous) {
         sous.textContent =
-          etat.voie === 'distance'
+          voieSoumise() === 'distance'
             ? 'Signez votre partie. Les autres emprunteurs recevront leur propre lien par courriel.'
             : actifs > 1
               ? 'Chacun signe dans son cadre — passez l’appareil quand c’est fait.'
@@ -1185,7 +1262,7 @@ const OPTIONS_NOMBRE = [
               ...(etat.autreMontant ? { autre_montant: Number(etat.autreMontant) } : {}),
             },
             signataires: etat.signataires,
-            voie: etat.voie,
+            voie: voieSoumise(),
             attestation: true,
             signatures,
           }),
@@ -1253,19 +1330,40 @@ const OPTIONS_NOMBRE = [
       // elles qui ont réellement reçu (ou recevront) l'accusé de signature.
       const copies = donnees.copies ?? [];
 
-      if (donnees.enAttente?.length) {
-        const attendus = donnees.enAttente;
+      const manquants = donnees.nonEnvoyes ?? [];
+
+      if (donnees.enAttente?.length || manquants.length) {
+        const attendus = donnees.enAttente ?? [];
         if (titre) titre.textContent = 'Votre partie est signée';
 
-        const phrase: Array<string | Node> = ["Un lien de signature vient d'être envoyé à "];
-        attendus.forEach((personne, index) => {
-          if (index > 0) phrase.push(index === attendus.length - 1 ? ' et ' : ', ');
-          phrase.push(`${personne.nom} (`, adresse(personne.courriel), ')');
-        });
+        const phrase: Array<string | Node> = [];
+
+        if (attendus.length) {
+          phrase.push("Un lien de signature vient d'être envoyé à ");
+          attendus.forEach((personne, index) => {
+            if (index > 0) phrase.push(index === attendus.length - 1 ? ' et ' : ', ');
+            phrase.push(`${personne.nom} (`, adresse(personne.courriel), ')');
+          });
+          phrase.push('.');
+        }
+
+        // Un envoi manqué se dit, il ne se tait pas : sans cette phrase, quelqu'un attend un
+        // courriel qui ne viendra jamais. Stéphanie a reçu le lien de son côté.
+        if (manquants.length) {
+          phrase.push(attendus.length ? ' En revanche, je n’ai pas réussi à écrire à ' : 'Je n’ai pas réussi à écrire à ');
+          manquants.forEach((personne, index) => {
+            if (index > 0) phrase.push(index === manquants.length - 1 ? ' et ' : ', ');
+            phrase.push(`${personne.nom} (`, adresse(personne.courriel), ')');
+          });
+          phrase.push(
+            ' — vérifiez l’adresse. Stéphanie est prévenue et lui transmettra son lien de signature.',
+          );
+        }
+
         phrase.push(
-          attendus.length === 1
-            ? '. Le formulaire sera transmis à Stéphanie dès sa signature, et vous recevrez une confirmation'
-            : '. Le formulaire sera transmis à Stéphanie dès les dernières signatures, et vous recevrez une confirmation',
+          attendus.length + manquants.length === 1
+            ? ' Le formulaire sera transmis à Stéphanie dès sa signature, et vous recevrez une confirmation'
+            : ' Le formulaire sera transmis à Stéphanie dès les dernières signatures, et vous recevrez une confirmation',
         );
         // copies[0] est l'emprunteur qui vient de remplir : c'est son adresse à lui qu'on
         // lui confirme, pas celle de tout le monde.
@@ -1303,7 +1401,7 @@ const OPTIONS_NOMBRE = [
       if (zone && etat.reponses.absorption === 'autre') zone.hidden = false;
     }
     for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="voie"]')) {
-      radio.checked = radio.value === etat.voie;
+      radio.checked = etat.voie !== null && radio.value === etat.voie;
     }
     if (etat.nombre !== null) ajusterSignataires(etat.nombre);
     appliquerSelectionNombre();
@@ -1336,7 +1434,11 @@ const OPTIONS_NOMBRE = [
       // l'écran qu'on ne veut voir personne franchir sans y répondre.
       if (voulue >= ETAPE_SIGNATAIRES && etat.nombre === null) return ETAPE_NOMBRE;
 
-      if (voulue >= ETAPE_SIGNATURE && erreurSignataires() !== null) return ETAPE_SIGNATAIRES;
+      // Sans réponse à la question de la voie, l'écran de signature ne sait pas combien de
+      // cadres ouvrir : c'est exactement l'écran qu'on ne veut voir personne franchir.
+      if (voulue >= ETAPE_SIGNATURE && (erreurSignataires() !== null || voieSoumise() === null)) {
+        return ETAPE_SIGNATAIRES;
+      }
 
       return Math.min(voulue, TOTAL);
     }
