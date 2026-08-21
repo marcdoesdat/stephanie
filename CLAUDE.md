@@ -295,6 +295,15 @@ est identique au modèle au pixel près.
   n'écrit **rien** dans l'état — sinon ajouter ensuite un co-emprunteur ramènerait une
   réponse que personne n'a donnée. Chaque option énonce sa conséquence : « aucun lien ne
   sera envoyé » d'un côté, « chacun recevra son propre lien » de l'autre.
+- **Un tracé appartient à quelqu'un, pas à un rang.** Les cadres de signature sont rendus une
+  fois pour toutes et survivent aux allers-retours ; la liste des signataires, elle, bouge.
+  Retirer le deuxième de trois emprunteurs décalait le troisième dans le cadre du deuxième —
+  et le tracé déjà dessiné y restait, attestation cochée, sous le nom de quelqu'un d'autre : un
+  formulaire de conformité serait parti portant la signature d'une personne au nom d'une autre.
+  `preparerSignatures` retient donc l'identité (nom + courriel) du propriétaire de chaque
+  cadre, et vide cadre **et** attestation dès qu'elle change. L'attestation est un engagement
+  personnel : elle ne se transmet pas avec le cadre. Une ligne à l'écran dit pourquoi le cadre
+  s'est vidé, sans quoi l'effacement passerait pour une panne.
 - Les tracés de signature ne sont **jamais persistés côté navigateur** et le dossier Blob est
   supprimé dès le PDF produit. TTL de 14 jours, purge opportuniste à la création.
 - Le parcours reprend où il en était après un rechargement : réponses **et écran courant**

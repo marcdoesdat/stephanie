@@ -273,6 +273,11 @@ const OPTIONS_NOMBRE = [
               Signez dans le cadre, comme sur papier.
             </p>
 
+            <p class="profil-prepare" data-note-effacee hidden>
+              La liste des emprunteurs a changé depuis votre passage ici&nbsp;: les signatures
+              concernées ont été effacées. Chacun doit signer dans son propre cadre.
+            </p>
+
             {
               Array.from({ length: MAX_SIGNATAIRES }).map((_, index) => (
                 <div class="profil-bloc-signature" data-bloc-signature={String(index)} hidden>
@@ -1153,8 +1158,28 @@ const OPTIONS_NOMBRE = [
       return voieSoumise() === 'distance' ? 1 : etat.signataires.length;
     }
 
+    /**
+     * À qui appartient le tracé qui se trouve dans chaque cadre.
+     *
+     * Les cadres sont rendus une fois pour toutes et survivent aux allers-retours ; la liste
+     * des signataires, elle, bouge. Retirer le deuxième de trois emprunteurs décale le
+     * troisième dans le cadre du deuxième — et le tracé déjà dessiné y restait, attestation
+     * cochée, sous le nom de quelqu'un d'autre. Un formulaire de conformité serait alors parti
+     * portant la signature d'une personne au nom d'une autre.
+     */
+    const proprietaireTrace = new Map<number, string>();
+
+    /** Ce qui identifie un signataire pour ce seul usage : ni le nom seul, ni le rang. */
+    function identiteSignataire(index: number): string | null {
+      const signataire = etat.signataires[index];
+      if (!signataire) return null;
+      return `${signataire.nom}\u0000${signataire.courriel}`.toLowerCase();
+    }
+
     function preparerSignatures(): void {
       const actifs = blocsActifs();
+      let effacee = false;
+
       for (let index = 0; index < MAX_SIGNATAIRES; index += 1) {
         const bloc = formulaire.querySelector<HTMLElement>(`[data-bloc-signature="${index}"]`);
         if (!bloc) continue;
@@ -1162,7 +1187,27 @@ const OPTIONS_NOMBRE = [
         const rappel = bloc.querySelector<HTMLElement>('[data-sig-qui]');
         const nom = etat.signataires[index]?.nom ?? '';
         if (rappel) rappel.textContent = nom ? `Signature de ${nom}` : '';
+
+        // Le cadre a changé d'occupant : ce qu'il contient ne vaut plus rien. On l'efface —
+        // y compris l'attestation, qui est un engagement personnel et ne se transmet pas.
+        const identite = identiteSignataire(index);
+        if ((proprietaireTrace.get(index) ?? null) !== identite) {
+          const pad = formulaire.querySelector<SignaturePadElement>(`#signature-${index}`);
+          // L'élément personnalisé peut ne pas encore être défini au tout premier passage.
+          if (typeof pad?.effacer === 'function') {
+            if (pad.versPng() !== null) effacee = true;
+            pad.effacer();
+          }
+          const attestation = formulaire.querySelector<HTMLInputElement>(`[data-attestation="${index}"]`);
+          if (attestation) attestation.checked = false;
+
+          if (identite === null) proprietaireTrace.delete(index);
+          else proprietaireTrace.set(index, identite);
+        }
       }
+
+      const note = formulaire.querySelector<HTMLElement>('[data-note-effacee]');
+      if (note) note.hidden = !effacee;
 
       const titre = formulaire.querySelector<HTMLElement>('[data-titre-signature]');
       const sous = formulaire.querySelector<HTMLElement>('[data-sous-signature]');
