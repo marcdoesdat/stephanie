@@ -285,6 +285,16 @@ est identique au modèle au pixel près.
   suivie d'un « + Ajouter » discret, le co-emprunteur se retrouvait absent d'un formulaire pourtant
   signé « notre vision commune ». Le bouton « + Ajouter » reste, mais comme correction, pas comme
   seul chemin.
+- **« Les autres emprunteurs sont-ils avec vous ? » n'a pas de réponse par défaut.** C'est
+  cette question, et elle seule, qui décide si un lien de signature part vers les
+  co-emprunteurs. Tant que « Oui, ils sont avec moi » était pré-coché, on traversait sans la
+  voir la branche où personne ne reçoit rien — et un co-emprunteur pouvait attendre
+  indéfiniment un courriel qui n'était jamais dû. Même raison que l'écran du nombre
+  d'emprunteurs. Corollaires tenus par `voieSoumise()` : un emprunteur **seul** n'est pas
+  questionné (« en présence » est alors un constat, pas un défaut), et déclarer être seul
+  n'écrit **rien** dans l'état — sinon ajouter ensuite un co-emprunteur ramènerait une
+  réponse que personne n'a donnée. Chaque option énonce sa conséquence : « aucun lien ne
+  sera envoyé » d'un côté, « chacun recevra son propre lien » de l'autre.
 - Les tracés de signature ne sont **jamais persistés côté navigateur** et le dossier Blob est
   supprimé dès le PDF produit. TTL de 14 jours, purge opportuniste à la création.
 - Le parcours reprend où il en était après un rechargement : réponses **et écran courant**
