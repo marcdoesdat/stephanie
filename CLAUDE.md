@@ -281,7 +281,9 @@ est identique au modèle au pixel près.
   signataires reçoivent un accusé de signature sans document, et les endpoints ne renvoient plus
   ni `pdf` ni `filename` au navigateur — l'écran de confirmation ne propose aucun téléchargement.
 - **Le nombre d'emprunteurs est demandé, jamais déduit.** Un écran dédié — en tuiles, sans valeur
-  par défaut — précède la liste des signataires. Tant que la liste s'ouvrait sur une seule carte
+  par défaut — précède la liste des signataires ; quand un lien préparé apporte déjà les
+  coordonnées, la question est intégrée à l'écran des signataires au lieu d'être une étape.
+  Tant que la liste s'ouvrait sur une seule carte
   suivie d'un « + Ajouter » discret, le co-emprunteur se retrouvait absent d'un formulaire pourtant
   signé « notre vision commune ». Le bouton « + Ajouter » reste, mais comme correction, pas comme
   seul chemin.
@@ -349,8 +351,11 @@ est identique au modèle au pixel près.
   confiance. `/preparer-profil` est **plus strict** que ce décodeur : une adresse douteuse doit
   être corrigée tant qu'elle est sous les yeux de celle qui la connaît.
 - **Le nombre d'emprunteurs reste demandé.** Un lien préparé pour deux personnes
-  **pré-sélectionne** la tuile et le dit à l'écran ; il ne franchit pas l'écran à la place du
-  client. Une valeur préparée par la courtière n'est pas un nombre deviné par le formulaire.
+  **pré-sélectionne** la tuile et le dit à l'écran ; il ne franchit pas la question à la
+  place du client. Quand le lien est préparé, la question vit sur l'écran des signataires —
+  le client la vérifie là où les coordonnées l'attendent — et « retour » y ramène au
+  récapitulatif ; sans lien, l'écran dédié au nombre reste. Une valeur préparée par la
+  courtière n'est pas un nombre deviné par le formulaire.
 - **`/preparer-profil` n'envoie rien et n'enregistre rien** : pas d'endpoint, pas de dossier,
   pas de courriel. La page ne construit qu'une URL dans le navigateur — ce qui est préparé
   n'existe que dans le lien, et le lien n'existe que quand elle le transmet.

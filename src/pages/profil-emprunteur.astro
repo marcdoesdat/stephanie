@@ -189,8 +189,8 @@ const OPTIONS_NOMBRE = [
               fournit pas la mise de fonds.
             </p>
 
-            {/* Visible seulement quand le lien portait un préremplissage : la réponse est
-                pré-sélectionnée, mais la question reste posée — c'est le client qui la valide. */}
+            {/* L'écran dédié du parcours sans lien préparé. Avec un lien, la même question
+                est posée directement sur l'écran des signataires. */}
             <p class="profil-prepare" data-note-preparation hidden>
               {prenom} a préparé ce formulaire d’avance. Vérifiez que le nombre est exact&nbsp;;
               corrigez-le au besoin.
@@ -223,6 +223,30 @@ const OPTIONS_NOMBRE = [
               Tous les emprunteurs au prêt doivent signer. Chacun a besoin de sa propre adresse
               courriel.
             </p>
+
+            {/* Visible seulement quand le lien portait un préremplissage : les coordonnées
+                étant déjà remplies, la question du nombre vit ici, sur l'écran où la liste se
+                corrige — un écran de moins à franchir pour le client. */}
+            <fieldset class="profil-nombre-integre" data-nombre-integre hidden>
+              <legend>Combien d’emprunteurs seront au prêt&nbsp;?</legend>
+              <p class="profil-prepare" data-note-preparation hidden>
+                {prenom} a préparé ce formulaire d’avance. Vérifiez que le nombre est exact&nbsp;;
+                corrigez-le au besoin.
+              </p>
+              <div class="profil-nombre-tuiles">
+                {
+                  OPTIONS_NOMBRE.map((option) => (
+                    <button
+                      type="button"
+                      class="profil-nombre-tuile"
+                      data-nombre-integre={String(option.nombre)}
+                    >
+                      {option.label}
+                    </button>
+                  ))
+                }
+              </div>
+            </fieldset>
 
             <p class="profil-prepare" data-note-preparation hidden>
               Les coordonnées ci-dessous viennent de {prenom}. Corrigez-les si besoin&nbsp;: c’est
@@ -544,6 +568,56 @@ const OPTIONS_NOMBRE = [
     color: var(--ink);
   }
 
+  /* ---- Nombre intégré à l'écran des signataires (lien préparé seulement) ---- */
+
+  .profil-nombre-integre {
+    border: 0;
+    padding: 0;
+    margin: 1.3rem 0 0;
+  }
+
+  .profil-nombre-integre legend {
+    padding: 0;
+    margin-bottom: 0.55rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .profil-nombre-integre .profil-prepare {
+    margin-bottom: 0.85rem;
+  }
+
+  .profil-nombre-tuiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .profil-nombre-tuile {
+    padding: 0.65rem 0.45rem;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--ink);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .profil-nombre-tuile:hover {
+    border-color: var(--clay);
+  }
+
+  .profil-nombre-tuile.selected {
+    border-color: var(--forest);
+    background: rgba(61, 90, 74, 0.08);
+  }
+
   /* ---- Signature ---- */
 
   .profil-bloc-signature {
@@ -694,6 +768,8 @@ const OPTIONS_NOMBRE = [
     const sousSignataires = formulaire.querySelector<HTMLElement>('[data-sous-signataires]');
     const boutonAjouter = formulaire.querySelector<HTMLButtonElement>('[data-ajouter]');
     const groupeVoie = formulaire.querySelector<HTMLElement>('[data-voie-groupe]');
+    /** La question du nombre intégrée aux signataires — visible seulement avec un lien préparé. */
+    const blocNombreIntegre = formulaire.querySelector<HTMLElement>('[data-nombre-integre]');
 
     let etape = 0;
     /** Quand on corrige depuis le récapitulatif, on y retourne au lieu d'avancer. */
@@ -740,8 +816,8 @@ const OPTIONS_NOMBRE = [
         nom: emprunteur.nom,
         courriel: emprunteur.courriel,
       }));
-      // Le nombre reste **demandé** : il est seulement pré-sélectionné à l'écran, que le
-      // client doit toujours franchir d'un clic. Une valeur préparée par la courtière n'est
+      // Le nombre reste **demandé** : il est seulement pré-sélectionné, sur l'écran des
+      // signataires où la question est intégrée. Une valeur préparée par la courtière n'est
       // pas un nombre deviné par le formulaire.
       etat.nombre = emprunteurs.length;
       sauvegarder();
@@ -857,7 +933,11 @@ const OPTIONS_NOMBRE = [
     formulaire.querySelector('[data-demarrer]')?.addEventListener('click', () => afficher(1));
 
     boutonRetour?.addEventListener('click', () => {
-      if (etape > 1) afficher(etape - 1);
+      if (etape <= 1) return;
+      // Lien préparé : depuis les signataires, « retour » ramène au récapitulatif — la
+      // question du nombre a été intégrée ici et n'est plus une étape du parcours.
+      if (prerempli && etape === ETAPE_SIGNATAIRES) afficher(ETAPE_RECAP);
+      else afficher(etape - 1);
     });
 
     /* ---------------- Questions ---------------- */
@@ -955,7 +1035,9 @@ const OPTIONS_NOMBRE = [
       bouton.type = 'button';
       bouton.className = 'btn-cta btn-cta--block';
       bouton.textContent = 'Tout est exact — continuer';
-      bouton.addEventListener('click', () => afficher(ETAPE_NOMBRE));
+      // Lien préparé : la question du nombre est intégrée à l'écran des signataires, où les
+      // coordonnées attendent déjà le client. Sans lien, l'écran dédié reste celui du nombre.
+      bouton.addEventListener('click', () => afficher(prerempli ? ETAPE_SIGNATAIRES : ETAPE_NOMBRE));
       continuer.appendChild(bouton);
       listeRecap.appendChild(continuer);
     }
@@ -963,8 +1045,11 @@ const OPTIONS_NOMBRE = [
     /* ---------------- Nombre d'emprunteurs ---------------- */
 
     function appliquerSelectionNombre(): void {
-      for (const carte of formulaire.querySelectorAll<HTMLElement>('[data-nombre]')) {
-        carte.classList.toggle('selected', Number(carte.dataset.nombre) === etat.nombre);
+      // Deux jeux de tuiles portent la même sélection : l'écran dédié au nombre (parcours
+      // sans lien préparé) et la question intégrée à l'écran des signataires (lien préparé).
+      for (const carte of formulaire.querySelectorAll<HTMLElement>('[data-nombre], [data-nombre-integre]')) {
+        const valeur = Number(carte.dataset.nombre ?? carte.dataset.nombreIntegre);
+        carte.classList.toggle('selected', valeur === etat.nombre);
       }
     }
 
@@ -991,6 +1076,22 @@ const OPTIONS_NOMBRE = [
 
         // Même délai que les questions : la sélection doit être vue avant que l'écran change.
         window.setTimeout(() => afficher(ETAPE_SIGNATAIRES), 220);
+      });
+    }
+
+    // Le même choix, posé sur l'écran des signataires : on reste sur place, la liste
+    // s'ajuste sous les yeux du client — qui est justement en train de la corriger.
+    for (const carte of formulaire.querySelectorAll<HTMLElement>('[data-nombre-integre]')) {
+      carte.addEventListener('click', () => {
+        const nombre = Number(carte.dataset.nombreIntegre);
+        if (!Number.isInteger(nombre) || nombre < 1 || nombre > MAX_SIGNATAIRES) return;
+
+        etat.nombre = nombre;
+        ajusterSignataires(nombre);
+        appliquerSelectionNombre();
+        rendreSignataires();
+        masquerErreurs();
+        sauvegarder();
       });
     }
 
@@ -1411,6 +1512,8 @@ const OPTIONS_NOMBRE = [
       for (const note of formulaire.querySelectorAll<HTMLElement>('[data-note-preparation]')) {
         note.hidden = false;
       }
+      // La question du nombre vit sur l'écran des signataires quand le lien était préparé.
+      if (blocNombreIntegre) blocNombreIntegre.hidden = false;
     }
 
     /**
