@@ -19,9 +19,15 @@ interface Props {
    * entre en concurrence avec celle de la page.
    */
   sansBarreCta?: boolean;
+  /**
+   * Retire la bannière de consentement et les scripts d'analytique. Pour les écrans
+   * internes (cockpit de la courtière) : la bannière fixe couvre le contenu, et il n'y
+   * a rien à consentir ni à mesurer sur un outil de travail.
+   */
+  sansConsentement?: boolean;
 }
 
-const { title, fullTitle, description, ogImage, noindex, sansBarreCta } = Astro.props;
+const { title, fullTitle, description, ogImage, noindex, sansBarreCta, sansConsentement } = Astro.props;
 ---
 
 <!doctype html>
@@ -90,16 +96,18 @@ const { title, fullTitle, description, ogImage, noindex, sansBarreCta } = Astro.
       />
     </noscript>
 
-    <script
-      is:inline
-      defer
-      src="https://cloud.umami.is/script.js"
-      data-website-id="9a2bb5e1-afd5-4d94-a89f-5584d5c44b12"
-      data-domains={config.site_url.replace(/^https?:\/\//, '')}
-    ></script>
+    {!sansConsentement && (
+      <script
+        is:inline
+        defer
+        src="https://cloud.umami.is/script.js"
+        data-website-id="9a2bb5e1-afd5-4d94-a89f-5584d5c44b12"
+        data-domains={config.site_url.replace(/^https?:\/\//, '')}
+      ></script>
+    )}
 
     <!-- Bannière de consentement Loi 25 : gère le chargement conditionnel de Google Ads / Google Analytics (GA4) -->
-    <script is:inline defer src="/js/consent.js"></script>
+    {!sansConsentement && <script is:inline defer src="/js/consent.js"></script>}
 
     <!-- Critical CSS : fondations above-the-fold (variables, reset, nav, hero).
          is:inline est OBLIGATOIRE : sans lui, Astro scope ces sélecteurs (qui visent
@@ -114,8 +122,8 @@ const { title, fullTitle, description, ogImage, noindex, sansBarreCta } = Astro.
       .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
       .skip-link{position:absolute;top:.5rem;left:.5rem;transform:translateY(calc(-100% - 1rem));z-index:10000;padding:.6rem 1rem;background:var(--ink);color:#fff;font-weight:600;border-radius:6px;text-decoration:none;transition:transform .15s ease-in}
       .skip-link:focus,.skip-link:focus-visible{transform:translateY(0);outline:2px solid var(--clay);outline-offset:2px}
-      nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,250,246,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 clamp(1rem,3vw,4rem);display:flex;align-items:center;justify-content:space-between;min-height:68px}
-      nav.scrolled{box-shadow:var(--shadow-sm)}
+      nav#navbar{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,250,246,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 clamp(1rem,3vw,4rem);display:flex;align-items:center;justify-content:space-between;min-height:68px}
+      nav#navbar.scrolled{box-shadow:var(--shadow-sm)}
       .nav-logo{font-family:"Lora",serif;font-size:1.15rem;font-weight:600;color:var(--ink);text-decoration:none}
       .nav-logo span,.nav-logo .cabinet-name{color:var(--clay)}
       .nav-links{display:flex;gap:clamp(1rem,1.8vw,2.5rem);list-style:none;align-items:center;flex-wrap:wrap;min-width:0}
@@ -140,7 +148,7 @@ const { title, fullTitle, description, ogImage, noindex, sansBarreCta } = Astro.
       .card-sm{font-size:.75rem;color:var(--muted)}.card-val{font-family:"Lora",serif;font-size:1.1rem;font-weight:600;color:var(--forest)}
       @media(max-width:1280px){.nav-links{gap:.85rem}.nav-links a{font-size:.74rem}.nav-cta{padding:.5rem 1rem}}
       @media(max-width:1180px){.nav-links{display:none}.hamburger{display:flex}}
-      @media(max-width:900px){nav{padding:0 1.5rem}#hero{padding:6rem 1.5rem 3rem}.hero-inner{grid-template-columns:1fr;gap:2rem}.hero-left .hero-value-prop{font-size:2.8rem}.hero-right{display:none}}
+      @media(max-width:900px){nav#navbar{padding:0 1.5rem}#hero{padding:6rem 1.5rem 3rem}.hero-inner{grid-template-columns:1fr;gap:2rem}.hero-left .hero-value-prop{font-size:2.8rem}.hero-right{display:none}}
     </style>
   </head>
   <body>
@@ -159,7 +167,7 @@ const { title, fullTitle, description, ogImage, noindex, sansBarreCta } = Astro.
         </a>
       </div>
     )}
-    <ConsentBanner />
+    {!sansConsentement && <ConsentBanner />}
 
     <!-- Sticky scroll-aware + état conversion -->
     <script is:inline>

@@ -15,6 +15,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  comparerContrats,
   motifUrgenceContrat,
   motifUrgenceReseau,
   phraseUrgenceContrat,
@@ -191,6 +192,37 @@ describe('motifUrgenceContrat', () => {
     );
     expect(liste.map((e) => e.resume.id)).toEqual(['refuse', 'finaliser', 'perime']);
   });
+
+  it('à rang égal, ce qui expire le plus tôt passe devant', () => {
+    const liste = urgencesContrats(
+      [
+        resume({ id: 'long', expireDansJours: 1.5 }),
+        resume({ id: 'court', expireDansJours: 0.5 }),
+      ],
+      OPTIONS,
+    );
+    expect(liste.map((e) => e.resume.id)).toEqual(['court', 'long']);
+  });
+});
+
+describe('comparerContrats', () => {
+  it('range le refus devant la finalisation, puis l’expiration, puis le reste', () => {
+    const tries = [
+      resume({ id: 'tranquille', expireDansJours: 9 }),
+      resume({ id: 'perime', expireDansJours: 0.5 }),
+      resume({ id: 'finaliser', statut: 'a_finaliser' }),
+      resume({ id: 'refuse', statut: 'gele' }),
+    ].sort(comparerContrats);
+    expect(tries.map((r) => r.id)).toEqual(['refuse', 'finaliser', 'perime', 'tranquille']);
+  });
+
+  it('à rang égal, ce qui expire le plus tôt passe devant', () => {
+    const tries = [
+      resume({ id: 'long', expireDansJours: 1.5 }),
+      resume({ id: 'court', expireDansJours: 0.5 }),
+    ].sort(comparerContrats);
+    expect(tries.map((r) => r.id)).toEqual(['court', 'long']);
+  });
 });
 
 describe('les phrases', () => {
@@ -281,5 +313,29 @@ describe('tachesDuJour', () => {
       OPTIONS,
     );
     expect(taches[0]?.nom).toBe('Marc Auclair, Ana Pires');
+  });
+
+  it('fait passer le lien de signature qui expire le plus tôt devant l’autre', () => {
+    const taches = tachesDuJour(
+      {
+        contrats: [
+          resume({ id: 'long', expireDansJours: 1.9 }),
+          resume({ id: 'court', expireDansJours: 0.1 }),
+        ],
+      },
+      OPTIONS,
+    );
+    expect(taches.map((t) => t.id)).toEqual(['court', 'long']);
+  });
+
+  it('à poids égal, le lien qui expire passe devant un dossier aux documents complets', () => {
+    const taches = tachesDuJour(
+      {
+        dossiers: [dossier({ id: 'docs', etape: 'documents', majIlYA: 1, documents: ['recu'] })],
+        contrats: [resume({ id: 'perime', expireDansJours: 0.1 })],
+      },
+      OPTIONS,
+    );
+    expect(taches.map((t) => t.id)).toEqual(['perime', 'docs']);
   });
 });

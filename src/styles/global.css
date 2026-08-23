@@ -38,8 +38,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--ink);f
 .skip-link:focus,.skip-link:focus-visible{transform:translateY(0);outline:2px solid var(--clay);outline-offset:2px}
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,250,246,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 clamp(1rem,3vw,4rem);display:flex;align-items:center;justify-content:space-between;min-height:68px;transition:box-shadow .3s}
-nav.scrolled{box-shadow:var(--shadow-sm)}
+nav#navbar{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,250,246,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 clamp(1rem,3vw,4rem);display:flex;align-items:center;justify-content:space-between;min-height:68px;transition:box-shadow .3s}
+nav#navbar.scrolled{box-shadow:var(--shadow-sm)}
 .nav-logo{font-family:"Lora",serif;font-size:1.15rem;font-weight:600;color:var(--ink);text-decoration:none}
 .nav-logo span{color:var(--clay)}
 .nav-links{display:flex;gap:clamp(1rem,1.8vw,2.5rem);list-style:none;align-items:center;flex-wrap:wrap;min-width:0}
@@ -1430,7 +1430,7 @@ footer strong{color:rgba(255,255,255,.85)}
   .hamburger{display:flex}
 }
 @media(max-width:900px){
-  nav{padding:0 1.5rem}
+  nav#navbar{padding:0 1.5rem}
   #hero{padding:6rem 1.5rem 3rem}
   .hero-inner{grid-template-columns:1fr;gap:2rem}
   .hero-left .hero-value-prop{font-size:2.8rem}
@@ -1598,11 +1598,13 @@ footer strong{color:rgba(255,255,255,.85)}
   .outils-tab .outils-tab-label{font-size:.8rem}
 }
 
-/* Mobile : grille 2 colonnes — tous les 6 outils d'un coup, sans scroll */
-@media(max-width:540px){
+/* Tablette et mobile : tous les outils d'un coup, sans défilement. La rangée
+   horizontale débordait de l'écran sous ~1140px, et sa barre de défilement masquée
+   laissait les derniers onglets coupés au bord — sans indice qu'il y en avait d'autres. */
+@media(max-width:1140px){
   .outils-tablist{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:repeat(3, 1fr);
     gap:.5rem;
     overflow-x:visible;
     border-bottom:none;
@@ -1654,4 +1656,9 @@ footer strong{color:rgba(255,255,255,.85)}
     border-style:dashed;
     background:var(--sand);
   }
+}
+
+/* Téléphone : deux colonnes, pour garder des cartes assez larges */
+@media(max-width:540px){
+  .outils-tablist{grid-template-columns:repeat(2, 1fr)}
 }

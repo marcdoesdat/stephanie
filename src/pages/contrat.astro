@@ -42,6 +42,7 @@ const RANGS = [0, 1, 2];
   description="Outil interne de génération du contrat de courtage hypothécaire."
   noindex={true}
   sansBarreCta={true}
+  sansConsentement={true}
 >
   <main id="main-content" class="ct-page">
     <section class="ct-shell">
@@ -1272,6 +1273,7 @@ const RANGS = [0, 1, 2];
 <script>
   import type { SignaturePadElement } from '../scripts/signaturePad';
   import { ErreurImport, importerSignature } from '../scripts/importSignature';
+  import { comparerContrats, motifUrgenceContrat, type ResumeEcran } from '../utils/tableauDeBord';
 
   /* ---------------- Formulaire ---------------- */
 
@@ -1464,15 +1466,12 @@ const RANGS = [0, 1, 2];
 
     /* ---------------- Suivi des contrats en cours ---------------- */
 
-    interface ResumeDossier {
-      readonly id: string;
+    /** Ce que /api/contrat-dossiers rend, enrichi de ce que le suivi affiche. */
+    interface ResumeDossier extends ResumeEcran {
       readonly creeLe: string;
-      readonly expireLe: string;
-      readonly statut: string;
       readonly mode: string;
       readonly emprunteurs: Array<{ nom: string; courriel: string; signeLe: string | null }>;
       readonly courant: { nom: string; courriel: string } | null;
-      readonly refusePar: string | null;
     }
 
     const suivi = document.getElementById('ct-suivi') as HTMLDetailsElement | null;
@@ -1505,19 +1504,13 @@ const RANGS = [0, 1, 2];
       return Number.isNaN(instant) ? '' : DATE_COMPLETE.format(new Date(instant));
     }
 
-    /** Le délai de 10 jours se referme : c'est le moment de relancer, pas d'attendre. */
-    function bientotPerime(iso: string): boolean {
-      const instant = Date.parse(iso);
-      return !Number.isNaN(instant) && instant - Date.now() < 2 * 86400000;
-    }
-
-    /** Un dossier qui attend un geste d'elle — ce sont ceux qui font ouvrir la section. */
+    /**
+     * Un dossier qui attend un geste d'elle — ce sont ceux qui font ouvrir la section.
+     * La règle n'a qu'un exemplaire : `motifUrgenceContrat`, partagé avec le tableau de
+     * bord. Y compris pour le seuil d'expiration : il vit dans `tableauDeBord.ts`, pas ici.
+     */
     function reclameSonAttention(dossier: ResumeDossier): boolean {
-      return (
-        dossier.statut === 'a_finaliser' ||
-        dossier.statut === 'gele' ||
-        (dossier.statut === 'en_attente' && bientotPerime(dossier.expireLe))
-      );
+      return motifUrgenceContrat(dossier) !== null;
     }
 
     function texteEtat(dossier: ResumeDossier): string {
@@ -1548,7 +1541,7 @@ const RANGS = [0, 1, 2];
 
       if (dossier.statut !== 'gele') {
         const echeance = document.createElement('span');
-        if (bientotPerime(dossier.expireLe)) echeance.className = 'ct-urgent';
+        if (motifUrgenceContrat(dossier)?.type === 'bientot_perime') echeance.className = 'ct-urgent';
         echeance.textContent = ` · expire ${relatif(dossier.expireLe)}`;
         echeance.title = `Les liens cessent de valoir le ${dateComplete(dossier.expireLe)}.`;
         meta.append(echeance);
@@ -1699,14 +1692,11 @@ const RANGS = [0, 1, 2];
 
         const dossiers = (data.dossiers ?? []) as ResumeDossier[];
 
-        // Le serveur trie du plus récent au plus ancien. Ici, c'est l'urgence qui commande :
-        // ce qui l'attend en premier, puis, à statut égal, ce qui expire le plus tôt.
-        const PRIORITE: Record<string, number> = { a_finaliser: 0, gele: 1, en_attente: 2 };
-        dossiers.sort(
-          (a, b) =>
-            (PRIORITE[a.statut] ?? 3) - (PRIORITE[b.statut] ?? 3) ||
-            Date.parse(a.expireLe) - Date.parse(b.expireLe),
-        );
+        // Le serveur trie du plus récent au plus ancien. Ici, c'est l'ordre commun au
+        // tableau de bord : refus d'abord, puis finalisation, puis expiration proche, et
+        // ce qui expire le plus tôt à rang égal. La règle vit dans `tableauDeBord.ts` —
+        // les deux écrans doivent nommer la même urgence.
+        dossiers.sort(comparerContrats);
 
         resumerEnTete(compte, dossiers);
 

@@ -206,10 +206,18 @@ export function urgencesContrats<T extends ResumeEcran>(
   resumes: readonly T[],
   options: OptionsContrat = {},
 ): Array<{ readonly resume: T; readonly urgence: UrgenceContrat }> {
+  const maintenant = options.maintenant ?? Date.now();
   return resumes
-    .map((resume) => ({ resume, urgence: motifUrgenceContrat(resume, options) }))
-    .filter((e): e is { resume: T; urgence: UrgenceContrat } => e.urgence !== null)
-    .sort((a, b) => poidsContrat(b.urgence) - poidsContrat(a.urgence));
+    .map((resume) => ({
+      resume,
+      urgence: motifUrgenceContrat(resume, { maintenant }),
+      rang: rangDossierContrat(resume, maintenant),
+    }))
+    .filter((e): e is { resume: T; urgence: UrgenceContrat; rang: number } => e.urgence !== null)
+    .sort(
+      (a, b) => b.rang - a.rang || Date.parse(a.resume.expireLe) - Date.parse(b.resume.expireLe),
+    )
+    .map(({ resume, urgence }) => ({ resume, urgence }));
 }
 
 function poidsContrat(urgence: UrgenceContrat): number {
@@ -221,6 +229,31 @@ function poidsContrat(urgence: UrgenceContrat): number {
     case 'bientot_perime':
       return 2;
   }
+}
+
+/**
+ * Le rang d'un dossier de signature — plus il est grand, plus le dossier remonte. C'est
+ * l'exemplaire unique de la règle : l'écran de suivi de /contrat le consomme pour trier
+ * sa liste complète, le cockpit pour ne retenir que ce qui presse.
+ *
+ * Un dossier sans motif d'urgence garde le rang 0 : il figure dans la liste de /contrat,
+ * mais il n'a rien à faire dans le tableau de bord.
+ */
+export function rangDossierContrat(resume: ResumeEcran, maintenant = Date.now()): number {
+  const motif = motifUrgenceContrat(resume, { maintenant });
+  return motif ? poidsContrat(motif) : 0;
+}
+
+/**
+ * L'ordre commun aux deux écrans. /contrat triait la finalisation devant le refus, le
+ * tableau de bord l'inverse : chacun nommait une urgence différente. Ce comparateur est
+ * le seul exemplaire de la règle — refus, finalisation, expiration proche, puis le
+ * reste, et ce qui expire le plus tôt à rang égal.
+ */
+export function comparerContrats(a: ResumeEcran, b: ResumeEcran): number {
+  const ecart = rangDossierContrat(b) - rangDossierContrat(a);
+  if (ecart !== 0) return ecart;
+  return Date.parse(a.expireLe) - Date.parse(b.expireLe);
 }
 
 /* ------------------------------------------------------------------ */
@@ -304,7 +337,14 @@ export function tachesDuJour(
       nom: nommerContrat(resume, urgence),
       phrase: phraseUrgenceContrat(urgence),
       poids: poidsContrat(urgence),
-      anciennete: 0,
+      // À poids égal dans la liste commune, un lien près de mourir passe devant : son
+      // ancienneté est le temps déjà consumé dans la fenêtre d'alerte, en heures — deux
+      // jours moins ce qui reste. Sans cela, deux liens qui expirent se départageaient
+      // par leur ordre d'arrivée, pas par leur échéance.
+      anciennete:
+        urgence.type === 'bientot_perime'
+          ? DELAI_ALERTE_EXPIRATION_MS / 3_600_000 - urgence.heuresRestantes
+          : 0,
       lien: '/contrat#ct-suivi',
     });
   }

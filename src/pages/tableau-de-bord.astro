@@ -29,10 +29,15 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
 // Le fuseau est explicite : la fonction SSR tourne en UTC, et sans lui la page annoncerait
 // déjà demain à partir de 20 h.
-const dateDuJour = new Intl.DateTimeFormat('fr-CA', {
+const dateBrute = new Intl.DateTimeFormat('fr-CA', {
   timeZone: 'America/Toronto',
   dateStyle: 'full',
 }).format(new Date());
+
+// « samedi 22 août 2026 » → « Samedi 22 août 2026 » : seule la capitale d'usage du nom du
+// jour. Un `text-transform: capitalize` majusculait chaque mot — « 22 Août » — ce que
+// l'usage français n'écrit jamais.
+const dateDuJour = dateBrute.charAt(0).toUpperCase() + dateBrute.slice(1);
 
 const prenom = config.nom.split(' ')[0] ?? config.nom;
 
@@ -145,6 +150,7 @@ const racine = config.site_url.replace(/\/+$/, '');
   description="Écran interne : ce qui demande un geste aujourd’hui, et l’accès aux outils."
   noindex={true}
   sansBarreCta={true}
+  sansConsentement={true}
 >
   <main id="main-content" class="tb-page">
     <section class="tb-shell">
@@ -226,8 +232,11 @@ const racine = config.site_url.replace(/\/+$/, '');
     padding: 2.5rem 1.25rem 5rem;
   }
 
-  /* Neutralise le rembourrage des sections vitrine hérité de global.css. */
-  .tb-page section {
+  /* Neutralise le rembourrage des sections vitrine hérité de global.css.
+     `.tb-jour` en est exclue : sa propre règle de rembourrage serait sinon
+     écrasée (une règle à deux sélecteurs bat une classe seule), et la carte
+     « À faire aujourd'hui » collait son contenu aux bords. */
+  .tb-page section:not(.tb-jour) {
     padding: 0;
   }
 
@@ -250,8 +259,6 @@ const racine = config.site_url.replace(/\/+$/, '');
     margin: 0.25rem 0 0;
     font-size: 0.88rem;
     color: var(--muted);
-    /* Le format `dateStyle: full` rend « samedi 14 mai 2026 » — capitale d'usage. */
-    text-transform: capitalize;
   }
 
   .tb-h2 {
@@ -274,8 +281,8 @@ const racine = config.site_url.replace(/\/+$/, '');
     background: var(--white);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: 1.3rem 1.4rem;
-    margin-bottom: 2.4rem;
+    padding: 1.6rem 1.6rem;
+    margin-bottom: 2.6rem;
   }
 
   .tb-jour-tete {
@@ -283,7 +290,7 @@ const racine = config.site_url.replace(/\/+$/, '');
     align-items: baseline;
     justify-content: space-between;
     gap: 0.75rem;
-    margin-bottom: 0.9rem;
+    margin-bottom: 1.1rem;
   }
 
   .tb-lien {
@@ -297,6 +304,12 @@ const racine = config.site_url.replace(/\/+$/, '');
     cursor: pointer;
   }
 
+  .tb-lien:disabled {
+    color: var(--muted);
+    text-decoration: none;
+    cursor: default;
+  }
+
   .tb-etat,
   .tb-quota,
   .tb-panne {
@@ -305,14 +318,18 @@ const racine = config.site_url.replace(/\/+$/, '');
     color: var(--muted);
   }
 
+  .tb-etat {
+    line-height: 1.55;
+  }
+
   .tb-quota {
-    margin-top: 0.9rem;
-    padding-top: 0.7rem;
+    margin-top: 1.1rem;
+    padding-top: 0.85rem;
     border-top: 1px solid var(--border);
   }
 
   .tb-panne {
-    margin-top: 0.6rem;
+    margin-top: 0.75rem;
     color: #a5342a;
   }
 
@@ -413,9 +430,9 @@ const racine = config.site_url.replace(/\/+$/, '');
   #tb-app .tb-tache {
     display: flex;
     align-items: baseline;
-    gap: 0.7rem;
-    padding: 0.7rem 0.85rem;
-    margin-bottom: 0.45rem;
+    gap: 0.75rem;
+    padding: 0.8rem 0.95rem;
+    margin-bottom: 0.55rem;
     background: var(--sand);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -465,12 +482,6 @@ const racine = config.site_url.replace(/\/+$/, '');
     margin-top: 0.1rem;
     font-size: 0.82rem;
     line-height: 1.45;
-    color: var(--muted);
-  }
-
-  #tb-app .tb-vide {
-    margin: 0;
-    font-size: 0.88rem;
     color: var(--muted);
   }
 </style>
@@ -570,7 +581,34 @@ const racine = config.site_url.replace(/\/+$/, '');
       zone.replaceChildren(fragment);
     }
 
+    let chargement = false;
+
+    /**
+     * Une garde, pas qu'un état visuel : deux clics rapides lançaient deux chaînes de
+     * trois GET en parallèle, et trois chargements concurrents suffisent à basculer un
+     * carnet sur son repli mémoire vide — la panne de `ficheUnifiee`, documentée dans
+     * CLAUDE.md. Le bouton est aussi désarmé, pour le dire au doigt autant qu'au code.
+     */
     async function rendre(): Promise<void> {
+      if (chargement) return;
+      chargement = true;
+      if (actualiser) {
+        actualiser.disabled = true;
+        actualiser.setAttribute('aria-busy', 'true');
+      }
+
+      try {
+        await rendreCharge();
+      } finally {
+        chargement = false;
+        if (actualiser) {
+          actualiser.disabled = false;
+          actualiser.removeAttribute('aria-busy');
+        }
+      }
+    }
+
+    async function rendreCharge(): Promise<void> {
       if (etat) etat.textContent = 'Chargement…';
       if (panne) panne.hidden = true;
       if (quota) quota.hidden = true;

@@ -719,9 +719,10 @@ les cinq.
 - **La règle d'urgence n'a qu'un exemplaire par carnet.** Celle des dossiers vit dans
   `dossiersEcran.ts` (le cockpit l'**appelle**, ne la réécrit pas) ; celles du réseau et des
   contrats ont migré depuis les scripts de `reseau.astro` et `contrat.astro` vers
-  `tableauDeBord.ts`, que les deux pages consomment désormais. `phraseUrgence` (dossiers) est
-  passée dans `dossiersEcran.ts` pour la même raison : deux écrans la rédigent, la laisser dans
-  une page les ferait diverger.
+  `tableauDeBord.ts`, que les deux pages consomment désormais — `/contrat` trie son suivi par
+  `comparerContrats` et ouvre la section sur `motifUrgenceContrat`, seuil d'expiration
+  compris. `phraseUrgence` (dossiers) est passée dans `dossiersEcran.ts` pour la même raison :
+  deux écrans la rédigent, la laisser dans une page les ferait diverger.
 - **Les trois `GET` partent en séquence, jamais en `Promise.all`.** Le SSR d'Astro sur Netlify
   est une seule fonction ; trois lectures Blobs concurrentes peuvent courir la mémoïsation
   paresseuse et basculer un carnet sur son repli mémoire vide — la panne déjà documentée pour
