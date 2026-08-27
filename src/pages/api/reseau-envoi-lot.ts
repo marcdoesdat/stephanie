@@ -8,9 +8,8 @@
 // - **Le message est rendu par contact.** Pas de texte commun recopié : chacun reçoit le
 //   gabarit en vigueur avec ses propres variables (prénom, agence, secteur). Pour changer
 //   le texte, on change le modèle — c'est le même chemin que l'écran d'édition.
-// - **Les trois refus tiennent.** Retrait (vérifié contact par contact), plafond du jour
-//   (vérifié sur le carnet entier avant le premier octet), Resend absent (en dev, tout est
-//   simulé et journalisé comme tel).
+// - **Les deux refus tiennent.** Retrait (vérifié contact par contact), Resend absent
+//   (en dev, tout est simulé et journalisé comme tel).
 // - **Rendu avant envoi.** Tous les messages sont rendus avant que le premier ne parte :
 //   un gabarit qui ne se rend pas fait échouer le lot entier, jamais une moitié.
 // - **Envoi en série, espacé.** Comme les invitations du profil : Resend limite le débit,
@@ -25,15 +24,12 @@ import { jsonResponse, loadResendEnv } from '../../services/emailService';
 import { loadSiteConfig } from '../../config';
 import { envoyerApproche } from '../../services/reseauCourriels';
 import {
-  envoisDuJour,
   journaliserEnvoi,
   lienRetrait,
   lireContact,
-  listerContacts,
   type Contact,
 } from '../../services/reseauContactService';
 import {
-  PLAFOND_QUOTIDIEN,
   gabaritValide,
   peutRecevoir,
   type CleGabarit,
@@ -44,10 +40,9 @@ import { rendrePourContact } from '../../services/reseauGabaritsService';
 export const prerender = false;
 
 /**
- * Un lot n'est pas un achat d'adresses. Au-delà de cette taille, la demande est tronquée —
- * et de toute façon le plafond quotidien (12) coupe bien avant. L'écran découpe sa sélection
- * en tranches de 4 pour garder chaque requête courte : la limite protège la fonction, pas
- * le carnet.
+ * Un lot n'est pas un achat d'adresses. Au-delà de cette taille, la demande est tronquée.
+ * L'écran découpe sa sélection en tranches de 4 pour garder chaque requête courte : la
+ * limite protège la fonction, pas le carnet.
  */
 const LOT_MAX = 12;
 
@@ -71,8 +66,6 @@ export interface BilanLot {
   readonly ignores: Array<{ nom: string; courriel: string; raison: 'retrait' | 'introuvable' }>;
   /** Rempli au fil de l'envoi : vrai si Resend était absent et que tout a été simulé. */
   simule: boolean;
-  /** Le compte du jour, envois du lot inclus — l'écran l'affiche avec le plafond. */
-  envoisDuJour: number;
 }
 
 /** Espacement entre deux envois : assez pour rester sous la limite de débit de Resend. */
@@ -134,7 +127,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
     candidats.push({
       contact,
-      // Rendu différé à la boucle suivante : on veut d'abord compter le plafond.
+      // Le rendu est fait à la boucle suivante, une fois la liste établie.
       message: { gabarit, objet: '', corps: '' },
     });
   }
@@ -143,30 +136,9 @@ export const POST: APIRoute = async ({ request }) => {
     return jsonResponse(
       {
         ok: true,
-        bilan: { envoyes: [], echoues: [], ignores, simule: false, envoisDuJour: 0 },
+        bilan: { envoyes: [], echoues: [], ignores, simule: false },
       },
       200,
-    );
-  }
-
-  // Le plafond du jour, compté sur le carnet entier — avant qu'un octet ne parte.
-  let carnets: Contact[];
-  try {
-    carnets = await listerContacts();
-  } catch (err) {
-    console.error('[reseau-envoi-lot] Carnet illisible :', err);
-    return jsonResponse({ error: 'Le carnet n’a pas pu être lu.' }, 502);
-  }
-  const partis = envoisDuJour(carnets);
-  const reste = PLAFOND_QUOTIDIEN - partis;
-  if (candidats.length > reste) {
-    return jsonResponse(
-      {
-        error: `Il reste ${reste} envoi${reste > 1 ? 's' : ''} sur le plafond du jour (${PLAFOND_QUOTIDIEN}), et votre sélection en compte ${candidats.length}. Réduisez la sélection ou reprenez demain.`,
-        code: 'plafond',
-        reste,
-      },
-      429,
     );
   }
 
@@ -185,7 +157,7 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
-  const bilan: BilanLot = { envoyes: [], echoues: [], ignores, simule: false, envoisDuJour: partis };
+  const bilan: BilanLot = { envoyes: [], echoues: [], ignores, simule: false };
 
   const env = loadResendEnv();
   if (!env) {
@@ -213,7 +185,6 @@ export const POST: APIRoute = async ({ request }) => {
         }
       }
       bilan.simule = true;
-      bilan.envoisDuJour = partis + bilan.envoyes.length;
       return jsonResponse({ ok: true, bilan }, 200);
     }
     console.error('[reseau-envoi-lot] Variables Resend absentes — envoi impossible.');
@@ -244,6 +215,5 @@ export const POST: APIRoute = async ({ request }) => {
     bilan.envoyes.push({ id: contact.id, nom: contact.nom, courriel: contact.courriel });
   }
 
-  bilan.envoisDuJour = partis + bilan.envoyes.length;
   return jsonResponse({ ok: true, bilan }, 200);
 };

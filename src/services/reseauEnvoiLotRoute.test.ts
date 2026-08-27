@@ -2,9 +2,8 @@
  * Tests de l'envoi en lot — `/api/reseau-envoi-lot`.
  *
  * Ce que ces tests protègent, c'est la promesse que l'écran affiche : un bilan qui dit la
- * vérité. Un lot où un courriel échoue ne doit pas faire croire que tout est parti, un
- * contact retiré ne doit recevoir rien, et le plafond du jour doit arrêter la demande
- * **avant** le premier octet — sans quoi la protection de la délivrabilité ne protège plus.
+ * vérité. Un lot où un courriel échoue ne doit pas faire croire que tout est parti, et un
+ * contact retiré ne doit recevoir rien.
  *
  * Placés ici et non à côté de la route : tout fichier `.ts` sous src/pages/ devient un
  * endpoint Astro — un test posé là serait publié comme route.
@@ -95,7 +94,6 @@ async function poster(lot: string[], gabarit = 'introduction') {
       echoues: Array<{ nom: string; raison: string }>;
       ignores: Array<{ nom: string; courriel: string; raison: string }>;
       simule: boolean;
-      envoisDuJour: number;
     };
   };
   return { statut: reponse.status, corps };
@@ -122,7 +120,6 @@ describe('le lot part, en entier', () => {
     expect(corps.bilan?.envoyes).toHaveLength(2);
     expect(corps.bilan?.echoues).toHaveLength(0);
     expect(corps.bilan?.ignores).toHaveLength(0);
-    expect(corps.bilan?.envoisDuJour).toBe(2);
     expect(envoyer).toHaveBeenCalledTimes(2);
 
     // Chacun a reçu **son** message : pas de variable orpheline, et les prénoms diffèrent.
@@ -184,27 +181,6 @@ describe('les refus tiennent, même en lot', () => {
     expect(statut).toBe(200);
     expect(corps.bilan?.envoyes).toHaveLength(1);
     expect(corps.bilan?.ignores).toHaveLength(0);
-  });
-
-  it('le plafond du jour refuse le lot entier, avant tout envoi', async () => {
-    const service = await chargerService();
-    // Douze envois déjà journalisés aujourd'hui : le plafond est atteint.
-    const marie = await creer(service, 'Marie Tremblay', 'marie@agence.ca');
-    const message = {
-      gabarit: 'introduction' as const,
-      objet: 'Financement hypothécaire',
-      corps: 'Bonjour, voici mon message assez long pour être valide.',
-    };
-    for (let index = 0; index < 12; index += 1) {
-      await service.journaliserEnvoi(marie.id, message);
-    }
-    const jean = await creer(service, 'Jean Bernard', 'jean@cabinet.ca');
-
-    const { statut, corps } = await poster([jean.id]);
-
-    expect(statut).toBe(429);
-    expect(corps.code).toBe('plafond');
-    expect(envoyer).not.toHaveBeenCalled();
   });
 
   it('un gabarit qui ne se rend pas échoue avant le premier octet', async () => {

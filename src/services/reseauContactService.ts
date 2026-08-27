@@ -124,7 +124,7 @@ export async function listerContacts(): Promise<Contact[]> {
   return contacts.sort((a, b) => a.nom.localeCompare(b.nom, 'fr-CA'));
 }
 
-/** Combien de courriels sont partis aujourd'hui, tous contacts confondus. Sert au plafond. */
+/** Combien de courriels sont partis aujourd'hui, tous contacts confondus. Sert au compteur. */
 export function envoisDuJour(contacts: Contact[], maintenant = Date.now()): number {
   const debut = new Date(maintenant);
   debut.setHours(0, 0, 0, 0);

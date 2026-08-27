@@ -7,10 +7,9 @@
 // endroit. Ce que l'écran affiche est donc exactement ce que le serveur sait produire — et
 // ce qu'elle en fait ensuite (retoucher, réécrire) est ce qui part vraiment.
 //
-// Trois refus, dans cet ordre, avant qu'un octet ne parte :
+// Deux refus, dans cet ordre, avant qu'un octet ne parte :
 //   1. le contact a demandé son retrait  → jamais, sans exception ;
-//   2. le plafond quotidien est atteint  → protège la délivrabilité du domaine ;
-//   3. Resend n'est pas configuré        → en dev, on simule et on journalise comme tel.
+//   2. Resend n'est pas configuré        → en dev, on simule et on journalise comme tel.
 
 import type { APIRoute } from 'astro';
 import { requeteAutorisee } from '../../services/accesCourtiere';
@@ -18,20 +17,12 @@ import { jsonResponse, loadResendEnv } from '../../services/emailService';
 import { loadSiteConfig } from '../../config';
 import { envoyerApproche } from '../../services/reseauCourriels';
 import {
-  envoisDuJour,
   journaliserEnvoi,
   lienRetrait,
   lireContact,
-  listerContacts,
   versFiche,
 } from '../../services/reseauContactService';
-import {
-  PLAFOND_QUOTIDIEN,
-  gabaritValide,
-  parserMessage,
-  peutRecevoir,
-} from '../../utils/reseauCourtiers';
-import type { Contact } from '../../services/reseauContactService';
+import { gabaritValide, parserMessage, peutRecevoir } from '../../utils/reseauCourtiers';
 import { rendrePourContact } from '../../services/reseauGabaritsService';
 
 export const prerender = false;
@@ -92,26 +83,7 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
-  // 2. Le plafond du jour, compté sur le carnet entier.
-  let contacts: Contact[];
-  try {
-    contacts = await listerContacts();
-  } catch (err) {
-    console.error('[reseau-envoi] Carnet illisible :', err);
-    return jsonResponse({ error: 'Le carnet n’a pas pu être lu.' }, 502);
-  }
-  const partis = envoisDuJour(contacts);
-  if (partis >= PLAFOND_QUOTIDIEN) {
-    return jsonResponse(
-      {
-        error: `Plafond du jour atteint (${PLAFOND_QUOTIDIEN} envois). Reprenez demain — c'est ce qui garde vos courriels hors des indésirables.`,
-        code: 'plafond',
-      },
-      429,
-    );
-  }
-
-  // 3. Sans Resend, on ne prétend pas avoir envoyé.
+  // 2. Sans Resend, on ne prétend pas avoir envoyé.
   const env = loadResendEnv();
   if (!env) {
     if (import.meta.env.DEV) {
@@ -137,8 +109,5 @@ export const POST: APIRoute = async ({ request }) => {
   // Journaliser après coup : l'inverse ferait croire à un envoi qui n'a pas eu lieu, et la
   // relance suivante serait calculée sur du vide.
   const maj = await journaliserEnvoi(contact.id, message.valeur);
-  return jsonResponse(
-    { ok: true, contact: maj ? versFiche(maj) : null, envoisDuJour: partis + 1, plafond: PLAFOND_QUOTIDIEN },
-    200,
-  );
+  return jsonResponse({ ok: true, contact: maj ? versFiche(maj) : null }, 200);
 };

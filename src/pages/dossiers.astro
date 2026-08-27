@@ -304,6 +304,10 @@ const destinataires = Object.entries(DESTINATAIRES);
     padding: 0;
   }
 
+  /* La remise à zéro ci-dessus est scopée par Astro en `.dc-page[data] section[data]`,
+     plus spécifique que `.dc-bloc[data]` : les règles qui suivent portent donc le chemin
+     complet pour reprendre le dessus. */
+
   .dc-shell-connexion {
     max-width: 62rem;
     margin: 0 auto;
@@ -528,13 +532,13 @@ const destinataires = Object.entries(DESTINATAIRES);
     padding: 0.5rem 0.7rem;
   }
 
-  .dc-bloc {
+  .dc-page .dc-bloc {
     padding-bottom: 1.25rem;
     margin-bottom: 1.25rem;
     border-bottom: 1px solid var(--border);
   }
 
-  .dc-bloc:last-child {
+  .dc-page .dc-bloc:last-child {
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
@@ -551,7 +555,7 @@ const destinataires = Object.entries(DESTINATAIRES);
     min-height: 44px;
   }
 
-  .dc-bloc-prevenir {
+  .dc-page .dc-bloc-prevenir {
     background: var(--warm);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);

@@ -535,12 +535,12 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
 - **`RESEND_FROM_RESEAU` sépare l'envoi d'approche du reste** — mais elle n'est pas
   configurée aujourd'hui : un second domaine vérifié dans Resend suppose un forfait payant
   (décision d'août 2026). Les approches partent donc de `RESEND_FROM_EMAIL`, l'adresse des
-  liens de signature et des accusés de rappel. Trois conséquences, liées entre elles :
-  `PLAFOND_QUOTIDIEN` est **fixé bas (12)** parce que le volume est le seul garde-fou qui
-  reste ; la page affiche l'adresse réellement employée en **constat, pas en alarme** — un
-  avertissement qu'on ne peut pas suivre d'effet n'apprend qu'à ignorer les avertissements ;
-  et le jour où un sous-domaine sera vérifié, renseigner la variable suffit (le plafond peut
-  alors remonter).
+  liens de signature et des accusés de rappel. Deux choses, liées entre elles : la page
+  affiche l'adresse réellement employée en **constat, pas en alarme** — un avertissement
+  qu'on ne peut pas suivre d'effet n'apprend qu'à ignorer les avertissements ; et le jour où
+  un sous-domaine sera vérifié, renseigner la variable suffit. Il n'y a **plus de plafond
+  quotidien** (retiré en août 2026, à la demande de la courtière) : le compteur
+  « x envois aujourd'hui » reste affiché comme simple information, sans « restants ».
 - **Le courriel d'approche n'emprunte pas l'habillage du site.** `wrapEmailHtml` et
   `renderSignatureBlock` (fond sable, carte à bordure, liens couleur argile) conviennent à un
   accusé de réception — qui *est* un envoi automatique et gagne à en avoir l'air. Une approche
@@ -554,16 +554,14 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
   pas fait échouer le lot entier, pas une moitié. C'est le même chemin que l'aperçu et que
   l'envoi un par un (`reseau-envoi.ts` partage désormais `rendrePourContact`), donc ce que
   l'écran montre est ce qui part.
-- **Le lot respecte les trois refus de l'envoi un par un** : retrait vérifié contact par contact
-  (les retirés sont ignorés et nommés au bilan), plafond du jour vérifié sur le carnet entier
-  avant le premier octet (429 si la sélection dépasse le reliquat), Resend absent → tout est
-  simulé et journalisé comme tel en dev. Un envoi en échec n'arrête pas les autres : le bilan
-  nomme qui a échoué, et l'écran décoche ce qui est parti pour que retenter ne réécrive jamais
-  deux fois à la même personne.
+- **Le lot respecte les deux refus de l'envoi un par un** : retrait vérifié contact par contact
+  (les retirés sont ignorés et nommés au bilan), Resend absent → tout est simulé et journalisé
+  comme tel en dev. Un envoi en échec n'arrête pas les autres : le bilan nomme qui a échoué, et
+  l'écran décoche ce qui est parti pour que retenter ne réécrive jamais deux fois à la même
+  personne.
 - **L'écran découpe le lot en tranches de quatre.** Chaque requête reste courte et légère — un
   `Promise.all` ou une seule requête de douze envois risquerait le 429 de Resend et le dépassement
-  de la limite de temps de la fonction. Le plafond est réaffiché au fur et à mesure ; un 429
-  « plafond » interrompt la suite en nommant combien sont déjà partis.
+  de la limite de temps de la fonction.
 - **Le lot se filtre par date de création** (« Créés du / au », bornes libres) : c'est ce qui
   permet de viser « la liste importée mardi » sans re-cocher à la main. La comparaison se fait
   sur le **jour local** de `creeLe`, jamais sur l'instant ; les contacts retirés restent exclus
@@ -816,8 +814,8 @@ npx vitest              # mode watch
   aboutissent ; un `GET` ne retire personne ; la page ne dit jamais qu'un jeton est faux ; un
   retrait qui échoue prévient la courtière
 - `src/services/reseauEnvoiLotRoute.test.ts` — le lot rend par contact et fait avancer les
-  états ; un retiré est ignoré et nommé ; le plafond refuse avant tout octet ; un gabarit qui
-  ne se rend pas échoue sans rien envoyer ; sans Resend, tout est simulé et journalisé comme tel
+  états ; un retiré est ignoré et nommé ; un gabarit qui ne se rend pas échoue sans rien
+  envoyer ; sans Resend, tout est simulé et journalisé comme tel
 - `src/utils/origineRequete.test.ts` — la vérification d'origine réécrite est identique à
   celle d'Astro, et la dispense ne couvre que `/api/reseau-retrait`
 - `src/services/reseauGabaritsService.test.ts` — réécriture des gabarits : portée par

@@ -3,14 +3,13 @@
 // Ne fait que lire. Le même verdict d'accès que la page /reseau : une page protégée devant
 // une API ouverte ne protège rien.
 //
-// Renvoie aussi le compte d'envois du jour : l'écran doit pouvoir dire « il vous reste
-// 18 envois aujourd'hui » avant qu'elle ne rédige, pas après.
+// Renvoie aussi le compte d'envois du jour : l'écran l'affiche en clair — savoir combien
+// d'approches sont parties garde la main sur la réputation du domaine.
 
 import type { APIRoute } from 'astro';
 import { requeteAutorisee } from '../../services/accesCourtiere';
 import { jsonResponse } from '../../services/emailService';
 import { envoisDuJour, listerContacts, versFiche } from '../../services/reseauContactService';
-import { PLAFOND_QUOTIDIEN } from '../../utils/reseauCourtiers';
 
 export const prerender = false;
 
@@ -26,7 +25,6 @@ export const GET: APIRoute = async ({ request }) => {
         ok: true,
         contacts: contacts.map(versFiche),
         envoisDuJour: envoisDuJour(contacts),
-        plafond: PLAFOND_QUOTIDIEN,
       },
       200,
     );

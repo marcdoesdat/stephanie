@@ -24,7 +24,6 @@ import {
   BASES_CONSENTEMENT,
   ETATS,
   GABARITS,
-  PLAFOND_QUOTIDIEN,
   PROFESSIONS,
   VARIABLES_DISPONIBLES,
 } from '../utils/reseauCourtiers';
@@ -70,7 +69,7 @@ const adresseEnvoi = adresseDediee();
             nom={config.nom}
           />
         ) : (
-          <div id="rs-app" data-plafond={String(PLAFOND_QUOTIDIEN)}>
+          <div id="rs-app">
             <BarreCourtiere actif="reseau" />
             <header class="rs-entete">
               <div>
@@ -275,6 +274,17 @@ const adresseEnvoi = adresseDediee();
                 <label class="rs-lot-filtre">
                   <span>au</span>
                   <input type="date" id="rs-lot-date-au" />
+                </label>
+                <label class="rs-lot-filtre">
+                  <span>État</span>
+                  <select id="rs-lot-filtre-etat" aria-label="Filtrer par état">
+                    <option value="">Tous les états</option>
+                    {etats
+                      .filter(([cle]) => cle !== 'refuse')
+                      .map(([cle, libelle]) => (
+                        <option value={cle}>{libelle}</option>
+                      ))}
+                  </select>
                 </label>
                 <button type="button" class="rs-lien" data-lot-dates-effacer hidden>
                   Effacer les dates
@@ -493,6 +503,10 @@ const adresseEnvoi = adresseDediee();
     padding: 0;
   }
 
+  /* La remise à zéro ci-dessus est scopée par Astro en `.rs-page[data] section[data]`,
+     plus spécifique que `.rs-fiche[data]` : la fiche porterait donc son padding en vain.
+     Le chemin complet (`.rs-page .rs-fiche`) reprend le dessus. */
+
   .rs-titre {
     font-size: 1.6rem;
     margin: 0 0 0.5rem;
@@ -699,7 +713,8 @@ const adresseEnvoi = adresseDediee();
     color: var(--muted);
   }
 
-  .rs-lot-filtre input {
+  .rs-lot-filtre input,
+  .rs-lot-filtre select {
     padding: 0.45rem 0.6rem;
     background: var(--sand);
     border: 1.5px solid var(--border);
@@ -758,7 +773,7 @@ const adresseEnvoi = adresseDediee();
     margin-bottom: 0.6rem;
   }
 
-  .rs-fiche {
+  .rs-page .rs-fiche {
     background: var(--white);
     border: 1px solid var(--border);
     border-radius: 20px;
@@ -938,7 +953,7 @@ const adresseEnvoi = adresseDediee();
       padding: 1.5rem 0.9rem 4rem;
     }
 
-    .rs-fiche {
+    .rs-page .rs-fiche {
       padding: 1.25rem;
     }
   }
@@ -1221,7 +1236,6 @@ const adresseEnvoi = adresseDediee();
     let contacts: Fiche[] = [];
     let selection: string | null = null;
     let envoisFaits = 0;
-    const plafond = Number(app.dataset.plafond ?? '25');
 
     const $ = <T extends HTMLElement>(selecteur: string): T | null =>
       app.querySelector<T>(selecteur);
@@ -1419,8 +1433,7 @@ const adresseEnvoi = adresseDediee();
     function rendreQuota(): void {
       const quota = $<HTMLElement>('[data-quota]');
       if (!quota) return;
-      const reste = Math.max(0, plafond - envoisFaits);
-      quota.textContent = `${envoisFaits} envoi${envoisFaits > 1 ? 's' : ''} aujourd’hui · ${reste} restant${reste > 1 ? 's' : ''}`;
+      quota.textContent = `${envoisFaits} envoi${envoisFaits > 1 ? 's' : ''} aujourd’hui`;
       quota.hidden = false;
     }
 
@@ -2074,7 +2087,7 @@ const adresseEnvoi = adresseDediee();
       );
     }
 
-    /* ---------------- Filtre par date du lot ---------------- */
+    /* ---------------- Filtres du lot (dates + état) ---------------- */
 
     /** La date du calendrier local — sans l'heure, pour comparer des jours. */
     function jourLocal(iso: string): string {
@@ -2092,14 +2105,21 @@ const adresseEnvoi = adresseDediee();
       };
     }
 
+    function lotEtat(): string {
+      return (document.getElementById('rs-lot-filtre-etat') as HTMLSelectElement | null)?.value ?? '';
+    }
+
     /**
      * Le filtre par date porte sur la **création** de la fiche : c'est ce qui permet de
      * viser « la liste importée mardi » sans re-cocher à la main. Deux dates libres —
-     * « du » seul vaut « depuis ce jour », « au » seul vaut « jusqu'à ce jour ». Les
+     * « du » seul vaut « depuis ce jour », « au » seul vaut « jusqu'à ce jour ». Le filtre
+     * par état, lui, montre un seul état à la fois — par exemple les « À contacter ». Les
      * contacts retirés restent exclus, quel que soit le filtre.
      */
     function lotContactVisible(contact: Fiche): boolean {
       if (contact.etat === 'refuse') return false;
+      const etat = lotEtat();
+      if (etat && contact.etat !== etat) return false;
       const { du, au } = lotDates();
       if (!du && !au) return true;
       const jour = jourLocal(contact.creeLe);
@@ -2112,6 +2132,16 @@ const adresseEnvoi = adresseDediee();
     function lotDatesActives(): boolean {
       const { du, au } = lotDates();
       return du !== '' || au !== '';
+    }
+
+    /** Le nom des filtres posés, pour le compteur : dates, état, ou les deux. */
+    function lotFiltresTexte(): string {
+      const dates = lotDatesActives();
+      const etat = lotEtat() !== '';
+      if (dates && etat) return 'filtres actifs';
+      if (dates) return 'dates filtrées';
+      if (etat) return 'état filtré';
+      return '';
     }
 
     /**
@@ -2157,11 +2187,13 @@ const adresseEnvoi = adresseDediee();
       const total = panneauLot?.querySelectorAll<HTMLInputElement>('[data-lot-id]').length ?? 0;
       const choisis = lotCoches().length;
       if (compte) {
-        const filtre = lotDatesActives() ? ' · dates filtrées' : '';
+        const filtre = lotFiltresTexte();
         compte.textContent =
           total === 0
-            ? `Aucun contact pour ces dates${lotDatesActives() ? '' : ' dans le carnet'}.`
-            : `${choisis} sur ${total}${filtre}`;
+            ? filtre
+              ? 'Aucun contact ne correspond à ces filtres.'
+              : 'Aucun contact dans le carnet.'
+            : `${choisis} sur ${total}${filtre ? ` · ${filtre}` : ''}`;
       }
       if (bouton) {
         bouton.textContent =
@@ -2183,7 +2215,7 @@ const adresseEnvoi = adresseDediee();
       if (panneauImport) panneauImport.hidden = true;
       erreurLot(null);
       // À la première ouverture, la sélection par défaut est ce qui appelle le lot :
-      // les contacts jamais approchés — parmi ceux que le filtre de date laisse voir.
+      // les contacts jamais approchés — parmi ceux que les filtres laissent voir.
       if (!lotInitialise) {
         rendreLotListe(
           new Set(
@@ -2216,6 +2248,12 @@ const adresseEnvoi = adresseDediee();
         majBoutonDates();
       });
     }
+
+    document.getElementById('rs-lot-filtre-etat')?.addEventListener('change', () => {
+      // Même règle que les dates : la sélection en cours est conservée, le compteur ne
+      // compte plus que les visibles.
+      rendreLotListe();
+    });
 
     panneauLot?.querySelector('[data-lot-dates-effacer]')?.addEventListener('click', () => {
       for (const id of ['rs-lot-date-du', 'rs-lot-date-au']) {
@@ -2301,7 +2339,7 @@ const adresseEnvoi = adresseDediee();
       }
       if (
         !window.confirm(
-          `Envoyer ce gabarit à ${ids.length} contact${ids.length > 1 ? 's' : ''} ? Les envois sont espacés, et le plafond du jour (${plafond}) est respecté.`,
+          `Envoyer ce gabarit à ${ids.length} contact${ids.length > 1 ? 's' : ''} ? Les envois sont espacés, et chacun recevra sa propre version du message.`,
         )
       ) {
         return;

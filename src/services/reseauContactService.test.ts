@@ -157,7 +157,7 @@ describe('envois', () => {
     await service.journaliserEnvoi(b.id, MESSAGE);
     expect(service.envoisDuJour(await service.listerContacts())).toBe(2);
 
-    // Un envoi d'hier ne compte plus dans le plafond d'aujourd'hui.
+    // Un envoi d'hier ne compte plus dans le compte du jour.
     const hier = new Date(Date.now() - 26 * 3600000).toISOString();
     const contacts = await service.listerContacts();
     const bricole = contacts.map((contact) => ({

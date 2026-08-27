@@ -632,11 +632,9 @@ const racine = config.site_url.replace(/\/+$/, '');
       const reseau = await charger<{
         contacts: ContactEcran[];
         envoisDuJour: number;
-        plafond: number;
       }>('/api/reseau-contacts', (d) => ({
         contacts: (d?.contacts ?? []) as ContactEcran[],
         envoisDuJour: Number(d?.envoisDuJour ?? 0),
-        plafond: Number(d?.plafond ?? 0),
       }));
       if (!reseau) muets.push('le réseau');
 
@@ -671,9 +669,8 @@ const racine = config.site_url.replace(/\/+$/, '');
         }
       }
 
-      if (quota && reseau && reseau.plafond > 0) {
-        const restants = Math.max(reseau.plafond - reseau.envoisDuJour, 0);
-        quota.textContent = `Réseau : ${reseau.envoisDuJour} envoi${reseau.envoisDuJour > 1 ? 's' : ''} aujourd’hui · ${restants} restant${restants > 1 ? 's' : ''}.`;
+      if (quota && reseau) {
+        quota.textContent = `Réseau : ${reseau.envoisDuJour} envoi${reseau.envoisDuJour > 1 ? 's' : ''} aujourd’hui.`;
         quota.hidden = false;
       }
 
