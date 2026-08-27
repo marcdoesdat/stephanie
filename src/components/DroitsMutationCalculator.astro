@@ -376,8 +376,10 @@ import { VILLES } from '../data/droitsMutation';
   }
 
   /* tbody rows are injected via JS (no astro-cid), must use :global */
-  :global(#dm-table td:not(:first-child)) {
-    text-align: right !important;
+  @media (min-width: 769px) {
+    :global(#dm-table td:not(:first-child)) {
+      text-align: right !important;
+    }
   }
 
   /* Zebra */
@@ -495,6 +497,139 @@ import { VILLES } from '../data/droitsMutation';
     }
 
     .dm-total-row td.dm-amount {
+      font-size: 1.15rem;
+    }
+  }
+</style>
+
+<style is:global>
+  /* Le corps du tableau (#dm-table-body) est injecté en JavaScript : les cellules n'ont
+     pas d'attribut astro-*, donc le bloc scopé ci-dessus ne les atteint pas. Ces règles —
+     circonscrites à #dm-table — en sont le pendant global : sans elles, les td n'avaient
+     aucun padding (et le mode empilé mobile restait lettre morte). */
+
+  #dm-table td {
+    padding: 0.6rem 0.6rem;
+    color: var(--ink);
+    vertical-align: baseline;
+  }
+
+  #dm-table td:first-child {
+    padding-left: 0;
+  }
+
+  #dm-table tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  #dm-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  #dm-table tbody tr:nth-child(even):not(.dm-active):not(.dm-total-row) {
+    background: rgba(0, 0, 0, 0.018);
+  }
+
+  #dm-table tbody tr.dm-active {
+    background: rgba(196, 122, 82, 0.07);
+  }
+
+  #dm-table tbody tr.dm-active td:first-child {
+    position: relative;
+    padding-left: 10px;
+  }
+
+  #dm-table tbody tr.dm-active td:first-child::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 65%;
+    border-radius: 2px;
+    background: var(--clay);
+  }
+
+  #dm-table .dm-range,
+  #dm-table .dm-amount {
+    font-variant-numeric: tabular-nums;
+  }
+
+  #dm-table .dm-amount {
+    white-space: nowrap;
+  }
+
+  #dm-table .dm-total-row td {
+    border-top: 2px solid var(--border);
+    padding-top: 0.8rem;
+    font-size: 0.92rem;
+    background: rgba(196, 122, 82, 0.06);
+  }
+
+  #dm-table .dm-total-row td:first-child {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  #dm-table .dm-total-row td.dm-amount {
+    color: var(--clay);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    #dm-table thead {
+      display: none;
+    }
+
+    #dm-table,
+    #dm-table tbody,
+    #dm-table tr,
+    #dm-table td {
+      display: block;
+    }
+
+    #dm-table tr {
+      padding: 0.7rem 0;
+    }
+
+    #dm-table td {
+      padding: 0.25rem 0;
+      text-align: left !important;
+      border: none;
+    }
+
+    #dm-table td::before {
+      content: attr(data-label);
+      display: inline-block;
+      width: 5.5rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    #dm-table td.dm-amount {
+      font-size: 1rem;
+    }
+
+    #dm-table tbody tr.dm-active {
+      border-left: 3px solid var(--clay);
+      padding-left: 10px;
+    }
+
+    #dm-table tbody tr.dm-active td:first-child::before {
+      display: none;
+    }
+
+    #dm-table .dm-total-row td {
+      background: rgba(196, 122, 82, 0.08);
+    }
+
+    #dm-table .dm-total-row td.dm-amount {
       font-size: 1.15rem;
     }
   }

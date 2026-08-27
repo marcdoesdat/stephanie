@@ -8,6 +8,7 @@ import {
   PROFESSIONS,
   etatApresEnvoi,
   gabaritPour,
+  gabaritRelancePour,
   gabaritValide,
   parserContact,
   parserMessage,
@@ -220,6 +221,18 @@ describe('états', () => {
     for (const etat of Object.keys(ETATS)) {
       if (etat !== 'refuse') expect(peutRecevoir(etat as keyof typeof ETATS)).toBe(true);
     }
+  });
+
+  it('suit la séquence introduction → relance → dernière relance', () => {
+    expect(gabaritRelancePour('contacte')).toBe('relance');
+    expect(gabaritRelancePour('relance')).toBe('derniere_relance');
+  });
+
+  it('n’appelle aucune relance hors de la séquence', () => {
+    expect(gabaritRelancePour('a_contacter')).toBeNull();
+    expect(gabaritRelancePour('en_discussion')).toBeNull();
+    expect(gabaritRelancePour('partenaire')).toBeNull();
+    expect(gabaritRelancePour('refuse')).toBeNull();
   });
 });
 

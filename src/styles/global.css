@@ -657,6 +657,14 @@ td:last-child{text-align:center}
   .badge-pop{font-size:.5rem;padding:.15rem .45rem;letter-spacing:.04em;margin-right:.3rem}
 }
 
+/* Tablette (721–900 px) : seul le tableau des taux resserre son padding ici. Les autres
+   tableaux — amortissement, dossiers, droits de mutation — règlent le leur dans leur propre
+   page ; l'ancienne règle globale `th,td{…!important}` les écrasait tous. */
+@media (max-width: 900px) and (min-width: 721px){
+  .taux-table-wrap th{padding:.8rem 1rem}
+  .taux-row td{padding:.8rem 1rem}
+}
+
 /* SIMULATEUR */
 #simulateur{background:var(--warm);padding-bottom:3rem}
 .sim-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:4rem;margin-top:4rem;align-items:start}
@@ -1454,7 +1462,6 @@ footer strong{color:rgba(255,255,255,.85)}
   .sim-cards{grid-template-columns:1fr 1fr}
   .form-row{grid-template-columns:1fr}
   footer{padding:2rem 1.5rem calc(2rem + 58px + env(safe-area-inset-bottom))}
-  th,td{padding:.8rem 1rem!important}
   .taux-footer{flex-direction:column}
   /* Le bouton Messenger vient se poser DANS la barre CTA (MainLayout) :
      centré verticalement dans la bande, aligné à droite, au-dessus d'elle. */

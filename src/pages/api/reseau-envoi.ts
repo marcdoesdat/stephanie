@@ -30,48 +30,11 @@ import {
   gabaritValide,
   parserMessage,
   peutRecevoir,
-  prenomDe,
-  rendreTexte,
-  type CleGabarit,
-  type VariablesGabarit,
 } from '../../utils/reseauCourtiers';
 import type { Contact } from '../../services/reseauContactService';
-import { gabaritEffectif } from '../../services/reseauGabaritsService';
+import { rendrePourContact } from '../../services/reseauGabaritsService';
 
 export const prerender = false;
-
-function variables(contact: Contact): VariablesGabarit {
-  const config = loadSiteConfig();
-  return {
-    prenom: prenomDe(contact.nom),
-    nom: contact.nom,
-    agence: contact.agence,
-    secteur: contact.secteur || config.region,
-    courtiere: config.nom,
-    organisation: config.organisation,
-    telephone: config.telephone,
-    courriel: config.courriel,
-    site: config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''),
-  };
-}
-
-/**
- * Le rendu part du gabarit **en vigueur** — la réécriture de Stéphanie si elle en a fait
- * une, le modèle d'origine sinon. Passer par `gabaritPour` enverrait un texte que l'écran
- * d'édition ne montre pas.
- */
-async function rendre(
-  contact: Contact,
-  cle: CleGabarit,
-): Promise<{ objet: string; corps: string; personnalise: boolean }> {
-  const modele = await gabaritEffectif(cle, contact.profession);
-  const table = variables(contact);
-  return {
-    objet: rendreTexte(modele.objet, table),
-    corps: rendreTexte(modele.corps, table),
-    personnalise: modele.personnalise,
-  };
-}
 
 /* ------------------------------------------------------------------ */
 /*  Aperçu                                                             */
@@ -91,7 +54,7 @@ export const GET: APIRoute = async ({ request }) => {
   if (!contact) return jsonResponse({ error: 'Contact introuvable.' }, 404);
 
   try {
-    return jsonResponse({ ok: true, ...(await rendre(contact, gabarit)) }, 200);
+    return jsonResponse({ ok: true, ...(await rendrePourContact(contact, gabarit)) }, 200);
   } catch (err) {
     console.error('[reseau-envoi] Rendu du gabarit impossible :', err);
     return jsonResponse({ error: 'Ce gabarit n’a pas pu être rendu.' }, 500);

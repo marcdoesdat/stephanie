@@ -257,7 +257,7 @@ const config = loadSiteConfig();
   }
   .amort-table thead tr { background: var(--ink); }
   .amort-table th {
-    padding: 1rem 1.4rem;
+    padding: 0.9rem 1.1rem;
     text-align: right;
     font-weight: 600;
     font-size: .72rem;
@@ -265,14 +265,16 @@ const config = loadSiteConfig();
     text-transform: uppercase;
     color: rgba(255,255,255,.7);
     border-bottom: none;
+    white-space: nowrap;
   }
   .amort-table th:first-child { text-align: center; width: 56px; color: rgba(255,255,255,.4); }
   .amort-table td {
-    padding: .75rem 1.4rem;
+    padding: 0.7rem 1.1rem;
     text-align: right;
     border-bottom: 1px solid var(--border);
     font-variant-numeric: tabular-nums;
     color: var(--ink);
+    white-space: nowrap;
   }
   .amort-table td:first-child {
     text-align: center;
@@ -299,7 +301,12 @@ const config = loadSiteConfig();
   @media (max-width: 700px) {
     .amort-summary { grid-template-columns: 1fr 1fr; }
     .amort-table-wrap { overflow-x: auto; }
-    .amort-table { min-width: 480px; }
+    .amort-table { min-width: 520px; }
+    .amort-table th,
+    .amort-table td {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
     .amort-hero h1 { font-size: 1.8rem; }
   }
 </style>

@@ -18,10 +18,15 @@
 
 import {
   gabaritPour,
+  prenomDe,
+  rendreTexte,
   validerModele,
   type CleGabarit,
   type CleProfession,
+  type VariablesGabarit,
 } from '../utils/reseauCourtiers';
+import { loadSiteConfig } from '../config';
+import type { Contact } from './reseauContactService';
 import { creerStockage } from './dossierStockage';
 
 const stockage = creerStockage('reseau-gabarits', 'reseauGabarits');
@@ -83,6 +88,44 @@ export async function gabaritEffectif(
 export function gabaritOrigine(gabarit: CleGabarit, profession: CleProfession): GabaritEffectif {
   const origine = gabaritPour(gabarit, profession);
   return { objet: origine.objet, corps: origine.corps, personnalise: false };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Rendu pour un contact                                              */
+/* ------------------------------------------------------------------ */
+
+/** Les variables d'un contact, telles que le gabarit a le droit de les employer. */
+export function variablesPour(contact: Contact): VariablesGabarit {
+  const config = loadSiteConfig();
+  return {
+    prenom: prenomDe(contact.nom),
+    nom: contact.nom,
+    agence: contact.agence,
+    secteur: contact.secteur || config.region,
+    courtiere: config.nom,
+    organisation: config.organisation,
+    telephone: config.telephone,
+    courriel: config.courriel,
+    site: config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+  };
+}
+
+/**
+ * Le message **rendu** pour un contact donné : le gabarit en vigueur (réécriture ou modèle
+ * d'origine), avec ses variables substituées. C'est la seule façon d'envoyer — l'aperçu et
+ * l'envoi passent par le même chemin, en lot comme un par un.
+ */
+export async function rendrePourContact(
+  contact: Contact,
+  cle: CleGabarit,
+): Promise<{ objet: string; corps: string; personnalise: boolean }> {
+  const modele = await gabaritEffectif(cle, contact.profession);
+  const table = variablesPour(contact);
+  return {
+    objet: rendreTexte(modele.objet, table),
+    corps: rendreTexte(modele.corps, table),
+    personnalise: modele.personnalise,
+  };
 }
 
 export type ResultatEnregistrement = { ok: true } | { ok: false; erreur: string };

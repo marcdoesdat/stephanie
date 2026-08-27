@@ -93,6 +93,7 @@ src/
 | `/api/reseau-contacts` | API | Le carnet du réseau, en lecture (résumés + envois du jour) |
 | `/api/reseau-contact` | API | Écriture dans le carnet : créer, corriger, supprimer, état, note, relance, import |
 | `/api/reseau-envoi` | API | Aperçu d'un gabarit (GET) et envoi de l'approche (POST), puis journalisation |
+| `/api/reseau-envoi-lot` | API | Envoi en lot : le gabarit **rendu pour chaque contact**, en série, avec bilan (envoyés, échecs, ignorés) |
 | `/api/reseau-gabarit` | API | Lecture, réécriture et retour au modèle d'origine d'un gabarit de courriel |
 | `/api/reseau-retrait` | API | Désabonnement d'un contact par son lien — **la seule route du réseau qui soit publique** |
 | `/api/crm-dossiers` | API | Les dossiers clients, en lecture (fiches complètes pour l'écran de suivi) |
@@ -547,6 +548,27 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
   parfois marquée comme pourriel. `reseauCourriels.ts` a donc son enveloppe nue et sa signature
   en texte simple, et un test interdit le retour du fond sable. Le contenu obligatoire (AMF,
   coordonnées, pied LCAP) est identique — seule la décoration tombe.
+- **L'envoi en lot rend le message pour chacun, jamais un texte commun.** `/api/reseau-envoi-lot`
+  passe par `rendrePourContact` — le gabarit en vigueur avec les variables de chaque contact —
+  et **tous les messages sont rendus avant que le premier ne parte** : un gabarit qui ne se rend
+  pas fait échouer le lot entier, pas une moitié. C'est le même chemin que l'aperçu et que
+  l'envoi un par un (`reseau-envoi.ts` partage désormais `rendrePourContact`), donc ce que
+  l'écran montre est ce qui part.
+- **Le lot respecte les trois refus de l'envoi un par un** : retrait vérifié contact par contact
+  (les retirés sont ignorés et nommés au bilan), plafond du jour vérifié sur le carnet entier
+  avant le premier octet (429 si la sélection dépasse le reliquat), Resend absent → tout est
+  simulé et journalisé comme tel en dev. Un envoi en échec n'arrête pas les autres : le bilan
+  nomme qui a échoué, et l'écran décoche ce qui est parti pour que retenter ne réécrive jamais
+  deux fois à la même personne.
+- **L'écran découpe le lot en tranches de quatre.** Chaque requête reste courte et légère — un
+  `Promise.all` ou une seule requête de douze envois risquerait le 429 de Resend et le dépassement
+  de la limite de temps de la fonction. Le plafond est réaffiché au fur et à mesure ; un 429
+  « plafond » interrompt la suite en nommant combien sont déjà partis.
+- **La relance en un clic est préparée, jamais expédiée.** L'état suffit à dire où on en est dans
+  la séquence — `journaliserEnvoi` fait avancer la fiche, `gabaritRelancePour` rend `relance` pour
+  un contact `contacte` et `derniere_relance` pour un contact `relance`. Le bouton de la fiche
+  sélectionne ce gabarit et charge son rendu ; relire, retoucher et envoyer restent des gestes.
+  Un gabarit sélectionné par l'état n'est pas un texte relu par elle.
 - **Les gabarits sont un point de départ, pas le texte final.** Le rendu vient du serveur
   (`GET /api/reseau-envoi`) pour que le catalogue n'existe qu'à un seul endroit, mais c'est le
   texte relu et retouché qui part — et c'est **lui** qui est journalisé, pas le modèle.
@@ -782,6 +804,9 @@ npx vitest              # mode watch
 - `src/services/reseauRetraitRoute.test.ts` — les trois façons dont un retrait arrive
   aboutissent ; un `GET` ne retire personne ; la page ne dit jamais qu'un jeton est faux ; un
   retrait qui échoue prévient la courtière
+- `src/services/reseauEnvoiLotRoute.test.ts` — le lot rend par contact et fait avancer les
+  états ; un retiré est ignoré et nommé ; le plafond refuse avant tout octet ; un gabarit qui
+  ne se rend pas échoue sans rien envoyer ; sans Resend, tout est simulé et journalisé comme tel
 - `src/utils/origineRequete.test.ts` — la vérification d'origine réécrite est identique à
   celle d'Astro, et la dispense ne couvre que `/api/reseau-retrait`
 - `src/services/reseauGabaritsService.test.ts` — réécriture des gabarits : portée par

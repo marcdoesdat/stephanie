@@ -133,6 +133,9 @@ const adresseEnvoi = adresseDediee();
                 <button type="button" class="btn-secondary btn-secondary--sm" data-ouvrir-formulaire>
                   + Nouveau contact
                 </button>
+                <button type="button" class="btn-secondary btn-secondary--sm" data-ouvrir-lot>
+                  Envoi en lot
+                </button>
                 <button type="button" class="rs-lien" data-ouvrir-import>Importer une liste</button>
                 <button type="button" class="rs-lien" data-exporter>Exporter (CSV)</button>
               </div>
@@ -253,6 +256,53 @@ const adresseEnvoi = adresseDediee();
               </div>
             </form>
 
+            {/* ---------------- Envoi en lot ---------------- */}
+            <form class="contact-form rs-panneau" id="rs-lot" hidden>
+              <h2 class="rs-h2">Envoi en lot</h2>
+              <p class="rs-aide">
+                Cochez les contacts à qui écrire. Le message est rendu <strong>pour
+                chacun</strong> avec ses propres informations — prénom, agence, secteur — et
+                les envois sont espacés. Pour changer le texte, modifiez le modèle : un lot
+                de messages identiques mot pour mot se reconnaît à dix mètres, par les
+                filtres.
+              </p>
+              <div class="rs-lot-barre">
+                <span class="rs-lot-compte" data-lot-compte />
+                <button type="button" class="rs-lien" data-lot-tout>Tout cocher</button>
+                <button type="button" class="rs-lien" data-lot-aucun>Tout décocher</button>
+              </div>
+              <div class="rs-lot-liste" data-lot-liste />
+
+              <div class="rs-grille">
+                <div>
+                  <label class="cform-label" for="rs-lot-gabarit">Gabarit du lot</label>
+                  <select id="rs-lot-gabarit">
+                    {gabarits.map((gabarit) => (
+                      <option value={gabarit.cle} title={gabarit.resume}>
+                        {gabarit.nom} — {gabarit.resume}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <button type="button" class="btn-secondary btn-secondary--sm" data-lot-apercu>
+                Aperçu
+              </button>
+              <div class="rs-lot-apercu" data-lot-apercu-bloc hidden>
+                <p class="rs-aide" data-lot-apercu-note />
+                <p class="rs-lot-apercu-objet" data-lot-apercu-objet />
+                <pre class="rs-lot-apercu-corps" data-lot-apercu-corps />
+              </div>
+
+              <p class="rs-erreur" data-erreur-lot hidden />
+              <p class="rs-lot-bilan" data-lot-bilan aria-live="polite" hidden />
+              <div class="rs-panneau-actions">
+                <button type="submit" class="btn-cta" data-lot-envoyer>Envoyer</button>
+                <button type="button" class="rs-lien" data-fermer-lot>Annuler</button>
+              </div>
+            </form>
+
             {/* ---------------- Le carnet ---------------- */}
             <section class="rs-carnet">
               <h2 class="rs-h2">
@@ -304,6 +354,17 @@ const adresseEnvoi = adresseDediee();
               {/* ---------------- Composition ---------------- */}
               <div class="rs-composer" data-composer>
                 <h3 class="rs-h3">Écrire</h3>
+
+                <div class="rs-relance-rapide" data-relance-rapide hidden>
+                  <p class="rs-aide">
+                    Ce contact a déjà reçu un message sans réponse. Le gabarit qui suit la
+                    séquence est préparé en un clic — relisez, retouchez, puis envoyez.
+                  </p>
+                  <button type="button" class="btn-secondary btn-secondary--sm" data-relance-rapide-btn>
+                    Préparer la relance
+                  </button>
+                </div>
+
                 <div class="rs-gabarit-ligne">
                   <label class="cform-label" for="rs-gabarit">Gabarit</label>
                   <span class="rs-gabarit-etat" data-gabarit-personnalise hidden>réécrit par vous</span>
@@ -599,6 +660,62 @@ const adresseEnvoi = adresseDediee();
     font-size: 0.8rem;
     font-weight: 400;
     color: var(--muted);
+  }
+
+  .rs-lot-barre {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .rs-lot-compte {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .rs-lot-apercu {
+    background: var(--sand);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    margin: 1rem 0 0.25rem;
+  }
+
+  .rs-lot-apercu-objet {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 0.6rem;
+  }
+
+  .rs-lot-apercu-corps {
+    font-family: inherit;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--ink);
+    white-space: pre-wrap;
+    margin: 0;
+  }
+
+  .rs-lot-bilan {
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: 0.8rem 1rem;
+    margin: 0.75rem 0 0;
+  }
+
+  .rs-relance-rapide {
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .rs-relance-rapide .rs-aide {
+    margin-bottom: 0.6rem;
   }
 
   .rs-fiche {
@@ -967,10 +1084,65 @@ const adresseEnvoi = adresseDediee();
     cursor: pointer;
     margin-top: 0.3rem;
   }
+
+  /* La liste du lot est bâtie en JavaScript : style global, circonscrit à #rs-app. */
+
+  #rs-app .rs-lot-liste {
+    max-height: 19rem;
+    overflow-y: auto;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.5rem 0.8rem;
+    margin-bottom: 1.1rem;
+  }
+
+  #rs-app .rs-lot-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.65rem;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+
+  #rs-app .rs-lot-item:last-child {
+    border-bottom: none;
+  }
+
+  #rs-app .rs-lot-item input[type='checkbox'] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--clay);
+    flex-shrink: 0;
+  }
+
+  #rs-app .rs-lot-item-texte {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  #rs-app .rs-lot-item-meta {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
 </style>
 
 <script>
-  import { BASES_CONSENTEMENT, ETATS, PROFESSIONS, type CleEtat } from '../utils/reseauCourtiers';
+  import {
+    BASES_CONSENTEMENT,
+    ETATS,
+    PROFESSIONS,
+    gabaritRelancePour,
+    type CleEtat,
+  } from '../utils/reseauCourtiers';
   import { phraseUrgenceReseau, urgencesReseau } from '../utils/tableauDeBord';
 
   /* ---------------- L'application ---------------- */
@@ -1070,6 +1242,7 @@ const adresseEnvoi = adresseDediee();
         contacts = data.contacts;
         envoisFaits = data.envoisDuJour;
         rendre();
+        if (lotInitialise) rendreLotListe();
       } catch (err) {
         if (liste) {
           liste.replaceChildren(
@@ -1336,6 +1509,19 @@ const adresseEnvoi = adresseDediee();
       // composition ouvert serait une invitation à contourner sa demande.
       const composer = fiche.querySelector<HTMLElement>('[data-composer]');
       if (composer) composer.hidden = contact.etat === 'refuse';
+
+      // La relance en un clic : le bouton n'apparaît que quand l'état appelle la suite de
+      // la séquence (contacté → relance, relancé → dernière relance).
+      const relanceRapide = fiche.querySelector<HTMLElement>('[data-relance-rapide]');
+      if (relanceRapide) {
+        const suite = gabaritRelancePour(contact.etat);
+        relanceRapide.hidden = suite === null;
+        const bouton = relanceRapide.querySelector<HTMLButtonElement>('[data-relance-rapide-btn]');
+        if (bouton) {
+          bouton.textContent =
+            suite === 'derniere_relance' ? 'Préparer la dernière relance' : 'Préparer la relance';
+        }
+      }
 
       rendreHistorique(contact);
     }
@@ -1638,6 +1824,25 @@ const adresseEnvoi = adresseDediee();
       void chargerGabarit();
     });
 
+    /* ---------------- Relance en un clic ---------------- */
+
+    /**
+     * L'état suffit à dire où on en est dans la séquence : `journaliserEnvoi` a fait
+     * avancer la fiche, et `gabaritRelancePour` dit quel gabarit vient ensuite. Le bouton
+     * sélectionne ce gabarit et charge son rendu — l'envoi, lui, reste un geste : elle
+     * relit et retouche, comme toujours.
+     */
+    fiche?.querySelector('[data-relance-rapide-btn]')?.addEventListener('click', () => {
+      const contact = contactCourant();
+      const suite = contact ? gabaritRelancePour(contact.etat) : null;
+      if (!contact || !suite || !selecteurGabarit) return;
+      selecteurGabarit.value = suite;
+      void chargerGabarit();
+      fiche
+        ?.querySelector<HTMLElement>('[data-composer]')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
     /* ---------------- Édition du gabarit ---------------- */
 
     /**
@@ -1802,6 +2007,242 @@ const adresseEnvoi = adresseDediee();
         }
       } finally {
         bouton.disabled = false;
+      }
+    });
+
+    /* ---------------- Envoi en lot ---------------- */
+
+    const panneauLot = document.getElementById('rs-lot') as HTMLFormElement | null;
+    /** Vrai dès la première ouverture — la présélection ne se fait qu'une fois. */
+    let lotInitialise = false;
+
+    /** Les identifiants cochés, dans l'ordre de la liste. */
+    function lotCoches(): string[] {
+      if (!panneauLot) return [];
+      return [...panneauLot.querySelectorAll<HTMLInputElement>('[data-lot-id]:checked')].map(
+        (caseCoche) => caseCoche.dataset.lotId ?? '',
+      );
+    }
+
+    /**
+     * La liste du lot, bâtie depuis le carnet. Les contacts retirés en sont exclus — on ne
+     * coche pas ce qu'on n'a pas le droit d'envoyer. La sélection courante est conservée
+     * d'un rendu à l'autre : après un lot, seuls les destinataires servis sont décochés,
+     * ce qui laisse cochés les échecs à retenter.
+     */
+    function rendreLotListe(preselections?: Set<string>): void {
+      const hote = panneauLot?.querySelector<HTMLElement>('[data-lot-liste]');
+      if (!hote) return;
+      const gardees = preselections ?? new Set(lotCoches());
+      const fragment = document.createDocumentFragment();
+
+      for (const contact of contacts) {
+        if (contact.etat === 'refuse') continue;
+        const etiquette = document.createElement('label');
+        etiquette.className = 'rs-lot-item';
+
+        const caseCoche = document.createElement('input');
+        caseCoche.type = 'checkbox';
+        caseCoche.dataset.lotId = contact.id;
+        caseCoche.checked = gardees.has(contact.id);
+
+        const corps = texte('span', 'rs-lot-item-texte', contact.nom);
+        const meta = texte(
+          'span',
+          'rs-lot-item-meta',
+          [libelleProfession(contact.profession), contact.agence].filter(Boolean).join(' · '),
+        );
+        corps.append(meta);
+        etiquette.append(caseCoche, corps, badge(contact.etat));
+        fragment.append(etiquette);
+      }
+      hote.replaceChildren(fragment);
+      rendreLotCompte();
+    }
+
+    function rendreLotCompte(): void {
+      const compte = panneauLot?.querySelector<HTMLElement>('[data-lot-compte]');
+      const bouton = panneauLot?.querySelector<HTMLButtonElement>('[data-lot-envoyer]');
+      if (!compte && !bouton) return;
+      const total = panneauLot?.querySelectorAll<HTMLInputElement>('[data-lot-id]').length ?? 0;
+      const choisis = lotCoches().length;
+      if (compte) {
+        compte.textContent =
+          total === 0 ? 'Aucun contact à approcher dans le carnet.' : `${choisis} sur ${total}`;
+      }
+      if (bouton) {
+        bouton.textContent =
+          choisis > 0 ? `Envoyer à ${choisis} contact${choisis > 1 ? 's' : ''}` : 'Envoyer';
+      }
+    }
+
+    function erreurLot(message: string | null): void {
+      const cible = panneauLot?.querySelector<HTMLElement>('[data-erreur-lot]');
+      if (!cible) return;
+      cible.textContent = message ?? '';
+      cible.hidden = message === null;
+    }
+
+    app.querySelector('[data-ouvrir-lot]')?.addEventListener('click', () => {
+      if (!panneauLot) return;
+      panneauLot.hidden = false;
+      if (formulaire) formulaire.hidden = true;
+      if (panneauImport) panneauImport.hidden = true;
+      erreurLot(null);
+      // À la première ouverture, la sélection par défaut est ce qui appelle le lot :
+      // les contacts jamais approchés.
+      if (!lotInitialise) {
+        rendreLotListe(new Set(contacts.filter((c) => c.etat === 'a_contacter').map((c) => c.id)));
+        lotInitialise = true;
+      }
+      panneauLot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    panneauLot?.querySelector('[data-fermer-lot]')?.addEventListener('click', () => {
+      if (panneauLot) panneauLot.hidden = true;
+    });
+
+    panneauLot?.querySelector('[data-lot-tout]')?.addEventListener('click', () => {
+      for (const caseCoche of panneauLot.querySelectorAll<HTMLInputElement>('[data-lot-id]')) {
+        caseCoche.checked = true;
+      }
+      rendreLotCompte();
+    });
+
+    panneauLot?.querySelector('[data-lot-aucun]')?.addEventListener('click', () => {
+      for (const caseCoche of panneauLot.querySelectorAll<HTMLInputElement>('[data-lot-id]')) {
+        caseCoche.checked = false;
+      }
+      rendreLotCompte();
+    });
+
+    panneauLot?.querySelector('[data-lot-liste]')?.addEventListener('change', () => {
+      rendreLotCompte();
+    });
+
+    /** L'aperçu du premier contact coché — ce que chacun recevra, avec ses variables. */
+    panneauLot?.querySelector('[data-lot-apercu]')?.addEventListener('click', async () => {
+      const gabarit = (document.getElementById('rs-lot-gabarit') as HTMLSelectElement | null)
+        ?.value;
+      const premier = lotCoches()[0];
+      erreurLot(null);
+      if (!premier || !gabarit) {
+        erreurLot('Cochez au moins un contact.');
+        return;
+      }
+
+      try {
+        const data = await api<{ objet: string; corps: string }>(
+          `/api/reseau-envoi?id=${encodeURIComponent(premier)}&gabarit=${encodeURIComponent(gabarit)}`,
+        );
+        if (!data) return;
+        const contact = contacts.find((c) => c.id === premier);
+        const note = panneauLot.querySelector<HTMLElement>('[data-lot-apercu-note]');
+        const objet = panneauLot.querySelector<HTMLElement>('[data-lot-apercu-objet]');
+        const corps = panneauLot.querySelector<HTMLElement>('[data-lot-apercu-corps]');
+        const bloc = panneauLot.querySelector<HTMLElement>('[data-lot-apercu-bloc]');
+        if (note) {
+          note.textContent = `Aperçu pour ${contact?.nom ?? 'le premier contact'} — chaque destinataire recevra sa propre version, rendue avec ses informations.`;
+        }
+        if (objet) objet.textContent = data.objet;
+        if (corps) corps.textContent = data.corps;
+        if (bloc) bloc.hidden = false;
+      } catch (err) {
+        erreurLot(err instanceof Error ? err.message : 'Aperçu indisponible.');
+      }
+    });
+
+    /** Un lot part en tranches courtes : chaque requête reste légère et rapide. */
+    function decouper<T>(valeurs: T[], taille: number): T[][] {
+      const tranches: T[][] = [];
+      for (let debut = 0; debut < valeurs.length; debut += taille) {
+        tranches.push(valeurs.slice(debut, debut + taille));
+      }
+      return tranches;
+    }
+
+    panneauLot?.addEventListener('submit', async (evenement) => {
+      evenement.preventDefault();
+      const bouton = panneauLot.querySelector<HTMLButtonElement>('[data-lot-envoyer]');
+      const bilanEl = panneauLot.querySelector<HTMLElement>('[data-lot-bilan]');
+      const gabarit = (document.getElementById('rs-lot-gabarit') as HTMLSelectElement | null)
+        ?.value;
+      erreurLot(null);
+      if (bilanEl) bilanEl.hidden = true;
+
+      const ids = lotCoches();
+      if (ids.length === 0) {
+        erreurLot('Cochez au moins un contact.');
+        return;
+      }
+      if (
+        !window.confirm(
+          `Envoyer ce gabarit à ${ids.length} contact${ids.length > 1 ? 's' : ''} ? Les envois sont espacés, et le plafond du jour (${plafond}) est respecté.`,
+        )
+      ) {
+        return;
+      }
+
+      let envoyes = 0;
+      const partis = new Set<string>();
+      const echoues: string[] = [];
+      const ignores: string[] = [];
+      let simule = false;
+      if (bouton) bouton.disabled = true;
+
+      try {
+        for (const tranche of decouper(ids, 4)) {
+          const data = await api<{
+            bilan: {
+              envoyes: Array<{ id: string; nom: string }>;
+              echoues: Array<{ nom: string; raison: string }>;
+              ignores: Array<{ nom: string }>;
+              simule: boolean;
+            };
+          }>('/api/reseau-envoi-lot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lot: tranche, gabarit }),
+          });
+          if (!data) return;
+          envoyes += data.bilan.envoyes.length;
+          for (const ligne of data.bilan.envoyes) partis.add(ligne.id);
+          for (const ligne of data.bilan.echoues) echoues.push(`${ligne.nom} (${ligne.raison})`);
+          for (const ligne of data.bilan.ignores) ignores.push(ligne.nom);
+          simule = simule || data.bilan.simule;
+        }
+
+        // Ce qui est parti n'est plus coché : une seconde demande repartirait à zéro, sans
+        // risquer d'écrire deux fois à la même personne. Les échecs restent cochés.
+        for (const caseCoche of panneauLot.querySelectorAll<HTMLInputElement>('[data-lot-id]')) {
+          if (partis.has(caseCoche.dataset.lotId ?? '')) caseCoche.checked = false;
+        }
+
+        await charger();
+        if (bilanEl) {
+          const morceaux = [
+            simule
+              ? `${envoyes} message${envoyes > 1 ? 's' : ''} simulé${envoyes > 1 ? 's' : ''} (Resend absent)`
+              : `${envoyes} envoyé${envoyes > 1 ? 's' : ''}`,
+            echoues.length
+              ? `${echoues.length} échec${echoues.length > 1 ? 's' : ''} : ${echoues.join(' · ')}`
+              : '',
+            ignores.length
+              ? `${ignores.length} ignoré${ignores.length > 1 ? 's' : ''} : ${ignores.join(' · ')}`
+              : '',
+          ].filter(Boolean);
+          bilanEl.textContent = morceaux.join(' — ');
+          bilanEl.hidden = false;
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Envoi interrompu.';
+        erreurLot(
+          envoyes > 0 ? `Interrompu après ${envoyes} envoi${envoyes > 1 ? 's' : ''}. ${message}` : message,
+        );
+        await charger();
+      } finally {
+        if (bouton) bouton.disabled = false;
+        rendreLotCompte();
       }
     });
 

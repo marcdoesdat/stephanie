@@ -409,6 +409,21 @@ export function peutRecevoir(etat: CleEtat): boolean {
   return etat !== 'refuse';
 }
 
+/**
+ * Le gabarit que l'état du contact appelle, pour la relance en un clic.
+ *
+ * La séquence d'approche a un ordre naturel : introduction, puis relance, puis dernière
+ * relance. L'état en est la trace — `journaliserEnvoi` fait avancer `a_contacter` →
+ * `contacte` → `relance` — donc l'état suffit à dire où on en est, sans qu'un nouvel
+ * écran demande de choisir. Les autres états (`en_discussion`, `partenaire`, `refuse`)
+ * n'appellent aucune relance : `null`.
+ */
+export function gabaritRelancePour(etat: CleEtat): CleGabarit | null {
+  if (etat === 'contacte') return 'relance';
+  if (etat === 'relance') return 'derniere_relance';
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Validation des entrées                                             */
 /* ------------------------------------------------------------------ */
