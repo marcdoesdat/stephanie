@@ -90,6 +90,26 @@ describe('création', () => {
     expect(modifie?.consentement.base).toBe('relation_existante');
     expect(modifie?.consentement.le).toBe(origine);
   });
+
+  it('importe un lot en lisant le carnet une seule fois, dédoublonné en mémoire', async () => {
+    const service = await chargerService();
+    await service.creerContact(donnees()); // déjà au carnet
+
+    const bilan = await service.importerContacts([
+      donnees({ nom: 'Louis Dupré', courriel: 'louis@agence.ca' }),
+      donnees({ nom: 'Anne Côté', courriel: 'anne@agence.ca' }),
+      donnees(), // doublon du carnet
+      donnees({ nom: 'Anne en double', courriel: 'anne@agence.ca' }), // doublon du lot
+    ]);
+
+    expect(bilan).toEqual({ crees: 2, ignores: 2 });
+    const carnet = await service.listerContacts();
+    expect(carnet.map((c) => c.courriel).sort()).toEqual([
+      'anne@agence.ca',
+      'louis@agence.ca',
+      'marie@agence.ca',
+    ]);
+  });
 });
 
 describe('envois', () => {

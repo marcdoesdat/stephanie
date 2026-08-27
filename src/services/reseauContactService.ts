@@ -187,6 +187,57 @@ export async function creerContact(donnees: DonneesContact): Promise<Contact | {
   return ecrire(contact);
 }
 
+/**
+ * Crée plusieurs fiches d'un coup — le pendant de `creerContact` pour un import.
+ *
+ * Le carnet n'est lu qu'**une seule fois** : recréer `creerContact` ligne par ligne
+ * relirait tout le carnet à chaque adresse, et un import de deux cents lignes deviendrait
+ * deux cents lectures du carnet entier. Le dédoublonnage se fait donc en mémoire, contre
+ * les adresses déjà présentes **comme** contre celles du lot lui-même — une liste collée
+ * deux fois ne produit jamais deux fiches.
+ */
+export async function importerContacts(
+  donnees: DonneesContact[],
+): Promise<{ crees: number; ignores: number }> {
+  const existants = await listerContacts();
+  const vues = new Set(existants.map((contact) => contact.courriel));
+
+  let crees = 0;
+  let ignores = 0;
+  for (const fiche of donnees) {
+    if (vues.has(fiche.courriel)) {
+      ignores += 1;
+      continue;
+    }
+    vues.add(fiche.courriel);
+
+    const maintenant = new Date().toISOString();
+    const contact: Contact = {
+      id: nouvelIdentifiant(),
+      creeLe: maintenant,
+      majLe: maintenant,
+      nom: fiche.nom,
+      courriel: fiche.courriel,
+      telephone: fiche.telephone,
+      agence: fiche.agence,
+      secteur: fiche.secteur,
+      profession: fiche.profession,
+      notes: fiche.notes,
+      etat: 'a_contacter',
+      consentement: { ...fiche.consentement, le: maintenant },
+      relanceLe: null,
+      dernierEnvoiLe: null,
+      jetonRetrait: nouveauJeton(),
+      historique: [evenement('creation', 'Fiche créée')],
+    };
+    // Une fiche qui ne s'écrit pas fait échouer le lot : l'écriture lève, la route rend
+    // l'erreur — et le dédoublonnage rend le recollage de la même liste sans danger.
+    await ecrire(contact);
+    crees += 1;
+  }
+  return { crees, ignores };
+}
+
 /** Met à jour les coordonnées. L'état, lui, ne se change que par `changerEtat`. */
 export async function modifierContact(id: string, donnees: DonneesContact): Promise<Contact | null> {
   const contact = await lireContact(id);

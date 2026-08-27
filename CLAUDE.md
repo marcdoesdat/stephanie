@@ -564,11 +564,22 @@ planificateurs : les mêmes clés de profession que `/api/partenaires-submit`.
   `Promise.all` ou une seule requête de douze envois risquerait le 429 de Resend et le dépassement
   de la limite de temps de la fonction. Le plafond est réaffiché au fur et à mesure ; un 429
   « plafond » interrompt la suite en nommant combien sont déjà partis.
+- **Le lot se filtre par date de création** (« Créés du / au », bornes libres) : c'est ce qui
+  permet de viser « la liste importée mardi » sans re-cocher à la main. La comparaison se fait
+  sur le **jour local** de `creeLe`, jamais sur l'instant ; les contacts retirés restent exclus
+  quel que soit le filtre, « Tout cocher » ne coche que les visibles, et la sélection en cours
+  est conservée d'un rendu à l'autre. Le filtre ne touche que le panneau du lot — le carnet
+  principal garde ses propres filtres.
 - **La relance en un clic est préparée, jamais expédiée.** L'état suffit à dire où on en est dans
   la séquence — `journaliserEnvoi` fait avancer la fiche, `gabaritRelancePour` rend `relance` pour
   un contact `contacte` et `derniere_relance` pour un contact `relance`. Le bouton de la fiche
   sélectionne ce gabarit et charge son rendu ; relire, retoucher et envoyer restent des gestes.
   Un gabarit sélectionné par l'état n'est pas un texte relu par elle.
+- **L'import lit le carnet une seule fois.** `importerContacts` dédoublonne en mémoire contre
+  les adresses présentes **et** celles du lot — jamais en rappelant `creerContact` par ligne,
+  qui relirait tout le carnet à chaque adresse. Le serveur garde son plafond de 200 lignes par
+  requête ; l'écran découpe les grands collages en tranches de 200 et additionne le bilan.
+  Recoller la même liste est sans danger : le dédoublonnage ignore ce qui existe déjà.
 - **Les gabarits sont un point de départ, pas le texte final.** Le rendu vient du serveur
   (`GET /api/reseau-envoi`) pour que le catalogue n'existe qu'à un seul endroit, mais c'est le
   texte relu et retouché qui part — et c'est **lui** qui est journalisé, pas le modèle.

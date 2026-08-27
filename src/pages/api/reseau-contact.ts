@@ -14,6 +14,7 @@ import {
   changerEtat,
   creerContact,
   fixerRelance,
+  importerContacts,
   modifierContact,
   supprimerContact,
   versFiche,
@@ -182,8 +183,9 @@ async function importer(source: Record<string, unknown>): Promise<Response> {
   const lignes = Array.isArray(source.lignes) ? source.lignes.slice(0, IMPORT_MAX) : [];
   if (lignes.length === 0) return jsonResponse({ error: 'Rien à importer.' }, 400);
 
-  let crees = 0;
-  let ignores = 0;
+  // Validation de toutes les lignes d'abord, création en un seul passage ensuite : le
+  // carnet n'est lu qu'une fois, quel que soit le nombre de lignes.
+  const valides: DonneesContact[] = [];
   const rejets: string[] = [];
 
   for (const brute of lignes) {
@@ -194,7 +196,7 @@ async function importer(source: Record<string, unknown>): Promise<Response> {
       continue;
     }
 
-    const donnees: DonneesContact = {
+    valides.push({
       nom,
       courriel: normaliserCourriel(ligne.courriel),
       telephone: normaliser(ligne.telephone, LONGUEURS.telephone),
@@ -203,12 +205,9 @@ async function importer(source: Record<string, unknown>): Promise<Response> {
       profession: source.profession,
       notes: '',
       consentement: { base: consentementBrut.base, source: sourceConsentement },
-    };
-
-    const resultat = await creerContact(donnees);
-    if ('doublon' in resultat) ignores += 1;
-    else crees += 1;
+    });
   }
 
+  const { crees, ignores } = await importerContacts(valides);
   return jsonResponse({ ok: true, crees, ignores, rejets: rejets.slice(0, 20) }, 200);
 }

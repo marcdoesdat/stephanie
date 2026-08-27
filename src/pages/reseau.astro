@@ -219,7 +219,8 @@ const adresseEnvoi = adresseDediee();
               <p class="rs-aide">
                 Collez une colonne par tabulation ou point-virgule :
                 <code>nom ; courriel ; agence ; secteur</code>. Les adresses déjà au carnet
-                sont ignorées. La profession et l’origine s’appliquent à tout le lot.
+                sont ignorées. La profession et l’origine s’appliquent à tout le lot. Les
+                grandes listes partent en tranches de 200 lignes — le bilan fait le total.
               </p>
               <textarea id="rs-import-texte" rows="6" placeholder="Marie Tremblay ; marie@agence.ca ; RE/MAX Repentigny" />
 
@@ -266,6 +267,19 @@ const adresseEnvoi = adresseDediee();
                 de messages identiques mot pour mot se reconnaît à dix mètres, par les
                 filtres.
               </p>
+              <div class="rs-lot-filtres">
+                <label class="rs-lot-filtre">
+                  <span>Créés du</span>
+                  <input type="date" id="rs-lot-date-du" />
+                </label>
+                <label class="rs-lot-filtre">
+                  <span>au</span>
+                  <input type="date" id="rs-lot-date-au" />
+                </label>
+                <button type="button" class="rs-lien" data-lot-dates-effacer hidden>
+                  Effacer les dates
+                </button>
+              </div>
               <div class="rs-lot-barre">
                 <span class="rs-lot-compte" data-lot-compte />
                 <button type="button" class="rs-lien" data-lot-tout>Tout cocher</button>
@@ -667,6 +681,32 @@ const adresseEnvoi = adresseDediee();
     align-items: baseline;
     gap: 0.9rem;
     margin-bottom: 0.6rem;
+  }
+
+  .rs-lot-filtres {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.8rem;
+  }
+
+  .rs-lot-filtre {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .rs-lot-filtre input {
+    padding: 0.45rem 0.6rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--ink);
   }
 
   .rs-lot-compte {
@@ -1749,30 +1789,40 @@ const adresseEnvoi = adresseDediee();
       }
 
       try {
-        const data = await api<{ crees: number; ignores: number; rejets: string[] }>(
-          '/api/reseau-contact',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'importer',
-              lignes,
-              profession:
-                (document.getElementById('rs-import-profession') as HTMLSelectElement | null)?.value ?? '',
-              consentement: {
-                base: (document.getElementById('rs-import-base') as HTMLSelectElement | null)?.value ?? '',
-                source:
-                  (document.getElementById('rs-import-source') as HTMLInputElement | null)?.value ?? '',
-              },
-            }),
-          },
-        );
-        if (!data) return;
+        const profession =
+          (document.getElementById('rs-import-profession') as HTMLSelectElement | null)?.value ?? '';
+        const consentement = {
+          base: (document.getElementById('rs-import-base') as HTMLSelectElement | null)?.value ?? '',
+          source: (document.getElementById('rs-import-source') as HTMLInputElement | null)?.value ?? '',
+        };
+
+        // Le serveur plafonne chaque requête à 200 lignes : une grande liste part donc en
+        // tranches successives, et le bilan additionne tout. Recoller la même liste ne
+        // crée jamais de doublon — le carnet dédoublonne sur l'adresse.
+        let crees = 0;
+        let ignores = 0;
+        const rejets: string[] = [];
+        for (const tranche of decouper(lignes, 200)) {
+          const data = await api<{ crees: number; ignores: number; rejets: string[] }>(
+            '/api/reseau-contact',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'importer', lignes: tranche, profession, consentement }),
+            },
+          );
+          if (!data) return;
+          crees += data.crees;
+          ignores += data.ignores;
+          rejets.push(...data.rejets);
+        }
 
         const bilan = [
-          `${data.crees} contact${data.crees > 1 ? 's' : ''} ajouté${data.crees > 1 ? 's' : ''}`,
-          data.ignores ? `${data.ignores} déjà au carnet` : '',
-          data.rejets.length ? `${data.rejets.length} ligne(s) illisible(s) : ${data.rejets.join(', ')}` : '',
+          `${crees} contact${crees > 1 ? 's' : ''} ajouté${crees > 1 ? 's' : ''}`,
+          ignores ? `${ignores} déjà au carnet` : '',
+          rejets.length
+            ? `${rejets.length} ligne(s) illisible(s) : ${rejets.slice(0, 20).join(', ')}`
+            : '',
         ]
           .filter(Boolean)
           .join(' · ');
@@ -2024,6 +2074,46 @@ const adresseEnvoi = adresseDediee();
       );
     }
 
+    /* ---------------- Filtre par date du lot ---------------- */
+
+    /** La date du calendrier local — sans l'heure, pour comparer des jours. */
+    function jourLocal(iso: string): string {
+      const instant = new Date(iso);
+      if (Number.isNaN(instant.getTime())) return '';
+      const mois = String(instant.getMonth() + 1).padStart(2, '0');
+      const jour = String(instant.getDate()).padStart(2, '0');
+      return `${instant.getFullYear()}-${mois}-${jour}`;
+    }
+
+    function lotDates(): { du: string; au: string } {
+      return {
+        du: (document.getElementById('rs-lot-date-du') as HTMLInputElement | null)?.value ?? '',
+        au: (document.getElementById('rs-lot-date-au') as HTMLInputElement | null)?.value ?? '',
+      };
+    }
+
+    /**
+     * Le filtre par date porte sur la **création** de la fiche : c'est ce qui permet de
+     * viser « la liste importée mardi » sans re-cocher à la main. Deux dates libres —
+     * « du » seul vaut « depuis ce jour », « au » seul vaut « jusqu'à ce jour ». Les
+     * contacts retirés restent exclus, quel que soit le filtre.
+     */
+    function lotContactVisible(contact: Fiche): boolean {
+      if (contact.etat === 'refuse') return false;
+      const { du, au } = lotDates();
+      if (!du && !au) return true;
+      const jour = jourLocal(contact.creeLe);
+      if (du && jour < du) return false;
+      if (au && jour > au) return false;
+      return true;
+    }
+
+    /** Vrai si un filtre de date est posé — le compteur le signale. */
+    function lotDatesActives(): boolean {
+      const { du, au } = lotDates();
+      return du !== '' || au !== '';
+    }
+
     /**
      * La liste du lot, bâtie depuis le carnet. Les contacts retirés en sont exclus — on ne
      * coche pas ce qu'on n'a pas le droit d'envoyer. La sélection courante est conservée
@@ -2037,7 +2127,7 @@ const adresseEnvoi = adresseDediee();
       const fragment = document.createDocumentFragment();
 
       for (const contact of contacts) {
-        if (contact.etat === 'refuse') continue;
+        if (!lotContactVisible(contact)) continue;
         const etiquette = document.createElement('label');
         etiquette.className = 'rs-lot-item';
 
@@ -2067,8 +2157,11 @@ const adresseEnvoi = adresseDediee();
       const total = panneauLot?.querySelectorAll<HTMLInputElement>('[data-lot-id]').length ?? 0;
       const choisis = lotCoches().length;
       if (compte) {
+        const filtre = lotDatesActives() ? ' · dates filtrées' : '';
         compte.textContent =
-          total === 0 ? 'Aucun contact à approcher dans le carnet.' : `${choisis} sur ${total}`;
+          total === 0
+            ? `Aucun contact pour ces dates${lotDatesActives() ? '' : ' dans le carnet'}.`
+            : `${choisis} sur ${total}${filtre}`;
       }
       if (bouton) {
         bouton.textContent =
@@ -2090,9 +2183,15 @@ const adresseEnvoi = adresseDediee();
       if (panneauImport) panneauImport.hidden = true;
       erreurLot(null);
       // À la première ouverture, la sélection par défaut est ce qui appelle le lot :
-      // les contacts jamais approchés.
+      // les contacts jamais approchés — parmi ceux que le filtre de date laisse voir.
       if (!lotInitialise) {
-        rendreLotListe(new Set(contacts.filter((c) => c.etat === 'a_contacter').map((c) => c.id)));
+        rendreLotListe(
+          new Set(
+            contacts
+              .filter((c) => c.etat === 'a_contacter' && lotContactVisible(c))
+              .map((c) => c.id),
+          ),
+        );
         lotInitialise = true;
       }
       panneauLot.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2100,6 +2199,31 @@ const adresseEnvoi = adresseDediee();
 
     panneauLot?.querySelector('[data-fermer-lot]')?.addEventListener('click', () => {
       if (panneauLot) panneauLot.hidden = true;
+    });
+
+    /* ---------------- Filtre par date ---------------- */
+
+    function majBoutonDates(): void {
+      const bouton = panneauLot?.querySelector<HTMLButtonElement>('[data-lot-dates-effacer]');
+      if (bouton) bouton.hidden = !lotDatesActives();
+    }
+
+    for (const id of ['rs-lot-date-du', 'rs-lot-date-au']) {
+      document.getElementById(id)?.addEventListener('change', () => {
+        // La sélection en cours est conservée ; les fiches que le filtre écarte sortent
+        // simplement de la liste — et la case « Envoyer » ne compte plus que les visibles.
+        rendreLotListe();
+        majBoutonDates();
+      });
+    }
+
+    panneauLot?.querySelector('[data-lot-dates-effacer]')?.addEventListener('click', () => {
+      for (const id of ['rs-lot-date-du', 'rs-lot-date-au']) {
+        const champ = document.getElementById(id) as HTMLInputElement | null;
+        if (champ) champ.value = '';
+      }
+      rendreLotListe();
+      majBoutonDates();
     });
 
     panneauLot?.querySelector('[data-lot-tout]')?.addEventListener('click', () => {
