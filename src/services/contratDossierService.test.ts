@@ -554,6 +554,99 @@ describe('marquerRefus', () => {
   });
 });
 
+describe('corrigerCourrielCourant', () => {
+  it('corrige l’adresse du signataire courant et invalide l’ancien lien', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+
+    const corrige = await service.corrigerCourrielCourant(invitation.dossierId, 'ana.corrigee@exemple.ca');
+    expect(corrige.ok).toBe(true);
+    if (!corrige.ok) return;
+
+    expect(corrige.invitation.courriel).toBe('ana.corrigee@exemple.ca');
+    // L'ancien jeton est mort, le nouveau ouvre le dossier à la même place.
+    expect(await service.ouvrirParJeton(invitation.dossierId, invitation.jeton)).toBeNull();
+    const rouvert = (await service.ouvrirParJeton(corrige.invitation.dossierId, corrige.invitation.jeton))!;
+    expect(rouvert.dossier.emprunteurs[rouvert.index]!.emprunteur.courriel).toBe('ana.corrigee@exemple.ca');
+    expect(rouvert.dossier.donnees.emprunteurs[rouvert.index]!.courriel).toBe('ana.corrigee@exemple.ca');
+  });
+
+  it('refuse une adresse invalide ou déjà prise par un autre emprunteur', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+
+    const invalide = await service.corrigerCourrielCourant(invitation.dossierId, 'pas-une-adresse');
+    expect(invalide).toEqual({ ok: false, raison: 'invalide' });
+
+    const doublon = await service.corrigerCourrielCourant(invitation.dossierId, 'bo@exemple.ca');
+    expect(doublon).toEqual({ ok: false, raison: 'doublon' });
+  });
+
+  it('ne corrige rien sur un dossier gelé ou complet', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const corrige = await service.corrigerCourrielCourant(invitation.dossierId, 'autre@exemple.ca');
+    expect(corrige).toEqual({ ok: false, raison: 'introuvable' });
+  });
+});
+
+describe('annulerDossier', () => {
+  it('annule un dossier en cours : les liens meurent et le résumé le dit', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+
+    const annule = await service.annulerDossier(invitation.dossierId);
+    expect(annule?.statut).toBe('annule');
+    expect(annule?.annuleLe).toBeTruthy();
+
+    // Le jeton ne rouvre plus rien, et aucune relance n'est possible.
+    expect(await service.ouvrirParJeton(invitation.dossierId, invitation.jeton)).toBeNull();
+    expect(await service.reemettreLienCourant(invitation.dossierId)).toBeNull();
+
+    const resumes = await service.listerDossiers();
+    expect(resumes[0]!.statut).toBe('annule');
+    expect(resumes[0]!.annuleLe).toBeTruthy();
+  });
+
+  it('n’annule pas un dossier déjà gelé ou expiré', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.marquerRefus(ouvert.dossier, ouvert.index, 'Non merci.');
+
+    expect(await service.annulerDossier(invitation.dossierId)).toBeNull();
+  });
+});
+
+describe('destinatairesAnnulation', () => {
+  it('à distance : les signataires et le courant, jamais ceux dont le tour n’est pas venu', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(
+      donnees('ana@exemple.ca', 'bo@exemple.ca', 'cy@exemple.ca'),
+    );
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const annule = (await service.annulerDossier(invitation.dossierId))!;
+    const destinataires = service.destinatairesAnnulation(annule);
+    expect(destinataires.map((d) => [d.courriel, d.aSigne])).toEqual([
+      ['ana@exemple.ca', true],
+      ['bo@exemple.ca', false],
+    ]);
+  });
+
+  it('en présentiel : seuls ceux qui ont signé — aucun courriel n’est parti vers les autres', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'), 'presence');
+
+    const annule = (await service.annulerDossier(invitation.dossierId))!;
+    expect(service.destinatairesAnnulation(annule)).toEqual([]);
+  });
+});
+
 describe('emprunteursEnAttente et supprimerDossier', () => {
   it('liste ceux qui n’ont pas signé', async () => {
     const service = await chargerService();

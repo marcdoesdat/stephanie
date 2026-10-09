@@ -141,7 +141,7 @@ function ancienneteReseau(urgence: UrgenceReseau): number {
  */
 export interface ResumeEcran {
   readonly id: string;
-  readonly statut: 'en_attente' | 'a_finaliser' | 'gele';
+  readonly statut: 'en_attente' | 'a_finaliser' | 'gele' | 'annule';
   readonly expireLe: string;
   readonly emprunteurs: ReadonlyArray<{ readonly nom: string }>;
   readonly courant: { readonly nom: string } | null;
@@ -169,6 +169,8 @@ export function motifUrgenceContrat(
   options: OptionsContrat = {},
 ): UrgenceContrat | null {
   const maintenant = options.maintenant ?? Date.now();
+  // Une annulation est un geste qu'elle vient de poser : il n'y a plus rien à faire.
+  if (resume.statut === 'annule') return null;
   if (resume.statut === 'gele') return { type: 'refuse', par: resume.refusePar };
   if (resume.statut === 'a_finaliser') return { type: 'a_finaliser' };
 

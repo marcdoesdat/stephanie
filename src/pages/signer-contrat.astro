@@ -37,6 +37,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
   description="Signature du contrat de courtage hypothécaire."
   noindex={true}
   sansBarreCta={true}
+  sansConsentement={true}
 >
   <main id="main-content" class="signer-page">
     <section class="signer-shell">
@@ -98,14 +99,116 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 )}
 
                 <h2 class="sc-sous-titre">Ce que vous vous apprêtez à signer</h2>
-                <dl class="sc-recap">
-                  {lignes.map(([libelle, valeur]) => (
-                    <div class="sc-recap-ligne">
-                      <dt>{libelle}</dt>
-                      <dd>{valeur}</dd>
-                    </div>
+                {/* Une erreur se repère ici, en haut : c'est donc ici qu'elle se corrige. Tant
+                    que les champs vivaient au bas de la page, sous le contrat intégral, il
+                    fallait tout faire défiler pour réparer une lettre de son nom. Chaque ligne
+                    est son propre <dl> pour que le panneau puisse s'insérer entre deux. */}
+                <div class="sc-recap">
+                  {lignes.map(([libelle, valeur], i) => (
+                    i === ouvert.index ? (
+                      <>
+                        <dl class="sc-recap-ligne sc-recap-moi">
+                          <dt>{libelle} <span class="sc-moi">(vous)</span></dt>
+                          <dd>
+                            <span data-recap-moi>{valeur}</span>
+                            <span class="sc-modifie" data-recap-modifie hidden>modifié</span>
+                            <button
+                              type="button"
+                              class="sc-modifier"
+                              data-modifier
+                              aria-expanded="false"
+                              aria-controls="sc-edition"
+                            >
+                              Modifier
+                            </button>
+                          </dd>
+                        </dl>
+
+                        <div class="sc-edition" id="sc-edition" data-edition hidden>
+                          <div class="sc-coordonnees">
+                            <div>
+                              <label class="cform-label" for="sc-prenom">Votre prénom</label>
+                              <input
+                                type="text"
+                                id="sc-prenom"
+                                class="cform-input"
+                                maxlength="60"
+                                autocomplete="given-name"
+                                required
+                                value={entree.emprunteur.prenom}
+                              />
+                            </div>
+                            <div>
+                              <label class="cform-label" for="sc-nom">Votre nom de famille</label>
+                              <input
+                                type="text"
+                                id="sc-nom"
+                                class="cform-input"
+                                maxlength="60"
+                                autocomplete="family-name"
+                                required
+                                value={entree.emprunteur.nom}
+                              />
+                            </div>
+                            <div>
+                              <label class="cform-label" for="sc-courriel">Votre courriel</label>
+                              <input
+                                type="email"
+                                id="sc-courriel"
+                                class="cform-input"
+                                maxlength="120"
+                                autocomplete="email"
+                                required
+                                value={entree.emprunteur.courriel}
+                              />
+                            </div>
+                            <div>
+                              <label class="cform-label" for="sc-telephone">Votre téléphone</label>
+                              <input
+                                type="tel"
+                                id="sc-telephone"
+                                class="cform-input"
+                                maxlength="40"
+                                value={entree.emprunteur.telephone}
+                              />
+                            </div>
+                            <div class="sc-coordonnees-large">
+                              <label class="cform-label" for="sc-adresse">Votre adresse</label>
+                              <input
+                                type="text"
+                                id="sc-adresse"
+                                class="cform-input"
+                                maxlength="160"
+                                value={entree.emprunteur.adresse}
+                              />
+                            </div>
+                            <p class="sc-precision">
+                              C’est ce qui figurera sur le contrat, et c’est à cette adresse
+                              courriel que vous le recevrez. Le document plus bas montre encore
+                              la version de {prenomCourtiere} : votre correction y sera inscrite
+                              au moment où vous signerez.
+                            </p>
+                          </div>
+                          <p class="sc-erreur" data-erreur-edition hidden></p>
+                          <button type="button" class="btn btn-primary sc-bouton-petit" data-edition-ok>
+                            Enregistrer
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <dl class="sc-recap-ligne">
+                        <dt>{libelle}</dt>
+                        <dd>{valeur}</dd>
+                      </dl>
+                    )
                   ))}
-                </dl>
+                </div>
+                <p class="sc-note">
+                  Une erreur ailleurs — montant, taux, adresse du projet ? Seule {prenomCourtiere}
+                  peut la corriger :
+                  {' '}<button type="button" class="sc-refus-lien" data-vers-refus>signalez-la-lui</button>,
+                  rien ne sera signé.
+                </p>
 
                 <h2 class="sc-sous-titre">Le contrat au complet</h2>
                 <p class="sc-texte">
@@ -137,9 +240,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                   </a>
                 </p>
 
-                <h2 class="sc-sous-titre">Deux questions, et vos coordonnées</h2>
-                {/* Le document ci-dessus est celui de la courtière : une correction faite plus
-                    bas n'y apparaît qu'une fois la signature enregistrée. */}
+                <h2 class="sc-sous-titre">Deux questions</h2>
                 <p class="sc-texte">
                   Ces réponses vous appartiennent — {prenomCourtiere} ne peut pas y répondre à
                   votre place. Elles seront inscrites sur le contrat.
@@ -184,69 +285,6 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                     <span>Non</span>
                   </label>
                 </fieldset>
-
-                <div class="sc-coordonnees">
-                  <div>
-                    <label class="cform-label" for="sc-prenom">Votre prénom</label>
-                    <input
-                      type="text"
-                      id="sc-prenom"
-                      class="cform-input"
-                      maxlength="60"
-                      autocomplete="given-name"
-                      required
-                      value={entree.emprunteur.prenom}
-                    />
-                  </div>
-                  <div>
-                    <label class="cform-label" for="sc-nom">Votre nom de famille</label>
-                    <input
-                      type="text"
-                      id="sc-nom"
-                      class="cform-input"
-                      maxlength="60"
-                      autocomplete="family-name"
-                      required
-                      value={entree.emprunteur.nom}
-                    />
-                  </div>
-                  <div>
-                    <label class="cform-label" for="sc-courriel">Votre courriel</label>
-                    <input
-                      type="email"
-                      id="sc-courriel"
-                      class="cform-input"
-                      maxlength="120"
-                      autocomplete="email"
-                      required
-                      value={entree.emprunteur.courriel}
-                    />
-                  </div>
-                  <div>
-                    <label class="cform-label" for="sc-telephone">Votre téléphone</label>
-                    <input
-                      type="tel"
-                      id="sc-telephone"
-                      class="cform-input"
-                      maxlength="40"
-                      value={entree.emprunteur.telephone}
-                    />
-                  </div>
-                  <div>
-                    <label class="cform-label" for="sc-adresse">Votre adresse</label>
-                    <input
-                      type="text"
-                      id="sc-adresse"
-                      class="cform-input"
-                      maxlength="160"
-                      value={entree.emprunteur.adresse}
-                    />
-                  </div>
-                  <p class="sc-precision">
-                    Corrigez-les au besoin, y compris votre nom et votre courriel : c’est ce qui
-                    figurera sur le contrat, et c’est à cette adresse que vous le recevrez.
-                  </p>
-                </div>
 
                 <label class="sc-attestation">
                   <input type="checkbox" data-attestation />
@@ -366,6 +404,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
   }
 
   .sc-recap-ligne {
+    margin: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
     gap: 0.75rem;
@@ -387,6 +426,77 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     margin: 0;
     font-weight: 600;
     overflow-wrap: anywhere;
+  }
+
+  /* Sa propre ligne : la seule qu'il peut corriger, donc la seule qui se distingue. */
+  .sc-recap-moi {
+    background: var(--warm, #fbf4ec);
+  }
+
+  .sc-recap-moi dd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.6rem;
+  }
+
+  .sc-moi {
+    font-weight: 400;
+    font-size: 0.8rem;
+  }
+
+  .sc-modifier {
+    margin-left: auto;
+    padding: 0.25rem 0.75rem;
+    border: 1.5px solid var(--clay, #a85f38);
+    border-radius: 999px;
+    background: var(--white, #fff);
+    color: var(--clay, #a85f38);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .sc-modifier:hover {
+    background: var(--clay, #a85f38);
+    color: var(--white, #fff);
+  }
+
+  .sc-modifier:focus-visible {
+    outline: 3px solid var(--clay, #a85f38);
+    outline-offset: 2px;
+  }
+
+  .sc-modifie {
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: #eaf5ec;
+    color: #26603a;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .sc-edition {
+    padding: 0.9rem 0.85rem 1rem;
+    border-bottom: 1px solid var(--line, #e3d9cc);
+    background: var(--warm, #fbf4ec);
+  }
+
+  .sc-edition .sc-coordonnees {
+    margin-bottom: 0.4rem;
+  }
+
+  .sc-edition .sc-erreur {
+    margin: 0.4rem 0 0;
+  }
+
+  .sc-bouton-petit {
+    margin-top: 0.7rem;
+  }
+
+  .sc-coordonnees-large {
+    grid-column: 1 / -1;
   }
 
   /* Le contrat lui-même : assez haut pour qu'on lise vraiment, pas une vignette. */
@@ -612,6 +722,78 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     const valeurChamp = (id: string): string =>
       app.querySelector<HTMLInputElement>(`#${id}`)?.value.trim() ?? '';
 
+    /* ---------- Correction des coordonnées, sur place ---------- */
+
+    const boutonModifier = app.querySelector<HTMLButtonElement>('[data-modifier]');
+    const edition = app.querySelector<HTMLElement>('[data-edition]');
+    const erreurEdition = app.querySelector<HTMLElement>('[data-erreur-edition]');
+    const recapMoi = app.querySelector<HTMLElement>('[data-recap-moi]');
+    const recapModifie = app.querySelector<HTMLElement>('[data-recap-modifie]');
+    const IDS_COORDONNEES = ['sc-prenom', 'sc-nom', 'sc-courriel', 'sc-telephone', 'sc-adresse'];
+    const origine = Object.fromEntries(IDS_COORDONNEES.map((id) => [id, valeurChamp(id)]));
+
+    /** Le message à montrer, ou `null` si l'identité tient — même règle qu'à la signature. */
+    function verifierIdentite(): { message: string; champ: string } | null {
+      if (valeurChamp('sc-prenom').length < 2) {
+        return { message: 'Vérifiez votre prénom : il doit figurer correctement sur le contrat.', champ: 'sc-prenom' };
+      }
+      if (valeurChamp('sc-nom').length < 2) {
+        return { message: 'Vérifiez votre nom : il doit figurer correctement sur le contrat.', champ: 'sc-nom' };
+      }
+      if (!/^[^\s@]+@(?:[^\s@.]+\.)+[a-z]{2,}$/i.test(valeurChamp('sc-courriel'))) {
+        return { message: 'Vérifiez votre courriel : l’adresse saisie ne semble pas valide.', champ: 'sc-courriel' };
+      }
+      return null;
+    }
+
+    function ouvrirEdition(champ = 'sc-prenom'): void {
+      if (!edition) return;
+      edition.hidden = false;
+      boutonModifier?.setAttribute('aria-expanded', 'true');
+      if (boutonModifier) boutonModifier.hidden = true;
+      edition.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      app!.querySelector<HTMLInputElement>(`#${champ}`)?.focus({ preventScroll: true });
+    }
+
+    /** Ferme le panneau et réécrit sa ligne du récapitulatif avec ce qu'il vient de saisir. */
+    function fermerEdition(): void {
+      masquerErreur(erreurEdition);
+      const probleme = verifierIdentite();
+      if (probleme) {
+        montrerErreur(erreurEdition, probleme.message);
+        app!.querySelector<HTMLInputElement>(`#${probleme.champ}`)?.focus();
+        return;
+      }
+
+      const nom = `${valeurChamp('sc-prenom')} ${valeurChamp('sc-nom')}`;
+      const telephone = valeurChamp('sc-telephone');
+      if (recapMoi) {
+        recapMoi.textContent = `${nom} — ${valeurChamp('sc-courriel')}${telephone ? ` — ${telephone}` : ''}`;
+      }
+      if (recapModifie) recapModifie.hidden = IDS_COORDONNEES.every((id) => valeurChamp(id) === origine[id]);
+
+      // Le cadre de signature annonce le nom de celui qui signe : il suit la correction.
+      const qui = app!.querySelector<HTMLElement>('[data-sig-qui]');
+      if (qui) qui.textContent = `Signature de ${nom}`;
+
+      if (edition) edition.hidden = true;
+      if (boutonModifier) {
+        boutonModifier.hidden = false;
+        boutonModifier.setAttribute('aria-expanded', 'false');
+        boutonModifier.focus({ preventScroll: true });
+      }
+    }
+
+    boutonModifier?.addEventListener('click', () => ouvrirEdition());
+    app.querySelector('[data-edition-ok]')?.addEventListener('click', fermerEdition);
+    // Entrée dans un champ enregistre, comme dans un formulaire — sans rien soumettre.
+    edition?.addEventListener('keydown', (evenement) => {
+      if (evenement.key === 'Enter' && evenement.target instanceof HTMLInputElement) {
+        evenement.preventDefault();
+        fermerEdition();
+      }
+    });
+
     /**
      * Compose l'écran de fin. Les étapes doivent rester vraies de ce que le système fait
      * vraiment : le seul courriel qu'un emprunteur reçoit après avoir signé est celui du
@@ -703,12 +885,13 @@ Astro.response.headers.set('Cache-Control', 'no-store');
         nom: valeurChamp('sc-nom'),
         courriel: valeurChamp('sc-courriel'),
       };
-      if (identite.prenom.length < 2 || identite.nom.length < 2) {
-        montrerErreur(erreur, 'Vérifiez votre prénom et votre nom : ils doivent figurer correctement sur le contrat.');
-        return;
-      }
-      if (!/^[^\s@]+@(?:[^\s@.]+\.)+[a-z]{2,}$/i.test(identite.courriel)) {
-        montrerErreur(erreur, 'Vérifiez votre courriel : l’adresse saisie ne semble pas valide.');
+      // Les champs vivent en haut, dans le récapitulatif : on y ramène plutôt que de
+      // laisser un message au bas de la page désigner un champ qu'on ne voit pas.
+      const probleme = verifierIdentite();
+      if (probleme) {
+        montrerErreur(erreur, `${probleme.message} Corrigez-le dans le récapitulatif, en haut.`);
+        ouvrirEdition(probleme.champ);
+        montrerErreur(erreurEdition, probleme.message);
         return;
       }
 
@@ -795,7 +978,10 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
     /* ---------- Désaccord ---------- */
 
-    app.querySelector('[data-vers-refus]')?.addEventListener('click', () => afficher('refus'));
+    // Deux portes : la note sous le récapitulatif et le lien au bas du contrat.
+    for (const lien of app.querySelectorAll('[data-vers-refus]')) {
+      lien.addEventListener('click', () => afficher('refus'));
+    }
     app.querySelector('[data-retour]')?.addEventListener('click', () => afficher('lecture'));
 
     const boutonRefus = app.querySelector<HTMLButtonElement>('[data-envoyer-refus]');

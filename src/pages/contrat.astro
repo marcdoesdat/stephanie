@@ -1146,6 +1146,14 @@ const RANGS = [0, 1, 2];
     color: var(--ink, #1f1e1c);
   }
 
+  #ct-form .ct-lien-danger {
+    color: #8f2f28;
+  }
+
+  #ct-form .ct-lien-danger:hover {
+    color: #6f241f;
+  }
+
   #ct-form .ct-bouton,
   #ct-form .ct-bouton-petit {
     margin-top: 0.6rem;
@@ -1175,6 +1183,12 @@ const RANGS = [0, 1, 2];
     background: #fffbfb;
     border-color: #e8c9c6;
     box-shadow: inset 3px 0 0 #8f2f28;
+  }
+
+  #ct-suivi .ct-dossier[data-statut='annule'] {
+    background: #faf9f7;
+    border-color: #ded8cd;
+    color: var(--muted);
   }
 
   #ct-suivi .ct-dossier-titre {
@@ -1207,6 +1221,11 @@ const RANGS = [0, 1, 2];
   #ct-suivi .ct-etat[data-etat='gele'] {
     background: #fdeceb;
     color: #8f2f28;
+  }
+
+  #ct-suivi .ct-etat[data-etat='annule'] {
+    background: #efede8;
+    color: var(--muted);
   }
 
   #ct-suivi .ct-dossier-meta {
@@ -1552,6 +1571,7 @@ const RANGS = [0, 1, 2];
     function texteEtat(dossier: ResumeDossier): string {
       if (dossier.statut === 'a_finaliser') return 'à signer par vous';
       if (dossier.statut === 'gele') return 'refusé';
+      if (dossier.statut === 'annule') return 'annulé';
       return dossier.mode === 'presence' ? 'à faire signer' : 'en attente';
     }
 
@@ -1575,7 +1595,7 @@ const RANGS = [0, 1, 2];
       debut.title = `Créé le ${dateComplete(dossier.creeLe)}`;
       meta.append(debut);
 
-      if (dossier.statut !== 'gele') {
+      if (dossier.statut !== 'gele' && dossier.statut !== 'annule') {
         const echeance = document.createElement('span');
         if (motifUrgenceContrat(dossier)?.type === 'bientot_perime') echeance.className = 'ct-urgent';
         echeance.textContent = ` · expire ${relatif(dossier.expireLe)}`;
@@ -1656,6 +1676,7 @@ const RANGS = [0, 1, 2];
         finaliser.className = 'btn btn-primary ct-bouton-petit';
         finaliser.textContent = 'Relire et signer →';
         actions.append(finaliser);
+        actions.append(boutonAnnuler(dossier));
       } else if (dossier.statut === 'en_attente' && dossier.courant) {
         const relancer = document.createElement('button');
         relancer.type = 'button';
@@ -1667,14 +1688,40 @@ const RANGS = [0, 1, 2];
         relancer.title = 'L’ancien lien cesse aussitôt de fonctionner.';
         relancer.addEventListener('click', () => relancerLien(dossier.id, relancer, actions));
         actions.append(relancer);
+
+        const corriger = document.createElement('button');
+        corriger.type = 'button';
+        corriger.className = 'ct-lien';
+        corriger.textContent = 'Corriger le courriel';
+        corriger.title = 'Le lien partira vers la nouvelle adresse.';
+        corriger.addEventListener('click', () => corrigerCourriel(dossier, corriger, actions));
+        actions.append(corriger);
+
+        actions.append(boutonAnnuler(dossier));
       } else if (dossier.refusePar) {
         const note = document.createElement('span');
         note.className = 'ct-note-action';
         note.textContent = `Refusé par ${dossier.refusePar} — aucun contrat ne sera produit. Préparez-en un nouveau.`;
         actions.append(note);
+      } else if (dossier.statut === 'annule') {
+        const note = document.createElement('span');
+        note.className = 'ct-note-action';
+        note.textContent = 'Annulé — aucun contrat ne sera produit à partir de ce dossier.';
+        actions.append(note);
       }
 
       return actions;
+    }
+
+    /** « Annuler le contrat » — tuera tous les liens et préviendra les emprunteurs. */
+    function boutonAnnuler(dossier: ResumeDossier): HTMLButtonElement {
+      const annuler = document.createElement('button');
+      annuler.type = 'button';
+      annuler.className = 'ct-lien ct-lien-danger';
+      annuler.textContent = 'Annuler le contrat';
+      annuler.title = 'Tous les liens cesseront de fonctionner et les emprunteurs seront prévenus.';
+      annuler.addEventListener('click', () => annulerContrat(dossier, annuler));
+      return annuler;
     }
 
     /** Le compte replié : discret quand tout suit son cours, pastille quand elle est attendue. */
@@ -1683,12 +1730,14 @@ const RANGS = [0, 1, 2];
 
       const aFinaliser = dossiers.filter((d) => d.statut === 'a_finaliser').length;
       const refuses = dossiers.filter((d) => d.statut === 'gele').length;
-      const attendus = dossiers.length - aFinaliser - refuses;
+      const annules = dossiers.filter((d) => d.statut === 'annule').length;
+      const attendus = dossiers.length - aFinaliser - refuses - annules;
 
       const parties: string[] = [];
       if (aFinaliser > 0) parties.push(`${aFinaliser} à signer par vous`);
       if (refuses > 0) parties.push(refuses > 1 ? `${refuses} refusés` : '1 refusé');
       if (attendus > 0) parties.push(`${attendus} en attente de signature`);
+      if (annules > 0) parties.push(annules > 1 ? `${annules} annulés` : '1 annulé');
 
       if (aFinaliser > 0) compte.dataset.ton = 'action';
       else if (refuses > 0) compte.dataset.ton = 'alerte';
@@ -1845,6 +1894,84 @@ const RANGS = [0, 1, 2];
       } catch {
         bouton.disabled = false;
         bouton.textContent = libelle;
+      }
+    }
+
+    /** Corrige le courriel du signataire courant, puis renvoie le lien à la bonne adresse. */
+    async function corrigerCourriel(
+      dossier: ResumeDossier,
+      bouton: HTMLButtonElement,
+      actions: HTMLElement,
+    ): Promise<void> {
+      const actuel = dossier.courant?.courriel ?? '';
+      const saisi = window.prompt('Nouvelle adresse courriel du signataire :', actuel);
+      if (saisi === null) return; // geste annulé
+      const courriel = saisi.trim();
+      if (!courriel) return;
+
+      bouton.disabled = true;
+      const libelle = bouton.textContent;
+      bouton.textContent = 'Envoi…';
+
+      try {
+        const reponse = await fetch('/api/contrat-relancer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ d: dossier.id, courriel }),
+        });
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+
+        if (!reponse.ok) {
+          const echec = document.createElement('span');
+          echec.className = 'ct-note-echec';
+          echec.textContent = String(data.error ?? 'La correction a échoué.');
+          actions.append(echec);
+          bouton.disabled = false;
+          bouton.textContent = libelle;
+          return;
+        }
+
+        // L'écran doit relire l'état : la nouvelle adresse s'affiche sous le nom.
+        void chargerSuivi();
+      } catch {
+        bouton.disabled = false;
+        bouton.textContent = libelle;
+      }
+    }
+
+    /** Annule le contrat : tous les liens meurent et les emprunteurs sont prévenus. */
+    async function annulerContrat(dossier: ResumeDossier, bouton: HTMLButtonElement): Promise<void> {
+      const noms = dossier.emprunteurs.map((e) => e.nom).join(', ');
+      const confirme = window.confirm(
+        `Annuler ce contrat pour ${noms} ? Tous les liens cesseront de fonctionner et les emprunteurs seront prévenus.`,
+      );
+      if (!confirme) return;
+
+      bouton.disabled = true;
+      bouton.textContent = 'Annulation…';
+
+      try {
+        const reponse = await fetch('/api/contrat-annuler', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ d: dossier.id }),
+        });
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+
+        if (!reponse.ok) {
+          bouton.disabled = false;
+          bouton.textContent = 'Annuler le contrat';
+          const echec = document.createElement('span');
+          echec.className = 'ct-note-echec';
+          echec.textContent = String(data.error ?? 'L’annulation a échoué.');
+          bouton.after(echec);
+          return;
+        }
+
+        void chargerSuivi();
+      } catch {
+        bouton.disabled = false;
+        bouton.textContent = 'Annuler le contrat';
       }
     }
 

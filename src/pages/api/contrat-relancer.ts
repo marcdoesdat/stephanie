@@ -13,7 +13,7 @@ import { loadSiteConfig } from '../../config';
 import { requeteAutorisee } from '../../services/accesCourtiere';
 import { checkRateLimit, clientIpFromRequest, jsonResponse, loadResendEnv } from '../../services/emailService';
 import { envoyerInvitation } from '../../services/contratCourriels';
-import { listerDossiers, reemettreLienCourant } from '../../services/contratDossierService';
+import { corrigerCourrielCourant, listerDossiers, reemettreLienCourant } from '../../services/contratDossierService';
 
 export const prerender = false;
 
@@ -34,12 +34,32 @@ export const POST: APIRoute = async ({ request }) => {
     return jsonResponse({ error: 'Trop de demandes. Réessayez dans une heure.' }, 429);
   }
 
-  const invitation = await reemettreLienCourant(payload.d);
-  if (!invitation) {
-    return jsonResponse(
-      { error: 'Ce dossier n’attend plus de signature — il est peut-être gelé, complet ou expiré.' },
-      410,
-    );
+  // « Corriger le courriel » : la courtière fournit une nouvelle adresse, le lien part
+  // vers elle. Sans courriel, c'est une simple relance vers l'adresse déjà saisie.
+  let invitation;
+  if (payload.courriel !== undefined) {
+    const corrige = await corrigerCourrielCourant(payload.d, payload.courriel);
+    if (!corrige.ok) {
+      if (corrige.raison === 'invalide') {
+        return jsonResponse({ error: 'Adresse courriel invalide. Vérifiez-la.' }, 400);
+      }
+      if (corrige.raison === 'doublon') {
+        return jsonResponse({ error: 'Cette adresse courriel est déjà celle d’un autre emprunteur.' }, 400);
+      }
+      return jsonResponse(
+        { error: 'Ce dossier n’attend plus de signature — il est peut-être gelé, complet ou expiré.' },
+        410,
+      );
+    }
+    invitation = corrige.invitation;
+  } else {
+    invitation = await reemettreLienCourant(payload.d);
+    if (!invitation) {
+      return jsonResponse(
+        { error: 'Ce dossier n’attend plus de signature — il est peut-être gelé, complet ou expiré.' },
+        410,
+      );
+    }
   }
 
   const base = loadSiteConfig().site_url.replace(/\/$/, '');

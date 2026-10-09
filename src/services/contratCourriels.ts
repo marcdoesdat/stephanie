@@ -373,3 +373,41 @@ export async function envoyerAvisRefus(
     ),
   });
 }
+
+/**
+ * Prévient les emprunteurs qu'un contrat en cours vient d'être annulé par la courtière —
+ * ceux que `destinatairesAnnulation` retient, jamais les suivants. Leur lien ne fonctionne plus : un courriel qui ne dit rien laisserait chacun cliquer sur
+ * un lien mort et croire à une panne. Envoyé en série, comme le reste.
+ */
+export async function envoyerAnnulation(
+  env: ResendEnv,
+  destinataires: ReadonlyArray<{ nom: string; courriel: string; aSigne: boolean }>,
+): Promise<void> {
+  const config = loadSiteConfig();
+
+  await envoyerEnSerie(
+    destinataires.map((destinataire) => async () => {
+      await sendEmail(env.apiKey, {
+        from: env.fromEmail,
+        to: destinataire.courriel,
+        subject: 'Votre contrat de courtage a été annulé',
+        html: wrapEmailHtml(
+          `<h1 style="font-size:19px;margin:0 0 6px;">Contrat annulé</h1>
+           <p style="margin:0 0 14px;font-size:14px;">
+             Bonjour ${escapeHtml(destinataire.nom)}, le contrat de courtage préparé par
+             ${escapeHtml(config.nom)} a été annulé. ${
+               destinataire.aSigne
+                 ? 'Votre signature ne sera pas utilisée : aucun contrat ne sera produit à partir de ce dossier.'
+                 : 'Le lien de signature que vous avez reçu ne fonctionne plus, et aucun contrat ne sera produit à partir de ce dossier.'
+             }
+           </p>
+           <p style="margin:0;font-size:14px;">
+             Si vous avez une question, écrivez à
+             <a href="mailto:${escapeHtml(config.courriel)}" style="color:#a85f38;">${escapeHtml(config.courriel)}</a>
+             ou appelez le ${escapeHtml(config.telephone)}.
+           </p>`,
+        ),
+      });
+    }),
+  );
+}

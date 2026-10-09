@@ -89,7 +89,8 @@ src/
 | `/api/contrat-apercu-courtiere` | API | Aperçu d'un dossier à finaliser, servi à la courtière par mot de passe |
 | `/api/contrat-finaliser` | API | Signature finale de la courtière — produit le PDF, l'envoie, supprime le dossier |
 | `/api/contrat-dossiers` | API | Résumés des contrats en cours, pour l'écran de suivi de `/contrat` |
-| `/api/contrat-relancer` | API | Réémet le lien du signataire courant — l'ancien cesse aussitôt de valoir |
+| `/api/contrat-relancer` | API | Réémet le lien du signataire courant — l'ancien cesse aussitôt de valoir ; avec `courriel`, corrige d'abord son adresse |
+| `/api/contrat-annuler` | API | Annulation d'un contrat en cours par la courtière — tous les liens meurent, les emprunteurs déjà atteints sont prévenus |
 | `/api/reseau-contacts` | API | Le carnet du réseau, en lecture (résumés + envois du jour) |
 | `/api/reseau-contact` | API | Écriture dans le carnet : créer, corriger, supprimer, état, note, relance, import |
 | `/api/reseau-envoi` | API | Aperçu d'un gabarit (GET) et envoi de l'approche (POST), puis journalisation |
@@ -416,6 +417,13 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   passait quelque chose, un dossier pouvait y dormir des jours. Le compte replié suffit à
   le dire ; la section ne se déplie d'elle-même que si un dossier est à finaliser, refusé,
   ou sur le point d'expirer. Les cartes sont triées par urgence, pas par date.
+- **Une erreur se corrige là où on la voit.** Le signataire repère une faute dans le
+  récapitulatif, en haut de `/signer-contrat` : sa propre ligne y porte un bouton
+  « Modifier » qui ouvre ses coordonnées sur place. Tant que les champs vivaient au bas de
+  la page, sous les 4 pages du contrat, il fallait tout faire défiler pour réparer une
+  lettre de son nom. Une identité invalide au moment de signer rouvre ce panneau plutôt
+  que de désigner un champ hors de vue. Toute autre erreur (montant, taux) n'appartient
+  qu'à la courtière : la note sous le récapitulatif mène au désaccord.
 - **Les écrans de fin de `/signer-contrat` ne sont pas des culs-de-sac.** La page n'a ni Nav
   ni pied de page : la confirmation et le lien périmé portent donc eux-mêmes les
   coordonnées de la courtière et la sortie vers l'accueil. Ce qu'annonce « la suite » doit
@@ -456,6 +464,16 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   constant, et expirent après 10 jours (plus court que le profil : les conditions bougent).
 - Si un emprunteur refuse, le dossier est **gelé** : aucun PDF, tous les liens restants
   meurent, Stéphanie est prévenue. Mieux vaut un dossier gelé qu'une signature arrachée.
+- **La courtière peut annuler un dossier** (`en_attente` ou `a_finaliser`) : statut
+  `annule`, tous les jetons effacés, aucun PDF. Seuls ceux qui ont déjà été atteints sont
+  prévenus (`destinatairesAnnulation`) — les signataires, et à distance le signataire
+  courant. Écrire « votre lien ne fonctionne plus » à quelqu'un dont le tour n'était pas
+  venu lui annoncerait un contrat qu'il n'a jamais vu. Un dossier annulé n'est pas une
+  urgence du tableau de bord.
+- **« Corriger le courriel » rattrape une faute de frappe de la courtière** : relancer vers
+  la même adresse fausse ne servirait à rien. `corrigerCourrielCourant` met `donnees` et
+  l'entrée d'accord, refuse une adresse déjà prise par un autre emprunteur, et réémet le
+  jeton — l'ancien meurt.
 - Le dossier Blob est supprimé dès le PDF produit — les tracés ne restent pas au repos.
 - `/contrat` et `/api/contrat-creer` appliquent **le même** verdict d'accès : une page
   protégée devant une API ouverte ne protège rien.

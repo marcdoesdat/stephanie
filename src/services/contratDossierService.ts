@@ -17,7 +17,7 @@
  * @module contratDossierService
  */
 
-import { decrireCorrectionIdentite } from '../utils/contratCourtage';
+import { decrireCorrectionIdentite, estCourrielValide } from '../utils/contratCourtage';
 import type { DonneesContrat, Emprunteur, ReponsesEmprunteur } from '../utils/contratCourtage';
 import {
   creerStockage,
@@ -55,8 +55,11 @@ export interface EntreeEmprunteur {
 /**
  * `a_finaliser` : tous les emprunteurs ont signé, il ne manque que la signature de la
  * courtière. C'est le seul état où le dossier attend une action de sa part.
+ *
+ * `annule` : la courtière a elle-même annulé le dossier (erreur dans le contrat, conditions
+ * qui ont bougé, emprunteur qui renonce) — les liens meurent sans qu'aucun PDF soit produit.
  */
-export type StatutDossier = 'en_attente' | 'a_finaliser' | 'gele';
+export type StatutDossier = 'en_attente' | 'a_finaliser' | 'gele' | 'annule';
 
 /**
  * Comment les emprunteurs signent — cela ne change pas l'ordre, seulement l'acheminement du
@@ -85,6 +88,8 @@ export interface DossierContrat {
     readonly motif: string;
     readonly le: string;
   };
+  /** Posé quand la courtière annule elle-même le dossier — les liens meurent. */
+  annuleLe?: string;
 }
 
 /** Un lien à envoyer par courriel : le jeton en clair n'existe qu'ici, jamais en base. */
@@ -206,6 +211,109 @@ export async function reemettreLienCourant(id: unknown): Promise<Invitation | nu
   const invitation = await emettreJeton(dossier, index);
   await stockage.ecrire(dossier.id, JSON.stringify(dossier));
   return invitation;
+}
+
+/** Résultat d'une correction de courriel par la courtière. */
+export type CorrectionCourriel =
+  | { readonly ok: true; readonly invitation: Invitation }
+  | { readonly ok: false; readonly raison: 'introuvable' | 'invalide' | 'doublon' };
+
+/**
+ * Corrige le courriel du signataire courant, puis réémet son lien vers la nouvelle adresse.
+ *
+ * C'est le rattrapage du scénario où la courtière a fait une faute de frappe : le lien part
+ * dans le vide, et « renvoyer » ne ferait qu'expédier un nouveau lien vers la même adresse
+ * fausse. Le contrat (`donnees`) et l'entrée sont mis d'accord, comme pour une correction
+ * faite par l'emprunteur lui-même. L'ancien jeton cesse aussitôt de valoir.
+ */
+export async function corrigerCourrielCourant(id: unknown, courriel: unknown): Promise<CorrectionCourriel> {
+  const normalise = typeof courriel === 'string' ? courriel.trim().toLowerCase() : '';
+  if (!estCourrielValide(normalise)) return { ok: false, raison: 'invalide' };
+  if (!identifiantPlausible(id, '')) return { ok: false, raison: 'introuvable' };
+
+  const brut = await stockage.lire(id as string);
+  if (!brut) return { ok: false, raison: 'introuvable' };
+
+  let dossier: DossierContrat;
+  try {
+    dossier = JSON.parse(brut) as DossierContrat;
+  } catch {
+    return { ok: false, raison: 'introuvable' };
+  }
+
+  if (dossier.statut !== 'en_attente') return { ok: false, raison: 'introuvable' };
+  if (Date.parse(dossier.expireLe) < Date.now()) return { ok: false, raison: 'introuvable' };
+
+  const index = indexCourant(dossier);
+  if (index === -1) return { ok: false, raison: 'introuvable' };
+
+  // Deux emprunteurs sur une même boîte ruineraient la preuve d'une signature distincte.
+  const doublon = dossier.emprunteurs.some((e, i) => i !== index && e.emprunteur.courriel === normalise);
+  if (doublon) return { ok: false, raison: 'doublon' };
+
+  const entree = dossier.emprunteurs[index]!;
+  entree.emprunteur = { ...entree.emprunteur, courriel: normalise };
+  dossier.donnees = {
+    ...dossier.donnees,
+    emprunteurs: dossier.donnees.emprunteurs.map((e, i) => (i === index ? entree.emprunteur : e)),
+  };
+
+  const invitation = await emettreJeton(dossier, index);
+  await stockage.ecrire(dossier.id, JSON.stringify(dossier));
+  return { ok: true, invitation };
+}
+
+/**
+ * Annule un dossier en cours, à la demande de la courtière : erreur dans le contrat,
+ * conditions qui ont bougé, emprunteur qui renonce. Tous les liens cessent de valoir, aucun
+ * PDF ne sera produit. L'écran de suivi le garde comme « annulé » jusqu'à son expiration.
+ *
+ * Comme `reemettreLienCourant`, l'état est relu du stockage — annuler un dossier gelé ou
+ * déjà complet entre-temps ne doit rien produire.
+ */
+export async function annulerDossier(id: unknown): Promise<DossierContrat | null> {
+  if (!identifiantPlausible(id, '')) return null;
+
+  const brut = await stockage.lire(id as string);
+  if (!brut) return null;
+
+  let dossier: DossierContrat;
+  try {
+    dossier = JSON.parse(brut) as DossierContrat;
+  } catch {
+    return null;
+  }
+
+  if (dossier.statut !== 'en_attente' && dossier.statut !== 'a_finaliser') return null;
+  if (Date.parse(dossier.expireLe) < Date.now()) return null;
+
+  dossier.statut = 'annule';
+  dossier.annuleLe = new Date().toISOString();
+  // Aucun lien ne doit survivre, même si un seul était vivant.
+  for (const entree of dossier.emprunteurs) entree.jetonHash = null;
+
+  await stockage.ecrire(dossier.id, JSON.stringify(dossier));
+  return dossier;
+}
+
+/**
+ * Qui doit apprendre l'annulation : ceux qui ont déjà signé, et — à distance — celui dont
+ * c'était le tour, puisqu'un lien l'attend dans sa boîte. Les suivants n'ont jamais rien
+ * reçu : leur écrire « votre lien ne fonctionne plus » annoncerait un contrat qu'ils n'ont
+ * pas vu. En présentiel, le signataire courant n'a reçu aucun courriel : rien à démentir.
+ */
+export function destinatairesAnnulation(
+  dossier: DossierContrat,
+): Array<{ nom: string; courriel: string; aSigne: boolean }> {
+  const courant = indexCourant(dossier);
+  return dossier.emprunteurs
+    .map((entree, i) => ({ entree, i }))
+    .filter(({ entree, i }) => entree.signature !== null || (dossier.mode === 'distance' && i === courant))
+    .map(({ entree }) => ({
+      nom: `${entree.emprunteur.prenom} ${entree.emprunteur.nom}`.trim(),
+      courriel: entree.emprunteur.courriel,
+      aSigne: entree.signature !== null,
+    }));
 }
 
 export interface DossierOuvert {
@@ -381,6 +489,8 @@ export interface ResumeDossier {
   /** Celui dont c'est le tour, `null` si le dossier n'attend plus personne. */
   readonly courant: { nom: string; courriel: string } | null;
   readonly refusePar: string | null;
+  /** Date d'annulation par la courtière, `null` si le dossier n'a pas été annulé. */
+  readonly annuleLe: string | null;
 }
 
 function resumer(dossier: DossierContrat): ResumeDossier {
@@ -405,6 +515,7 @@ function resumer(dossier: DossierContrat): ResumeDossier {
         }
       : null,
     refusePar: dossier.refus?.nom ?? null,
+    annuleLe: dossier.annuleLe ?? null,
   };
 }
 
