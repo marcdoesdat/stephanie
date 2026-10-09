@@ -1437,6 +1437,7 @@ const RANGS = [0, 1, 2];
   import { ErreurImport, importerSignature } from '../scripts/importSignature';
   import { comparerContrats, motifUrgenceContrat, type ResumeEcran } from '../utils/tableauDeBord';
   import { aujourdhuiIso, depuisTexteContrat, versTexteContrat } from '../utils/dateContrat';
+  import { estCourrielValide, NOM_MIN } from '../utils/contratCourtage';
 
   /* ---------------- Formulaire ---------------- */
 
@@ -1642,9 +1643,23 @@ const RANGS = [0, 1, 2];
         if (!bloc) return;
         bloc.hidden = true;
         for (const champ of bloc.querySelectorAll<HTMLInputElement>('input')) champ.value = '';
+        // Sa colonne du tableau d'identité part avec lui : ses pièces, restées en place,
+        // reviendraient sous le nom du prochain emprunteur ajouté à ce rang.
+        for (const champ of formulaire.querySelectorAll<HTMLInputElement>(
+          `[data-identite][data-colonne="${bouton.dataset.retirer}"]`,
+        )) {
+          poserChamp(champ, '');
+        }
         rafraichir();
       });
     }
+
+    // Entrée dans un champ ne doit pas envoyer le contrat : la soumission implicite d'un
+    // formulaire HTML expédierait un lien de signature au client au milieu de la saisie.
+    // Seul le bouton envoie. Les zones de texte gardent leur retour à la ligne.
+    formulaire.addEventListener('keydown', (evenement) => {
+      if (evenement.key === 'Enter' && evenement.target instanceof HTMLInputElement) evenement.preventDefault();
+    });
 
     formulaire.addEventListener('input', () => rafraichir());
     formulaire.addEventListener('change', () => rafraichir());
@@ -2244,7 +2259,8 @@ const RANGS = [0, 1, 2];
     ];
 
     function collecter(): Record<string, unknown> {
-      const emprunteurs = visibles().map((bloc) => {
+      const blocsVisibles = visibles();
+      const emprunteurs = blocsVisibles.map((bloc) => {
         const rang = bloc.dataset.emprunteur;
         const emprunteur: Record<string, string> = {};
         for (const [suffixe, cle] of EMPRUNTEUR_CHAMPS) emprunteur[cle] = valeur(`ct-${suffixe}-${rang}`);
@@ -2255,13 +2271,18 @@ const RANGS = [0, 1, 2];
         .filter((entree) => entree.checked)
         .map((entree) => entree.dataset.typeFinancement ?? '');
 
+      // La colonne d'identité suit le bloc, pas sa position : retirer l'emprunteur 2 de 3
+      // laisse visibles les blocs 0 et 2, et la colonne 2 doit aller au deuxième envoyé.
+      // Lue par son numéro brut, elle était perdue — et la colonne 1, celle du retiré,
+      // passait sous le nom du troisième.
+      const positionDuRang = new Map(blocsVisibles.map((bloc, position) => [Number(bloc.dataset.emprunteur), position]));
       const identite: Record<string, string[]> = {};
       for (const champ of formulaire.querySelectorAll<HTMLInputElement>('[data-identite]')) {
         const cle = champ.dataset.identite ?? '';
-        const colonne = Number(champ.dataset.colonne ?? '0');
-        if (colonne >= emprunteurs.length) continue;
+        const position = positionDuRang.get(Number(champ.dataset.colonne ?? '0'));
+        if (position === undefined) continue;
         identite[cle] ??= [];
-        identite[cle][colonne] = lireChamp(champ);
+        identite[cle][position] = lireChamp(champ);
       }
       for (const cle of Object.keys(identite)) {
         identite[cle] = Array.from(identite[cle] ?? [], (v) => v ?? '');
@@ -2402,6 +2423,26 @@ const RANGS = [0, 1, 2];
       if (emprunteurs.length === 0 || emprunteurs.some((e) => !e.prenom || !e.nom || !e.courriel)) {
         montrerErreur('Chaque emprunteur affiché doit avoir un prénom, un nom et un courriel.');
         return false;
+      }
+      // Les mêmes règles que le serveur (`parserEmprunteurs`), dites ici avec le nom de la
+      // personne : là-bas, elles ne produisent qu'un « Champs invalides » sans indice.
+      const vus = new Set<string>();
+      for (const [position, e] of emprunteurs.entries()) {
+        const qui = `${e.prenom} ${e.nom}`.trim() || `l’emprunteur ${position + 1}`;
+        const courriel = (e.courriel ?? '').toLowerCase();
+        if ((e.prenom ?? '').length < NOM_MIN || (e.nom ?? '').length < NOM_MIN) {
+          montrerErreur(`Le prénom et le nom de ${qui} doivent compter au moins ${NOM_MIN} lettres.`);
+          return false;
+        }
+        if (!estCourrielValide(courriel)) {
+          montrerErreur(`Le courriel de ${qui} n’est pas une adresse valide : « ${e.courriel} ».`);
+          return false;
+        }
+        if (vus.has(courriel)) {
+          montrerErreur(`Deux emprunteurs ont le même courriel (${courriel}) : chacun reçoit son propre lien.`);
+          return false;
+        }
+        vus.add(courriel);
       }
       return true;
     }
@@ -2566,6 +2607,16 @@ const RANGS = [0, 1, 2];
         const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
 
         if (!reponse.ok) {
+          // Le dossier est créé, seul le courriel a manqué. Rendre le bouton ferait créer un
+          // second dossier — deux liens vivants pour le même contrat. Le suivi rattrape.
+          if (data.code === 'invitation') {
+            montrerErreur(String(data.error ?? 'Le contrat est créé, mais le lien n’est pas parti.'));
+            if (bouton) bouton.textContent = 'Contrat créé';
+            suiviCharge = true;
+            if (suivi) suivi.open = true;
+            void chargerSuivi();
+            return;
+          }
           if (data.code === 'acces') {
             montrerErreur('Votre session a expiré. Rechargez la page pour vous reconnecter.');
           } else {

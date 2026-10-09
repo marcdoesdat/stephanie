@@ -42,7 +42,8 @@ function lienSignature(dossierId: string, jeton: string): string {
 
 const ECHECS = {
   dossier: 'Le dossier n’a pas pu être enregistré. Réessayez dans quelques minutes.',
-  invitation: 'Impossible d’envoyer l’invitation à signer. Vérifiez les adresses courriel saisies.',
+  invitation:
+    'Le contrat est créé, mais le lien n’a pas pu partir. Dans « Contrats en cours », vérifiez l’adresse (« Corriger le courriel ») ou utilisez « Renvoyer le lien ».',
 } as const;
 
 function echec(etape: keyof typeof ECHECS, err: unknown): Response {
