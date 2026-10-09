@@ -90,6 +90,7 @@ src/
 | `/api/contrat-finaliser` | API | Signature finale de la courtière — produit le PDF, l'envoie, supprime le dossier |
 | `/api/contrat-dossiers` | API | Résumés des contrats en cours, pour l'écran de suivi de `/contrat` |
 | `/api/contrat-relancer` | API | Réémet le lien du signataire courant — l'ancien cesse aussitôt de valoir ; avec `courriel`, corrige d'abord son adresse |
+| `/api/contrat-corriger` | API | Correction d'un contrat en cours : `GET` rend ses données pour préremplir `/contrat`, `POST` enregistre la version corrigée dans le même dossier — les signatures recueillies sont écartées, la séquence repart du premier |
 | `/api/contrat-annuler` | API | Annulation d'un contrat en cours par la courtière — tous les liens meurent, les emprunteurs déjà atteints sont prévenus |
 | `/api/reseau-contacts` | API | Le carnet du réseau, en lecture (résumés + envois du jour) |
 | `/api/reseau-contact` | API | Écriture dans le carnet : créer, corriger, supprimer, état, note, relance, import |
@@ -481,6 +482,22 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   courant. Écrire « votre lien ne fonctionne plus » à quelqu'un dont le tour n'était pas
   venu lui annoncerait un contrat qu'il n'a jamais vu. Un dossier annulé n'est pas une
   urgence du tableau de bord.
+- **« Corriger le contrat » épargne la ressaisie, jamais la relecture.** Sur un dossier
+  `en_attente` ou `a_finaliser`, le bouton remplit le formulaire de `/contrat` avec les données
+  du dossier (`GET /api/contrat-corriger`) ; à l'enregistrement, `corrigerContrat` garde le même
+  dossier mais **écarte toutes les signatures et réponses déjà recueillies** — elles portaient
+  sur l'ancien texte, et les garder sous un texte modifié ferait couvrir à quelqu'un un document
+  qu'il n'a jamais vu. Tous les anciens jetons meurent, la séquence repart du premier avec un
+  lien neuf, le délai de 10 jours repart. Le mode (distance/présentiel) ne change pas : changer
+  d'acheminement est un autre contrat. Une correction qui ne change rien est refusée
+  (`inchange`) plutôt que d'effacer des signatures pour un texte identique.
+- **Ce qui a changé est nommé partout** (`decrireCorrectionsContrat`) : dans l'invitation du
+  premier signataire, dans l'avis aux autres déjà atteints (signé → signature écartée ; lien en
+  main → lien mort ; aucun nouveau lien avant leur tour), sur `/signer-contrat`, dans l'avis
+  interne et dans la chronologie du certificat (`corrections`, qui ne se réécrit pas). Les
+  valeurs du tableau d'identité et les téléphones/adresses n'y sont **jamais recopiés** — seul
+  le libellé : l'avis part par courriel. Un test verrouille que chaque champ texte du contrat
+  est comparé. Ordre d'envoi : l'invitation d'abord, puis les avis, puis l'interne.
 - **« Corriger le courriel » rattrape une faute de frappe de la courtière** : relancer vers
   la même adresse fausse ne servirait à rien. `corrigerCourrielCourant` met `donnees` et
   l'entrée d'accord, refuse une adresse déjà prise par un autre emprunteur, et réémet le
@@ -841,7 +858,10 @@ npx vitest              # mode watch
   tolérés ; `produireCertificat` rend `null` au lieu de lever
 - `src/services/contratPdfService.test.ts` — estampage : 4 pages au bon format, caractères
   hors WinAnsi, champs trop longs tronqués plutôt que débordants
-- `src/services/contratDossierService.test.ts` — jetons à usage unique, expiration, gel sur refus
+- `src/services/contratDossierService.test.ts` — jetons à usage unique, expiration, gel sur refus,
+  correction : signatures écartées, anciens liens morts, historique conservé
+- `src/services/contratCorrigerRoute.test.ts` — la correction relance le premier signataire avec
+  ce qui a changé, prévient les autres déjà atteints, n'écrit à personne en présentiel
 - `src/services/accesCourtiere.test.ts` — porte de `/contrat` (fail closed, rotation du secret)
 - `src/utils/reseauCourtiers.test.ts` — gabarits rendus sans variable orpheline, whitelists
 - `src/services/reseauContactService.test.ts` — retrait définitif et idempotent, historique,

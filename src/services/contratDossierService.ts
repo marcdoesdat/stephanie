@@ -17,7 +17,7 @@
  * @module contratDossierService
  */
 
-import { decrireCorrectionIdentite, estCourrielValide } from '../utils/contratCourtage';
+import { decrireCorrectionIdentite, decrireCorrectionsContrat, estCourrielValide, nomComplet } from '../utils/contratCourtage';
 import type { DonneesContrat, Emprunteur, ReponsesEmprunteur } from '../utils/contratCourtage';
 import {
   creerStockage,
@@ -73,7 +73,10 @@ export interface DossierContrat {
   expireLe: string;
   statut: StatutDossier;
   readonly mode: ModeSignature;
-  /** Réécrit seulement pour y reporter une correction d'identité faite par un emprunteur. */
+  /**
+   * Réécrit pour y reporter une correction d'identité faite par un emprunteur, ou une
+   * correction de la courtière (`corrigerContrat`) — qui efface alors les signatures.
+   */
   donnees: DonneesContrat;
   /**
    * La courtière signe **en dernier**, une fois les réponses des emprunteurs connues :
@@ -90,6 +93,21 @@ export interface DossierContrat {
   };
   /** Posé quand la courtière annule elle-même le dossier — les liens meurent. */
   annuleLe?: string;
+  /**
+   * Chaque correction du contrat par la courtière, dans l'ordre. L'historique ne se réécrit
+   * pas : c'est ce qui permet au certificat de dire pourquoi une signature a été recueillie
+   * deux fois, et au signataire de voir ce qui a changé depuis sa première lecture.
+   */
+  corrections?: CorrectionContrat[];
+}
+
+/** Une correction du contrat par la courtière, alors que la signature était en cours. */
+export interface CorrectionContrat {
+  readonly le: string;
+  /** Une ligne lisible par champ modifié — voir `decrireCorrectionsContrat`. */
+  readonly changements: readonly string[];
+  /** Ceux dont la signature a été écartée par cette correction. */
+  readonly signaturesEcartees: readonly string[];
 }
 
 /** Un lien à envoyer par courriel : le jeton en clair n'existe qu'ici, jamais en base. */
@@ -316,6 +334,107 @@ export function destinatairesAnnulation(
     }));
 }
 
+/**
+ * Les données d'un contrat qu'on peut encore corriger, pour préremplir le formulaire de
+ * `/contrat`. Ni jeton ni tracé : seulement ce que la courtière a elle-même saisi (plus les
+ * corrections d'identité faites par les emprunteurs, déjà reportées dans `donnees`).
+ */
+export async function lireDonneesACorriger(
+  id: unknown,
+): Promise<{ donnees: DonneesContrat; mode: ModeSignature; signes: string[] } | null> {
+  const dossier = await lireCorrigeable(id);
+  if (!dossier) return null;
+  return {
+    donnees: dossier.donnees,
+    mode: dossier.mode,
+    signes: dossier.emprunteurs.filter((e) => e.signature !== null).map((e) => nomComplet(e.emprunteur)),
+  };
+}
+
+async function lireCorrigeable(id: unknown): Promise<DossierContrat | null> {
+  if (!identifiantPlausible(id, '')) return null;
+
+  const brut = await stockage.lire(id as string);
+  if (!brut) return null;
+
+  let dossier: DossierContrat;
+  try {
+    dossier = JSON.parse(brut) as DossierContrat;
+  } catch {
+    return null;
+  }
+
+  if (dossier.statut !== 'en_attente' && dossier.statut !== 'a_finaliser') return null;
+  if (Date.parse(dossier.expireLe) < Date.now()) return null;
+  return dossier;
+}
+
+/** Résultat d'une correction du contrat par la courtière. */
+export type ResultatCorrection =
+  | {
+      readonly ok: true;
+      readonly dossier: DossierContrat;
+      /** Le lien du premier signataire — le seul vivant après la correction. */
+      readonly invitation: Invitation;
+      readonly changements: readonly string[];
+      /** Ceux que le dossier avait déjà atteints avant la correction (voir `destinatairesAnnulation`). */
+      readonly atteints: ReadonlyArray<{ nom: string; courriel: string; aSigne: boolean }>;
+    }
+  | { readonly ok: false; readonly raison: 'introuvable' | 'inchange' };
+
+/**
+ * Corrige le contenu d'un contrat en cours — une coquille, un montant — sans tout recommencer.
+ *
+ * **Toutes les signatures déjà recueillies sont écartées.** Un emprunteur a signé *ce
+ * texte-là* : garder sa signature sous un texte modifié la ferait couvrir un document qu'il
+ * n'a jamais vu, et ruinerait la preuve que le contrat constitue. La séquence repart donc
+ * du premier signataire, avec un nouveau jeton ; tous les anciens meurent. Ce qui est épargné
+ * à la courtière, c'est la ressaisie — pas aux emprunteurs, la relecture.
+ *
+ * Les réponses des emprunteurs (PPV, transfert) sont effacées avec leur signature : elles
+ * ont été données en lisant l'ancien texte, et c'est à eux de les redonner.
+ *
+ * Le dossier garde son identifiant, son mode et sa date de création ; le délai de 10 jours
+ * repart, puisque chacun doit signer de nouveau. La correction est inscrite dans
+ * `corrections`, qui ne se réécrit pas.
+ *
+ * Comme les autres gestes de la courtière, l'état est relu du stockage : corriger un dossier
+ * gelé ou annulé entre-temps ne doit rien produire.
+ */
+export async function corrigerContrat(id: unknown, donnees: DonneesContrat): Promise<ResultatCorrection> {
+  const dossier = await lireCorrigeable(id);
+  if (!dossier) return { ok: false, raison: 'introuvable' };
+
+  const changements = decrireCorrectionsContrat(dossier.donnees, donnees);
+  // Rien n'a changé : effacer des signatures pour un texte identique serait une perte sèche.
+  if (changements.length === 0) return { ok: false, raison: 'inchange' };
+
+  const atteints = destinatairesAnnulation(dossier);
+  const signaturesEcartees = dossier.emprunteurs
+    .filter((e) => e.signature !== null)
+    .map((e) => nomComplet(e.emprunteur));
+
+  dossier.donnees = donnees;
+  dossier.emprunteurs = donnees.emprunteurs.map((emprunteur) => ({
+    emprunteur,
+    jetonHash: null,
+    signature: null,
+    reponses: null,
+  }));
+  dossier.statut = 'en_attente';
+  dossier.signatureCourtiere = null;
+  dossier.expireLe = new Date(Date.now() + DUREE_VIE_MS).toISOString();
+  dossier.corrections = [
+    ...(dossier.corrections ?? []),
+    { le: new Date().toISOString(), changements, signaturesEcartees },
+  ];
+
+  const invitation = await emettreJeton(dossier, 0);
+  await stockage.ecrire(dossier.id, JSON.stringify(dossier));
+
+  return { ok: true, dossier, invitation, changements, atteints };
+}
+
 export interface DossierOuvert {
   readonly dossier: DossierContrat;
   /** Position de l'emprunteur à qui appartient le jeton présenté. */
@@ -491,6 +610,8 @@ export interface ResumeDossier {
   readonly refusePar: string | null;
   /** Date d'annulation par la courtière, `null` si le dossier n'a pas été annulé. */
   readonly annuleLe: string | null;
+  /** Date de la dernière correction du contrat, `null` s'il n'a jamais été corrigé. */
+  readonly corrigeLe: string | null;
 }
 
 function resumer(dossier: DossierContrat): ResumeDossier {
@@ -516,6 +637,7 @@ function resumer(dossier: DossierContrat): ResumeDossier {
       : null,
     refusePar: dossier.refus?.nom ?? null,
     annuleLe: dossier.annuleLe ?? null,
+    corrigeLe: dossier.corrections?.at(-1)?.le ?? null,
   };
 }
 

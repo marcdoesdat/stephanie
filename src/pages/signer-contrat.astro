@@ -24,6 +24,9 @@ const ouvert = await ouvrirParJeton(dossierId, jeton);
 
 const entree = ouvert ? ouvert.dossier.emprunteurs[ouvert.index] : null;
 const lignes = ouvert ? resumerContrat(ouvert.dossier.donnees) : [];
+// La dernière correction de la courtière, s'il y en a eu une : celui qui a lu (ou signé)
+// l'ancien texte doit voir ce qui a changé, plutôt que de tout relire pour le deviner.
+const derniereCorrection = ouvert?.dossier.corrections?.at(-1) ?? null;
 const dejaSignes = ouvert
   ? ouvert.dossier.emprunteurs.filter((e) => e.signature !== null).map((e) => nomComplet(e.emprunteur))
   : [];
@@ -93,6 +96,20 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                   Bonjour {entree.emprunteur.prenom}, {prenomCourtiere} a préparé votre contrat
                   de courtage hypothécaire. Relisez-le en entier, puis signez au bas de la page.
                 </p>
+
+                {derniereCorrection && (
+                  <div class="sc-note sc-correction">
+                    <p>
+                      {prenomCourtiere} a corrigé ce contrat. Les signatures données sur
+                      l’ancien texte ont été écartées. Ce qui a changé :
+                    </p>
+                    <ul>
+                      {derniereCorrection.changements.map((changement) => (
+                        <li>{changement}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {dejaSignes.length > 0 && (
                   <p class="sc-note">Déjà signé par : {dejaSignes.join(', ')}.</p>
@@ -393,6 +410,23 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     margin: 0 0 1rem;
     font-size: 0.85rem;
     color: var(--muted);
+  }
+
+  .sc-correction {
+    padding: 0.7rem 0.85rem;
+    border-left: 3px solid var(--clay, #c47a52);
+    border-radius: 6px;
+    background: #fbf3ea;
+    color: var(--ink);
+  }
+
+  .sc-correction p {
+    margin: 0 0 0.35rem;
+  }
+
+  .sc-correction ul {
+    margin: 0;
+    padding-left: 1.2rem;
   }
 
   /* Le récapitulatif est la pièce maîtresse : il doit se lire, pas se survoler. */

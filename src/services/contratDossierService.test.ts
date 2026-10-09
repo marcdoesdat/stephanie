@@ -669,3 +669,106 @@ describe('emprunteursEnAttente et supprimerDossier', () => {
     expect(blobs.has(dossier.id)).toBe(false);
   });
 });
+
+describe('corrigerContrat', () => {
+  it('écarte les signatures recueillies et relance la séquence du premier, dans le même dossier', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    const { suivante } = await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses('oui'));
+
+    const corrige = await service.corrigerContrat(invitation.dossierId, { ...donnees('ana@exemple.ca', 'bo@exemple.ca'), montantPret: '310 000' });
+    expect(corrige.ok).toBe(true);
+    if (!corrige.ok) return;
+
+    expect(corrige.dossier.id).toBe(invitation.dossierId);
+    expect(corrige.dossier.statut).toBe('en_attente');
+    expect(corrige.dossier.donnees.montantPret).toBe('310 000');
+    // Aucune signature ni réponse ne survit : elles portaient sur l'ancien texte.
+    expect(corrige.dossier.emprunteurs.every((e) => e.signature === null && e.reponses === null)).toBe(true);
+    expect(corrige.changements).toEqual(['Montant du prêt : « — » → « 310 000 »']);
+    expect(corrige.dossier.corrections?.[0]?.signaturesEcartees).toEqual(['Ana Tremblay']);
+
+    // Le lien de Bo, émis après la signature d'Ana, meurt ; seul le nouveau lien d'Ana vit.
+    expect(await service.ouvrirParJeton(suivante!.dossierId, suivante!.jeton)).toBeNull();
+    const rouvert = (await service.ouvrirParJeton(corrige.invitation.dossierId, corrige.invitation.jeton))!;
+    expect(rouvert.index).toBe(0);
+    expect(corrige.invitation.courriel).toBe('ana@exemple.ca');
+
+    // Ceux déjà atteints : Ana (signé) et Bo (son lien l'attendait).
+    expect(corrige.atteints.map((a) => [a.courriel, a.aSigne])).toEqual([
+      ['ana@exemple.ca', true],
+      ['bo@exemple.ca', false],
+    ]);
+  });
+
+  it('ramène un dossier « à finaliser » en attente de signatures', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+    expect(await service.ouvrirPourFinalisation(invitation.dossierId)).not.toBeNull();
+
+    const corrige = await service.corrigerContrat(invitation.dossierId, { ...donnees('ana@exemple.ca'), tauxInteret: '4,19' });
+    expect(corrige.ok).toBe(true);
+    expect(await service.ouvrirPourFinalisation(invitation.dossierId)).toBeNull();
+
+    const [resume] = await service.listerDossiers();
+    expect(resume!.statut).toBe('en_attente');
+    expect(resume!.emprunteurs[0]!.signeLe).toBeNull();
+    expect(resume!.corrigeLe).toBeTruthy();
+  });
+
+  it('n’efface rien quand le contrat est identique', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const corrige = await service.corrigerContrat(invitation.dossierId, donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    expect(corrige).toEqual({ ok: false, raison: 'inchange' });
+    const [resume] = await service.listerDossiers();
+    expect(resume!.emprunteurs[0]!.signeLe).not.toBeNull();
+  });
+
+  it('ne corrige pas un dossier gelé, annulé ou inconnu', async () => {
+    const service = await chargerService();
+    const gele = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(gele.invitation.dossierId, gele.invitation.jeton))!;
+    await service.marquerRefus(ouvert.dossier, ouvert.index, 'Coquille.');
+
+    const annule = await service.creerDossier(donnees('bo@exemple.ca'));
+    await service.annulerDossier(annule.invitation.dossierId);
+
+    const modifie = { ...donnees('ana@exemple.ca'), montantPret: '1' };
+    expect(await service.corrigerContrat(gele.invitation.dossierId, modifie)).toEqual({ ok: false, raison: 'introuvable' });
+    expect(await service.corrigerContrat(annule.invitation.dossierId, modifie)).toEqual({ ok: false, raison: 'introuvable' });
+    expect(await service.corrigerContrat('inconnu', modifie)).toEqual({ ok: false, raison: 'introuvable' });
+    expect(await service.lireDonneesACorriger(gele.invitation.dossierId)).toBeNull();
+  });
+
+  it('rend au formulaire les données saisies, sans jeton ni tracé', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+
+    const lu = (await service.lireDonneesACorriger(invitation.dossierId))!;
+    expect(lu.donnees.emprunteurs.map((e) => e.courriel)).toEqual(['ana@exemple.ca', 'bo@exemple.ca']);
+    expect(lu.signes).toEqual(['Ana Tremblay']);
+    const serialise = JSON.stringify(lu);
+    expect(serialise).not.toContain('jetonHash');
+    expect(serialise).not.toContain('tracePngBase64');
+  });
+
+  it('garde l’historique des corrections successives', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    await service.corrigerContrat(invitation.dossierId, { ...donnees('ana@exemple.ca'), rang: '1' });
+    const second = await service.corrigerContrat(invitation.dossierId, { ...donnees('ana@exemple.ca'), rang: '2' });
+    expect(second.ok && second.dossier.corrections?.map((c) => c.changements)).toEqual([
+      ['Rang : « — » → « 1 »'],
+      ['Rang : « 1 » → « 2 »'],
+    ]);
+  });
+});

@@ -45,6 +45,8 @@ import {
   agregerTransfert,
   parserReponsesEmprunteur,
   parserIdentiteEmprunteur,
+  decrireCorrectionsContrat,
+  type DonneesContrat,
   type Emplacement,
   type ReponsesEmprunteur,
 } from './contratCourtage';
@@ -453,5 +455,68 @@ describe('agregerTransfert', () => {
 
   it('ignore les emprunteurs qui n’ont pas encore répondu', () => {
     expect(agregerTransfert([rep('non', 'oui'), null])).toBe('oui');
+  });
+});
+
+describe('decrireCorrectionsContrat', () => {
+  const base = parserDonneesContrat({
+    ...MINIMAL,
+    emprunteurs: [
+      { prenom: 'Youssef', nom: 'Limaoui', courriel: 'y@exemple.ca' },
+      { prenom: 'Asnaa', nom: 'Dalil', courriel: 'a@exemple.ca' },
+    ],
+  })!;
+
+  it('ne voit rien quand rien n’a changé', () => {
+    expect(decrireCorrectionsContrat(base, { ...base })).toEqual([]);
+  });
+
+  it('nomme une coquille dans un nom, avant et après', () => {
+    const apres = {
+      ...base,
+      emprunteurs: [base.emprunteurs[0]!, { ...base.emprunteurs[1]!, prenom: 'Asmaa' }],
+    };
+    expect(decrireCorrectionsContrat(base, apres)).toEqual([
+      'Emprunteur 2 — nom : « Asnaa Dalil » → « Asmaa Dalil »',
+    ]);
+  });
+
+  /**
+   * Verrou : un champ du contrat que la comparaison ignorerait laisserait passer une
+   * correction pour « aucun changement » — refusée — ou, pire, ne la nommerait à personne.
+   */
+  it('voit chaque champ texte du contrat', () => {
+    const structurels = new Set(['emprunteurs', 'typesFinancement', 'typeTaux', 'doubleRemuneration', 'identite']);
+    for (const cle of Object.keys(base) as Array<keyof DonneesContrat>) {
+      if (structurels.has(cle)) continue;
+      const apres = { ...base, [cle]: 'modifié' } as DonneesContrat;
+      expect(decrireCorrectionsContrat(base, apres), cle).toHaveLength(1);
+    }
+  });
+
+  it('voit les cases, le type de taux, la divulgation et les emprunteurs ajoutés', () => {
+    const apres: DonneesContrat = {
+      ...base,
+      typesFinancement: ['refinancement'],
+      typeTaux: 'fixe',
+      doubleRemuneration: 'recevra',
+      emprunteurs: [...base.emprunteurs, { prenom: 'Cam', nom: 'Roy', courriel: 'c@exemple.ca', telephone: '', adresse: '' }],
+    };
+    const changements = decrireCorrectionsContrat(base, apres);
+    expect(changements).toHaveLength(4);
+    expect(changements[0]).toBe('Emprunteur 3 ajouté : Cam Roy');
+  });
+
+  it('ne recopie jamais une valeur du tableau d’identité ni une coordonnée personnelle', () => {
+    const apres: DonneesContrat = {
+      ...base,
+      emprunteurs: [{ ...base.emprunteurs[0]!, telephone: '514-555-0000', adresse: '1 rue Secrète' }, base.emprunteurs[1]!],
+      identite: { ...base.identite, document1_numero: ['L1234-567890-12'] },
+    };
+    const texte = decrireCorrectionsContrat(base, apres).join(' | ');
+    expect(texte).not.toContain('L1234');
+    expect(texte).not.toContain('514-555');
+    expect(texte).not.toContain('Secrète');
+    expect(texte).toContain('Tableau de vérification de l’identité');
   });
 });
