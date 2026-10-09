@@ -35,6 +35,7 @@ import {
   type ReponsesEmprunteur,
 } from '../utils/contratCourtage';
 import type { DossierContrat } from './contratDossierService';
+import type { CertificatJoint } from './certificatSignaturePdf';
 
 /** Ce qu'on peut démontrer a posteriori sur une signature donnée. */
 export interface PreuveSignature {
@@ -109,6 +110,18 @@ function sectionPreuves(preuves: readonly PreuveSignature[]): string {
     .join('');
 }
 
+/**
+ * Un certificat manquant se dit : sans cette ligne, son absence passerait pour un oubli du
+ * système de messagerie. La trace reste entière dans ce courriel.
+ */
+function alerteCertificat(certificat: CertificatJoint | null): string {
+  if (certificat) return '';
+  return `<p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fbeae3;border:1px solid #a85f38;color:#a85f38;">
+    Le certificat de signature (PDF) n’a pas pu être produit. La trace de preuve ci-dessous
+    reste complète : conservez ce courriel.
+  </p>`;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Dossier complet — le contrat signé part à la courtière             */
 /* ------------------------------------------------------------------ */
@@ -119,6 +132,8 @@ export interface EnvoiComplet {
   readonly pdfBase64: string;
   readonly empreintePdf: string;
   readonly nomFichier: string;
+  /** Le journal d'audit en PDF, joint au courriel interne ; `null` s'il n'a pu être produit. */
+  readonly certificat: CertificatJoint | null;
 }
 
 /**
@@ -141,8 +156,11 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
       html: wrapEmailHtml(
         `<h1 style="font-size:19px;margin:0 0 6px;">Contrat de courtage signé</h1>
          <p style="margin:0 0 18px;color:#6b6257;font-size:14px;">
-           Toutes les signatures ont été recueillies. Le contrat estampé est en pièce jointe.
+           Toutes les signatures ont été recueillies. Le contrat estampé est en pièce jointe${
+             envoi.certificat ? ', avec son certificat de signature (journal d’audit)' : ''
+           }.
          </p>
+         ${alerteCertificat(envoi.certificat)}
          ${sectionContrat(envoi.donnees)}
          ${sectionPreuves(envoi.preuves)}
          ${bloc(
@@ -150,6 +168,9 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
            renderDataRows([
              ['Nom du fichier', escapeHtml(envoi.nomFichier)],
              ['Empreinte SHA-256 du PDF', escapeHtml(envoi.empreintePdf)],
+             ...(envoi.certificat
+               ? [['Certificat de signature', escapeHtml(envoi.certificat.nomFichier)] as [string, string]]
+               : []),
            ]),
          )}
          <p style="margin:20px 0 0;color:#6b6257;font-size:12px;">
@@ -158,7 +179,10 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
            celui qui a été signé.
          </p>`,
       ),
-      attachments: [toResendAttachment(envoi.nomFichier, envoi.pdfBase64)],
+      attachments: [
+        toResendAttachment(envoi.nomFichier, envoi.pdfBase64),
+        ...(envoi.certificat ? [toResendAttachment(envoi.certificat.nomFichier, envoi.certificat.pdfBase64)] : []),
+      ],
     });
 
   const accuses = envoi.preuves.map((preuve) => () =>

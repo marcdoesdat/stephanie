@@ -35,7 +35,9 @@ import {
 } from '../../services/profilCourriels';
 import { creerDossier, type SignatureEnregistree } from '../../services/profilDossierService';
 import { empreinteSha256, genererProfilPdf, versBase64 } from '../../services/profilPdfService';
+import { produireCertificat } from '../../services/certificatSignaturePdf';
 import {
+  TEXTE_ATTESTATION,
   decoderTraceSignature,
   parserReponses,
   parserSignataires,
@@ -194,16 +196,38 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     try {
+      const empreintePdf = await empreinteSha256(pdf);
+      // Tout a été signé sur place : aucun dossier de signature n'a existé.
+      const certificat = await produireCertificat({
+        titreDocument: 'Profil des emprunteurs',
+        nomFichier,
+        empreintePdf,
+        dossierId: null,
+        ouvertLe: null,
+        signataires: preuves.map((preuve, index) => ({
+          ...preuve,
+          role: index === 0 ? 'Emprunteur (demandeur)' : 'Co-emprunteur',
+          trace: decoderTraceSignature(tracesBrutes[String(index)]),
+          attestation: TEXTE_ATTESTATION,
+          declarations: [],
+        })),
+        produitLe: maintenant,
+      });
       if (resendEnv) {
         await envoyerDossierComplet(resendEnv, {
           reponses,
           preuves,
           pdfBase64: versBase64(pdf),
-          empreintePdf: await empreinteSha256(pdf),
+          empreintePdf,
           nomFichier,
+          certificat,
         });
       } else {
-        console.log('[profil-submit] ⚠️  Resend non configuré — envoi du dossier complet simulé :', nomFichier);
+        console.log(
+          '[profil-submit] ⚠️  Resend non configuré — envoi du dossier complet simulé :',
+          nomFichier,
+          certificat ? `+ ${certificat.nomFichier}` : '(certificat non produit)',
+        );
       }
     } catch (err) {
       return echec('courriel', err);

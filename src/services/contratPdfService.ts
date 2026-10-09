@@ -114,7 +114,7 @@ const REMPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
 const WINANSI_AUTORISE =
   /[^\u0020-\u007e\u00a0-\u00ff\u0152\u0153\u0160\u0161\u017d\u017e\u0178\u0192\u20ac\u2122]/g;
 
-function nettoyerPourWinAnsi(texte: string): string {
+export function nettoyerPourWinAnsi(texte: string): string {
   let sortie = texte;
   for (const [motif, remplacement] of REMPLACEMENTS) sortie = sortie.replace(motif, remplacement);
   return sortie.replace(WINANSI_AUTORISE, '');

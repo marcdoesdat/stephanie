@@ -25,6 +25,7 @@ import {
 import { loadSiteConfig } from '../config';
 import { formatDateHeureLong } from '../utils/formatters';
 import { TEXTE_ATTESTATION, resumerReponses, type ReponsesProfil } from '../utils/profilEmprunteurs';
+import type { CertificatJoint } from './certificatSignaturePdf';
 
 /** Ce qu'on peut démontrer a posteriori sur une signature donnée. */
 export interface PreuveSignature {
@@ -112,19 +113,32 @@ export interface EnvoiComplet {
   readonly pdfBase64: string;
   readonly empreintePdf: string;
   readonly nomFichier: string;
+  /** Le journal d'audit en PDF, joint au courriel interne ; `null` s'il n'a pu être produit. */
+  readonly certificat: CertificatJoint | null;
 }
 
 /**
  * Le PDF signé ne part **qu'à la courtière**. Les signataires reçoivent une confirmation
  * sans pièce jointe : le document est une pièce de dossier, il circule par le canal de la
- * courtière et non par une boîte courriel de client. Ne pas y rattacher `piece`.
+ * courtière et non par une boîte courriel de client. Ne pas y rattacher `pieces` — le certificat non plus.
  */
 export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet): Promise<void> {
   const config = loadSiteConfig();
   const prenomCourtiere = config.nom.split(' ')[0];
   const principal = envoi.preuves[0];
   const noms = envoi.preuves.map((p) => p.nom).join(', ');
-  const piece = toResendAttachment(envoi.nomFichier, envoi.pdfBase64);
+  const pieces = [
+    toResendAttachment(envoi.nomFichier, envoi.pdfBase64),
+    ...(envoi.certificat ? [toResendAttachment(envoi.certificat.nomFichier, envoi.certificat.pdfBase64)] : []),
+  ];
+  const mentionCertificat = envoi.certificat
+    ? ` Le certificat de signature (<strong>${escapeHtml(envoi.certificat.nomFichier)}</strong>) l'accompagne : c'est le journal d'audit, à ranger au dossier avec le formulaire.`
+    : '';
+  const alerteCertificat = envoi.certificat
+    ? ''
+    : `<p style="margin:8px 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fbeae3;border:1px solid #a85f38;color:#a85f38;">
+        Le certificat de signature (PDF) n'a pas pu être produit. La trace de preuve ci-dessous reste complète : conservez ce courriel.
+      </p>`;
 
   const interne = wrapEmailHtml(`
       <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Profil des emprunteurs signé</h1>
@@ -133,8 +147,9 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
       </p>
       <p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#f0f7f1;border:1px solid #c5dac8;color:#2d5a3a;">
         Le formulaire rempli et signé est en pièce jointe (<strong>${escapeHtml(envoi.nomFichier)}</strong>).
-        Vous êtes seule à le recevoir : les signataires n'ont eu qu'un accusé de signature, sans le document.
+        Vous êtes seule à le recevoir : les signataires n'ont eu qu'un accusé de signature, sans le document.${mentionCertificat}
       </p>
+      ${alerteCertificat}
       ${sectionReponses(envoi.reponses)}
       ${sectionPreuves(envoi.preuves)}
       ${bloc('Document', renderDataRows([['Empreinte du PDF (SHA-256)', `<code style="font-size:11px;">${escapeHtml(envoi.empreintePdf)}</code>`]]))}
@@ -151,7 +166,7 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
         to: env.notifyEmail,
         subject: `Profil des emprunteurs signé — ${principal?.nom ?? 'client'}`,
         html: interne,
-        attachments: [piece],
+        attachments: pieces,
         ...(principal ? { reply_to: principal.courriel } : {}),
       }),
   ];

@@ -128,9 +128,13 @@ describe('POST /api/profil-submit', () => {
 
     expect(reponse.status).toBe(200);
     expect(corps.enAttente).toBeUndefined();
-    // Deux envois et une pièce jointe : le dossier a bien été clos, pas mis en attente.
+    // Deux envois, le formulaire et son certificat : le dossier a bien été clos, pas mis en attente.
     expect(envois.map((e) => e.to)).toEqual(['interne@exemple.ca', 'marc@exemple.ca']);
-    expect(envois[0]!.attachments).toEqual([expect.objectContaining({ content: expect.any(String) })]);
+    expect(envois[0]!.attachments).toEqual([
+      expect.objectContaining({ filename: expect.stringMatching(/^profil-emprunteurs-/), content: expect.any(String) }),
+      expect.objectContaining({ filename: expect.stringMatching(/^certificat-signature-profil-emprunteurs-/) }),
+    ]);
+    expect(envois[1]!.attachments).toBeUndefined();
   });
 
   it('ouvre un dossier en attente quand une signature manque vraiment', async () => {

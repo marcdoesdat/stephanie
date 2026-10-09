@@ -269,6 +269,7 @@ est identique au modèle au pixel près.
 | `src/pages/preparer-profil.astro` | L'écran de la courtière : saisir les emprunteurs, obtenir le lien |
 | `src/services/profilDossierService.ts` | Dossiers en attente de co-signature (Netlify Blobs, jetons hachés) |
 | `src/services/profilCourriels.ts` | Courriels + **trace de preuve** des signatures |
+| `src/services/certificatSignaturePdf.ts` | **Certificat de signature** (journal d'audit en PDF), partagé avec le contrat |
 | `src/components/SignaturePad.astro` + `src/scripts/signaturePad.ts` | Bloc de signature (canevas, recadrage sur l'encre, repli « nom tapé ») |
 
 **Règles :**
@@ -279,6 +280,15 @@ est identique au modèle au pixel près.
   verrouille l'absence d'annotations.
 - **Rien n'est ajouté au PDF hors des champs du modèle.** La trace de preuve (horodatage serveur,
   IP, navigateur, empreintes) vit dans le courriel interne, jamais dans le document.
+- **Le journal d'audit est un second PDF, jamais une page ajoutée au premier.** À la clôture,
+  `produireCertificat` produit un « certificat de signature » distinct : document et empreinte
+  SHA-256, puis chaque signataire (rôle, courriel, horodatage serveur, voie, IP, navigateur,
+  attestation, empreinte et miniature du tracé), puis la chronologie. L'empreinte du document
+  est ce qui rattache le certificat à ce PDF-là et à aucun autre. Il part en **seconde pièce
+  jointe du seul courriel interne** — il porte les IP de chacun, il suit donc la règle du
+  document qu'il atteste. Il **ne lève jamais** : un certificat raté rend `null`, le courriel
+  le dit à la courtière, et la trace reste entière dans le corps du message. Le confort ne
+  doit jamais retenir le document signé.
 - **Le PDF ne sort que vers la courtière.** Seul le courriel interne le porte en pièce jointe : les
   signataires reçoivent un accusé de signature sans document, et les endpoints ne renvoient plus
   ni `pdf` ni `filename` au navigateur — l'écran de confirmation ne propose aucun téléchargement.
@@ -382,6 +392,7 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
 | `src/services/contratPdfService.ts` | Estampage pdf-lib + empreintes SHA-256 |
 | `src/services/contratDossierService.ts` | Dossiers en attente de signature (Netlify Blobs, jetons hachés) |
 | `src/services/contratCourriels.ts` | Courriels + **trace de preuve** des signatures |
+| `src/services/certificatSignaturePdf.ts` | **Certificat de signature** joint au contrat finalisé (voir « Profil des emprunteurs ») |
 | `src/services/accesCourtiere.ts` | Mot de passe partagé + cookie signé de `/contrat` |
 | `src/services/reglagesCourtiere.ts` | Signature mémorisée + valeurs par défaut du formulaire |
 | `src/utils/detourageSignature.ts` + `src/scripts/importSignature.ts` | Import d'une signature photographiée : fond retiré, recadrage sur l'encre |
@@ -474,6 +485,11 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   la même adresse fausse ne servirait à rien. `corrigerCourrielCourant` met `donnees` et
   l'entrée d'accord, refuse une adresse déjà prise par un autre emprunteur, et réémet le
   jeton — l'ancien meurt.
+- **Le certificat de signature du contrat inclut la courtière**, contrairement aux preuves du
+  courriel (`preuvesDe`), qui ne listent que les emprunteurs : il atteste le document entier.
+  Elle n'y porte **aucune attestation cochée** — elle n'en coche pas, elle appose sa signature
+  mémorisée après relecture — et le certificat n'en dit pas plus que ce qui s'est passé. Les
+  déclarations de chaque emprunteur (PPV, transfert) y figurent sous son nom.
 - Le dossier Blob est supprimé dès le PDF produit — les tracés ne restent pas au repos.
 - `/contrat` et `/api/contrat-creer` appliquent **le même** verdict d'accès : une page
   protégée devant une API ouverte ne protège rien.
@@ -819,6 +835,10 @@ npx vitest              # mode watch
 - `src/utils/profilPreparation.test.ts` — aller-retour du lien préparé (accents compris), champs
   écartés un à un plutôt que crus, adresse en double non préremplie, paramètre abîmé → lien vierge
 - `src/utils/contratCourtage.test.ts` — géométrie du modèle PDF + whitelist de validation
+- `src/services/certificatSignaturePdf.test.ts` — le certificat porte l'empreinte complète du
+  document, chaque signataire et sa voie, un tracé par signataire ; chronologie ordonnée sans
+  ouverture inventée ; tracé illisible, navigateur interminable et caractères hors WinAnsi
+  tolérés ; `produireCertificat` rend `null` au lieu de lever
 - `src/services/contratPdfService.test.ts` — estampage : 4 pages au bon format, caractères
   hors WinAnsi, champs trop longs tronqués plutôt que débordants
 - `src/services/contratDossierService.test.ts` — jetons à usage unique, expiration, gel sur refus

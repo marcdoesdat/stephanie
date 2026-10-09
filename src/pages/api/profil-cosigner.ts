@@ -31,7 +31,8 @@ import {
   type Dossier,
 } from '../../services/profilDossierService';
 import { empreinteSha256, genererProfilPdf, versBase64 } from '../../services/profilPdfService';
-import { decoderTraceSignature } from '../../utils/profilEmprunteurs';
+import { TEXTE_ATTESTATION, decoderTraceSignature } from '../../utils/profilEmprunteurs';
+import { produireCertificat } from '../../services/certificatSignaturePdf';
 
 export const prerender = false;
 
@@ -151,15 +152,45 @@ export const POST: APIRoute = async ({ request }) => {
         signeLe: new Date(s.signature!.signeLe),
       })),
     );
-    const nomFichier = nomFichierProfil(aJour.signataires[0]!.nom, new Date());
+    const produitLe = new Date();
+    const nomFichier = nomFichierProfil(aJour.signataires[0]!.nom, produitLe);
+    const empreintePdf = await empreinteSha256(pdf);
+    const certificat = await produireCertificat({
+      titreDocument: 'Profil des emprunteurs',
+      nomFichier,
+      empreintePdf,
+      dossierId: aJour.id,
+      ouvertLe: aJour.creeLe,
+      signataires: aJour.signataires.flatMap((s, rang) =>
+        s.signature
+          ? [
+              {
+                nom: s.nom,
+                role: rang === 0 ? 'Emprunteur (demandeur)' : 'Co-emprunteur',
+                courriel: s.courriel,
+                signeLe: s.signature.signeLe,
+                voie: s.signature.voie,
+                ip: s.signature.ip,
+                agent: s.signature.agent,
+                empreinteTrace: s.signature.empreinteTrace,
+                trace: depuisBase64(s.signature.tracePngBase64),
+                attestation: TEXTE_ATTESTATION,
+                declarations: [],
+              },
+            ]
+          : [],
+      ),
+      produitLe,
+    });
 
     if (resendEnv) {
       await envoyerDossierComplet(resendEnv, {
         reponses: aJour.reponses,
         preuves: preuvesDu(aJour),
         pdfBase64: versBase64(pdf),
-        empreintePdf: await empreinteSha256(pdf),
+        empreintePdf,
         nomFichier,
+        certificat,
       });
     } else {
       console.log('[profil-cosigner] ⚠️  Resend non configuré — envoi du dossier complet simulé.');

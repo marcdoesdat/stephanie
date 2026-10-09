@@ -94,6 +94,7 @@ describe('envoyerDossierComplet', () => {
       pdfBase64: 'JVBERi0xLjc=',
       empreintePdf: 'deadbeef',
       nomFichier: 'profil.pdf',
+      certificat: null,
     });
 
     expect(appels).toHaveLength(3);
@@ -111,6 +112,7 @@ describe('envoyerDossierComplet', () => {
       pdfBase64: 'JVBERi0xLjc=',
       empreintePdf: 'deadbeef',
       nomFichier: 'profil.pdf',
+      certificat: null,
     });
 
     expect(appels[0]!.corps.to).toBe('interne@exemple.ca');
@@ -119,6 +121,42 @@ describe('envoyerDossierComplet', () => {
       expect(appel.corps.attachments).toBeUndefined();
       expect(String(appel.corps.html)).not.toContain('JVBERi0xLjc=');
     }
+  });
+
+  it('joint le certificat de signature au seul courriel de la courtière', async () => {
+    // Le certificat porte les IP et les empreintes de chacun : il suit la même règle que le
+    // document qu'il atteste.
+    const appels = installerFauxResend();
+
+    await envoyerDossierComplet(ENV, {
+      reponses: REPONSES,
+      preuves: [preuve('Marc', 'marc@exemple.ca'), preuve('Julie', 'julie@exemple.ca')],
+      pdfBase64: 'JVBERi0xLjc=',
+      empreintePdf: 'deadbeef',
+      nomFichier: 'profil.pdf',
+      certificat: { nomFichier: 'certificat-signature-profil.pdf', pdfBase64: 'Q0VSVA==' },
+    });
+
+    expect(appels[0]!.corps.attachments).toEqual([
+      { filename: 'profil.pdf', content: 'JVBERi0xLjc=' },
+      { filename: 'certificat-signature-profil.pdf', content: 'Q0VSVA==' },
+    ]);
+    for (const appel of appels.slice(1)) expect(appel.corps.attachments).toBeUndefined();
+  });
+
+  it('dit à la courtière quand le certificat manque', async () => {
+    const appels = installerFauxResend();
+
+    await envoyerDossierComplet(ENV, {
+      reponses: REPONSES,
+      preuves: [preuve('Marc', 'marc@exemple.ca')],
+      pdfBase64: 'JVBERi0xLjc=',
+      empreintePdf: 'deadbeef',
+      nomFichier: 'profil.pdf',
+      certificat: null,
+    });
+
+    expect(String(appels[0]!.corps.html)).toContain('n\'a pas pu être produit');
   });
 
   it('n’envoie jamais deux courriels en même temps', async () => {
@@ -136,6 +174,7 @@ describe('envoyerDossierComplet', () => {
       pdfBase64: 'JVBERi0xLjc=',
       empreintePdf: 'deadbeef',
       nomFichier: 'profil.pdf',
+      certificat: null,
     });
 
     expect(appels).toHaveLength(4);
@@ -152,6 +191,7 @@ describe('envoyerDossierComplet', () => {
         pdfBase64: 'JVBERi0xLjc=',
         empreintePdf: 'deadbeef',
         nomFichier: 'profil.pdf',
+        certificat: null,
       }),
     ).rejects.toThrow(/Resend HTTP 403.*domaine non vérifié/);
   });
@@ -165,6 +205,7 @@ describe('envoyerDossierComplet', () => {
       pdfBase64: 'JVBERi0xLjc=',
       empreintePdf: 'deadbeef',
       nomFichier: 'profil.pdf',
+      certificat: null,
     });
 
     expect(appels[0]!.corps.reply_to).toBe('marc@exemple.ca');
@@ -180,6 +221,7 @@ describe('envoyerDossierComplet', () => {
       pdfBase64: 'JVBERi0xLjc=',
       empreintePdf: 'deadbeef',
       nomFichier: 'profil.pdf',
+      certificat: null,
     });
 
     const interne = String(appels[0]!.corps.html);

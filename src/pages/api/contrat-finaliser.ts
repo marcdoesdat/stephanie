@@ -30,7 +30,8 @@ import {
   type SignatureEstampee,
 } from '../../services/contratPdfService';
 import { lireReglages, traceEnregistree } from '../../services/reglagesCourtiere';
-import { nomComplet } from '../../utils/contratCourtage';
+import { TEXTE_ATTESTATION, nomComplet, resumerReponsesEmprunteur } from '../../utils/contratCourtage';
+import { produireCertificat, type SignataireCertificat } from '../../services/certificatSignaturePdf';
 
 export const prerender = false;
 
@@ -67,6 +68,52 @@ function preuvesDe(dossier: DossierContrat): PreuveSignature[] {
       } satisfies PreuveSignature;
     })
     .filter((p): p is PreuveSignature => p !== null);
+}
+
+/**
+ * Les signataires du certificat : chaque emprunteur, puis la courtière. Contrairement à
+ * `preuvesDe`, sa signature y figure — le certificat atteste le document entier.
+ */
+function signatairesCertificat(
+  dossier: DossierContrat,
+  courtiere: { nom: string; courriel: string; signature: SignatureEnregistree; trace: Uint8Array },
+): SignataireCertificat[] {
+  const emprunteurs = dossier.emprunteurs.flatMap((entree): SignataireCertificat[] => {
+    if (!entree.signature) return [];
+    return [
+      {
+        nom: nomComplet(entree.emprunteur),
+        role: 'Emprunteur',
+        courriel: entree.emprunteur.courriel,
+        signeLe: entree.signature.signeLe,
+        voie: entree.signature.voie,
+        ip: entree.signature.ip,
+        agent: entree.signature.agent,
+        empreinteTrace: entree.signature.empreinteTrace,
+        trace: depuisBase64(entree.signature.tracePngBase64),
+        attestation: TEXTE_ATTESTATION,
+        declarations: entree.reponses ? resumerReponsesEmprunteur(entree.reponses) : [],
+      },
+    ];
+  });
+  return [
+    ...emprunteurs,
+    {
+      nom: courtiere.nom,
+      role: 'Courtière',
+      courriel: courtiere.courriel,
+      signeLe: courtiere.signature.signeLe,
+      voie: courtiere.signature.voie,
+      ip: courtiere.signature.ip,
+      agent: courtiere.signature.agent,
+      empreinteTrace: courtiere.signature.empreinteTrace,
+      trace: courtiere.trace,
+      // Elle n'a coché aucune attestation : elle a relu le contrat derrière son mot de passe et
+      // appose sa signature mémorisée d'un clic. Le certificat ne doit pas en dire plus.
+      attestation: null,
+      declarations: [['Signature apposée', 'Signature mémorisée, après relecture du contrat complété']],
+    },
+  ];
 }
 
 export const POST: APIRoute = async ({ request }) => {
@@ -145,16 +192,36 @@ export const POST: APIRoute = async ({ request }) => {
 
   const resendEnv = loadResendEnv();
   try {
+    const empreintePdf = await empreinteSha256(pdf);
+    const certificat = await produireCertificat({
+      titreDocument: 'Contrat de courtage hypothécaire',
+      nomFichier,
+      empreintePdf,
+      dossierId: dossier.id,
+      ouvertLe: dossier.creeLe,
+      signataires: signatairesCertificat(dossier, {
+        nom: config.nom,
+        courriel: config.courriel,
+        signature: signatureCourtiere,
+        trace,
+      }),
+      produitLe: maintenant,
+    });
     if (resendEnv) {
       await envoyerDossierComplet(resendEnv, {
         donnees: dossier.donnees,
         preuves: preuvesDe(dossier),
         pdfBase64: versBase64(pdf),
-        empreintePdf: await empreinteSha256(pdf),
+        empreintePdf,
         nomFichier,
+        certificat,
       });
     } else {
-      console.log('[contrat-finaliser] ⚠️  Resend non configuré — envoi du contrat simulé :', nomFichier);
+      console.log(
+        '[contrat-finaliser] ⚠️  Resend non configuré — envoi du contrat simulé :',
+        nomFichier,
+        certificat ? `+ ${certificat.nomFichier}` : '(certificat non produit)',
+      );
     }
   } catch (err) {
     console.error('[contrat-finaliser] Contrat produit mais envoi échoué :', err);
