@@ -134,7 +134,19 @@ Astro.response.headers.set('Cache-Control', 'no-store');
             )}
 
             <p class="fc-erreur" data-erreur hidden />
-            <p class="fc-succes" data-succes hidden />
+            <div class="fc-succes" data-succes role="status" hidden>
+              <svg class="fc-succes-coche" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="11" />
+                <path d="M7 12.5l3.2 3.2L17 9" />
+              </svg>
+              <div>
+                <p class="fc-succes-titre">Contrat envoyé</p>
+                <p class="fc-succes-texte">
+                  Signé et envoyé dans votre boîte courriel. Les emprunteurs ont reçu leur accusé.
+                </p>
+                <a class="fc-succes-lien" href="/contrat#ct-suivi">Retour au suivi des contrats</a>
+              </div>
+            </div>
 
             <button
               type="button"
@@ -282,13 +294,53 @@ Astro.response.headers.set('Cache-Control', 'no-store');
   }
 
   .fc-succes {
+    display: flex;
+    gap: 0.8rem;
+    align-items: flex-start;
     margin: 1rem 0 0;
-    padding: 0.7rem 0.85rem;
+    padding: 0.9rem 1rem;
     border-radius: 8px;
     background: #eaf5ec;
     color: #26603a;
     font-size: 0.88rem;
     line-height: 1.5;
+  }
+
+  .fc-succes[hidden] {
+    display: none;
+  }
+
+  .fc-succes-coche {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .fc-succes-coche circle {
+    fill: #26603a;
+  }
+
+  .fc-succes-coche path {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .fc-succes-titre {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .fc-succes-texte {
+    margin: 0.15rem 0 0.4rem;
+  }
+
+  .fc-succes-lien {
+    color: #26603a;
+    font-weight: 600;
   }
 
   @media (max-width: 560px) {
@@ -329,12 +381,9 @@ Astro.response.headers.set('Cache-Control', 'no-store');
         return;
       }
 
-      if (succes) {
-        succes.textContent =
-          'Contrat signé et envoyé dans votre boîte courriel. Les emprunteurs ont reçu leur accusé.';
-        succes.hidden = false;
-      }
-      bouton.textContent = 'Contrat envoyé';
+      // Le geste est accompli : un bouton qui ne fait plus rien n'a pas à rester un bouton.
+      bouton.remove();
+      if (succes) succes.hidden = false;
     } catch {
       if (erreur) {
         erreur.textContent = 'Connexion impossible. Vérifiez votre réseau et réessayez.';
