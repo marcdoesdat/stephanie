@@ -660,6 +660,42 @@ const RANGS = [0, 1, 2];
     color: #a8442f;
   }
 
+  /* La page n'est pas enveloppée dans `.contact-form` : les classes `cform-label` et
+     `cform-input` sont définies sous ce sélecteur dans global.css et ne s'appliquent donc
+     pas ici. On les reproduit pour que les champs aient la même facture que le reste du
+     site — libellé au-dessus, saisie pleine largeur, alignement régulier. */
+  .ct-form .cform-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .ct-form .cform-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+  }
+
+  .ct-form .cform-input:focus {
+    outline: none;
+    border-color: var(--clay);
+    background: var(--white);
+  }
+
+  .ct-form textarea.cform-input {
+    resize: vertical;
+  }
+
   .ct-astuce {
     margin-left: 0.4rem;
     font-size: 0.72rem;
