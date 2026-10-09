@@ -274,8 +274,10 @@ const RANGS = [0, 1, 2];
                   </select>
                 </div>
                 <div>
-                  <label class="cform-label" for="ct-versement">Versement cap. + int. ($)</label>
-                  <input type="text" id="ct-versement" class="cform-input" inputmode="numeric" maxlength="20" />
+                  {/* « cap. » seul est lu par Chrome comme « CAP », le code postal italien : le libellé
+                      écrit le mot en entier, sans quoi le navigateur y collait le code postal. */}
+                  <label class="cform-label" for="ct-versement">Versement capital + intérêts ($)</label>
+                  <input type="text" id="ct-versement" class="cform-input" inputmode="numeric" maxlength="20" autocomplete="off" />
                 </div>
               </div>
 
