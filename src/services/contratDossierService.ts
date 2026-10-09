@@ -17,6 +17,7 @@
  * @module contratDossierService
  */
 
+import { decrireCorrectionIdentite } from '../utils/contratCourtage';
 import type { DonneesContrat, Emprunteur, ReponsesEmprunteur } from '../utils/contratCourtage';
 import {
   creerStockage,
@@ -42,7 +43,8 @@ export const DUREE_VIE_MS = 10 * 24 * 60 * 60 * 1000;
 const stockage = creerStockage('contrats-courtage', 'contratDossier');
 
 export interface EntreeEmprunteur {
-  readonly emprunteur: Emprunteur;
+  /** Remplacé par ce que l'emprunteur confirme ou corrige en signant (nom, courriel). */
+  emprunteur: Emprunteur;
   /** SHA-256 du jeton d'invitation ; `null` une fois le jeton consommé. */
   jetonHash: string | null;
   signature: SignatureEnregistree | null;
@@ -68,7 +70,8 @@ export interface DossierContrat {
   expireLe: string;
   statut: StatutDossier;
   readonly mode: ModeSignature;
-  readonly donnees: DonneesContrat;
+  /** Réécrit seulement pour y reporter une correction d'identité faite par un emprunteur. */
+  donnees: DonneesContrat;
   /**
    * La courtière signe **en dernier**, une fois les réponses des emprunteurs connues :
    * `null` jusque-là. Signer d'abord reviendrait à couvrir de sa signature des réponses
@@ -256,9 +259,25 @@ export async function enregistrerSignature(
   index: number,
   signature: SignatureEnregistree,
   reponses: ReponsesEmprunteur,
+  identite?: Pick<Emprunteur, 'prenom' | 'nom' | 'courriel'>,
 ): Promise<{ dossier: DossierContrat; complet: boolean; suivante: Invitation | null }> {
   const entree = dossier.emprunteurs[index];
   if (!entree) throw new Error('Emprunteur introuvable dans le dossier.');
+
+  // Une erreur de saisie de la courtière se corrige ici, par celui qui la voit. Le contrat
+  // (`donnees`) et l'entrée doivent rester d'accord : le PDF lit l'un, la suite l'autre.
+  if (identite) {
+    const corrige: Emprunteur = { ...entree.emprunteur, ...identite };
+    const correction = decrireCorrectionIdentite(entree.emprunteur, corrige);
+    if (correction) {
+      entree.emprunteur = corrige;
+      dossier.donnees = {
+        ...dossier.donnees,
+        emprunteurs: dossier.donnees.emprunteurs.map((e, i) => (i === index ? corrige : e)),
+      };
+      reponses = { ...reponses, identiteCorrigee: correction };
+    }
+  }
 
   entree.signature = signature;
   entree.reponses = reponses;

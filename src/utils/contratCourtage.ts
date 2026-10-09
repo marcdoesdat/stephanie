@@ -437,6 +437,11 @@ export interface ReponsesEmprunteur {
   /** Corrigées par l'emprunteur ; vides s'il n'a rien changé à ce que la courtière a saisi. */
   readonly telephone: string;
   readonly adresse: string;
+  /**
+   * Posé par le serveur — jamais lu du navigateur — quand l'emprunteur a corrigé son nom ou
+   * son courriel : la courtière voit ce qui a changé par rapport à ce qu'elle avait saisi.
+   */
+  readonly identiteCorrigee?: string;
 }
 
 /**
@@ -493,12 +498,45 @@ export function parserReponsesEmprunteur(payload: unknown): ReponsesEmprunteur |
   };
 }
 
+export type IdentiteEmprunteur = Pick<Emprunteur, 'prenom' | 'nom' | 'courriel'>;
+
+/**
+ * Valide le nom et le courriel que l'emprunteur confirme (ou corrige) en signant. Mêmes
+ * règles que `parserEmprunteurs` ; l'unicité du courriel face aux autres emprunteurs est
+ * vérifiée par l'appelant, qui connaît le dossier.
+ */
+export function parserIdentiteEmprunteur(payload: unknown): IdentiteEmprunteur | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const brut = payload as Record<string, unknown>;
+
+  const prenom = chaine(brut.prenom, NOM_MAX);
+  const nom = chaine(brut.nom, NOM_MAX);
+  const courriel = chaine(brut.courriel, 120).toLowerCase();
+
+  if (prenom.length < NOM_MIN || nom.length < NOM_MIN) return null;
+  if (!estCourrielValide(courriel)) return null;
+  return { prenom, nom, courriel };
+}
+
+/** Ce que l'emprunteur a changé à ce que la courtière avait saisi, ou `null` s'il n'a rien changé. */
+export function decrireCorrectionIdentite(avant: Emprunteur, apres: Emprunteur): string | null {
+  const parties: string[] = [];
+  if (avant.prenom !== apres.prenom || avant.nom !== apres.nom) {
+    parties.push(`nom « ${nomComplet(avant)} » → « ${nomComplet(apres)} »`);
+  }
+  if (avant.courriel !== apres.courriel) {
+    parties.push(`courriel « ${avant.courriel} » → « ${apres.courriel} »`);
+  }
+  return parties.length > 0 ? parties.join(' ; ') : null;
+}
+
 /** Libellé lisible des réponses d'un emprunteur — courriels et trace de preuve. */
 export function resumerReponsesEmprunteur(reponses: ReponsesEmprunteur): Array<[string, string]> {
   const paires: Array<[string, string]> = [
     ['Personne politiquement vulnérable', reponses.ppv === 'oui' ? 'Oui' : 'Non'],
     ['Consent au transfert au nouveau cabinet', reponses.transfertCabinet === 'oui' ? 'Oui' : 'Non'],
   ];
+  if (reponses.identiteCorrigee) paires.push(['Identité corrigée par l’emprunteur', reponses.identiteCorrigee]);
   if (reponses.telephone) paires.push(['Téléphone confirmé', reponses.telephone]);
   if (reponses.adresse) paires.push(['Adresse confirmée', reponses.adresse]);
   return paires;

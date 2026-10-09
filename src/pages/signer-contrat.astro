@@ -138,6 +138,8 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 </p>
 
                 <h2 class="sc-sous-titre">Deux questions, et vos coordonnées</h2>
+                {/* Le document ci-dessus est celui de la courtière : une correction faite plus
+                    bas n'y apparaît qu'une fois la signature enregistrée. */}
                 <p class="sc-texte">
                   Ces réponses vous appartiennent — {prenomCourtiere} ne peut pas y répondre à
                   votre place. Elles seront inscrites sur le contrat.
@@ -185,6 +187,42 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
                 <div class="sc-coordonnees">
                   <div>
+                    <label class="cform-label" for="sc-prenom">Votre prénom</label>
+                    <input
+                      type="text"
+                      id="sc-prenom"
+                      class="cform-input"
+                      maxlength="60"
+                      autocomplete="given-name"
+                      required
+                      value={entree.emprunteur.prenom}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="sc-nom">Votre nom de famille</label>
+                    <input
+                      type="text"
+                      id="sc-nom"
+                      class="cform-input"
+                      maxlength="60"
+                      autocomplete="family-name"
+                      required
+                      value={entree.emprunteur.nom}
+                    />
+                  </div>
+                  <div>
+                    <label class="cform-label" for="sc-courriel">Votre courriel</label>
+                    <input
+                      type="email"
+                      id="sc-courriel"
+                      class="cform-input"
+                      maxlength="120"
+                      autocomplete="email"
+                      required
+                      value={entree.emprunteur.courriel}
+                    />
+                  </div>
+                  <div>
                     <label class="cform-label" for="sc-telephone">Votre téléphone</label>
                     <input
                       type="tel"
@@ -205,7 +243,8 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                     />
                   </div>
                   <p class="sc-precision">
-                    Corrigez-les au besoin : c’est ce qui figurera sur le contrat.
+                    Corrigez-les au besoin, y compris votre nom et votre courriel : c’est ce qui
+                    figurera sur le contrat, et c’est à cette adresse que vous le recevrez.
                   </p>
                 </div>
 
@@ -393,11 +432,41 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
   .sc-choix {
     display: flex;
-    gap: 0.55rem;
     align-items: center;
-    padding: 0.3rem 0;
-    font-size: 0.92rem;
+    gap: 0.7rem;
+    padding: 0.7rem 0.9rem;
+    margin: 0.3rem 0;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--white);
     cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .sc-choix:hover {
+    background: var(--sand);
+  }
+
+  .sc-choix:has(input:checked) {
+    background: var(--warm);
+    border-color: var(--clay);
+  }
+
+  /* Au clavier, c'est le libellé entier qui porte le focus visible, pas la seule pastille. */
+  .sc-choix:has(input:focus-visible) {
+    outline: 3px solid var(--clay);
+    outline-offset: 2px;
+  }
+
+  .sc-choix input[type='radio'] {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+    accent-color: var(--clay);
   }
 
   .sc-coordonnees {
@@ -539,7 +608,9 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     const dossier = app.dataset.dossier ?? '';
     const jeton = app.dataset.jeton ?? '';
     const prenomCourtiere = app.dataset.prenomCourtiere ?? 'votre courtière';
-    const courrielSignataire = app.dataset.courrielSignataire ?? '';
+    let courrielSignataire = app.dataset.courrielSignataire ?? '';
+    const valeurChamp = (id: string): string =>
+      app.querySelector<HTMLInputElement>(`#${id}`)?.value.trim() ?? '';
 
     /**
      * Compose l'écran de fin. Les étapes doivent rester vraies de ce que le système fait
@@ -627,6 +698,20 @@ Astro.response.headers.set('Cache-Control', 'no-store');
         return;
       }
 
+      const identite = {
+        prenom: valeurChamp('sc-prenom'),
+        nom: valeurChamp('sc-nom'),
+        courriel: valeurChamp('sc-courriel'),
+      };
+      if (identite.prenom.length < 2 || identite.nom.length < 2) {
+        montrerErreur(erreur, 'Vérifiez votre prénom et votre nom : ils doivent figurer correctement sur le contrat.');
+        return;
+      }
+      if (!/^[^\s@]+@(?:[^\s@.]+\.)+[a-z]{2,}$/i.test(identite.courriel)) {
+        montrerErreur(erreur, 'Vérifiez votre courriel : l’adresse saisie ne semble pas valide.');
+        return;
+      }
+
       boutonSigner.disabled = true;
       const libelleOrigine = boutonSigner.textContent;
       boutonSigner.textContent = 'Envoi…';
@@ -639,6 +724,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
           action: 'signature',
           attestation: true,
           signature: pad.versPng(),
+          identite,
           reponses: {
             ppv: choix('sc-ppv'),
             transfertCabinet: choix('sc-transfert'),
@@ -654,6 +740,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
           return;
         }
 
+        courrielSignataire = identite.courriel.toLowerCase();
         const suivant = app.querySelector<HTMLElement>('[data-merci-suivant]');
         const nomSuivant = String(data.suivant ?? 'le signataire suivant');
 

@@ -44,6 +44,7 @@ import {
   agregerPpv,
   agregerTransfert,
   parserReponsesEmprunteur,
+  parserIdentiteEmprunteur,
   type Emplacement,
   type ReponsesEmprunteur,
 } from './contratCourtage';
@@ -387,6 +388,22 @@ describe('parserReponsesEmprunteur', () => {
   it('refuse autre chose qu’un objet', () => {
     expect(parserReponsesEmprunteur(null)).toBeNull();
     expect(parserReponsesEmprunteur('oui')).toBeNull();
+  });
+});
+
+describe('parserIdentiteEmprunteur', () => {
+  it('normalise nom et courriel', () => {
+    expect(parserIdentiteEmprunteur({ prenom: ' Marie ', nom: 'Tremblay', courriel: ' Marie@Exemple.CA ' })).toEqual({
+      prenom: 'Marie',
+      nom: 'Tremblay',
+      courriel: 'marie@exemple.ca',
+    });
+  });
+
+  it('refuse un courriel invalide ou un nom trop court', () => {
+    expect(parserIdentiteEmprunteur({ prenom: 'Marie', nom: 'Tremblay', courriel: 'marie@' })).toBeNull();
+    expect(parserIdentiteEmprunteur({ prenom: 'M', nom: 'Tremblay', courriel: 'm@exemple.ca' })).toBeNull();
+    expect(parserIdentiteEmprunteur(null)).toBeNull();
   });
 });
 

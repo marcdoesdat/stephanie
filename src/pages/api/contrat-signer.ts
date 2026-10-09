@@ -27,7 +27,12 @@ import {
 } from '../../services/contratDossierService';
 import type { SignatureEnregistree } from '../../services/dossierStockage';
 import { empreinteSha256 } from '../../services/contratPdfService';
-import { nomComplet, parserReponsesEmprunteur } from '../../utils/contratCourtage';
+import {
+  nomComplet,
+  parserIdentiteEmprunteur,
+  parserReponsesEmprunteur,
+  type IdentiteEmprunteur,
+} from '../../utils/contratCourtage';
 import { decoderTraceSignature } from '../../utils/traceSignature';
 
 export const prerender = false;
@@ -118,6 +123,22 @@ export const POST: APIRoute = async ({ request }) => {
     return jsonResponse({ error: 'Répondez aux deux questions avant de signer.' }, 400);
   }
 
+  // Nom et courriel : la courtière les a saisis, l'emprunteur les confirme ou les corrige.
+  // Absents (ancien écran resté ouvert), on garde ce que la courtière a saisi.
+  let identite: IdentiteEmprunteur | undefined;
+  if (payload.identite !== undefined) {
+    const parsee = parserIdentiteEmprunteur(payload.identite);
+    if (!parsee) {
+      return jsonResponse({ error: 'Vérifiez votre prénom, votre nom et votre courriel.' }, 400);
+    }
+    // Deux emprunteurs sur une même adresse ruineraient la preuve d'une boîte distincte.
+    const doublon = dossier.emprunteurs.some((e, i) => i !== index && e.emprunteur.courriel === parsee.courriel);
+    if (doublon) {
+      return jsonResponse({ error: 'Cette adresse courriel est déjà celle d’un autre emprunteur.' }, 400);
+    }
+    identite = parsee;
+  }
+
   const trace = decoderTraceSignature(payload.signature);
   if (!trace) return jsonResponse({ error: 'Signature manquante ou illisible' }, 400);
 
@@ -134,7 +155,7 @@ export const POST: APIRoute = async ({ request }) => {
   let complet: boolean;
   let suivante: Invitation | null;
   try {
-    ({ complet, suivante } = await enregistrerSignature(dossier, index, signature, reponses));
+    ({ complet, suivante } = await enregistrerSignature(dossier, index, signature, reponses, identite));
   } catch (err) {
     console.error('[contrat-signer] Impossible d’enregistrer la signature :', err);
     return jsonResponse({ error: 'Votre signature n’a pas pu être enregistrée. Réessayez.' }, 502);

@@ -254,6 +254,43 @@ describe('enregistrerSignature', () => {
     expect(apresDeux.suivante).toBeNull();
   });
 
+  it('reporte la correction de nom et de courriel dans le dossier et dans le contrat', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    const nomAvant = ouvert.dossier.emprunteurs[0]!.emprunteur.nom;
+
+    const { dossier } = await service.enregistrerSignature(
+      ouvert.dossier,
+      ouvert.index,
+      signature(),
+      reponses(),
+      { prenom: 'Anaïs', nom: nomAvant, courriel: 'anais@exemple.ca' },
+    );
+
+    expect(dossier.emprunteurs[0]!.emprunteur.prenom).toBe('Anaïs');
+    expect(dossier.emprunteurs[0]!.emprunteur.courriel).toBe('anais@exemple.ca');
+    expect(dossier.donnees.emprunteurs[0]!.prenom).toBe('Anaïs');
+    expect(dossier.donnees.emprunteurs[0]!.courriel).toBe('anais@exemple.ca');
+    expect(dossier.donnees.emprunteurs[1]!.courriel).toBe('bo@exemple.ca');
+    expect(dossier.emprunteurs[0]!.reponses?.identiteCorrigee).toContain('anais@exemple.ca');
+  });
+
+  it('ne note aucune correction quand l’identité est confirmée telle quelle', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+
+    const { dossier } = await service.enregistrerSignature(
+      ouvert.dossier,
+      ouvert.index,
+      signature(),
+      reponses(),
+      { ...ouvert.dossier.emprunteurs[0]!.emprunteur },
+    );
+    expect(dossier.emprunteurs[0]!.reponses?.identiteCorrigee).toBeUndefined();
+  });
+
   it('est complet dès la première signature quand il n’y a qu’un emprunteur', async () => {
     const service = await chargerService();
     const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
