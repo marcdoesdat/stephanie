@@ -861,3 +861,113 @@ export function resumerContrat(donnees: DonneesContrat): Array<[string, string]>
 
   return paires;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Correction d'un contrat en cours                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Champs dont la valeur peut figurer dans l'avis de correction. Les autres — coordonnées
+ * personnelles, tableau d'identité — ne sont nommés que par leur libellé : l'avis part par
+ * courriel à chaque emprunteur, et le numéro d'une pièce d'identité n'a rien à y faire.
+ */
+const CHAMPS_CORRIGIBLES: ReadonlyArray<readonly [keyof DonneesContrat, string, boolean]> = [
+  ['retributionAutreEntite', 'Rétribution d’une autre entité', true],
+  ['partageRetribution', 'Partage de la rétribution', true],
+  ['autreCabinet', 'Autre cabinet', true],
+  ['nbPreteursCabinet', 'Nombre de prêteurs du cabinet', true],
+  ['nbPreteursCourtier', 'Nombre de prêteurs du courtier', true],
+  ['preteurMajoritaire', 'Prêteur majoritaire', true],
+  ['autresLogiciels', 'Autres logiciels', true],
+  ['collaborateur', 'Collaborateur (assurances)', true],
+  ['adresseProjet', 'Adresse du projet', true],
+  ['autresPrecisions', 'Autres précisions', true],
+  ['montantPret', 'Montant du prêt', true],
+  ['assuranceHypothecaire', 'Assurance hypothécaire', true],
+  ['totalPret', 'Total du prêt', true],
+  ['tauxInteret', 'Taux d’intérêt', true],
+  ['amortissementAns', 'Amortissement (ans)', true],
+  ['amortissementMois', 'Amortissement (mois)', true],
+  ['termeAns', 'Terme (ans)', true],
+  ['termeMois', 'Terme (mois)', true],
+  ['versement', 'Versement', true],
+  ['rang', 'Rang', true],
+  ['autresExigences', 'Autres exigences', true],
+  ['fraisEtude', 'Frais d’étude de dossier', true],
+  ['honorairesMontant', 'Honoraires', true],
+  ['honorairesPourcentage', 'Honoraires (%)', true],
+  ['raisonDoubleRemuneration', 'Raison de la double rémunération', true],
+  ['resiliationMontant', 'Frais de résiliation', true],
+  ['resiliationPourcentage', 'Frais de résiliation (%)', true],
+  ['consentementsValidesJusquau', 'Consentements valides jusqu’au', true],
+  ['dateVerification', 'Date de la vérification d’identité', false],
+];
+
+/**
+ * Ce que la courtière a changé à un contrat en cours, une ligne lisible par changement —
+ * pour l'avis aux emprunteurs, l'écran de signature et la trace de preuve. Liste vide : rien
+ * n'a changé, et il n'y a donc aucune raison d'effacer les signatures recueillies.
+ */
+export function decrireCorrectionsContrat(avant: DonneesContrat, apres: DonneesContrat): string[] {
+  const ou = (valeur: string): string => (valeur === '' ? '—' : valeur);
+  const changements: string[] = [];
+
+  const total = Math.max(avant.emprunteurs.length, apres.emprunteurs.length);
+  for (let i = 0; i < total; i += 1) {
+    const a = avant.emprunteurs[i];
+    const b = apres.emprunteurs[i];
+    const etiquette = `Emprunteur ${i + 1}`;
+    if (!a && b) {
+      changements.push(`${etiquette} ajouté : ${nomComplet(b)}`);
+      continue;
+    }
+    if (a && !b) {
+      changements.push(`${etiquette} retiré : ${nomComplet(a)}`);
+      continue;
+    }
+    if (!a || !b) continue;
+    if (nomComplet(a) !== nomComplet(b)) {
+      changements.push(`${etiquette} — nom : « ${nomComplet(a)} » → « ${nomComplet(b)} »`);
+    }
+    if (a.courriel !== b.courriel) {
+      changements.push(`${etiquette} — courriel : « ${a.courriel} » → « ${b.courriel} »`);
+    }
+    if (a.telephone !== b.telephone) changements.push(`${etiquette} — téléphone`);
+    if (a.adresse !== b.adresse) changements.push(`${etiquette} — adresse`);
+  }
+
+  for (const [cle, libelle, montrerValeur] of CHAMPS_CORRIGIBLES) {
+    const a = avant[cle] as string;
+    const b = apres[cle] as string;
+    if (a === b) continue;
+    changements.push(montrerValeur ? `${libelle} : « ${ou(a)} » → « ${ou(b)} »` : libelle);
+  }
+
+  const casesAvant = libelleCases(avant.typesFinancement, TYPES_FINANCEMENT);
+  const casesApres = libelleCases(apres.typesFinancement, TYPES_FINANCEMENT);
+  if (casesAvant !== casesApres) changements.push(`Type de financement : « ${casesAvant} » → « ${casesApres} »`);
+
+  if (avant.typeTaux !== apres.typeTaux) {
+    const libelle = (t: DonneesContrat['typeTaux']): string => (t === 'fixe' ? 'Fixe' : t === 'variable' ? 'Variable' : '—');
+    changements.push(`Type de taux : « ${libelle(avant.typeTaux)} » → « ${libelle(apres.typeTaux)} »`);
+  }
+
+  if (avant.doubleRemuneration !== apres.doubleRemuneration) {
+    const libelle = (v: DonneesContrat['doubleRemuneration']): string =>
+      v ? libelleCases([v], DOUBLE_REMUNERATION) : '—';
+    changements.push(
+      `Divulgation additionnelle : « ${libelle(avant.doubleRemuneration)} » → « ${libelle(apres.doubleRemuneration)} »`,
+    );
+  }
+
+  const identiteChangee = LIGNES_IDENTITE.some((ligne) => {
+    const a = avant.identite[ligne.id] ?? [];
+    const b = apres.identite[ligne.id] ?? [];
+    const n = Math.max(a.length, b.length);
+    for (let i = 0; i < n; i += 1) if ((a[i] ?? '') !== (b[i] ?? '')) return true;
+    return false;
+  });
+  if (identiteChangee) changements.push('Tableau de vérification de l’identité');
+
+  return changements;
+}

@@ -91,6 +91,21 @@ const RANGS = [0, 1, 2];
               </div>
             </details>
 
+            {/* ---------------- Correction d'un contrat en cours ---------------- */}
+
+            {/* Montré quand « Corriger le contrat » a rempli le formulaire avec un dossier déjà
+                parti : sans lui, rien ne distinguerait une correction d'un nouveau contrat —
+                et c'est précisément le moment où il faut savoir quelles signatures tombent. */}
+            <div class="ct-correction" data-correction hidden>
+              <p class="ct-correction-titre">
+                Correction du contrat de <strong data-correction-noms></strong>
+              </p>
+              <p class="ct-correction-texte" data-correction-texte></p>
+              <button type="button" class="ct-lien" data-correction-abandon>
+                Abandonner la correction
+              </button>
+            </div>
+
             {/* ---------------- Ma signature ---------------- */}
 
             <div class="ct-signature-barre" data-etat={signatureEnregistree ? 'ok' : 'manquante'}>
@@ -561,7 +576,7 @@ const RANGS = [0, 1, 2];
                 votre signature ne couvre rien que vous n’ayez vu.
               </p>
 
-              <p class="cform-label ct-espace">Comment signent-ils ?</p>
+              <p class="cform-label ct-espace" data-mode-titre>Comment signent-ils ?</p>
               <label class="ct-case ct-case-large">
                 <input type="radio" name="ct-mode" value="distance" checked />
                 <span>
@@ -1323,6 +1338,29 @@ const RANGS = [0, 1, 2];
     font-size: 0.82rem;
     color: #8f2f28;
   }
+
+  /* ---------- Correction d'un contrat en cours ---------- */
+
+  .ct-correction {
+    margin: 0 0 1.25rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid #e6c9a8;
+    border-left: 4px solid var(--clay, #a85f38);
+    border-radius: 10px;
+    background: #fbf3ea;
+  }
+
+  .ct-correction-titre {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+  }
+
+  .ct-correction-texte {
+    margin: 0 0 0.5rem;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
 </style>
 
 <script>
@@ -1527,6 +1565,7 @@ const RANGS = [0, 1, 2];
       readonly mode: string;
       readonly emprunteurs: Array<{ nom: string; courriel: string; signeLe: string | null }>;
       readonly courant: { nom: string; courriel: string } | null;
+      readonly corrigeLe: string | null;
     }
 
     const suivi = document.getElementById('ct-suivi') as HTMLDetailsElement | null;
@@ -1594,6 +1633,15 @@ const RANGS = [0, 1, 2];
       debut.textContent = `${depart} ${relatif(dossier.creeLe)} · ${progression}`;
       debut.title = `Créé le ${dateComplete(dossier.creeLe)}`;
       meta.append(debut);
+
+      // Une correction relance la séquence : sans cette mention, « 0 signature sur 2 » sur un
+      // dossier envoyé il y a une semaine aurait l'air d'un dossier qui dort.
+      if (dossier.corrigeLe) {
+        const corrige = document.createElement('span');
+        corrige.textContent = ` · corrigé ${relatif(dossier.corrigeLe)}`;
+        corrige.title = `Corrigé le ${dateComplete(dossier.corrigeLe)}`;
+        meta.append(corrige);
+      }
 
       if (dossier.statut !== 'gele' && dossier.statut !== 'annule') {
         const echeance = document.createElement('span');
@@ -1676,6 +1724,7 @@ const RANGS = [0, 1, 2];
         finaliser.className = 'btn btn-primary ct-bouton-petit';
         finaliser.textContent = 'Relire et signer →';
         actions.append(finaliser);
+        actions.append(boutonCorriger(dossier));
         actions.append(boutonAnnuler(dossier));
       } else if (dossier.statut === 'en_attente' && dossier.courant) {
         const relancer = document.createElement('button');
@@ -1697,6 +1746,7 @@ const RANGS = [0, 1, 2];
         corriger.addEventListener('click', () => corrigerCourriel(dossier, corriger, actions));
         actions.append(corriger);
 
+        actions.append(boutonCorriger(dossier));
         actions.append(boutonAnnuler(dossier));
       } else if (dossier.refusePar) {
         const note = document.createElement('span');
@@ -1711,6 +1761,23 @@ const RANGS = [0, 1, 2];
       }
 
       return actions;
+    }
+
+    /**
+     * « Corriger le contrat » — remplit le formulaire avec le dossier, pour une coquille ou un
+     * montant. Les signatures déjà recueillies tomberont à l'enregistrement : le titre le dit
+     * dès le survol, et le bandeau de correction le redit avant qu'elle n'enregistre.
+     */
+    function boutonCorriger(dossier: ResumeDossier): HTMLButtonElement {
+      const corriger = document.createElement('button');
+      corriger.type = 'button';
+      corriger.className = 'ct-lien';
+      corriger.textContent = 'Corriger le contrat';
+      corriger.title = dossier.emprunteurs.some((e) => e.signeLe)
+        ? 'Sans rien ressaisir. Les signatures déjà recueillies seront écartées : chacun signera le texte corrigé.'
+        : 'Sans rien ressaisir. Le lien déjà envoyé sera remplacé.';
+      corriger.addEventListener('click', () => ouvrirCorrection(dossier, corriger));
+      return corriger;
     }
 
     /** « Annuler le contrat » — tuera tous les liens et préviendra les emprunteurs. */
@@ -2005,16 +2072,59 @@ const RANGS = [0, 1, 2];
 
     /* ---------------- Collecte ---------------- */
 
+    /**
+     * Les champs libres du contrat, par identifiant de champ. Une seule liste sert à la
+     * collecte et au préremplissage d'une correction : un champ ajouté à l'une seulement
+     * serait perdu à la première correction, sans que rien ne le signale.
+     */
+    const CHAMPS_TEXTE: ReadonlyArray<readonly [string, string]> = [
+      ['ct-retribution-entite', 'retributionAutreEntite'],
+      ['ct-partage-retribution', 'partageRetribution'],
+      ['ct-autre-cabinet', 'autreCabinet'],
+      ['ct-nb-cabinet', 'nbPreteursCabinet'],
+      ['ct-nb-courtier', 'nbPreteursCourtier'],
+      ['ct-preteur-majoritaire', 'preteurMajoritaire'],
+      ['ct-autres-logiciels', 'autresLogiciels'],
+      ['ct-collaborateur', 'collaborateur'],
+      ['ct-adresse-projet', 'adresseProjet'],
+      ['ct-precisions', 'autresPrecisions'],
+      ['ct-montant', 'montantPret'],
+      ['ct-assurance', 'assuranceHypothecaire'],
+      ['ct-total', 'totalPret'],
+      ['ct-taux', 'tauxInteret'],
+      ['ct-type-taux', 'typeTaux'],
+      ['ct-amort-ans', 'amortissementAns'],
+      ['ct-amort-mois', 'amortissementMois'],
+      ['ct-terme-ans', 'termeAns'],
+      ['ct-terme-mois', 'termeMois'],
+      ['ct-versement', 'versement'],
+      ['ct-rang', 'rang'],
+      ['ct-exigences', 'autresExigences'],
+      ['ct-frais-etude', 'fraisEtude'],
+      ['ct-honoraires', 'honorairesMontant'],
+      ['ct-honoraires-pct', 'honorairesPourcentage'],
+      ['ct-double-remuneration', 'doubleRemuneration'],
+      ['ct-raison-double', 'raisonDoubleRemuneration'],
+      ['ct-resiliation', 'resiliationMontant'],
+      ['ct-resiliation-pct', 'resiliationPourcentage'],
+      ['ct-validite', 'consentementsValidesJusquau'],
+      ['ct-date-verification', 'dateVerification'],
+    ];
+
+    const EMPRUNTEUR_CHAMPS: ReadonlyArray<readonly [string, string]> = [
+      ['prenom', 'prenom'],
+      ['nom', 'nom'],
+      ['tel', 'telephone'],
+      ['adresse', 'adresse'],
+      ['courriel', 'courriel'],
+    ];
+
     function collecter(): Record<string, unknown> {
       const emprunteurs = visibles().map((bloc) => {
         const rang = bloc.dataset.emprunteur;
-        return {
-          prenom: valeur(`ct-prenom-${rang}`),
-          nom: valeur(`ct-nom-${rang}`),
-          telephone: valeur(`ct-tel-${rang}`),
-          adresse: valeur(`ct-adresse-${rang}`),
-          courriel: valeur(`ct-courriel-${rang}`),
-        };
+        const emprunteur: Record<string, string> = {};
+        for (const [suffixe, cle] of EMPRUNTEUR_CHAMPS) emprunteur[cle] = valeur(`ct-${suffixe}-${rang}`);
+        return emprunteur;
       });
 
       const typesFinancement = [...formulaire.querySelectorAll<HTMLInputElement>('[data-type-financement]')]
@@ -2033,43 +2143,123 @@ const RANGS = [0, 1, 2];
         identite[cle] = Array.from(identite[cle] ?? [], (v) => v ?? '');
       }
 
-      return {
-        emprunteurs,
-        retributionAutreEntite: valeur('ct-retribution-entite'),
-        partageRetribution: valeur('ct-partage-retribution'),
-        autreCabinet: valeur('ct-autre-cabinet'),
-        nbPreteursCabinet: valeur('ct-nb-cabinet'),
-        nbPreteursCourtier: valeur('ct-nb-courtier'),
-        preteurMajoritaire: valeur('ct-preteur-majoritaire'),
-        autresLogiciels: valeur('ct-autres-logiciels'),
-        collaborateur: valeur('ct-collaborateur'),
-        adresseProjet: valeur('ct-adresse-projet'),
-        typesFinancement,
-        autresPrecisions: valeur('ct-precisions'),
-        montantPret: valeur('ct-montant'),
-        assuranceHypothecaire: valeur('ct-assurance'),
-        totalPret: valeur('ct-total'),
-        tauxInteret: valeur('ct-taux'),
-        typeTaux: valeur('ct-type-taux'),
-        amortissementAns: valeur('ct-amort-ans'),
-        amortissementMois: valeur('ct-amort-mois'),
-        termeAns: valeur('ct-terme-ans'),
-        termeMois: valeur('ct-terme-mois'),
-        versement: valeur('ct-versement'),
-        rang: valeur('ct-rang'),
-        autresExigences: valeur('ct-exigences'),
-        fraisEtude: valeur('ct-frais-etude'),
-        honorairesMontant: valeur('ct-honoraires'),
-        honorairesPourcentage: valeur('ct-honoraires-pct'),
-        doubleRemuneration: valeur('ct-double-remuneration'),
-        raisonDoubleRemuneration: valeur('ct-raison-double'),
-        resiliationMontant: valeur('ct-resiliation'),
-        resiliationPourcentage: valeur('ct-resiliation-pct'),
-        consentementsValidesJusquau: valeur('ct-validite'),
-        identite,
-        dateVerification: valeur('ct-date-verification'),
-      };
+      const donnees: Record<string, unknown> = { emprunteurs, typesFinancement, identite };
+      for (const [id, cle] of CHAMPS_TEXTE) donnees[cle] = valeur(id);
+      return donnees;
     }
+
+    /** L'inverse de `collecter` : pose les données d'un dossier dans le formulaire. */
+    function remplir(donnees: Record<string, unknown>): void {
+      const emprunteurs = (Array.isArray(donnees.emprunteurs) ? donnees.emprunteurs : []) as Array<
+        Record<string, unknown>
+      >;
+      for (const [rang, bloc] of blocs().entries()) {
+        const emprunteur = emprunteurs[rang];
+        bloc.hidden = !emprunteur && rang > 0;
+        for (const [suffixe, cle] of EMPRUNTEUR_CHAMPS) {
+          const champ = document.getElementById(`ct-${suffixe}-${rang}`) as HTMLInputElement | null;
+          if (champ) champ.value = emprunteur ? String(emprunteur[cle] ?? '') : '';
+        }
+      }
+
+      for (const [id, cle] of CHAMPS_TEXTE) {
+        const champ = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+        if (champ) champ.value = donnees[cle] == null ? '' : String(donnees[cle]);
+      }
+
+      const types = Array.isArray(donnees.typesFinancement) ? (donnees.typesFinancement as string[]) : [];
+      for (const caseType of formulaire.querySelectorAll<HTMLInputElement>('[data-type-financement]')) {
+        caseType.checked = types.includes(caseType.dataset.typeFinancement ?? '');
+      }
+
+      const identite = (donnees.identite ?? {}) as Record<string, string[]>;
+      for (const champ of formulaire.querySelectorAll<HTMLInputElement>('[data-identite]')) {
+        const colonne = Number(champ.dataset.colonne ?? '0');
+        champ.value = identite[champ.dataset.identite ?? '']?.[colonne] ?? '';
+      }
+
+      rafraichir();
+    }
+
+    /* ---------------- Correction d'un contrat en cours ---------------- */
+
+    /** Le dossier en cours de correction ; `null` quand le formulaire prépare un nouveau contrat. */
+    let correction: { id: string; mode: string } | null = null;
+    const bandeauCorrection = formulaire.querySelector<HTMLElement>('[data-correction]');
+    const titrePage = formulaire.querySelector<HTMLElement>('.ct-titre');
+
+    async function ouvrirCorrection(dossier: ResumeDossier, declencheur: HTMLButtonElement): Promise<void> {
+      declencheur.disabled = true;
+      const libelle = declencheur.textContent;
+      declencheur.textContent = 'Chargement…';
+
+      try {
+        const reponse = await fetch(`/api/contrat-corriger?d=${encodeURIComponent(dossier.id)}`);
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+        if (!reponse.ok) {
+          const echec = document.createElement('span');
+          echec.className = 'ct-note-echec';
+          echec.textContent = String(data.error ?? 'Le contrat n’a pas pu être chargé.');
+          declencheur.after(echec);
+          return;
+        }
+
+        remplir((data.donnees ?? {}) as Record<string, unknown>);
+        const mode = data.mode === 'presence' ? 'presence' : 'distance';
+        correction = { id: dossier.id, mode };
+
+        // Le mode suit le dossier : changer d'acheminement en cours de route n'est pas une
+        // correction, c'est un autre contrat.
+        for (const radio of formulaire.querySelectorAll<HTMLInputElement>('input[name="ct-mode"]')) {
+          radio.checked = radio.value === mode;
+          radio.disabled = true;
+        }
+
+        const signes = Array.isArray(data.signes) ? (data.signes as string[]) : [];
+        const noms = formulaire.querySelector<HTMLElement>('[data-correction-noms]');
+        const texte = formulaire.querySelector<HTMLElement>('[data-correction-texte]');
+        if (noms) noms.textContent = dossier.emprunteurs.map((e) => e.nom).join(', ');
+        if (texte) {
+          texte.textContent =
+            (signes.length > 0
+              ? `${signes.join(', ')} ${signes.length > 1 ? 'ont' : 'a'} déjà signé l’ancien texte : en enregistrant, ${
+                  signes.length > 1 ? 'ces signatures seront écartées' : 'cette signature sera écartée'
+                } et il faudra signer de nouveau le contrat corrigé. `
+              : '') +
+            (mode === 'presence'
+              ? 'Un nouveau lien s’affichera ici pour le premier signataire ; l’ancien cessera de fonctionner.'
+              : 'Le premier signataire recevra un nouveau lien avec la liste de ce qui a changé ; les liens déjà envoyés cesseront de fonctionner.');
+        }
+        if (bandeauCorrection) bandeauCorrection.hidden = false;
+        if (titrePage) titrePage.textContent = 'Corriger le contrat';
+        // « Préremplies avec vos valeurs habituelles » cesse d'être vrai : elles portent
+        // désormais celles du dossier.
+        const intro = formulaire.querySelector<HTMLElement>('.ct-entete .ct-texte');
+        if (intro) intro.hidden = true;
+        if (erreur) erreur.hidden = true;
+        if (succes) succes.hidden = true;
+        if (bouton) {
+          bouton.disabled = false;
+          bouton.textContent = 'Enregistrer la correction';
+        }
+        if (suivi) suivi.open = false;
+        bandeauCorrection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {
+        const echec = document.createElement('span');
+        echec.className = 'ct-note-echec';
+        echec.textContent = 'Connexion impossible. Réessayez.';
+        declencheur.after(echec);
+      } finally {
+        declencheur.disabled = false;
+        declencheur.textContent = libelle;
+      }
+    }
+
+    // Abandonner ramène au formulaire neuf, préremplis par défaut compris : le plus sûr est
+    // de laisser le serveur le rendre de nouveau plutôt que de deviner ce qu'il contenait.
+    formulaire.querySelector('[data-correction-abandon]')?.addEventListener('click', () => {
+      window.location.assign('/contrat');
+    });
 
     const erreur = formulaire.querySelector<HTMLElement>('[data-erreur]');
     const succes = formulaire.querySelector<HTMLElement>('[data-succes]');
@@ -2142,6 +2332,78 @@ const RANGS = [0, 1, 2];
 
     /* ---------------- Envoi ---------------- */
 
+    async function enregistrerCorrection(
+      enCours: { id: string; mode: string },
+      donnees: Record<string, unknown>,
+    ): Promise<void> {
+      if (bouton) {
+        bouton.disabled = true;
+        bouton.textContent = 'Enregistrement…';
+      }
+      const retablir = (): void => {
+        if (bouton) {
+          bouton.disabled = false;
+          bouton.textContent = 'Enregistrer la correction';
+        }
+      };
+
+      try {
+        const reponse = await fetch('/api/contrat-corriger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ d: enCours.id, donnees }),
+        });
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+
+        if (!reponse.ok) {
+          montrerErreur(
+            data.code === 'acces'
+              ? 'Votre session a expiré. Rechargez la page pour vous reconnecter.'
+              : String(data.error ?? 'La correction a échoué. Réessayez.'),
+          );
+          // Une invitation manquée laisse le dossier corrigé : le suivi doit le montrer.
+          if (data.code === 'invitation') {
+            correction = null;
+            void chargerSuivi();
+            if (bouton) bouton.textContent = 'Correction enregistrée';
+            return;
+          }
+          retablir();
+          return;
+        }
+
+        correction = null;
+        const ordre = (data.ordre ?? []) as Array<{ nom: string; courriel: string }>;
+        const ecartees = (data.signaturesEcartees ?? []) as string[];
+        const changements = (data.changements ?? []) as string[];
+        if (succes) {
+          succes.innerHTML = '';
+          const resume = `Contrat corrigé (${changements.length} changement${changements.length > 1 ? 's' : ''}).${
+            ecartees.length > 0 ? ` Signature${ecartees.length > 1 ? 's' : ''} écartée${ecartees.length > 1 ? 's' : ''} : ${ecartees.join(', ')}.` : ''
+          } `;
+          if (data.mode === 'presence' && typeof data.lien === 'string') {
+            succes.append(resume, `Ordre de signature : ${ordre.map((e, i) => `${i + 1}. ${e.nom}`).join(' · ')}. `);
+            ajouterLienPresence(succes, data.lien, ordre[0]?.nom ?? 'le premier emprunteur');
+          } else {
+            const premier = ordre[0];
+            succes.append(
+              `${resume}Nouveau lien envoyé à ${premier?.nom ?? 'l’emprunteur'} (${premier?.courriel ?? ''}) ; les anciens ne fonctionnent plus.`,
+            );
+          }
+          succes.hidden = false;
+          succes.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (bandeauCorrection) bandeauCorrection.hidden = true;
+        if (bouton) bouton.textContent = 'Correction enregistrée';
+
+        suiviCharge = true;
+        void chargerSuivi();
+      } catch {
+        montrerErreur('Connexion impossible. Vérifiez votre réseau et réessayez.');
+        retablir();
+      }
+    }
+
     formulaire.addEventListener('submit', async (evenement) => {
       evenement.preventDefault();
       if (erreur) erreur.hidden = true;
@@ -2152,6 +2414,11 @@ const RANGS = [0, 1, 2];
 
       const mode =
         formulaire.querySelector<HTMLInputElement>('input[name="ct-mode"]:checked')?.value ?? 'distance';
+
+      if (correction) {
+        await enregistrerCorrection(correction, donnees);
+        return;
+      }
 
       if (!signatureEnregistree) {
         montrerErreur('Enregistrez d’abord votre signature, en haut de la page.');

@@ -206,6 +206,16 @@ export const POST: APIRoute = async ({ request }) => {
         trace,
       }),
       produitLe: maintenant,
+      evenements: (dossier.corrections ?? []).map((correction) => ({
+        le: correction.le,
+        libelle: `Contrat corrigé par la courtière (${correction.changements.length} changement${
+          correction.changements.length > 1 ? 's' : ''
+        })${
+          correction.signaturesEcartees.length > 0
+            ? ` — signatures écartées : ${correction.signaturesEcartees.join(', ')}`
+            : ''
+        }`,
+      })),
     });
     if (resendEnv) {
       await envoyerDossierComplet(resendEnv, {

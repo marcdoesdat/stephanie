@@ -57,6 +57,12 @@ export interface EntreeCertificat {
   readonly ouvertLe: string | null;
   readonly signataires: readonly SignataireCertificat[];
   readonly produitLe: Date;
+  /**
+   * Ce qui s'est passé d'autre dans le dossier — une correction du contrat par la courtière,
+   * qui a écarté des signatures. Sans cette ligne, le certificat montrerait des signatures
+   * datées d'après une première ronde dont rien ne dirait qu'elle a eu lieu.
+   */
+  readonly evenements?: readonly EvenementCertificat[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -234,6 +240,7 @@ export function chronologie(entree: EntreeCertificat): EvenementCertificat[] {
       libelle: `Signé par ${s.nom} (${s.role.toLowerCase()}) — ${s.voie === 'presence' ? 'en présence' : 'à distance'}, IP ${s.ip}`,
     });
   }
+  for (const evenement of entree.evenements ?? []) evenements.push(evenement);
   evenements.push({ le: entree.produitLe.toISOString(), libelle: 'Document signé produit et scellé par son empreinte' });
   // Tri stable : deux signatures à la même milliseconde gardent l'ordre du document.
   return evenements

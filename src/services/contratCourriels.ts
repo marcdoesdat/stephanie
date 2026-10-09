@@ -212,6 +212,15 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
   await envoyerEnSerie([interne, ...accuses]);
 }
 
+/** Ce qui a changé, en liste — dans les courriels qui suivent une correction. */
+function blocCorrection(changements: readonly string[]): string {
+  if (changements.length === 0) return '';
+  return `<p style="margin:0 0 6px;font-size:14px;">Ce qui a changé :</p>
+           <ul style="margin:0 0 14px;padding-left:20px;font-size:14px;">
+             ${changements.map((c) => `<li style="margin:0 0 4px;">${escapeHtml(c)}</li>`).join('')}
+           </ul>`;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Invitations à signer                                               */
 /* ------------------------------------------------------------------ */
@@ -231,12 +240,16 @@ export interface InvitationCourriel {
  *
  * @param rang  Position du signataire dans la file (1 = premier), pour le lui dire.
  * @param total Nombre d'emprunteurs au contrat.
+ * @param correction Ce que la courtière vient de corriger, quand l'invitation suit une
+ *   correction : le signataire qui a déjà lu (ou signé) l'ancien texte doit savoir pourquoi
+ *   on lui redemande de signer, et quoi relire.
  */
 export async function envoyerInvitation(
   env: ResendEnv,
   invitation: InvitationCourriel,
   rang: number,
   total: number,
+  correction?: { readonly changements: readonly string[]; readonly aSigne: boolean },
 ): Promise<void> {
   const config = loadSiteConfig();
   const suite =
@@ -246,21 +259,39 @@ export async function envoyerInvitation(
         : `Les signataires précédents ont signé — le contrat porte déjà leur signature.`
       : '';
 
-  await envoyerEnSerie([
-    () =>
-      sendEmail(env.apiKey, {
-        from: env.fromEmail,
-        to: invitation.courriel,
-        subject: 'Votre contrat de courtage hypothécaire à signer',
-        reply_to: config.courriel,
-        html: wrapEmailHtml(
-          `<h1 style="font-size:19px;margin:0 0 6px;">Votre contrat est prêt à signer</h1>
+  const entete = correction
+    ? `<h1 style="font-size:19px;margin:0 0 6px;">Votre contrat a été corrigé</h1>
+           <p style="margin:0 0 14px;font-size:14px;">Bonjour ${escapeHtml(invitation.nom)},</p>
+           <p style="margin:0 0 14px;font-size:14px;">
+             ${escapeHtml(config.nom)} a corrigé votre contrat de courtage hypothécaire.
+             ${
+               correction.aSigne
+                 ? 'Votre signature précédente portait sur l’ancien texte : elle a été écartée, et il faut signer le contrat corrigé.'
+                 : 'Le lien reçu précédemment ne fonctionne plus ; celui-ci le remplace.'
+             }
+           </p>
+           ${blocCorrection(correction.changements)}`
+    : `<h1 style="font-size:19px;margin:0 0 6px;">Votre contrat est prêt à signer</h1>
            <p style="margin:0 0 14px;font-size:14px;">Bonjour ${escapeHtml(invitation.nom)},</p>
            <p style="margin:0 0 14px;font-size:14px;">
              ${escapeHtml(config.nom)} a préparé votre contrat de courtage hypothécaire.
              Le lien ci-dessous vous permet de le relire en entier, de répondre à deux
              questions qui vous concernent, puis de le signer.
-           </p>
+           </p>`;
+
+  await envoyerEnSerie([
+    () =>
+      sendEmail(env.apiKey, {
+        from: env.fromEmail,
+        to: invitation.courriel,
+        subject: correction
+          ? correction.aSigne
+            ? 'Votre contrat de courtage a été corrigé — à signer de nouveau'
+            : 'Votre contrat de courtage a été corrigé — nouveau lien de signature'
+          : 'Votre contrat de courtage hypothécaire à signer',
+        reply_to: config.courriel,
+        html: wrapEmailHtml(
+          `${entete}
            ${suite ? `<p style="margin:0 0 14px;font-size:14px;">${escapeHtml(suite)}</p>` : ''}
            <p style="margin:22px 0;">
              <a href="${escapeHtml(invitation.lien)}"
@@ -292,13 +323,26 @@ export async function envoyerAvisEnAttente(
   donnees: DonneesContrat,
   ordre: ReadonlyArray<{ nom: string; courriel: string }>,
   mode: 'distance' | 'presence' = 'distance',
+  correction?: { readonly changements: readonly string[]; readonly signaturesEcartees: readonly string[] },
 ): Promise<void> {
   await sendEmail(env.apiKey, {
     from: env.fromEmail,
     to: env.notifyEmail,
-    subject: `Contrat de courtage en signature — ${ordre.length} signataire${ordre.length > 1 ? 's' : ''}`,
+    subject: correction
+      ? `Contrat de courtage corrigé — de nouveau en signature`
+      : `Contrat de courtage en signature — ${ordre.length} signataire${ordre.length > 1 ? 's' : ''}`,
     html: wrapEmailHtml(
-      `<h1 style="font-size:19px;margin:0 0 6px;">Contrat envoyé en signature</h1>
+      `<h1 style="font-size:19px;margin:0 0 6px;">${correction ? 'Contrat corrigé, de nouveau en signature' : 'Contrat envoyé en signature'}</h1>
+       ${
+         correction
+           ? `${blocCorrection(correction.changements)}
+       <p style="margin:0 0 14px;font-size:14px;">${
+         correction.signaturesEcartees.length > 0
+           ? `Signatures écartées (portaient sur l’ancien texte) : ${escapeHtml(correction.signaturesEcartees.join(', '))}.`
+           : 'Aucune signature n’avait encore été recueillie.'
+       }</p>`
+           : ''
+       }
        <p style="margin:0 0 18px;color:#6b6257;font-size:14px;">
          ${
            mode === 'presence'
@@ -425,6 +469,51 @@ export async function envoyerAnnulation(
                  : 'Le lien de signature que vous avez reçu ne fonctionne plus, et aucun contrat ne sera produit à partir de ce dossier.'
              }
            </p>
+           <p style="margin:0;font-size:14px;">
+             Si vous avez une question, écrivez à
+             <a href="mailto:${escapeHtml(config.courriel)}" style="color:#a85f38;">${escapeHtml(config.courriel)}</a>
+             ou appelez le ${escapeHtml(config.telephone)}.
+           </p>`,
+        ),
+      });
+    }),
+  );
+}
+
+/**
+ * Prévient les emprunteurs déjà atteints — sauf le premier signataire, qui reçoit sa
+ * nouvelle invitation — que le contrat a été corrigé. Celui qui a signé doit apprendre que
+ * sa signature a été écartée et qu'un nouveau lien lui viendra à son tour ; celui qui
+ * attendait avec un lien en main, que ce lien ne fonctionne plus. Sans ce courriel, l'un
+ * croirait avoir fini, l'autre cliquerait sur un lien mort.
+ */
+export async function envoyerAvisCorrection(
+  env: ResendEnv,
+  destinataires: ReadonlyArray<{ nom: string; courriel: string; aSigne: boolean }>,
+  changements: readonly string[],
+): Promise<void> {
+  const config = loadSiteConfig();
+
+  await envoyerEnSerie(
+    destinataires.map((destinataire) => async () => {
+      await sendEmail(env.apiKey, {
+        from: env.fromEmail,
+        to: destinataire.courriel,
+        subject: 'Votre contrat de courtage a été corrigé',
+        reply_to: config.courriel,
+        html: wrapEmailHtml(
+          `<h1 style="font-size:19px;margin:0 0 6px;">Votre contrat a été corrigé</h1>
+           <p style="margin:0 0 14px;font-size:14px;">
+             Bonjour ${escapeHtml(destinataire.nom)}, ${escapeHtml(config.nom)} a corrigé le
+             contrat de courtage hypothécaire. ${
+               destinataire.aSigne
+                 ? 'Votre signature portait sur l’ancien texte : elle a été écartée.'
+                 : 'Le lien de signature que vous avez reçu ne fonctionne plus.'
+             }
+             Vous recevrez un nouveau lien pour relire et signer le contrat corrigé dès que
+             votre tour viendra.
+           </p>
+           ${blocCorrection(changements)}
            <p style="margin:0;font-size:14px;">
              Si vous avez une question, écrivez à
              <a href="mailto:${escapeHtml(config.courriel)}" style="color:#a85f38;">${escapeHtml(config.courriel)}</a>
