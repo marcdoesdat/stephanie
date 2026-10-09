@@ -508,6 +508,11 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   mémorisée après relecture — et le certificat n'en dit pas plus que ce qui s'est passé. Les
   déclarations de chaque emprunteur (PPV, transfert) y figurent sous son nom.
 - Le dossier Blob est supprimé dès le PDF produit — les tracés ne restent pas au repos.
+- **Les cinq cases de date de `/contrat` sont des calendriers, le PDF garde la date en
+  lettres.** `src/utils/dateContrat.ts` convertit dans le navigateur (`2027-04-30` ↔
+  « 30 avril 2027 ») : le serveur reçoit et estampe le même texte qu'avant. Calcul sur les
+  chiffres, jamais `new Date('2027-04-30')`, qui serait la veille au Québec. Un ancien texte
+  qu'on ne sait pas relire n'est pas effacé : il est conservé et affiché sous la case.
 - `/contrat` et `/api/contrat-creer` appliquent **le même** verdict d'accès : une page
   protégée devant une API ouverte ne protège rien.
 - Sans `CONTRAT_MOT_DE_PASSE` en production, la page se **ferme** (fail closed). En dev,
@@ -856,6 +861,8 @@ npx vitest              # mode watch
   document, chaque signataire et sa voie, un tracé par signataire ; chronologie ordonnée sans
   ouverture inventée ; tracé illisible, navigateur interminable et caractères hors WinAnsi
   tolérés ; `produireCertificat` rend `null` au lieu de lever
+- `src/utils/dateContrat.test.ts` — aller-retour calendrier ↔ date en lettres, « 1er »,
+  anciens formats relus, rien de deviné
 - `src/services/contratPdfService.test.ts` — estampage : 4 pages au bon format, caractères
   hors WinAnsi, champs trop longs tronqués plutôt que débordants
 - `src/services/contratDossierService.test.ts` — jetons à usage unique, expiration, gel sur refus,

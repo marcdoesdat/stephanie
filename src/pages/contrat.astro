@@ -20,6 +20,13 @@ import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/a
 import { lireReglages } from '../services/reglagesCourtiere';
 import { LIGNES_IDENTITE, TYPES_FINANCEMENT } from '../utils/contratCourtage';
 
+/** Les lignes du tableau d'identité qui sont des dates : elles prennent un calendrier. */
+const LIGNES_IDENTITE_DATES: ReadonlySet<string> = new Set([
+  'dossier_credit_date',
+  'document1_expiration',
+  'document2_expiration',
+]);
+
 const config = loadSiteConfig();
 const autorise = await requeteAutorisee(Astro.request);
 const configureManquante = !accesConfigure() && !accesLibreEnDev();
@@ -295,13 +302,10 @@ const RANGS = [0, 1, 2];
                 </div>
                 <div>
                   <label class="cform-label" for="ct-validite">Consentements valides jusqu’au</label>
-                  <input
-                    type="text"
-                    id="ct-validite"
-                    class="cform-input"
-                    maxlength="40"
-                    placeholder="31 décembre 2026"
-                  />
+                  <div class="ct-date-champ">
+                    <input type="date" id="ct-validite" class="cform-input" data-date-contrat />
+                    <span class="ct-date-ancienne" data-date-ancienne hidden />
+                  </div>
                 </div>
               </div>
 
@@ -532,23 +536,43 @@ const RANGS = [0, 1, 2];
                   {LIGNES_IDENTITE.map((ligne) => (
                     <div class="ct-identite-ligne">
                       <span class="ct-identite-label">{ligne.label}</span>
-                      {RANGS.map((rang) => (
-                        <input
-                          type="text"
-                          class="cform-input"
-                          maxlength="60"
-                          data-identite={ligne.id}
-                          data-colonne={rang}
-                          aria-label={`${ligne.label} — emprunteur ${rang + 1}`}
-                        />
-                      ))}
+                      {RANGS.map((rang) =>
+                        LIGNES_IDENTITE_DATES.has(ligne.id) ? (
+                          <div class="ct-date-champ">
+                            <input
+                              type="date"
+                              class="cform-input"
+                              data-date-contrat
+                              data-identite={ligne.id}
+                              data-colonne={rang}
+                              aria-label={`${ligne.label} — emprunteur ${rang + 1}`}
+                            />
+                            <span class="ct-date-ancienne" data-date-ancienne hidden />
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            class="cform-input"
+                            maxlength="60"
+                            data-identite={ligne.id}
+                            data-colonne={rang}
+                            aria-label={`${ligne.label} — emprunteur ${rang + 1}`}
+                          />
+                        ),
+                      )}
                     </div>
                   ))}
                 </div>
                 <label class="cform-label ct-espace" for="ct-date-verification">
                   Date de la vérification
                 </label>
-                <input type="text" id="ct-date-verification" class="cform-input" maxlength="40" />
+                <div class="ct-date-champ ct-date-avec-bouton">
+                  <input type="date" id="ct-date-verification" class="cform-input" data-date-contrat />
+                  <button type="button" class="ct-lien-bouton" data-date-aujourdhui="ct-date-verification">
+                    Aujourd’hui
+                  </button>
+                  <span class="ct-date-ancienne" data-date-ancienne hidden />
+                </div>
               </div>
             </details>
 
@@ -910,6 +934,34 @@ const RANGS = [0, 1, 2];
     margin-top: 1.1rem;
   }
 
+  .ct-date-champ {
+    min-width: 0;
+  }
+
+  .ct-date-champ .cform-input {
+    width: 100%;
+  }
+
+  .ct-date-avec-bouton {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.8rem;
+  }
+
+  .ct-date-avec-bouton .cform-input {
+    width: auto;
+    flex: 0 1 14rem;
+  }
+
+  .ct-date-ancienne {
+    display: block;
+    flex-basis: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    color: #8a5a00;
+  }
+
   .ct-emprunteur {
     padding-bottom: 1rem;
     margin-bottom: 1rem;
@@ -928,6 +980,21 @@ const RANGS = [0, 1, 2];
   }
 
   .ct-ajouter:hover {
+    border-color: var(--accent, #a85f38);
+  }
+
+  .ct-lien-bouton {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--line, #c9bba8);
+    border-radius: 8px;
+    background: none;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--accent, #a85f38);
+    cursor: pointer;
+  }
+
+  .ct-lien-bouton:hover {
     border-color: var(--accent, #a85f38);
   }
 
@@ -1367,6 +1434,7 @@ const RANGS = [0, 1, 2];
   import type { SignaturePadElement } from '../scripts/signaturePad';
   import { ErreurImport, importerSignature } from '../scripts/importSignature';
   import { comparerContrats, motifUrgenceContrat, type ResumeEcran } from '../utils/tableauDeBord';
+  import { aujourdhuiIso, depuisTexteContrat, versTexteContrat } from '../utils/dateContrat';
 
   /* ---------------- Formulaire ---------------- */
 
@@ -1377,9 +1445,63 @@ const RANGS = [0, 1, 2];
     const formulaire: HTMLFormElement = form;
     let signatureEnregistree = formulaire.dataset.signatureEnregistree === 'oui';
 
-    const valeur = (id: string): string =>
-      (document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null)?.value.trim() ??
-      '';
+    /* ---------------- Cases de date ----------------
+     * Le calendrier parle ISO ; le contrat porte « 30 avril 2027 ». On convertit ici, dans les
+     * deux sens, et le serveur continue de recevoir le texte qu'il a toujours reçu.
+     * Un ancien texte qu'on ne sait pas relire comme une date (« fin avril ») n'est pas effacé
+     * en silence : il est gardé tel quel et affiché sous la case jusqu'à ce qu'une date soit
+     * choisie.
+     */
+    const noteAncienne = (champ: HTMLInputElement) =>
+      champ.parentElement?.querySelector<HTMLElement>('[data-date-ancienne]') ?? null;
+
+    function lireChamp(champ: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement): string {
+      if (!(champ instanceof HTMLInputElement) || !('dateContrat' in champ.dataset)) return champ.value.trim();
+      if (champ.value) return versTexteContrat(champ.value);
+      return champ.dataset.texteAncien ?? '';
+    }
+
+    function poserChamp(champ: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, texte: string): void {
+      if (!(champ instanceof HTMLInputElement) || !('dateContrat' in champ.dataset)) {
+        champ.value = texte;
+        return;
+      }
+      const iso = depuisTexteContrat(texte);
+      champ.value = iso ?? '';
+      const note = noteAncienne(champ);
+      if (iso === null && texte.trim() !== '') {
+        champ.dataset.texteAncien = texte.trim();
+        if (note) {
+          note.textContent = `Valeur actuelle : « ${texte.trim()} » — choisissez la date dans le calendrier.`;
+          note.hidden = false;
+        }
+      } else {
+        delete champ.dataset.texteAncien;
+        if (note) note.hidden = true;
+      }
+    }
+
+    for (const champ of document.querySelectorAll<HTMLInputElement>('[data-date-contrat]')) {
+      champ.addEventListener('input', () => {
+        delete champ.dataset.texteAncien;
+        const note = noteAncienne(champ);
+        if (note) note.hidden = true;
+      });
+    }
+
+    for (const bouton of document.querySelectorAll<HTMLButtonElement>('[data-date-aujourdhui]')) {
+      bouton.addEventListener('click', () => {
+        const champ = document.getElementById(bouton.dataset.dateAujourdhui ?? '') as HTMLInputElement | null;
+        if (!champ) return;
+        champ.value = aujourdhuiIso();
+        champ.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    }
+
+    const valeur = (id: string): string => {
+      const champ = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+      return champ ? lireChamp(champ) : '';
+    };
 
     const blocs = () => [...formulaire.querySelectorAll<HTMLElement>('[data-emprunteur]')];
     const visibles = () => blocs().filter((bloc) => !bloc.hidden);
@@ -2137,7 +2259,7 @@ const RANGS = [0, 1, 2];
         const colonne = Number(champ.dataset.colonne ?? '0');
         if (colonne >= emprunteurs.length) continue;
         identite[cle] ??= [];
-        identite[cle][colonne] = champ.value.trim();
+        identite[cle][colonne] = lireChamp(champ);
       }
       for (const cle of Object.keys(identite)) {
         identite[cle] = Array.from(identite[cle] ?? [], (v) => v ?? '');
@@ -2164,7 +2286,7 @@ const RANGS = [0, 1, 2];
 
       for (const [id, cle] of CHAMPS_TEXTE) {
         const champ = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
-        if (champ) champ.value = donnees[cle] == null ? '' : String(donnees[cle]);
+        if (champ) poserChamp(champ, donnees[cle] == null ? '' : String(donnees[cle]));
       }
 
       const types = Array.isArray(donnees.typesFinancement) ? (donnees.typesFinancement as string[]) : [];
@@ -2175,7 +2297,7 @@ const RANGS = [0, 1, 2];
       const identite = (donnees.identite ?? {}) as Record<string, string[]>;
       for (const champ of formulaire.querySelectorAll<HTMLInputElement>('[data-identite]')) {
         const colonne = Number(champ.dataset.colonne ?? '0');
-        champ.value = identite[champ.dataset.identite ?? '']?.[colonne] ?? '';
+        poserChamp(champ, identite[champ.dataset.identite ?? '']?.[colonne] ?? '');
       }
 
       rafraichir();
