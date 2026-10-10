@@ -30,6 +30,12 @@ const derniereCorrection = ouvert?.dossier.corrections?.at(-1) ?? null;
 const dejaSignes = ouvert
   ? ouvert.dossier.emprunteurs.filter((e) => e.signature !== null).map((e) => nomComplet(e.emprunteur))
   : [];
+// Pour la frise de l'écran de fin : qui signe, dans quel ordre, qui l'a déjà fait. Rien de
+// plus que ce que le récapitulatif montre déjà — des noms, jamais un courriel ni un tracé.
+const signatairesFrise = ouvert
+  ? ouvert.dossier.emprunteurs.map((e) => ({ nom: nomComplet(e.emprunteur), signe: e.signature !== null }))
+  : [];
+const telephoneLien = `tel:+1${config.telephone.replace(/\D/g, '')}`;
 
 // Un lien de signature ne doit jamais être mis en cache par un intermédiaire.
 Astro.response.headers.set('Cache-Control', 'no-store');
@@ -73,16 +79,24 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 ou le contrat a expiré, ou un autre emprunteur a signalé un désaccord.
               </p>
               <p class="sc-texte">
-                Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a> ou
-                appelez au <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>,
-                {' '}{prenomCourtiere} vous en renverra un.
+                Écrivez-lui ou appelez-la : {prenomCourtiere} vous en renverra un.
               </p>
               {/* Même impasse que l'écran de fin : sans Nav ni pied de page, il n'y avait
                   aucune sortie depuis ici. */}
               <div class="sc-fin">
-                <a class="btn-secondary btn-secondary--sm sc-retour" href="/">
-                  Visiter le site de {prenomCourtiere} →
-                </a>
+                <div class="sc-contacts">
+                  <a class="sc-contact" href={telephoneLien}>
+                    Appeler {prenomCourtiere}
+                    <span class="sc-contact-valeur">{config.telephone}</span>
+                  </a>
+                  <a class="sc-contact" href={`mailto:${config.courriel}`}>
+                    Écrire à {prenomCourtiere}
+                    <span class="sc-contact-valeur">{config.courriel}</span>
+                  </a>
+                </div>
+                <p class="sc-note sc-site">
+                  <a href="/">Visiter le site de {prenomCourtiere} →</a>
+                </p>
               </div>
             </div>
           ) : (
@@ -93,6 +107,9 @@ Astro.response.headers.set('Cache-Control', 'no-store');
               data-nom={nomComplet(entree.emprunteur)}
               data-prenom-courtiere={prenomCourtiere}
               data-courriel-signataire={entree.emprunteur.courriel}
+              data-courriel-courtiere={config.courriel}
+              data-index={ouvert.index}
+              data-signataires={JSON.stringify(signatairesFrise)}
             >
               <div data-ecran="lecture">
                 <h1 class="sc-titre">Votre contrat de courtage</h1>
@@ -381,26 +398,40 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                   il disait merci et ne menait nulle part. Il porte maintenant ce qui suit,
                   de quoi joindre la courtière, et la sortie vers le site. */}
               <div data-ecran="merci" hidden>
-                <p class="sc-marque" data-merci-marque aria-hidden="true">✓</p>
-                <h1 class="sc-titre" data-merci-titre>Merci, c’est signé</h1>
+                {/* Le crochet sur la ligne du titre : seul sur la sienne, il coûtait une
+                    ligne d'écran de téléphone pour ne rien dire de plus que le titre. */}
+                <div class="sc-entete-fin">
+                  <p class="sc-marque" data-merci-marque aria-hidden="true">✓</p>
+                  <h1 class="sc-titre" data-merci-titre>Merci, c’est signé</h1>
+                </div>
                 <p class="sc-texte" data-merci-texte></p>
                 <p class="sc-texte" data-merci-suivant hidden></p>
 
+                {/* La frise dit où en est le contrat ; la liste simple sert au désaccord,
+                    où il n'y a pas de séquence à montrer. */}
+                <ol class="sc-frise" data-merci-frise hidden></ol>
                 <ol class="sc-suite" data-merci-suite hidden></ol>
 
                 {/* Masqué pendant le relais en présentiel : l'appareil appartient alors à la
                     courtière, et rien ne doit inviter à s'en aller visiter le site. */}
+                {/* Deux vrais boutons au pouce plutôt qu'une phrase à deux liens ; la visite
+                    du site, geste le moins utile ici, passe en dernier et en simple lien. */}
                 <div class="sc-fin" data-merci-fin>
-                  <p class="sc-texte">
-                    Une question ? Écrivez à <a href={`mailto:${config.courriel}`}>{config.courriel}</a>
-                    {' '}ou appelez {prenomCourtiere} au{' '}
-                    <a href={`tel:+1${config.telephone.replace(/\D/g, '')}`}>{config.telephone}</a>.
-                  </p>
-                  <a class="btn-secondary btn-secondary--sm sc-retour" href="/">
-                    Visiter le site de {prenomCourtiere} →
-                  </a>
-                  <p class="sc-note sc-retour-note">
-                    Taux du jour, calculateurs hypothécaires et prise de rendez-vous.
+                  <p class="sc-fin-titre">Une question ?</p>
+                  <div class="sc-contacts">
+                    <a class="sc-contact" href={telephoneLien}>
+                      Appeler {prenomCourtiere}
+                      <span class="sc-contact-valeur">{config.telephone}</span>
+                    </a>
+                    <a class="sc-contact" href={`mailto:${config.courriel}`}>
+                      Écrire à {prenomCourtiere}
+                      <span class="sc-contact-valeur">{config.courriel}</span>
+                    </a>
+                  </div>
+                  <p class="sc-note sc-fermer">Vous pouvez fermer cette page.</p>
+                  <p class="sc-note sc-site">
+                    <a href="/">Visiter le site de {prenomCourtiere} →</a>
+                    <span class="sc-site-detail">Taux du jour, calculateurs et prise de rendez-vous.</span>
                   </p>
                 </div>
               </div>
@@ -442,6 +473,21 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     margin: 0 0 1rem;
     font-size: 0.85rem;
     color: var(--muted);
+  }
+
+  /* Sans cette règle, les liens du texte gardaient le bleu souligné du navigateur — le seul
+     élément de l'écran étranger au site. :global pour ceux que le script écrit. */
+  #sc-app :global(a:not([class])),
+  .sc-etat a:not([class]) {
+    color: var(--clay-dk);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+  }
+
+  #sc-app :global(a:not([class]):hover),
+  .sc-etat a:not([class]):hover {
+    color: var(--ink);
   }
 
   .sc-correction {
@@ -712,13 +758,25 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
   /* ---------- Écran de fin ---------- */
 
-  .sc-marque {
+  .sc-entete-fin {
     display: flex;
     align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 0.6rem;
+  }
+
+  .sc-entete-fin .sc-titre {
+    margin: 0;
+  }
+
+  .sc-marque {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
     justify-content: center;
-    width: 2.6rem;
-    height: 2.6rem;
-    margin: 0 0 1rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    margin: 0;
     border-radius: 50%;
     background: #eaf5ec;
     color: #26603a;
@@ -748,18 +806,190 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     padding-left: 0.2rem;
   }
 
+  /* ---------- Frise : où en est le contrat ----------
+     Écrite par le script, d'où les :global. Une pastille par étape, reliées par un trait :
+     ce qui est fait en vert, ce qui attend quelqu'un en argile, le reste en creux. */
+  .sc-frise {
+    list-style: none;
+    margin: 1.2rem 0 1.6rem;
+    padding: 0;
+  }
+
+  .sc-frise :global(li) {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.6rem 1fr;
+    column-gap: 0.75rem;
+    padding-bottom: 1.1rem;
+  }
+
+  .sc-frise :global(li:last-child) {
+    padding-bottom: 0;
+  }
+
+  /* Le trait qui relie une pastille à la suivante. */
+  .sc-frise :global(li:not(:last-child))::before {
+    content: '';
+    position: absolute;
+    top: 1.6rem;
+    bottom: 0;
+    left: calc(0.8rem - 1px);
+    width: 2px;
+    background: var(--border);
+  }
+
+  .sc-frise :global(li[data-etat='fait']:not(:last-child))::before {
+    background: #b9dcc3;
+  }
+
+  .sc-frise :global(.sc-frise-point) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--white);
+    color: transparent;
+    font-size: 0.8rem;
+    line-height: 1;
+  }
+
+  .sc-frise :global(li[data-etat='fait'] .sc-frise-point) {
+    border-color: #26603a;
+    background: #26603a;
+    color: #fff;
+  }
+
+  .sc-frise :global(li[data-etat='courant'] .sc-frise-point) {
+    border-color: var(--clay);
+    box-shadow: inset 0 0 0 4px var(--white);
+    background: var(--clay);
+  }
+
+  .sc-frise :global(.sc-frise-texte) {
+    margin: 0.15rem 0 0;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+
+  .sc-frise :global(li[data-etat='fait'] .sc-frise-texte) {
+    color: var(--ink);
+  }
+
+  .sc-frise :global(li[data-etat='courant'] .sc-frise-texte) {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .sc-frise :global(.sc-frise-badge) {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: 50px;
+    background: #f6e6dc;
+    color: var(--clay-dk);
+    font-size: 0.72rem;
+    font-weight: 600;
+    vertical-align: 0.1em;
+    white-space: nowrap;
+  }
+
+  .sc-frise :global(.sc-frise-detail) {
+    grid-column: 2;
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* L'adresse de réception, lisible d'un coup d'œil : c'est là qu'une faute se repère. */
+  .sc-frise :global(.sc-pastille) {
+    display: inline-block;
+    max-width: 100%;
+    margin: 0.35rem 0 0.3rem;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--ink);
+    font-size: 0.9rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .sc-frise :global(.sc-frise-correction) {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--clay-dk);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
   .sc-fin {
     margin-top: 1.8rem;
     padding-top: 1.4rem;
-    border-top: 1px solid var(--line, #e3d9cc);
+    border-top: 1px solid var(--border);
   }
 
-  .sc-retour {
-    margin-top: 0.3rem;
+  .sc-fin-titre {
+    margin: 0 0 0.7rem;
+    font-size: 0.95rem;
+    font-weight: 600;
   }
 
-  .sc-retour-note {
-    margin: 0.7rem 0 0;
+  .sc-contacts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.6rem;
+    margin: 0 0 1rem;
+  }
+
+  .sc-contact {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.7rem 1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--ink);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 0.2s;
+  }
+
+  .sc-contact:hover {
+    border-color: var(--clay);
+  }
+
+  .sc-contact:focus-visible {
+    outline: 3px solid var(--clay);
+    outline-offset: 2px;
+  }
+
+  .sc-contact-valeur {
+    margin-top: 0.1rem;
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+
+  .sc-fermer {
+    margin: 0 0 0.4rem;
+  }
+
+  .sc-site {
+    margin: 0;
+  }
+
+  .sc-site-detail {
+    display: block;
+    margin-top: 0.15rem;
   }
 
   /* Un titre de plusieurs lignes dans la bordure d'un fieldset la coupe en deux et
@@ -899,16 +1129,17 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     .sc-actions .sc-refus-lien {
       min-height: 44px;
     }
-
-    .sc-retour {
-      display: block;
-      text-align: center;
-    }
   }
 </style>
 
 <script>
   import type { SignaturePadElement } from '../scripts/signaturePad';
+  import {
+    composerFrise,
+    lienCorrectionAdresse,
+    type EtapeFrise,
+    type SignataireFrise,
+  } from '../utils/friseSignature';
 
   const app = document.getElementById('sc-app');
   if (app) {
@@ -922,6 +1153,17 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     const jeton = app.dataset.jeton ?? '';
     const prenomCourtiere = app.dataset.prenomCourtiere ?? 'votre courtière';
     let courrielSignataire = app.dataset.courrielSignataire ?? '';
+    let nomSignataire = app.dataset.nom ?? '';
+    const courrielCourtiere = app.dataset.courrielCourtiere ?? '';
+    const indexSignataire = Number(app.dataset.index ?? '0');
+    const signataires = ((): SignataireFrise[] => {
+      try {
+        const brut: unknown = JSON.parse(app.dataset.signataires ?? '[]');
+        return Array.isArray(brut) ? (brut as SignataireFrise[]) : [];
+      } catch {
+        return [];
+      }
+    })();
     const valeurChamp = (id: string): string =>
       app.querySelector<HTMLInputElement>(`#${id}`)?.value.trim() ?? '';
 
@@ -1063,11 +1305,13 @@ Astro.response.headers.set('Cache-Control', 'no-store');
       titre: string;
       texte: string;
       etapes?: string[];
+      frise?: EtapeFrise[];
       ton?: 'succes' | 'attention';
     }): void {
       const titre = app!.querySelector<HTMLElement>('[data-merci-titre]');
       const texte = app!.querySelector<HTMLElement>('[data-merci-texte]');
       const suite = app!.querySelector<HTMLElement>('[data-merci-suite]');
+      const frise = app!.querySelector<HTMLElement>('[data-merci-frise]');
       const marque = app!.querySelector<HTMLElement>('[data-merci-marque]');
 
       if (titre) titre.textContent = options.titre;
@@ -1087,13 +1331,78 @@ Astro.response.headers.set('Cache-Control', 'no-store');
         }
         suite.hidden = etapes.length === 0;
       }
+
+      if (frise) {
+        frise.innerHTML = '';
+        const etapes = options.frise ?? [];
+        for (const etape of etapes) frise.append(etapeFrise(etape));
+        frise.hidden = etapes.length === 0;
+      }
     }
 
-    /** « à marie@exemple.com » — pour que le destinataire repère sa propre faute de frappe. */
-    function reception(): string {
-      return courrielSignataire
-        ? `Vous recevrez le contrat signé par courriel, à ${courrielSignataire}. Prévenez ${prenomCourtiere} si cette adresse n’est pas la bonne.`
-        : 'Vous recevrez le contrat signé par courriel.';
+    /** Une étape de la frise. `textContent` partout : les noms viennent du dossier. */
+    function etapeFrise(etape: EtapeFrise): HTMLLIElement {
+      const li = document.createElement('li');
+      li.dataset.etat = etape.etat;
+      if (etape.etat === 'courant') li.setAttribute('aria-current', 'step');
+
+      const point = document.createElement('span');
+      point.className = 'sc-frise-point';
+      point.setAttribute('aria-hidden', 'true');
+      if (etape.etat === 'fait') point.textContent = '✓';
+
+      const texte = document.createElement('p');
+      texte.className = 'sc-frise-texte';
+      texte.textContent = etape.texte;
+      if (etape.etat === 'courant') {
+        const badge = document.createElement('span');
+        badge.className = 'sc-frise-badge';
+        badge.textContent = 'prochaine étape';
+        texte.append(badge);
+      }
+      li.append(point, texte);
+
+      if (etape.detail) {
+        const detail = document.createElement('p');
+        detail.className = 'sc-frise-detail';
+        detail.textContent = etape.detail;
+        li.append(detail);
+      }
+
+      // L'adresse de réception, et de quoi la corriger d'un geste — « prévenez-la » ne
+      // donnait pas le moyen de le faire.
+      if (etape.reception && courrielSignataire) {
+        const detail = document.createElement('div');
+        detail.className = 'sc-frise-detail';
+        const pastille = document.createElement('span');
+        pastille.className = 'sc-pastille';
+        pastille.textContent = courrielSignataire;
+        detail.append(pastille);
+        if (courrielCourtiere) {
+          const correction = document.createElement('a');
+          correction.className = 'sc-frise-correction';
+          correction.href = lienCorrectionAdresse({
+            courrielCourtiere,
+            prenomCourtiere,
+            nom: nomSignataire,
+            courriel: courrielSignataire,
+          });
+          correction.textContent = 'Ce n’est pas la bonne adresse ?';
+          detail.append(correction);
+        }
+        li.append(detail);
+      }
+      return li;
+    }
+
+    /** Où en est le contrat, à partir de ce que la page savait au chargement. */
+    function friseApresSignature(signeLe: unknown): EtapeFrise[] {
+      return composerFrise({
+        signataires,
+        index: indexSignataire,
+        prenomCourtiere,
+        signeLe: typeof signeLe === 'string' ? signeLe : null,
+      });
     }
 
     function afficher(nom: string): void {
@@ -1183,6 +1492,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
         }
 
         courrielSignataire = identite.courriel.toLowerCase();
+        nomSignataire = `${identite.prenom} ${identite.nom}`.trim() || nomSignataire;
         const suivant = app.querySelector<HTMLElement>('[data-merci-suivant]');
         const nomSuivant = String(data.suivant ?? 'le signataire suivant');
 
@@ -1190,20 +1500,13 @@ Astro.response.headers.set('Cache-Control', 'no-store');
           composerFin({
             titre: 'Merci, votre signature est enregistrée',
             texte: `Tous les emprunteurs ont signé. Il ne manque plus que ${prenomCourtiere}.`,
-            etapes: [
-              `${prenomCourtiere} relit le contrat et appose sa signature — c’est la dernière.`,
-              reception(),
-            ],
+            frise: friseApresSignature(data.signeLe),
           });
         } else {
           composerFin({
             titre: 'Merci, votre signature est enregistrée',
             texte: `Le contrat passe maintenant à ${nomSuivant}, qui recevra son lien par courriel.`,
-            etapes: [
-              `${nomSuivant} lit le contrat et signe à son tour.`,
-              `Quand tout le monde aura signé, ${prenomCourtiere} signe en dernier.`,
-              reception(),
-            ],
+            frise: friseApresSignature(data.signeLe),
           });
         }
 

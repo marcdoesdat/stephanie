@@ -450,6 +450,14 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   celui du contrat complet, une fois la courtière passée — il n'y a pas d'accusé immédiat,
   et en promettre un ferait attendre pour rien. Pendant le relais en présentiel, ni
   coordonnées ni lien vers le site : l'appareil n'appartient pas au signataire.
+- **L'écran de fin montre où en est le contrat** (`src/utils/friseSignature.ts`) : une frise
+  de chaque emprunteur, de la courtière, puis de la réception, l'étape qui attend quelqu'un
+  marquée « prochaine étape ». L'heure affichée est `signeLe`, renvoyé par
+  `/api/contrat-signer` — l'instant de la trace de preuve, jamais l'horloge du téléphone.
+  L'adresse de réception est mise en valeur avec un lien « Ce n'est pas la bonne adresse ? »
+  (courriel prérempli vers la courtière, depuis la messagerie du client). Les coordonnées
+  sont deux boutons au pouce ; « Visiter le site », le geste le moins utile ici, n'est qu'un
+  lien en dernier. Aucune étape n'annonce de délai ni d'accusé immédiat — un test le verrouille.
 - **Les cartes du suivi sont bâties en JavaScript, donc habillées par un bloc `is:global`**
   (circonscrit par `#ct-form` / `#ct-suivi`). Astro scope son `<style>` en estampant un
   attribut de portée sur les éléments qu'il rend lui-même : une règle scopée n'atteint
@@ -878,6 +886,8 @@ npx vitest              # mode watch
   document, chaque signataire et sa voie, un tracé par signataire ; chronologie ordonnée sans
   ouverture inventée ; tracé illisible, navigateur interminable et caractères hors WinAnsi
   tolérés ; `produireCertificat` rend `null` au lieu de lever
+- `src/utils/friseSignature.test.ts` — frise de fin de `/signer-contrat` : ordre et états,
+  heure du Québec tirée du serveur, rien d'inventé sans horodatage, aucun délai promis
 - `src/utils/dateContrat.test.ts` — aller-retour calendrier ↔ date en lettres, « 1er »,
   anciens formats relus, rien de deviné
 - `src/services/contratPdfService.test.ts` — estampage : 4 pages au bon format, caractères

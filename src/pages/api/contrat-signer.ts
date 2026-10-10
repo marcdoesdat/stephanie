@@ -173,7 +173,7 @@ export const POST: APIRoute = async ({ request }) => {
     // navigateur de celui qui vient de signer — il part par courriel, et par là seulement.
     if (dossier.mode === 'presence') {
       return jsonResponse(
-        { ok: true, complet: false, restants, suivant: suivante?.nom ?? null, lien },
+        { ok: true, complet: false, restants, suivant: suivante?.nom ?? null, lien, signeLe: signature.signeLe },
         200,
       );
     }
@@ -197,7 +197,10 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    return jsonResponse({ ok: true, complet: false, restants, suivant: suivante?.nom ?? null }, 200);
+    return jsonResponse(
+      { ok: true, complet: false, restants, suivant: suivante?.nom ?? null, signeLe: signature.signeLe },
+      200,
+    );
   }
 
   /* ---------- Dernier signataire : la balle passe à la courtière ---------- */
@@ -214,5 +217,7 @@ export const POST: APIRoute = async ({ request }) => {
     console.log(`[contrat-signer] ⚠️  Resend non configuré — à finaliser : ${lienFinalisation(dossier)}`);
   }
 
-  return jsonResponse({ ok: true, complet: true }, 200);
+  // L'horodatage serveur remonte à l'écran de fin : c'est l'instant que porte la trace de
+  // preuve, pas celui de l'horloge du téléphone.
+  return jsonResponse({ ok: true, complet: true, signeLe: signature.signeLe }, 200);
 };
