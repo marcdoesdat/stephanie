@@ -283,7 +283,9 @@ const RANGS = [0, 1, 2];
                 </div>
               </div>
 
-              <div class="ct-grille ct-espace">
+              {/* Des nombres de deux chiffres : sur téléphone, deux par ligne plutôt que six
+                  champs pleine largeur l'un sous l'autre. */}
+              <div class="ct-grille ct-grille-compacte ct-espace">
                 <div>
                   <label class="cform-label" for="ct-amort-ans">Amortissement (ans)</label>
                   <input type="text" id="ct-amort-ans" class="cform-input" inputmode="numeric" maxlength="4" />
@@ -304,7 +306,7 @@ const RANGS = [0, 1, 2];
                   <label class="cform-label" for="ct-rang">Rang</label>
                   <input type="text" id="ct-rang" class="cform-input" maxlength="10" placeholder="1" />
                 </div>
-                <div>
+                <div class="ct-pleine-mobile">
                   <label class="cform-label" for="ct-validite">Consentements valides jusqu’au</label>
                   <div class="ct-date-champ">
                     <input type="date" id="ct-validite" class="cform-input" data-date-contrat />
@@ -533,15 +535,31 @@ const RANGS = [0, 1, 2];
               </summary>
               <div class="ct-repliable-corps">
                 <p class="ct-aide">
-                  Une colonne par emprunteur, dans le même ordre que plus haut. Laissez vide si
-                  vous n’avez pas encore vu les pièces.
+                  Une case par emprunteur, à son prénom. Laissez vide si vous n’avez pas encore
+                  vu les pièces.
                 </p>
-                <div class="ct-identite">
+                {/* Les colonnes portent le prénom de l'emprunteur et suivent la liste : celles
+                    des emprunteurs absents sont masquées. Sur téléphone, les colonnes s'empilent,
+                    et chaque case porte alors son propre nom — sans quoi trois cases muettes à
+                    la suite ne disent pas laquelle appartient à qui. */}
+                <div class="ct-identite" data-identite-table>
+                  <div class="ct-identite-ligne ct-identite-entete" aria-hidden="true">
+                    <span />
+                    {RANGS.map((rang) => (
+                      <span class="ct-identite-qui" data-identite-qui={rang} data-colonne={rang}>
+                        Emprunteur {rang + 1}
+                      </span>
+                    ))}
+                  </div>
                   {LIGNES_IDENTITE.map((ligne) => (
                     <div class="ct-identite-ligne">
                       <span class="ct-identite-label">{ligne.label}</span>
-                      {RANGS.map((rang) =>
-                        LIGNES_IDENTITE_DATES.has(ligne.id) ? (
+                      {RANGS.map((rang) => (
+                        <div class="ct-identite-cellule" data-colonne={rang}>
+                        <span class="ct-identite-qui ct-identite-qui-case" data-identite-qui={rang} aria-hidden="true">
+                          Emprunteur {rang + 1}
+                        </span>
+                        {LIGNES_IDENTITE_DATES.has(ligne.id) ? (
                           <div class="ct-date-champ">
                             <input
                               type="date"
@@ -563,8 +581,9 @@ const RANGS = [0, 1, 2];
                             data-colonne={rang}
                             aria-label={`${ligne.label} — emprunteur ${rang + 1}`}
                           />
-                        ),
-                      )}
+                        )}
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -726,7 +745,9 @@ const RANGS = [0, 1, 2];
     border-radius: var(--radius-sm);
     color: var(--ink);
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
+    /* 16 px au moins : sous ce seuil, Safari sur iPhone zoome sur chaque champ touché et
+       la page ne revient pas d'elle-même à sa largeur. */
+    font-size: 1rem;
     transition: border-color 0.2s;
   }
 
@@ -1019,9 +1040,13 @@ const RANGS = [0, 1, 2];
     cursor: pointer;
   }
 
+  /* Des cases à la taille du doigt, aux couleurs du site. */
   .ct-case input {
-    margin-top: 0.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.05rem;
     flex: 0 0 auto;
+    accent-color: var(--clay, #a85f38);
   }
 
   .ct-case-large {
@@ -1030,7 +1055,7 @@ const RANGS = [0, 1, 2];
 
   .ct-identite-ligne {
     display: grid;
-    grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.4fr) repeat(var(--ct-colonnes, 1), minmax(0, 1fr));
     gap: 0.5rem;
     align-items: center;
     margin-bottom: 0.45rem;
@@ -1039,6 +1064,29 @@ const RANGS = [0, 1, 2];
   .ct-identite-label {
     font-size: 0.82rem;
     color: var(--muted);
+  }
+
+  .ct-identite-cellule {
+    min-width: 0;
+  }
+
+  .ct-identite-cellule[hidden],
+  .ct-identite-qui[hidden] {
+    display: none;
+  }
+
+  .ct-identite-qui {
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink, #1f1e1c);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* L'étiquette par case ne sert qu'une fois les colonnes empilées. */
+  .ct-identite-qui-case {
+    display: none;
   }
 
   /* ---------- Suivi des contrats en cours ---------- */
@@ -1105,10 +1153,33 @@ const RANGS = [0, 1, 2];
     color: #26603a;
   }
 
+  /* `.btn` seul n'a aucune règle dans global.css : sans celles-ci, « Aperçu » s'affichait
+     en bouton brut du navigateur, collé au bouton principal. Même gabarit que lui. */
   .ct-bouton-secondaire {
-    border: 1px solid var(--line, #c9bba8);
+    padding: 0.9rem 1.4rem;
+    border: 2px solid var(--border, #c9bba8);
+    border-radius: 50px;
     background: #fff;
     color: var(--ink, #1f1e1c);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .ct-bouton-secondaire:hover {
+    border-color: var(--clay, #a85f38);
+  }
+
+  .ct-bouton-secondaire:focus-visible {
+    outline: 3px solid var(--clay, #a85f38);
+    outline-offset: 3px;
+  }
+
+  .ct-bouton-secondaire:disabled {
+    opacity: 0.6;
+    cursor: wait;
   }
 
   .ct-erreur,
@@ -1194,10 +1265,94 @@ const RANGS = [0, 1, 2];
   }
 
   @media (max-width: 620px) {
+    /* Sur téléphone, chaque marge latérale se paie en largeur de champ : la page, la section
+       et son contenu en empilaient trois. */
+    .ct-page {
+      padding: 1.25rem 0.75rem 0.5rem;
+    }
+
+    /* `section` porte dans global.css une marge de 1,5 rem pensée pour les pages vitrines :
+       ici, elle s'ajoutait à celle de la page. */
+    .ct-shell {
+      padding: 0;
+    }
+
+    .ct-titre {
+      font-size: 1.3rem;
+      line-height: 1.25;
+    }
+
+    .ct-section {
+      padding: 0.9rem 0.85rem 1.1rem;
+    }
+
+    .ct-repliable summary {
+      padding: 0.9rem 0.85rem;
+    }
+
+    .ct-repliable-corps {
+      padding: 0 0.85rem 1.1rem;
+    }
+
+    .ct-signature-barre {
+      padding: 0.85rem;
+    }
+
+    /* Alignées par le bas : « Amortissement (ans) » passe sur deux lignes, et les deux
+       cases d'une même rangée doivent rester à la même hauteur. */
+    .ct-grille-compacte {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: end;
+    }
+
+    .ct-pleine-mobile {
+      grid-column: 1 / -1;
+    }
+
+    .ct-ajouter,
+    .ct-lien-bouton,
+    .ct-import-bouton {
+      min-height: 44px;
+    }
+
+    .ct-identite-entete {
+      display: none;
+    }
+
     .ct-identite-ligne {
       grid-template-columns: 1fr;
-      gap: 0.25rem;
-      margin-bottom: 1rem;
+      gap: 0.4rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .ct-identite-label {
+      font-weight: 600;
+      color: var(--ink, #1f1e1c);
+    }
+
+    /* Une seule colonne visible : le nom n'apprendrait rien. */
+    .ct-identite[data-colonnes='multi'] .ct-identite-qui-case:not([hidden]) {
+      display: block;
+      margin-bottom: 0.15rem;
+      color: var(--muted);
+    }
+
+    .ct-barre {
+      /* La barre colle au bas de l'écran et en épouse la largeur : sur téléphone, une carte
+         flottante entre deux marges mange de la hauteur pour rien. */
+      margin-inline: -0.75rem;
+      padding: 0.6rem 0.75rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+      border-width: 1px 0 0;
+      border-radius: 0;
+      gap: 0.45rem;
+    }
+
+    .ct-barre-resume {
+      flex-basis: 100%;
+      overflow: hidden;
+      font-size: 0.8rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .ct-barre-actions {
@@ -1206,6 +1361,16 @@ const RANGS = [0, 1, 2];
 
     .ct-barre-actions .btn {
       flex: 1 1 auto;
+      min-height: 46px;
+    }
+
+    .ct-barre-actions .ct-bouton-secondaire {
+      flex: 0 0 auto;
+    }
+
+    .ct-apercu iframe {
+      height: 75vh;
+      min-height: 360px;
     }
   }
 </style>
@@ -1227,6 +1392,32 @@ const RANGS = [0, 1, 2];
     color: var(--muted);
     text-decoration: underline;
     cursor: pointer;
+  }
+
+  /* Le nom tapé du bloc de signature vient d'un autre composant : les règles scopées de
+     cette page ne l'atteignent pas, et il s'affichait en champ brut de 13 px. */
+  #ct-form [data-sig-nom] {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font: inherit;
+    font-size: 1rem;
+  }
+
+  #ct-form [data-sig-nom]:focus {
+    outline: none;
+    border-color: var(--clay);
+    background: var(--white);
+  }
+
+  @media (max-width: 620px) {
+    #ct-form .ct-sous-titre .ct-lien {
+      min-height: 44px;
+      padding: 0 0.25rem;
+    }
   }
 
   #ct-form .ct-lien:hover {
@@ -1388,6 +1579,51 @@ const RANGS = [0, 1, 2];
     flex-wrap: wrap;
     gap: 0.3rem 1rem;
     align-items: center;
+  }
+
+  @media (max-width: 620px) {
+    #ct-suivi .ct-dossier {
+      padding: 0.85rem 0.8rem;
+    }
+
+    /* Au doigt : l'action principale prend la largeur, les autres deviennent des boutons
+       francs de 44 px plutôt que des liens soulignés de 29 px empilés l'un sur l'autre. */
+    #ct-suivi .ct-dossier-actions {
+      gap: 0.45rem;
+    }
+
+    #ct-suivi .ct-dossier-actions .btn {
+      flex: 1 1 100%;
+      justify-content: center;
+      text-align: center;
+    }
+
+    #ct-suivi .ct-dossier-actions .ct-lien {
+      flex: 1 1 calc(50% - 0.25rem);
+      min-height: 44px;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--line, #e3d9cc);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink, #1f1e1c);
+      text-decoration: none;
+      line-height: 1.25;
+    }
+
+    #ct-suivi .ct-dossier-actions .ct-lien-danger {
+      border-color: #e8c9c6;
+      color: #8f2f28;
+    }
+
+    #ct-suivi .ct-dossier-actions .ct-lien-signature,
+    #ct-suivi .ct-dossier-actions .ct-note-succes,
+    #ct-suivi .ct-dossier-actions .ct-note-echec {
+      flex-basis: 100%;
+    }
+
+    #ct-suivi .ct-suivi-pied .ct-lien {
+      min-height: 44px;
+    }
   }
 
   /* Un lien de signature en présentiel : c'est le seul endroit où le jeton apparaît. Il doit
@@ -1610,7 +1846,31 @@ const RANGS = [0, 1, 2];
       // Le bouton « Ajouter » disparaît quand les trois blocs du modèle sont utilisés.
       const ajouter = formulaire.querySelector<HTMLElement>('[data-ajouter]');
       if (ajouter) ajouter.hidden = visibles().length >= blocs().length;
+      majColonnesIdentite();
       majResume();
+    }
+
+    /**
+     * Le tableau d'identité n'offre une colonne qu'aux emprunteurs affichés, sous leur
+     * prénom. Trente cases dont vingt inutiles, sans nom au-dessus, se remplissaient au
+     * jugé — et, sur téléphone, rien ne disait quelle case empilée était à qui.
+     */
+    function majColonnesIdentite(): void {
+      const table = formulaire.querySelector<HTMLElement>('[data-identite-table]');
+      if (!table) return;
+      const affiches = new Set(visibles().map((bloc) => bloc.dataset.emprunteur));
+      table.style.setProperty('--ct-colonnes', String(Math.max(affiches.size, 1)));
+      table.dataset.colonnes = affiches.size > 1 ? 'multi' : 'une';
+
+      for (const element of table.querySelectorAll<HTMLElement>('.ct-identite-cellule, .ct-identite-entete [data-colonne]')) {
+        element.hidden = !affiches.has(element.dataset.colonne);
+      }
+      for (const etiquette of table.querySelectorAll<HTMLElement>('[data-identite-qui]')) {
+        const rang = etiquette.dataset.identiteQui ?? '0';
+        const prenom = valeur(`ct-prenom-${rang}`);
+        etiquette.textContent = prenom || `Emprunteur ${Number(rang) + 1}`;
+        etiquette.hidden = !affiches.has(rang);
+      }
     }
 
     /** Rappelle, sans remonter la page, ce qui partira réellement. */

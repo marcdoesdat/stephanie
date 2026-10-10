@@ -161,6 +161,12 @@ const { id, nom } = Astro.props;
     .sig-cadre {
       aspect-ratio: 5 / 2;
     }
+
+    /* Au doigt, une cible de 44 px : « Effacer » à 28 px se ratait au profit du cadre. */
+    .sig-effacer,
+    .sig-bascule {
+      min-height: 44px;
+    }
   }
 </style>
 
