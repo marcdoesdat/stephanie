@@ -67,6 +67,7 @@ const RANGS = [0, 1, 2];
             class="ct-form"
             autocomplete="off"
             data-signature-enregistree={signatureEnregistree ? 'oui' : 'non'}
+            data-courriel-courtiere={config.courriel.toLowerCase()}
           >
             <header class="ct-entete">
               <h1 class="ct-titre">Nouveau contrat de courtage</h1>
@@ -193,13 +194,13 @@ const RANGS = [0, 1, 2];
                       <label class="cform-label" for={`ct-prenom-${rang}`}>
                         Prénom <span class="ct-requis">*</span>
                       </label>
-                      <input type="text" id={`ct-prenom-${rang}`} class="cform-input" maxlength="60" />
+                      <input type="text" id={`ct-prenom-${rang}`} class="cform-input" maxlength="60" autocomplete="off" />
                     </div>
                     <div>
                       <label class="cform-label" for={`ct-nom-${rang}`}>
                         Nom <span class="ct-requis">*</span>
                       </label>
-                      <input type="text" id={`ct-nom-${rang}`} class="cform-input" maxlength="60" />
+                      <input type="text" id={`ct-nom-${rang}`} class="cform-input" maxlength="60" autocomplete="off" />
                     </div>
                     <div>
                       <label class="cform-label" for={`ct-courriel-${rang}`}>
@@ -211,15 +212,16 @@ const RANGS = [0, 1, 2];
                         class="cform-input"
                         maxlength="120"
                         placeholder="pour le lien de signature"
+                        autocomplete="off"
                       />
                     </div>
                     <div>
                       <label class="cform-label" for={`ct-tel-${rang}`}>Téléphone</label>
-                      <input type="tel" id={`ct-tel-${rang}`} class="cform-input" maxlength="40" />
+                      <input type="tel" id={`ct-tel-${rang}`} class="cform-input" maxlength="40" autocomplete="off" />
                     </div>
                     <div class="ct-pleine">
                       <label class="cform-label" for={`ct-adresse-${rang}`}>Adresse</label>
-                      <input type="text" id={`ct-adresse-${rang}`} class="cform-input" maxlength="160" />
+                      <input type="text" id={`ct-adresse-${rang}`} class="cform-input" maxlength="160" autocomplete="off" />
                     </div>
                   </div>
                 </div>
@@ -233,7 +235,7 @@ const RANGS = [0, 1, 2];
               <legend>Financement recherché</legend>
 
               <label class="cform-label" for="ct-adresse-projet">Adresse du projet</label>
-              <input type="text" id="ct-adresse-projet" class="cform-input" maxlength="200" />
+              <input type="text" id="ct-adresse-projet" class="cform-input" maxlength="200" autocomplete="off" />
 
               <p class="cform-label ct-espace">Type de financement</p>
               <div class="ct-cases">
@@ -515,7 +517,7 @@ const RANGS = [0, 1, 2];
 
                 <div class="ct-memoriser">
                   <button type="button" class="ct-lien" data-memoriser>
-                    Mémoriser ces valeurs pour les prochains contrats
+                    Mémoriser ces valeurs et les frais et honoraires pour les prochains contrats
                   </button>
                   <span class="ct-memoriser-etat" data-memoriser-etat hidden>Enregistré ✓</span>
                 </div>
@@ -556,6 +558,7 @@ const RANGS = [0, 1, 2];
                             type="text"
                             class="cform-input"
                             maxlength="60"
+                            autocomplete="off"
                             data-identite={ligne.id}
                             data-colonne={rang}
                             aria-label={`${ligne.label} — emprunteur ${rang + 1}`}
@@ -1447,6 +1450,7 @@ const RANGS = [0, 1, 2];
     // TypeScript ne conserve pas l'affinage de `form` à travers une déclaration de fonction.
     const formulaire: HTMLFormElement = form;
     let signatureEnregistree = formulaire.dataset.signatureEnregistree === 'oui';
+    const courrielCourtiere = formulaire.dataset.courrielCourtiere ?? '';
 
     /* ---------------- Cases de date ----------------
      * Le calendrier parle ISO ; le contrat porte « 30 avril 2027 ». On convertit ici, dans les
@@ -1705,6 +1709,7 @@ const RANGS = [0, 1, 2];
       readonly emprunteurs: Array<{ nom: string; courriel: string; signeLe: string | null }>;
       readonly courant: { nom: string; courriel: string } | null;
       readonly corrigeLe: string | null;
+      readonly refuseCourriel?: string | null;
     }
 
     const suivi = document.getElementById('ct-suivi') as HTMLDetailsElement | null;
@@ -1805,7 +1810,11 @@ const RANGS = [0, 1, 2];
         const ligne = document.createElement('li');
         const estCourant =
           dossier.statut === 'en_attente' && dossier.courant?.courriel === emprunteur.courriel;
-        const aRefuse = dossier.statut === 'gele' && emprunteur.nom === dossier.refusePar;
+        const aRefuse =
+          dossier.statut === 'gele' &&
+          (dossier.refuseCourriel
+            ? emprunteur.courriel === dossier.refuseCourriel
+            : emprunteur.nom === dossier.refusePar);
         ligne.dataset.etape = emprunteur.signeLe
           ? 'signe'
           : aRefuse
@@ -2061,6 +2070,18 @@ const RANGS = [0, 1, 2];
       hote.append(copier);
     }
 
+    /**
+     * Une erreur réseau ne doit pas passer pour rien : le bouton qui revient seul laissait
+     * croire que le geste avait abouti. Le message précédent est remplacé, pas empilé.
+     */
+    function noterEchec(actions: HTMLElement, message: string): void {
+      actions.querySelector('.ct-note-echec')?.remove();
+      const echec = document.createElement('span');
+      echec.className = 'ct-note-echec';
+      echec.textContent = message;
+      actions.append(echec);
+    }
+
     /** Réémet le lien du signataire courant ; l'ancien cesse aussitôt de valoir. */
     async function relancerLien(id: string, bouton: HTMLButtonElement, actions: HTMLElement): Promise<void> {
       bouton.disabled = true;
@@ -2100,6 +2121,7 @@ const RANGS = [0, 1, 2];
       } catch {
         bouton.disabled = false;
         bouton.textContent = libelle;
+        noterEchec(actions, 'Connexion impossible : aucun lien n’a été renvoyé. Réessayez.');
       }
     }
 
@@ -2137,11 +2159,20 @@ const RANGS = [0, 1, 2];
           return;
         }
 
+        // L'ancien lien est mort. En présentiel, le nouveau n'est montré que maintenant :
+        // relire le suivi tout de suite l'effacerait, et il faudrait le réémettre une fois de
+        // plus pour l'obtenir. Il reste affiché ; « Actualiser » remettra la carte à jour.
+        bouton.remove();
+        if (data.mode === 'presence' && typeof data.lien === 'string') {
+          ajouterLienPresence(actions, data.lien, String(data.nom ?? 'l’emprunteur'));
+          return;
+        }
         // L'écran doit relire l'état : la nouvelle adresse s'affiche sous le nom.
         void chargerSuivi();
       } catch {
         bouton.disabled = false;
         bouton.textContent = libelle;
+        noterEchec(actions, 'Connexion impossible : l’adresse n’a pas été corrigée. Réessayez.');
       }
     }
 
@@ -2178,6 +2209,10 @@ const RANGS = [0, 1, 2];
       } catch {
         bouton.disabled = false;
         bouton.textContent = 'Annuler le contrat';
+        const echec = document.createElement('span');
+        echec.className = 'ct-note-echec';
+        echec.textContent = 'Connexion impossible : le contrat n’a pas été annulé. Réessayez.';
+        bouton.after(echec);
       }
     }
 
@@ -2436,6 +2471,15 @@ const RANGS = [0, 1, 2];
         }
         if (!estCourrielValide(courriel)) {
           montrerErreur(`Le courriel de ${qui} n’est pas une adresse valide : « ${e.courriel} ».`);
+          return false;
+        }
+        // Le remplissage automatique du navigateur pose volontiers ses propres coordonnées
+        // dans les cases de l'emprunteur : le lien partirait alors vers elle, et le client
+        // attendrait un courriel qui ne viendra jamais.
+        if (courrielCourtiere && courriel === courrielCourtiere) {
+          montrerErreur(
+            `Le courriel de ${qui} est le vôtre (${courriel}) — probablement rempli par le navigateur. Saisissez celui de l’emprunteur.`,
+          );
           return false;
         }
         if (vus.has(courriel)) {
