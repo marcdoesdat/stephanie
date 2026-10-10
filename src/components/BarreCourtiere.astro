@@ -48,6 +48,17 @@ const ONGLETS: ReadonlyArray<{ cle: PageCourtiere; href: string; libelle: string
   </ul>
 </nav>
 
+<script>
+  // Quand la rangée défile sur téléphone, l'onglet courant peut tomber hors de l'écran :
+  // on l'y ramène, sans toucher au défilement de la page.
+  for (const liste of document.querySelectorAll<HTMLElement>('.bc-liste')) {
+    const courant = liste.querySelector<HTMLElement>('[aria-current="page"]');
+    if (courant && liste.scrollWidth > liste.clientWidth) {
+      liste.scrollLeft = courant.offsetLeft - liste.offsetLeft - (liste.clientWidth - courant.offsetWidth) / 2;
+    }
+  }
+</script>
+
 <style>
   .bc-barre {
     margin: 0 0 1.4rem;
@@ -83,6 +94,26 @@ const ONGLETS: ReadonlyArray<{ cle: PageCourtiere; href: string; libelle: string
   .bc-lien:focus-visible {
     border-color: var(--clay);
     color: var(--ink);
+  }
+
+  /* Sur téléphone, une seule rangée qui défile plutôt qu'un onglet orphelin à la ligne. */
+  @media (max-width: 480px) {
+    .bc-liste {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 0 0 0.15rem;
+      scrollbar-width: none;
+    }
+
+    .bc-liste::-webkit-scrollbar {
+      display: none;
+    }
+
+    .bc-lien {
+      min-height: 40px;
+      padding: 0.35rem 0.75rem;
+      white-space: nowrap;
+    }
   }
 
   .bc-lien[aria-current='page'] {

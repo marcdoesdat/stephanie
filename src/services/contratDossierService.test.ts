@@ -414,6 +414,7 @@ describe('listerDossiers', () => {
     const [resume] = await service.listerDossiers();
     expect(resume!.statut).toBe('gele');
     expect(resume!.refusePar).toBe('Ana Tremblay');
+    expect(resume!.refuseCourriel).toBe(resume!.emprunteurs.find((e) => e.nom === 'Ana Tremblay')?.courriel);
     expect(resume!.courant).toBeNull();
   });
 

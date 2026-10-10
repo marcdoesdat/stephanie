@@ -67,6 +67,7 @@ const RANGS = [0, 1, 2];
             class="ct-form"
             autocomplete="off"
             data-signature-enregistree={signatureEnregistree ? 'oui' : 'non'}
+            data-courriel-courtiere={config.courriel.toLowerCase()}
           >
             <header class="ct-entete">
               <h1 class="ct-titre">Nouveau contrat de courtage</h1>
@@ -193,13 +194,13 @@ const RANGS = [0, 1, 2];
                       <label class="cform-label" for={`ct-prenom-${rang}`}>
                         Prénom <span class="ct-requis">*</span>
                       </label>
-                      <input type="text" id={`ct-prenom-${rang}`} class="cform-input" maxlength="60" />
+                      <input type="text" id={`ct-prenom-${rang}`} class="cform-input" maxlength="60" autocomplete="off" />
                     </div>
                     <div>
                       <label class="cform-label" for={`ct-nom-${rang}`}>
                         Nom <span class="ct-requis">*</span>
                       </label>
-                      <input type="text" id={`ct-nom-${rang}`} class="cform-input" maxlength="60" />
+                      <input type="text" id={`ct-nom-${rang}`} class="cform-input" maxlength="60" autocomplete="off" />
                     </div>
                     <div>
                       <label class="cform-label" for={`ct-courriel-${rang}`}>
@@ -211,15 +212,16 @@ const RANGS = [0, 1, 2];
                         class="cform-input"
                         maxlength="120"
                         placeholder="pour le lien de signature"
+                        autocomplete="off"
                       />
                     </div>
                     <div>
                       <label class="cform-label" for={`ct-tel-${rang}`}>Téléphone</label>
-                      <input type="tel" id={`ct-tel-${rang}`} class="cform-input" maxlength="40" />
+                      <input type="tel" id={`ct-tel-${rang}`} class="cform-input" maxlength="40" autocomplete="off" />
                     </div>
                     <div class="ct-pleine">
                       <label class="cform-label" for={`ct-adresse-${rang}`}>Adresse</label>
-                      <input type="text" id={`ct-adresse-${rang}`} class="cform-input" maxlength="160" />
+                      <input type="text" id={`ct-adresse-${rang}`} class="cform-input" maxlength="160" autocomplete="off" />
                     </div>
                   </div>
                 </div>
@@ -233,7 +235,7 @@ const RANGS = [0, 1, 2];
               <legend>Financement recherché</legend>
 
               <label class="cform-label" for="ct-adresse-projet">Adresse du projet</label>
-              <input type="text" id="ct-adresse-projet" class="cform-input" maxlength="200" />
+              <input type="text" id="ct-adresse-projet" class="cform-input" maxlength="200" autocomplete="off" />
 
               <p class="cform-label ct-espace">Type de financement</p>
               <div class="ct-cases">
@@ -274,12 +276,16 @@ const RANGS = [0, 1, 2];
                   </select>
                 </div>
                 <div>
-                  <label class="cform-label" for="ct-versement">Versement cap. + int. ($)</label>
-                  <input type="text" id="ct-versement" class="cform-input" inputmode="numeric" maxlength="20" />
+                  {/* « cap. » seul est lu par Chrome comme « CAP », le code postal italien : le libellé
+                      écrit le mot en entier, sans quoi le navigateur y collait le code postal. */}
+                  <label class="cform-label" for="ct-versement">Versement capital + intérêts ($)</label>
+                  <input type="text" id="ct-versement" class="cform-input" inputmode="numeric" maxlength="20" autocomplete="off" />
                 </div>
               </div>
 
-              <div class="ct-grille ct-espace">
+              {/* Des nombres de deux chiffres : sur téléphone, deux par ligne plutôt que six
+                  champs pleine largeur l'un sous l'autre. */}
+              <div class="ct-grille ct-grille-compacte ct-espace">
                 <div>
                   <label class="cform-label" for="ct-amort-ans">Amortissement (ans)</label>
                   <input type="text" id="ct-amort-ans" class="cform-input" inputmode="numeric" maxlength="4" />
@@ -300,7 +306,7 @@ const RANGS = [0, 1, 2];
                   <label class="cform-label" for="ct-rang">Rang</label>
                   <input type="text" id="ct-rang" class="cform-input" maxlength="10" placeholder="1" />
                 </div>
-                <div>
+                <div class="ct-pleine-mobile">
                   <label class="cform-label" for="ct-validite">Consentements valides jusqu’au</label>
                   <div class="ct-date-champ">
                     <input type="date" id="ct-validite" class="cform-input" data-date-contrat />
@@ -513,7 +519,7 @@ const RANGS = [0, 1, 2];
 
                 <div class="ct-memoriser">
                   <button type="button" class="ct-lien" data-memoriser>
-                    Mémoriser ces valeurs pour les prochains contrats
+                    Mémoriser ces valeurs et les frais et honoraires pour les prochains contrats
                   </button>
                   <span class="ct-memoriser-etat" data-memoriser-etat hidden>Enregistré ✓</span>
                 </div>
@@ -529,15 +535,31 @@ const RANGS = [0, 1, 2];
               </summary>
               <div class="ct-repliable-corps">
                 <p class="ct-aide">
-                  Une colonne par emprunteur, dans le même ordre que plus haut. Laissez vide si
-                  vous n’avez pas encore vu les pièces.
+                  Une case par emprunteur, à son prénom. Laissez vide si vous n’avez pas encore
+                  vu les pièces.
                 </p>
-                <div class="ct-identite">
+                {/* Les colonnes portent le prénom de l'emprunteur et suivent la liste : celles
+                    des emprunteurs absents sont masquées. Sur téléphone, les colonnes s'empilent,
+                    et chaque case porte alors son propre nom — sans quoi trois cases muettes à
+                    la suite ne disent pas laquelle appartient à qui. */}
+                <div class="ct-identite" data-identite-table>
+                  <div class="ct-identite-ligne ct-identite-entete" aria-hidden="true">
+                    <span />
+                    {RANGS.map((rang) => (
+                      <span class="ct-identite-qui" data-identite-qui={rang} data-colonne={rang}>
+                        Emprunteur {rang + 1}
+                      </span>
+                    ))}
+                  </div>
                   {LIGNES_IDENTITE.map((ligne) => (
                     <div class="ct-identite-ligne">
                       <span class="ct-identite-label">{ligne.label}</span>
-                      {RANGS.map((rang) =>
-                        LIGNES_IDENTITE_DATES.has(ligne.id) ? (
+                      {RANGS.map((rang) => (
+                        <div class="ct-identite-cellule" data-colonne={rang}>
+                        <span class="ct-identite-qui ct-identite-qui-case" data-identite-qui={rang} aria-hidden="true">
+                          Emprunteur {rang + 1}
+                        </span>
+                        {LIGNES_IDENTITE_DATES.has(ligne.id) ? (
                           <div class="ct-date-champ">
                             <input
                               type="date"
@@ -554,12 +576,14 @@ const RANGS = [0, 1, 2];
                             type="text"
                             class="cform-input"
                             maxlength="60"
+                            autocomplete="off"
                             data-identite={ligne.id}
                             data-colonne={rang}
                             aria-label={`${ligne.label} — emprunteur ${rang + 1}`}
                           />
-                        ),
-                      )}
+                        )}
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -624,7 +648,10 @@ const RANGS = [0, 1, 2];
             <div class="ct-apercu" data-apercu hidden>
               <div class="ct-apercu-entete">
                 <strong>Aperçu du contrat</strong>
-                <button type="button" class="ct-lien" data-fermer-apercu>fermer</button>
+                <span class="ct-apercu-liens">
+                  <button type="button" class="ct-lien" data-apercu-plein-ecran>plein écran</button>
+                  <button type="button" class="ct-lien" data-fermer-apercu>fermer</button>
+                </span>
               </div>
               <iframe data-apercu-cadre title="Aperçu du contrat de courtage"></iframe>
             </div>
@@ -644,6 +671,20 @@ const RANGS = [0, 1, 2];
           </form>
         )
       }
+      {/* Hors de #ct-form : un formulaire ne s'imbrique pas dans un autre. Il poste le
+          contrat en cours de saisie vers un nouvel onglet, où le lecteur PDF du navigateur
+          montre toutes les pages. Rien n'est stocké : la route ne fait que rendre le PDF. */}
+      {autorise && (
+        <form
+          method="post"
+          action="/api/contrat-previsualiser"
+          target="_blank"
+          data-apercu-onglet
+          hidden
+        >
+          <input type="hidden" name="donnees" />
+        </form>
+      )}
     </section>
   </main>
 </MainLayout>
@@ -721,7 +762,9 @@ const RANGS = [0, 1, 2];
     border-radius: var(--radius-sm);
     color: var(--ink);
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
+    /* 16 px au moins : sous ce seuil, Safari sur iPhone zoome sur chaque champ touché et
+       la page ne revient pas d'elle-même à sa largeur. */
+    font-size: 1rem;
     transition: border-color 0.2s;
   }
 
@@ -1014,9 +1057,13 @@ const RANGS = [0, 1, 2];
     cursor: pointer;
   }
 
+  /* Des cases à la taille du doigt, aux couleurs du site. */
   .ct-case input {
-    margin-top: 0.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.05rem;
     flex: 0 0 auto;
+    accent-color: var(--clay, #a85f38);
   }
 
   .ct-case-large {
@@ -1025,7 +1072,7 @@ const RANGS = [0, 1, 2];
 
   .ct-identite-ligne {
     display: grid;
-    grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.4fr) repeat(var(--ct-colonnes, 1), minmax(0, 1fr));
     gap: 0.5rem;
     align-items: center;
     margin-bottom: 0.45rem;
@@ -1034,6 +1081,29 @@ const RANGS = [0, 1, 2];
   .ct-identite-label {
     font-size: 0.82rem;
     color: var(--muted);
+  }
+
+  .ct-identite-cellule {
+    min-width: 0;
+  }
+
+  .ct-identite-cellule[hidden],
+  .ct-identite-qui[hidden] {
+    display: none;
+  }
+
+  .ct-identite-qui {
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink, #1f1e1c);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* L'étiquette par case ne sert qu'une fois les colonnes empilées. */
+  .ct-identite-qui-case {
+    display: none;
   }
 
   /* ---------- Suivi des contrats en cours ---------- */
@@ -1100,10 +1170,33 @@ const RANGS = [0, 1, 2];
     color: #26603a;
   }
 
+  /* `.btn` seul n'a aucune règle dans global.css : sans celles-ci, « Aperçu » s'affichait
+     en bouton brut du navigateur, collé au bouton principal. Même gabarit que lui. */
   .ct-bouton-secondaire {
-    border: 1px solid var(--line, #c9bba8);
+    padding: 0.9rem 1.4rem;
+    border: 2px solid var(--border, #c9bba8);
+    border-radius: 50px;
     background: #fff;
     color: var(--ink, #1f1e1c);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .ct-bouton-secondaire:hover {
+    border-color: var(--clay, #a85f38);
+  }
+
+  .ct-bouton-secondaire:focus-visible {
+    outline: 3px solid var(--clay, #a85f38);
+    outline-offset: 3px;
+  }
+
+  .ct-bouton-secondaire:disabled {
+    opacity: 0.6;
+    cursor: wait;
   }
 
   .ct-erreur,
@@ -1148,6 +1241,11 @@ const RANGS = [0, 1, 2];
     font-size: 0.9rem;
   }
 
+  .ct-apercu-liens {
+    display: flex;
+    gap: 1rem;
+  }
+
   .ct-apercu iframe {
     display: block;
     width: 100%;
@@ -1189,10 +1287,94 @@ const RANGS = [0, 1, 2];
   }
 
   @media (max-width: 620px) {
+    /* Sur téléphone, chaque marge latérale se paie en largeur de champ : la page, la section
+       et son contenu en empilaient trois. */
+    .ct-page {
+      padding: 1.25rem 0.75rem 0.5rem;
+    }
+
+    /* `section` porte dans global.css une marge de 1,5 rem pensée pour les pages vitrines :
+       ici, elle s'ajoutait à celle de la page. */
+    .ct-shell {
+      padding: 0;
+    }
+
+    .ct-titre {
+      font-size: 1.3rem;
+      line-height: 1.25;
+    }
+
+    .ct-section {
+      padding: 0.9rem 0.85rem 1.1rem;
+    }
+
+    .ct-repliable summary {
+      padding: 0.9rem 0.85rem;
+    }
+
+    .ct-repliable-corps {
+      padding: 0 0.85rem 1.1rem;
+    }
+
+    .ct-signature-barre {
+      padding: 0.85rem;
+    }
+
+    /* Alignées par le bas : « Amortissement (ans) » passe sur deux lignes, et les deux
+       cases d'une même rangée doivent rester à la même hauteur. */
+    .ct-grille-compacte {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: end;
+    }
+
+    .ct-pleine-mobile {
+      grid-column: 1 / -1;
+    }
+
+    .ct-ajouter,
+    .ct-lien-bouton,
+    .ct-import-bouton {
+      min-height: 44px;
+    }
+
+    .ct-identite-entete {
+      display: none;
+    }
+
     .ct-identite-ligne {
       grid-template-columns: 1fr;
-      gap: 0.25rem;
-      margin-bottom: 1rem;
+      gap: 0.4rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .ct-identite-label {
+      font-weight: 600;
+      color: var(--ink, #1f1e1c);
+    }
+
+    /* Une seule colonne visible : le nom n'apprendrait rien. */
+    .ct-identite[data-colonnes='multi'] .ct-identite-qui-case:not([hidden]) {
+      display: block;
+      margin-bottom: 0.15rem;
+      color: var(--muted);
+    }
+
+    .ct-barre {
+      /* La barre colle au bas de l'écran et en épouse la largeur : sur téléphone, une carte
+         flottante entre deux marges mange de la hauteur pour rien. */
+      margin-inline: -0.75rem;
+      padding: 0.6rem 0.75rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+      border-width: 1px 0 0;
+      border-radius: 0;
+      gap: 0.45rem;
+    }
+
+    .ct-barre-resume {
+      flex-basis: 100%;
+      overflow: hidden;
+      font-size: 0.8rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .ct-barre-actions {
@@ -1201,6 +1383,16 @@ const RANGS = [0, 1, 2];
 
     .ct-barre-actions .btn {
       flex: 1 1 auto;
+      min-height: 46px;
+    }
+
+    .ct-barre-actions .ct-bouton-secondaire {
+      flex: 0 0 auto;
+    }
+
+    .ct-apercu iframe {
+      height: 75vh;
+      min-height: 360px;
     }
   }
 </style>
@@ -1224,6 +1416,32 @@ const RANGS = [0, 1, 2];
     cursor: pointer;
   }
 
+  /* Le nom tapé du bloc de signature vient d'un autre composant : les règles scopées de
+     cette page ne l'atteignent pas, et il s'affichait en champ brut de 13 px. */
+  #ct-form [data-sig-nom] {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font: inherit;
+    font-size: 1rem;
+  }
+
+  #ct-form [data-sig-nom]:focus {
+    outline: none;
+    border-color: var(--clay);
+    background: var(--white);
+  }
+
+  @media (max-width: 620px) {
+    #ct-form .ct-sous-titre .ct-lien {
+      min-height: 44px;
+      padding: 0 0.25rem;
+    }
+  }
+
   #ct-form .ct-lien:hover {
     color: var(--ink, #1f1e1c);
   }
@@ -1234,6 +1452,11 @@ const RANGS = [0, 1, 2];
 
   #ct-form .ct-lien-danger:hover {
     color: #6f241f;
+  }
+
+  /* Un <button> n'hérite pas de la police : `.btn-primary` la laissait au système. */
+  #ct-form button.btn-primary {
+    font-family: inherit;
   }
 
   #ct-form .ct-bouton,
@@ -1385,6 +1608,51 @@ const RANGS = [0, 1, 2];
     align-items: center;
   }
 
+  @media (max-width: 620px) {
+    #ct-suivi .ct-dossier {
+      padding: 0.85rem 0.8rem;
+    }
+
+    /* Au doigt : l'action principale prend la largeur, les autres deviennent des boutons
+       francs de 44 px plutôt que des liens soulignés de 29 px empilés l'un sur l'autre. */
+    #ct-suivi .ct-dossier-actions {
+      gap: 0.45rem;
+    }
+
+    #ct-suivi .ct-dossier-actions .btn {
+      flex: 1 1 100%;
+      justify-content: center;
+      text-align: center;
+    }
+
+    #ct-suivi .ct-dossier-actions .ct-lien {
+      flex: 1 1 calc(50% - 0.25rem);
+      min-height: 44px;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--line, #e3d9cc);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink, #1f1e1c);
+      text-decoration: none;
+      line-height: 1.25;
+    }
+
+    #ct-suivi .ct-dossier-actions .ct-lien-danger {
+      border-color: #e8c9c6;
+      color: #8f2f28;
+    }
+
+    #ct-suivi .ct-dossier-actions .ct-lien-signature,
+    #ct-suivi .ct-dossier-actions .ct-note-succes,
+    #ct-suivi .ct-dossier-actions .ct-note-echec {
+      flex-basis: 100%;
+    }
+
+    #ct-suivi .ct-suivi-pied .ct-lien {
+      min-height: 44px;
+    }
+  }
+
   /* Un lien de signature en présentiel : c'est le seul endroit où le jeton apparaît. Il doit
      se voir, et pouvoir partir par texto sans être recopié à la main. */
   #ct-form .ct-lien-signature {
@@ -1435,6 +1703,7 @@ const RANGS = [0, 1, 2];
   import { ErreurImport, importerSignature } from '../scripts/importSignature';
   import { comparerContrats, motifUrgenceContrat, type ResumeEcran } from '../utils/tableauDeBord';
   import { aujourdhuiIso, depuisTexteContrat, versTexteContrat } from '../utils/dateContrat';
+  import { estCourrielValide, NOM_MIN } from '../utils/contratCourtage';
 
   /* ---------------- Formulaire ---------------- */
 
@@ -1444,6 +1713,7 @@ const RANGS = [0, 1, 2];
     // TypeScript ne conserve pas l'affinage de `form` à travers une déclaration de fonction.
     const formulaire: HTMLFormElement = form;
     let signatureEnregistree = formulaire.dataset.signatureEnregistree === 'oui';
+    const courrielCourtiere = formulaire.dataset.courrielCourtiere ?? '';
 
     /* ---------------- Cases de date ----------------
      * Le calendrier parle ISO ; le contrat porte « 30 avril 2027 ». On convertit ici, dans les
@@ -1603,7 +1873,31 @@ const RANGS = [0, 1, 2];
       // Le bouton « Ajouter » disparaît quand les trois blocs du modèle sont utilisés.
       const ajouter = formulaire.querySelector<HTMLElement>('[data-ajouter]');
       if (ajouter) ajouter.hidden = visibles().length >= blocs().length;
+      majColonnesIdentite();
       majResume();
+    }
+
+    /**
+     * Le tableau d'identité n'offre une colonne qu'aux emprunteurs affichés, sous leur
+     * prénom. Trente cases dont vingt inutiles, sans nom au-dessus, se remplissaient au
+     * jugé — et, sur téléphone, rien ne disait quelle case empilée était à qui.
+     */
+    function majColonnesIdentite(): void {
+      const table = formulaire.querySelector<HTMLElement>('[data-identite-table]');
+      if (!table) return;
+      const affiches = new Set(visibles().map((bloc) => bloc.dataset.emprunteur));
+      table.style.setProperty('--ct-colonnes', String(Math.max(affiches.size, 1)));
+      table.dataset.colonnes = affiches.size > 1 ? 'multi' : 'une';
+
+      for (const element of table.querySelectorAll<HTMLElement>('.ct-identite-cellule, .ct-identite-entete [data-colonne]')) {
+        element.hidden = !affiches.has(element.dataset.colonne);
+      }
+      for (const etiquette of table.querySelectorAll<HTMLElement>('[data-identite-qui]')) {
+        const rang = etiquette.dataset.identiteQui ?? '0';
+        const prenom = valeur(`ct-prenom-${rang}`);
+        etiquette.textContent = prenom || `Emprunteur ${Number(rang) + 1}`;
+        etiquette.hidden = !affiches.has(rang);
+      }
     }
 
     /** Rappelle, sans remonter la page, ce qui partira réellement. */
@@ -1640,9 +1934,23 @@ const RANGS = [0, 1, 2];
         if (!bloc) return;
         bloc.hidden = true;
         for (const champ of bloc.querySelectorAll<HTMLInputElement>('input')) champ.value = '';
+        // Sa colonne du tableau d'identité part avec lui : ses pièces, restées en place,
+        // reviendraient sous le nom du prochain emprunteur ajouté à ce rang.
+        for (const champ of formulaire.querySelectorAll<HTMLInputElement>(
+          `[data-identite][data-colonne="${bouton.dataset.retirer}"]`,
+        )) {
+          poserChamp(champ, '');
+        }
         rafraichir();
       });
     }
+
+    // Entrée dans un champ ne doit pas envoyer le contrat : la soumission implicite d'un
+    // formulaire HTML expédierait un lien de signature au client au milieu de la saisie.
+    // Seul le bouton envoie. Les zones de texte gardent leur retour à la ligne.
+    formulaire.addEventListener('keydown', (evenement) => {
+      if (evenement.key === 'Enter' && evenement.target instanceof HTMLInputElement) evenement.preventDefault();
+    });
 
     formulaire.addEventListener('input', () => rafraichir());
     formulaire.addEventListener('change', () => rafraichir());
@@ -1688,6 +1996,7 @@ const RANGS = [0, 1, 2];
       readonly emprunteurs: Array<{ nom: string; courriel: string; signeLe: string | null }>;
       readonly courant: { nom: string; courriel: string } | null;
       readonly corrigeLe: string | null;
+      readonly refuseCourriel?: string | null;
     }
 
     const suivi = document.getElementById('ct-suivi') as HTMLDetailsElement | null;
@@ -1788,7 +2097,11 @@ const RANGS = [0, 1, 2];
         const ligne = document.createElement('li');
         const estCourant =
           dossier.statut === 'en_attente' && dossier.courant?.courriel === emprunteur.courriel;
-        const aRefuse = dossier.statut === 'gele' && emprunteur.nom === dossier.refusePar;
+        const aRefuse =
+          dossier.statut === 'gele' &&
+          (dossier.refuseCourriel
+            ? emprunteur.courriel === dossier.refuseCourriel
+            : emprunteur.nom === dossier.refusePar);
         ligne.dataset.etape = emprunteur.signeLe
           ? 'signe'
           : aRefuse
@@ -2044,6 +2357,18 @@ const RANGS = [0, 1, 2];
       hote.append(copier);
     }
 
+    /**
+     * Une erreur réseau ne doit pas passer pour rien : le bouton qui revient seul laissait
+     * croire que le geste avait abouti. Le message précédent est remplacé, pas empilé.
+     */
+    function noterEchec(actions: HTMLElement, message: string): void {
+      actions.querySelector('.ct-note-echec')?.remove();
+      const echec = document.createElement('span');
+      echec.className = 'ct-note-echec';
+      echec.textContent = message;
+      actions.append(echec);
+    }
+
     /** Réémet le lien du signataire courant ; l'ancien cesse aussitôt de valoir. */
     async function relancerLien(id: string, bouton: HTMLButtonElement, actions: HTMLElement): Promise<void> {
       bouton.disabled = true;
@@ -2083,6 +2408,7 @@ const RANGS = [0, 1, 2];
       } catch {
         bouton.disabled = false;
         bouton.textContent = libelle;
+        noterEchec(actions, 'Connexion impossible : aucun lien n’a été renvoyé. Réessayez.');
       }
     }
 
@@ -2120,11 +2446,20 @@ const RANGS = [0, 1, 2];
           return;
         }
 
+        // L'ancien lien est mort. En présentiel, le nouveau n'est montré que maintenant :
+        // relire le suivi tout de suite l'effacerait, et il faudrait le réémettre une fois de
+        // plus pour l'obtenir. Il reste affiché ; « Actualiser » remettra la carte à jour.
+        bouton.remove();
+        if (data.mode === 'presence' && typeof data.lien === 'string') {
+          ajouterLienPresence(actions, data.lien, String(data.nom ?? 'l’emprunteur'));
+          return;
+        }
         // L'écran doit relire l'état : la nouvelle adresse s'affiche sous le nom.
         void chargerSuivi();
       } catch {
         bouton.disabled = false;
         bouton.textContent = libelle;
+        noterEchec(actions, 'Connexion impossible : l’adresse n’a pas été corrigée. Réessayez.');
       }
     }
 
@@ -2161,6 +2496,10 @@ const RANGS = [0, 1, 2];
       } catch {
         bouton.disabled = false;
         bouton.textContent = 'Annuler le contrat';
+        const echec = document.createElement('span');
+        echec.className = 'ct-note-echec';
+        echec.textContent = 'Connexion impossible : le contrat n’a pas été annulé. Réessayez.';
+        bouton.after(echec);
       }
     }
 
@@ -2242,7 +2581,8 @@ const RANGS = [0, 1, 2];
     ];
 
     function collecter(): Record<string, unknown> {
-      const emprunteurs = visibles().map((bloc) => {
+      const blocsVisibles = visibles();
+      const emprunteurs = blocsVisibles.map((bloc) => {
         const rang = bloc.dataset.emprunteur;
         const emprunteur: Record<string, string> = {};
         for (const [suffixe, cle] of EMPRUNTEUR_CHAMPS) emprunteur[cle] = valeur(`ct-${suffixe}-${rang}`);
@@ -2253,13 +2593,18 @@ const RANGS = [0, 1, 2];
         .filter((entree) => entree.checked)
         .map((entree) => entree.dataset.typeFinancement ?? '');
 
+      // La colonne d'identité suit le bloc, pas sa position : retirer l'emprunteur 2 de 3
+      // laisse visibles les blocs 0 et 2, et la colonne 2 doit aller au deuxième envoyé.
+      // Lue par son numéro brut, elle était perdue — et la colonne 1, celle du retiré,
+      // passait sous le nom du troisième.
+      const positionDuRang = new Map(blocsVisibles.map((bloc, position) => [Number(bloc.dataset.emprunteur), position]));
       const identite: Record<string, string[]> = {};
       for (const champ of formulaire.querySelectorAll<HTMLInputElement>('[data-identite]')) {
         const cle = champ.dataset.identite ?? '';
-        const colonne = Number(champ.dataset.colonne ?? '0');
-        if (colonne >= emprunteurs.length) continue;
+        const position = positionDuRang.get(Number(champ.dataset.colonne ?? '0'));
+        if (position === undefined) continue;
         identite[cle] ??= [];
-        identite[cle][colonne] = lireChamp(champ);
+        identite[cle][position] = lireChamp(champ);
       }
       for (const cle of Object.keys(identite)) {
         identite[cle] = Array.from(identite[cle] ?? [], (v) => v ?? '');
@@ -2401,6 +2746,35 @@ const RANGS = [0, 1, 2];
         montrerErreur('Chaque emprunteur affiché doit avoir un prénom, un nom et un courriel.');
         return false;
       }
+      // Les mêmes règles que le serveur (`parserEmprunteurs`), dites ici avec le nom de la
+      // personne : là-bas, elles ne produisent qu'un « Champs invalides » sans indice.
+      const vus = new Set<string>();
+      for (const [position, e] of emprunteurs.entries()) {
+        const qui = `${e.prenom} ${e.nom}`.trim() || `l’emprunteur ${position + 1}`;
+        const courriel = (e.courriel ?? '').toLowerCase();
+        if ((e.prenom ?? '').length < NOM_MIN || (e.nom ?? '').length < NOM_MIN) {
+          montrerErreur(`Le prénom et le nom de ${qui} doivent compter au moins ${NOM_MIN} lettres.`);
+          return false;
+        }
+        if (!estCourrielValide(courriel)) {
+          montrerErreur(`Le courriel de ${qui} n’est pas une adresse valide : « ${e.courriel} ».`);
+          return false;
+        }
+        // Le remplissage automatique du navigateur pose volontiers ses propres coordonnées
+        // dans les cases de l'emprunteur : le lien partirait alors vers elle, et le client
+        // attendrait un courriel qui ne viendra jamais.
+        if (courrielCourtiere && courriel === courrielCourtiere) {
+          montrerErreur(
+            `Le courriel de ${qui} est le vôtre (${courriel}) — probablement rempli par le navigateur. Saisissez celui de l’emprunteur.`,
+          );
+          return false;
+        }
+        if (vus.has(courriel)) {
+          montrerErreur(`Deux emprunteurs ont le même courriel (${courriel}) : chacun reçoit son propre lien.`);
+          return false;
+        }
+        vus.add(courriel);
+      }
       return true;
     }
 
@@ -2414,12 +2788,37 @@ const RANGS = [0, 1, 2];
       if (apercu) apercu.hidden = true;
     });
 
+    /**
+     * Ouvre l'aperçu dans un nouvel onglet, par un vrai formulaire : le navigateur affiche
+     * alors le PDF avec son propre lecteur, toutes pages comprises. Un formulaire soumis
+     * pendant le clic n'est pas traité en fenêtre surgissante, contrairement à un
+     * `window.open` lancé après un `await`.
+     */
+    function ouvrirApercuOnglet(donnees: Record<string, unknown>): boolean {
+      const envoi = document.querySelector<HTMLFormElement>('[data-apercu-onglet]');
+      const champ = envoi?.querySelector<HTMLInputElement>('input[name="donnees"]');
+      if (!envoi || !champ) return false;
+      champ.value = JSON.stringify(donnees);
+      envoi.submit();
+      return true;
+    }
+
+    // Sur téléphone, un PDF dans un cadre n'affiche qu'une page, voire rien du tout.
+    const ecranEtroit = window.matchMedia('(max-width: 620px)');
+
+    formulaire.querySelector('[data-apercu-plein-ecran]')?.addEventListener('click', () => {
+      const donnees = collecter();
+      if (emprunteursValides(donnees)) ouvrirApercuOnglet(donnees);
+    });
+
     formulaire.querySelector('[data-previsualiser]')?.addEventListener('click', async (evenement) => {
       const declencheur = evenement.currentTarget as HTMLButtonElement;
       if (erreur) erreur.hidden = true;
 
       const donnees = collecter();
       if (!emprunteursValides(donnees)) return;
+
+      if (ecranEtroit.matches && ouvrirApercuOnglet(donnees)) return;
 
       declencheur.disabled = true;
       const libelle = declencheur.textContent;
@@ -2564,6 +2963,16 @@ const RANGS = [0, 1, 2];
         const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
 
         if (!reponse.ok) {
+          // Le dossier est créé, seul le courriel a manqué. Rendre le bouton ferait créer un
+          // second dossier — deux liens vivants pour le même contrat. Le suivi rattrape.
+          if (data.code === 'invitation') {
+            montrerErreur(String(data.error ?? 'Le contrat est créé, mais le lien n’est pas parti.'));
+            if (bouton) bouton.textContent = 'Contrat créé';
+            suiviCharge = true;
+            if (suivi) suivi.open = true;
+            void chargerSuivi();
+            return;
+          }
           if (data.code === 'acces') {
             montrerErreur('Votre session a expiré. Rechargez la page pour vous reconnecter.');
           } else {

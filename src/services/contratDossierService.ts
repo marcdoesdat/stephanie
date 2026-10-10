@@ -608,6 +608,12 @@ export interface ResumeDossier {
   /** Celui dont c'est le tour, `null` si le dossier n'attend plus personne. */
   readonly courant: { nom: string; courriel: string } | null;
   readonly refusePar: string | null;
+  /**
+   * Courriel de qui a refusé — c'est lui qui désigne la ligne à marquer : l'adresse est
+   * unique dans un dossier, le nom ne l'est pas (deux conjoints homonymes, un parent et
+   * son enfant).
+   */
+  readonly refuseCourriel: string | null;
   /** Date d'annulation par la courtière, `null` si le dossier n'a pas été annulé. */
   readonly annuleLe: string | null;
   /** Date de la dernière correction du contrat, `null` s'il n'a jamais été corrigé. */
@@ -636,6 +642,7 @@ function resumer(dossier: DossierContrat): ResumeDossier {
         }
       : null,
     refusePar: dossier.refus?.nom ?? null,
+    refuseCourriel: dossier.refus?.courriel ?? null,
     annuleLe: dossier.annuleLe ?? null,
     corrigeLe: dossier.corrections?.at(-1)?.le ?? null,
   };

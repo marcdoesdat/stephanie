@@ -15,7 +15,12 @@ import { loadSiteConfig } from '../config';
 import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
 import { ouvrirPourFinalisation } from '../services/contratDossierService';
 import { lireReglages } from '../services/reglagesCourtiere';
-import { nomComplet, resumerContrat, resumerReponsesEmprunteur } from '../utils/contratCourtage';
+import {
+  nomComplet,
+  resumerContrat,
+  resumerReponsesEmprunteur,
+  type ReponsesEmprunteur,
+} from '../utils/contratCourtage';
 import { formatDateHeureLong } from '../utils/formatters';
 
 const config = loadSiteConfig();
@@ -31,6 +36,18 @@ const signatureEnregistree = reglages?.signature
   : null;
 
 const lignes = dossier ? resumerContrat(dossier.donnees) : [];
+
+/**
+ * Les réponses qui appellent un geste de sa part avant de signer : une PPV déclarée
+ * (formulaire à remettre) ou un refus de transfert. Lues sur les réponses elles-mêmes,
+ * jamais sur les libellés affichés. `resumerReponsesEmprunteur` les rend dans cet ordre :
+ * PPV d'abord, transfert ensuite.
+ */
+function reponseAttention(reponses: ReponsesEmprunteur, rang: number): string | null {
+  if (rang === 0 && reponses.ppv === 'oui') return 'Formulaire PPV à remettre';
+  if (rang === 1 && reponses.transfertCabinet === 'non') return 'Refus de transfert';
+  return null;
+}
 
 Astro.response.headers.set('Cache-Control', 'no-store');
 ---
@@ -82,18 +99,39 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 </p>
                 <dl class="fc-recap">
                   {(entree.reponses ? resumerReponsesEmprunteur(entree.reponses) : []).map(
-                    ([libelle, valeur]) => (
-                      <div class="fc-recap-ligne">
-                        <dt>{libelle}</dt>
-                        <dd>{valeur}</dd>
-                      </div>
-                    ),
+                    ([libelle, valeur], rang) => {
+                      const attention = entree.reponses ? reponseAttention(entree.reponses, rang) : null;
+                      return (
+                        <div class="fc-recap-ligne" data-attention={attention ? 'oui' : undefined}>
+                          <dt>{libelle}</dt>
+                          <dd>
+                            {valeur}
+                            {attention && <span class="fc-attention">{attention}</span>}
+                          </dd>
+                        </div>
+                      );
+                    },
                   )}
                 </dl>
               </div>
             ))}
 
             <h2 class="fc-sous-titre">Le contrat</h2>
+            {/* Sur téléphone, le cadre n'affiche souvent qu'une page, voire rien : la carte
+                d'ouverture passe avant lui. Le lien sous le cadre reste sur ordinateur. */}
+            <a
+              href={`/api/contrat-apercu-courtiere?d=${encodeURIComponent(dossier.id)}`}
+              target="_blank"
+              rel="noopener"
+              class="fc-ouvrir-document"
+            >
+              <span class="fc-ouvrir-icone" aria-hidden="true">📄</span>
+              <span class="fc-ouvrir-texte">
+                <strong>Relire le contrat au complet</strong>
+                <span class="fc-ouvrir-detail">avec les signatures et les réponses — plein écran</span>
+              </span>
+              <span class="fc-ouvrir-fleche" aria-hidden="true">→</span>
+            </a>
             <div class="fc-document">
               <iframe
                 src={`/api/contrat-apercu-courtiere?d=${encodeURIComponent(dossier.id)}`}
@@ -101,7 +139,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 loading="eager"
               ></iframe>
             </div>
-            <p class="fc-texte">
+            <p class="fc-texte fc-ouvrir-bureau">
               <a
                 href={`/api/contrat-apercu-courtiere?d=${encodeURIComponent(dossier.id)}`}
                 target="_blank"
@@ -343,10 +381,108 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     font-weight: 600;
   }
 
+  /* Ce qui demande un geste avant de signer ressort de la liste. */
+  .fc-recap-ligne[data-attention='oui'] {
+    background: #fdf2e7;
+  }
+
+  .fc-attention {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    background: #fff;
+    color: #8a5320;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Un <button> n'hérite pas de la police : `.btn-primary` la laissait au système. */
+  .fc-shell :global(button.btn-primary) {
+    font-family: inherit;
+  }
+
+  .fc-ouvrir-document {
+    display: none;
+  }
+
   @media (max-width: 560px) {
+    /* Page, section et carte empilaient leurs marges : 80 px de chaque côté sur un
+       écran de 390, et une colonne de texte de 230 px. */
+    .fc-page {
+      padding: 0.75rem 0.5rem 2rem;
+    }
+
+    .fc-shell {
+      padding: 0;
+    }
+
+    .fc-shell :global(.contact-form) {
+      padding: 1.1rem 1rem;
+      border-radius: 18px;
+    }
+
+    .fc-titre {
+      font-size: 1.3rem;
+      line-height: 1.25;
+    }
+
     .fc-recap-ligne {
       grid-template-columns: 1fr;
       gap: 0.15rem;
+    }
+
+    .fc-attention {
+      margin: 0.25rem 0 0;
+    }
+
+    .fc-ouvrir-document {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin: 0 0 0.8rem;
+      padding: 0.9rem 1rem;
+      border: 1.5px solid var(--clay);
+      border-radius: 12px;
+      background: var(--white);
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .fc-ouvrir-icone {
+      font-size: 1.4rem;
+    }
+
+    .fc-ouvrir-texte {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .fc-ouvrir-detail {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .fc-ouvrir-fleche {
+      color: var(--clay);
+      font-weight: 700;
+    }
+
+    .fc-ouvrir-bureau {
+      display: none;
+    }
+
+    .fc-document iframe {
+      height: 60vh;
+      min-height: 360px;
+    }
+
+    .fc-bouton {
+      width: 100%;
+      text-align: center;
     }
   }
 </style>
