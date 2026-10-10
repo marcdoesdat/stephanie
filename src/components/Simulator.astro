@@ -1,4 +1,6 @@
 ﻿---
+import { FRAIS_DEFAUT } from '../utils/capaciteEmprunt';
+
 interface Props {
   defaultRate?: number;
 }
@@ -53,11 +55,11 @@ const { defaultRate = 3.79 } = Astro.props;
           <div class="sim-adv-heading">Frais de propriété</div>
           <div class="sim-group">
             <label for="sim-taxes">Taxes municipales et scolaires ($/mois)</label>
-            <input type="number" id="sim-taxes" value="250" inputmode="decimal" min="0" />
+            <input type="number" id="sim-taxes" value={FRAIS_DEFAUT.taxes} inputmode="decimal" min="0" />
           </div>
           <div class="sim-group">
             <label for="sim-chauffage">Frais de chauffage ($/mois)</label>
-            <input type="number" id="sim-chauffage" value="100" inputmode="decimal" min="0" />
+            <input type="number" id="sim-chauffage" value={FRAIS_DEFAUT.chauffage} inputmode="decimal" min="0" />
           </div>
           <div class="sim-group">
             <label for="sim-condo">Frais de copropriété / condo ($/mois)</label>
@@ -131,15 +133,15 @@ const { defaultRate = 3.79 } = Astro.props;
 </section>
 
 <script>
+  import { formatMoney } from '../utils/mortgageCalc';
   import {
-    tauxMensuel,
-    pvFromPmt,
-    tauxPrimeSCHL,
-    miseMinimale,
-    prixMaxParMise,
-    calcAbsoluteMax,
-    formatMoney,
-  } from '../utils/mortgageCalc';
+    calculerCapacite,
+    messageEchec,
+    lireMontant,
+    formaterSaisie,
+    decoderTransfert,
+    CLE_TRANSFERT_EXPRESS,
+  } from '../utils/capaciteEmprunt';
 
   function saveSimulationResult(type: string, resultat: string) {
     try {
@@ -161,23 +163,19 @@ const { defaultRate = 3.79 } = Astro.props;
       return formatMoney(Math.round(n));
     }
 
-    // --- Formatage français pour les champs montant ---
-    function parseMoneyVal(s: string): number {
-      return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
-    }
-    function fmtMoneyEl(el: HTMLInputElement): void {
-      const val = parseMoneyVal(el.value);
-      if (val > 0) el.value = Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
-    }
-
     const revenuEl = document.getElementById('sim-revenu') as HTMLInputElement;
     const dettesEl = document.getElementById('sim-dettes') as HTMLInputElement;
     const miseEl   = document.getElementById('sim-mise') as HTMLInputElement;
+    const condoEl  = document.getElementById('sim-condo') as HTMLInputElement;
 
+    // --- Formatage français pour les champs montant ---
     [revenuEl, dettesEl, miseEl].forEach(el => {
-      el.addEventListener('blur', () => fmtMoneyEl(el));
+      el.addEventListener('blur', () => {
+        const val = lireMontant(el.value);
+        if (val > 0) el.value = formaterSaisie(val);
+      });
       el.addEventListener('focus', () => {
-        const val = parseMoneyVal(el.value);
+        const val = lireMontant(el.value);
         if (val > 0) el.value = Math.round(val).toString();
         el.select();
       });
@@ -241,198 +239,91 @@ const { defaultRate = 3.79 } = Astro.props;
     }
 
     function simuler() {
-      const revenu = parseMoneyVal((document.getElementById('sim-revenu') as HTMLInputElement).value);
-      const dettes = parseMoneyVal((document.getElementById('sim-dettes') as HTMLInputElement).value);
-      let mise     = parseMoneyVal((document.getElementById('sim-mise') as HTMLInputElement).value);
-      const taux   = parseFloat((document.getElementById('sim-taux') as HTMLInputElement).value) || 3.79;
+      const tauxEl = document.getElementById('sim-taux') as HTMLInputElement;
+      const revenu = lireMontant(revenuEl.value);
+      const dettes = lireMontant(dettesEl.value);
+      const mise   = lireMontant(miseEl.value);
+      const taux   = parseFloat(tauxEl.value) || 3.79;
 
       // Easter egg : taux à 0 %
-      const tauxRaw = (document.getElementById('sim-taux') as HTMLInputElement).value.trim();
-      if (tauxRaw === '0' && revenu > 0) {
+      if (tauxEl.value.trim() === '0' && revenu > 0) {
         resetDisplay();
         return;
       }
-      const amort  = parseInt((document.getElementById('sim-amort') as HTMLSelectElement).value) || 25;
 
-      // Advanced options
-      const taxes    = parseFloat((document.getElementById('sim-taxes') as HTMLInputElement).value) || 0;
-      const chauffage= parseFloat((document.getElementById('sim-chauffage') as HTMLInputElement).value) || 0;
-      const condo    = parseFloat((document.getElementById('sim-condo') as HTMLInputElement).value) || 0;
+      const entrees = {
+        revenu,
+        dettes,
+        mise,
+        taux,
+        amortAns:  parseInt((document.getElementById('sim-amort') as HTMLSelectElement).value) || 25,
+        taxes:     parseFloat((document.getElementById('sim-taxes') as HTMLInputElement).value) || 0,
+        chauffage: parseFloat((document.getElementById('sim-chauffage') as HTMLInputElement).value) || 0,
+        condo:     parseFloat(condoEl.value) || 0,
+      };
+      const r = calculerCapacite(entrees);
 
-      if (!revenu) { resetDisplay(); showWarning(null); return; }
-
-      const revMensuel  = revenu / 12;
-      const tauxStress  = Math.max(taux + 2, 5.25);
-      const rStress     = tauxMensuel(tauxStress);
-      const rReel       = tauxMensuel(taux);
-      const n           = amort * 12;
-
-      // fraisProp = taxes + chauffage + 50% condo (included in ABD/ATD ratios)
-      const fraisProp = taxes + chauffage + condo * 0.5;
-
-      // --- Max loan capacity (at stress-test rate) ---
-      function maxPret(abdR: number, atdR: number): number {
-        const pmtABD = revMensuel * abdR - fraisProp;
-        const pmtATD = revMensuel * atdR - dettes - fraisProp;
-        return pvFromPmt(Math.min(pmtABD, pmtATD), rStress, n);
-      }
-
-      const pretMaxAssure = maxPret(0.39, 0.44);
-      const pretMaxConv   = maxPret(0.35, 0.42);
-
-      // --- Insured scenario: iterate to include SCHL prime (with user's mise) ---
-      let prixAssure = 0, baseAssure = 0, primeAssure = 0;
-      if (pretMaxAssure > 0) {
-        let prix = pretMaxAssure + mise;
-        for (let i = 0; i < 10; i++) {
-          const ltv = (prix - mise) / prix;
-          const pt  = tauxPrimeSCHL(ltv);
-          const base = pretMaxAssure / (1 + pt);
-          prix = base + mise;
+      if (!r.ok) {
+        resetDisplay();
+        showWarning(messageEchec(r.motif, entrees));
+        if (r.motif === 'revenu_insuffisant') {
+          const maxEl = document.getElementById('sim-max')!;
+          maxEl.textContent = 'Revenu insuffisant';
+          maxEl.style.fontSize = '1.8rem';
         }
-        prixAssure  = prix;
-        baseAssure  = prixAssure - mise;
-        primeAssure = baseAssure * tauxPrimeSCHL(baseAssure / prixAssure);
-      }
-
-      const prixConv = pretMaxConv + mise;
-
-      // --- Determine scenario ---
-      let isAssure: boolean, prixMax: number, pretBase: number, primeSCHL: number;
-
-      if (amort > 25) {
-        isAssure  = false;
-        prixMax   = prixConv;
-        pretBase  = pretMaxConv;
-        primeSCHL = 0;
-        if (pretBase <= 0 || mise / prixMax < 0.20) {
-          showWarning('L\'amortissement de 30 ans requiert une mise de fonds d\'au moins 20 % du prix d\'achat.');
-          resetDisplay();
-          return;
-        }
-      } else {
-        const assurePossible = prixAssure > 0 && prixAssure < 1_000_000 && (mise / prixAssure) < 0.20;
-        if (assurePossible) {
-          isAssure  = true;
-          prixMax   = prixAssure;
-          pretBase  = baseAssure;
-          primeSCHL = primeAssure;
-        } else {
-          isAssure  = false;
-          prixMax   = prixConv;
-          pretBase  = pretMaxConv;
-          primeSCHL = 0;
-        }
-      }
-
-      const abdLimit  = isAssure ? 0.39 : 0.35;
-      const atdLimit  = isAssure ? 0.44 : 0.42;
-      const typeLabel = isAssure ? 'assuré' : 'conventionnel';
-
-      const maxEl = document.getElementById('sim-max')!;
-      if (pretBase <= 0) {
-        // Revenu insuffisant pour couvrir les charges (dettes + frais de propriété)
-        // par rapport aux ratios d'endettement maximaux.
-        maxEl.textContent = 'Revenu insuffisant';
-        maxEl.style.fontSize = '1.8rem';
-        document.getElementById('sim-sub')!.textContent = '';
-        const aDesDettes = dettes > 0;
-        const aDesFrais = fraisProp > 0;
-        let detail: string;
-        if (aDesDettes && aDesFrais) {
-          detail = 'Vos charges mensuelles (dettes et frais de propriété) dépassent ce que votre revenu permet selon les ratios d\u2019endettement. Augmentez le revenu ou réduisez les dettes et frais.';
-        } else if (aDesDettes) {
-          detail = 'Vos dettes mensuelles dépassent ce que votre revenu permet selon les ratios d\u2019endettement. Augmentez le revenu ou réduisez les dettes.';
-        } else if (aDesFrais) {
-          detail = 'Les frais de propriété saisis dépassent ce que votre revenu permet selon les ratios d\u2019endettement. Réduisez les frais de propriété ou augmentez le revenu.';
-        } else {
-          detail = 'Le revenu saisi est trop faible pour permettre un emprunt selon les ratios d\u2019endettement.';
-        }
-        showWarning(detail);
-        document.getElementById('sim-absolute-card')!.style.display = 'none';
         return;
       }
-      maxEl.style.fontSize = '';
 
-      // --- Validate minimum down payment ---
-      let warning: string | null = null;
-      const miseMin = miseMinimale(prixMax);
-      if (mise < miseMin) {
-        const cap = prixMaxParMise(mise);
-        if (cap < prixMax) {
-          prixMax  = cap;
-          pretBase = prixMax - mise;
-          const ltv = pretBase / prixMax;
-          primeSCHL = isAssure ? pretBase * tauxPrimeSCHL(ltv) : 0;
-          warning = 'Mise de fonds insuffisante pour la capacité maximale. Prix limité à ' + fmt(cap) + '.';
-        }
-      }
-
-      // Total loan and real monthly payment
-      const pretTotal = pretBase + primeSCHL;
-      const pmtReel   = pretTotal * (rReel * Math.pow(1 + rReel, n)) / (Math.pow(1 + rReel, n) - 1);
-
-      // ABD / ATD at stress rate
-      const pmtStress = pretTotal * (rStress * Math.pow(1 + rStress, n)) / (Math.pow(1 + rStress, n) - 1);
-      const abd = ((pmtStress + fraisProp) / revMensuel) * 100;
-      const atd = ((pmtStress + fraisProp + dettes) / revMensuel) * 100;
+      const typeLabel = r.assure ? 'assuré' : 'conventionnel';
+      const partMise  = (mise / r.prixMax * 100).toFixed(1);
 
       // --- Update DOM ---
-      showWarning(warning);
+      showWarning(r.plafonneParMise
+        ? 'Mise de fonds insuffisante pour la capacité maximale. Prix limité à ' + fmt(r.prixMax) + '.'
+        : null);
 
-      document.getElementById('sim-max')!.textContent = fmt(prixMax);
+      const maxEl = document.getElementById('sim-max')!;
+      maxEl.style.fontSize = '';
+      maxEl.textContent = fmt(r.prixMax);
       document.getElementById('sim-sub')!.textContent =
-        'Prêt ' + typeLabel + ' · Mise de fonds de ' + fmt(mise) + ' (' + (mise / prixMax * 100).toFixed(1) + ' %)';
-      document.getElementById('sim-pret')!.textContent = fmt(pretTotal);
-      document.getElementById('sim-pmt')!.textContent  = fmt(pmtReel) + ' / mois';
+        'Prêt ' + typeLabel + ' · Mise de fonds de ' + fmt(mise) + ' (' + partMise + ' %)';
+      document.getElementById('sim-pret')!.textContent = fmt(r.pretTotal);
+      document.getElementById('sim-pmt')!.textContent  = fmt(r.versement) + ' / mois';
 
       const abdEl = document.getElementById('sim-abd')!;
-      abdEl.textContent = abd.toFixed(1) + ' %';
+      abdEl.textContent = r.abd.toFixed(1) + ' %';
       // Green < 32%, Orange 32–39%, Red > 39%
-      abdEl.style.color = ratioColor(abd, 32, abdLimit * 100);
+      abdEl.style.color = ratioColor(r.abd, 32, r.abdLimite);
 
       const atdEl = document.getElementById('sim-atd')!;
-      atdEl.textContent = atd.toFixed(1) + ' %';
+      atdEl.textContent = r.atd.toFixed(1) + ' %';
       // Green < 40%, Orange 40–44%, Red > 44%
-      atdEl.style.color = ratioColor(atd, 40, atdLimit * 100);
+      atdEl.style.color = ratioColor(r.atd, 40, r.atdLimite);
 
-      // --- Capacité maximale absolue ---
-      // Uses ABD 39% / ATD 44% (insured limits = most permissive)
-      const pmtAbsABD = revMensuel * 0.39 - fraisProp;
-      const pmtAbsATD = revMensuel * 0.44 - dettes - fraisProp;
-      const pmtAbsMax = Math.min(pmtAbsABD, pmtAbsATD);
-      const pretAbsMax = pvFromPmt(pmtAbsMax, rStress, n);
-
+      // --- Capacité maximale absolue (plafonds assurés, mise de fonds minimale) ---
       const absCard = document.getElementById('sim-absolute-card')!;
-      if (pretAbsMax > 0) {
-        const { prix: absPrix, miseMin: absMise } = calcAbsoluteMax(pretAbsMax);
-        if (absPrix > 0) {
-          absCard.style.display = '';
-          document.getElementById('sim-abs-prix')!.textContent = fmt(absPrix);
-          document.getElementById('sim-abs-mise')!.textContent = fmt(absMise);
-          document.getElementById('sim-abs-sub')!.textContent =
-            absPrix >= 1_000_000
-              ? 'Prêt conventionnel · Mise de fonds minimale de'
-              : 'Prêt assuré (SCHL) · Mise de fonds minimale de';
-        } else {
-          absCard.style.display = 'none';
-        }
+      if (r.maxAbsolu) {
+        absCard.style.display = '';
+        document.getElementById('sim-abs-prix')!.textContent = fmt(r.maxAbsolu.prix);
+        document.getElementById('sim-abs-mise')!.textContent = fmt(r.maxAbsolu.miseMin);
+        document.getElementById('sim-abs-sub')!.textContent =
+          r.maxAbsolu.prix >= 1_000_000
+            ? 'Prêt conventionnel · Mise de fonds minimale de'
+            : 'Prêt assuré (SCHL) · Mise de fonds minimale de';
       } else {
         absCard.style.display = 'none';
       }
 
       // Sauvegarder dans sessionStorage pour le formulaire « On en parle »
-      if (pretBase > 0 && prixMax > 0) {
-        saveSimulationResult('simulateur',
-          `Simulateur d'emprunt — Prix max : ${fmt(prixMax)}, ` +
-          `Revenu annuel : ${fmt(revenu)}, ` +
-          `Mise de fonds : ${fmt(mise)} (${(mise / prixMax * 100).toFixed(1)} %), ` +
-          `Taux : ${taux.toFixed(2).replace('.', ',')} %, ` +
-          `Versement : ${fmt(pmtReel)}/mois, ` +
-          `Prêt ${typeLabel} : ${fmt(pretTotal)}, ` +
-          `Ratio ABD : ${abd.toFixed(1)} %, Ratio ATD : ${atd.toFixed(1)} %`
-        );
-      }
+      saveSimulationResult('simulateur',
+        `Simulateur d'emprunt — Prix max : ${fmt(r.prixMax)}, ` +
+        `Revenu annuel : ${fmt(revenu)}, ` +
+        `Mise de fonds : ${fmt(mise)} (${partMise} %), ` +
+        `Taux : ${taux.toFixed(2).replace('.', ',')} %, ` +
+        `Versement : ${fmt(r.versement)}/mois, ` +
+        `Prêt ${typeLabel} : ${fmt(r.pretTotal)}, ` +
+        `Ratio ABD : ${r.abd.toFixed(1)} %, Ratio ATD : ${r.atd.toFixed(1)} %`
+      );
     }
 
     function scheduleSimulation() {
@@ -451,7 +342,20 @@ const { defaultRate = 3.79 } = Astro.props;
     });
     document.getElementById('sim-amort')!.addEventListener('change', simuler);
 
-
+    // Arrivée depuis le calculateur express de l'accueil : reprendre ses chiffres, une seule
+    // fois. Le transfert est effacé dès la lecture — un retour sur la page plus tard repart
+    // des valeurs par défaut plutôt que d'un calcul oublié.
+    try {
+      const t = decoderTransfert(sessionStorage.getItem(CLE_TRANSFERT_EXPRESS), Date.now());
+      sessionStorage.removeItem(CLE_TRANSFERT_EXPRESS);
+      if (t) {
+        if (t.revenu !== undefined) revenuEl.value = formaterSaisie(t.revenu);
+        if (t.dettes !== undefined) dettesEl.value = formaterSaisie(t.dettes);
+        if (t.mise !== undefined)   miseEl.value   = formaterSaisie(t.mise);
+        if (t.condo !== undefined)  condoEl.value  = String(Math.round(t.condo));
+        if (t.taux !== undefined)   simTauxEl.value = t.taux.toFixed(2);
+      }
+    } catch { /* stockage indisponible : le simulateur garde ses valeurs par défaut */ }
 
     simuler();
   });

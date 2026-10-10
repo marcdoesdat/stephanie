@@ -11,10 +11,11 @@ import Testimonials from '../components/Testimonials.astro';
 import Contact from '../components/Contact.astro';
 import Footer from '../components/Footer.astro';
 import MessengerBtn from '../components/MessengerBtn.astro';
+import CapaciteExpress from '../components/CapaciteExpress.astro';
 import { fetchHypothecaRates, rateCacheControl } from '../services/ratesService';
 import { getReviews } from '../services/reviewsService';
 import { loadSiteConfig } from '../config';
-import { House, Calculator, ClipboardList } from '@lucide/astro';
+import { Calculator, ClipboardList, Receipt, RefreshCw, Scale } from '@lucide/astro';
 
 // SSR obligatoire : les taux sont récupérés à chaque requête. Sans cette ligne,
 // Astro prérend la page au build et fige les taux du jour du déploiement
@@ -31,6 +32,16 @@ const googleReviews = await getReviews();
 // CDN cache: serve cached HTML for 6 h, revalidate in background for 1 h after expiry.
 // Durée réduite quand les taux manquent, pour ne pas figer la page dégradée.
 Astro.response.headers.set('Cache-Control', rateCacheControl(hypothecaRates));
+
+// Sous le calculateur express : les cinq autres outils de /outils (le simulateur complet
+// est déjà proposé par « Affiner » dans le calculateur).
+const autresOutils = [
+  { href: '/outils#calculateur', titre: 'Calculateur de versement', sous: 'Vos mensualités selon le taux et l’amortissement', Icone: Calculator },
+  { href: '/outils#comparateur', titre: 'Comparateur de taux', sous: 'Banque ou courtier : l’écart en dollars', Icone: Scale },
+  { href: '/outils#penalite', titre: 'Calculateur de pénalité', sous: 'IRD ou 3 mois d’intérêts', Icone: ClipboardList },
+  { href: '/outils#refinancement', titre: 'Simulateur de refinancement', sous: 'Consolider ses dettes, dégager de l’équité', Icone: RefreshCw },
+  { href: '/outils#droits-mutation', titre: 'Droits de mutation', sous: 'La taxe de bienvenue, calculée d’avance', Icone: Receipt },
+];
 
 ---
 
@@ -64,14 +75,48 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(hypothecaRates));
   <MessengerBtn />
   <Nav />
   <main id="main-content">
+    <!-- Ordre de l'accueil : la promesse, puis ce qui donne quelque chose avant de demander
+         (le calculateur, que le 2e bouton du hero vise), puis « est-ce pour moi » (services),
+         le renouvellement d'un seul tenant (taux + rappel), la preuve juste avant la
+         demande de contact (à propos + avis), et enfin FAQ et contact. -->
     <Hero baseRate={hypothecaVariable} reviews={googleReviews} />
 
-    <Services />
+    <section id="outils-teaser" aria-labelledby="outils-teaser-titre">
+      <div class="section-inner">
+        <div class="fade-up">
+          <h2 class="section-title" id="outils-teaser-titre">Combien pouvez-vous<br /><em>emprunter ?</em></h2>
+          <p class="section-sub">
+            Trois chiffres suffisent pour une première estimation, calculée comme le ferait un
+            prêteur, test de résistance compris.
+          </p>
+          <p class="outils-trust">Sans inscription · Résultat instantané</p>
+        </div>
 
-    <section id="apropos">
-      <About />
-      <Testimonials reviews={googleReviews} />
+        <CapaciteExpress taux={hypothecaRates?.fixe_5ans ?? null} />
+
+        <nav class="outils-autres fade-up" aria-labelledby="outils-autres-titre">
+          <div class="outils-autres-tete">
+            <h3 id="outils-autres-titre">Allez plus loin avec mes autres outils</h3>
+            <a href="/outils" class="outils-autres-tous">Voir tous les outils →</a>
+          </div>
+          <ul>
+            {autresOutils.map(({ href, titre, sous, Icone }) => (
+              <li>
+                <a href={href}>
+                  <span class="outils-autres-icone" aria-hidden="true"><Icone size={20} stroke-width={1.8} /></span>
+                  <span class="outils-autres-texte">
+                    <strong>{titre}</strong>
+                    <span>{sous}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
     </section>
+
+    <Services />
 
     <TauxSection hypothecaRates={hypothecaRates} />
 
@@ -87,42 +132,9 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(hypothecaRates));
       </div>
     </section>
 
-    <section id="outils-teaser">
-      <div class="section-inner">
-        <div class="fade-up">
-          <h2 class="section-title">Préparez votre projet<br />avec mes <em>outils</em></h2>
-          <p class="section-sub">
-            Capacité d'emprunt, versement estimé, pénalité hypothécaire — et trois autres outils
-            de planification pour préparer votre projet.
-          </p>
-          <p class="outils-trust">Sans inscription · Résultats instantanés</p>
-        </div>
-
-        <div class="outils-teaser-grid stagger-children">
-          <a href="/outils#simulateur" class="outils-card" aria-label="Simulateur d'emprunt — Estimez votre capacité d'achat">
-            <div class="service-icon" aria-hidden="true"><House size={22} stroke-width={1.8} /></div>
-            <div class="outils-card-title">Simulateur d'emprunt</div>
-            <p>Estimez votre capacité réelle selon vos revenus, dettes, mise de fonds et taux de qualification.</p>
-            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
-          </a>
-          <a href="/outils#calculateur" class="outils-card" aria-label="Calculateur de versement — Calculez vos mensualités">
-            <div class="service-icon" aria-hidden="true"><Calculator size={22} stroke-width={1.8} /></div>
-            <div class="outils-card-title">Calculateur de versement</div>
-            <p>Calculez des mensualités précises avec le taux, l'amortissement et les frais qui comptent vraiment.</p>
-            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
-          </a>
-          <a href="/outils#penalite" class="outils-card" aria-label="Calculateur de pénalité — Estimez vos frais de remboursement anticipé">
-            <div class="service-icon" aria-hidden="true"><ClipboardList size={22} stroke-width={1.8} /></div>
-            <div class="outils-card-title">Calculateur de pénalité</div>
-            <p>Estimez les frais de remboursement anticipé (IRD ou 3 mois d'intérêts) selon votre prêteur et votre contrat.</p>
-            <span class="outils-card-arrow" aria-hidden="true">Ouvrir l'outil →</span>
-          </a>
-        </div>
-
-        <div class="fade-up outils-teaser-cta" style="text-align:center">
-          <a href="/outils" class="btn-secondary btn-secondary--sm">Voir les 6 outils de planification →</a>
-        </div>
-      </div>
+    <section id="apropos">
+      <About />
+      <Testimonials reviews={googleReviews} />
     </section>
 
     <Faq />
@@ -139,50 +151,104 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(hypothecaRates));
       margin: 0;
     }
 
-    /* Tuiles cliquables — style cohérent avec les cartes Services */
     .outils-trust {
       margin: 0.25rem 0 0;
       font-size: 0.78rem;
       color: var(--clay, #c47a52);
       font-weight: 500;
     }
-    #outils-teaser .outils-card {
+
+    /* Les autres outils — une rangée discrète sous le calculateur, qui reste la vedette */
+    .outils-autres {
+      margin-top: 2.5rem;
+    }
+    .outils-autres-tete {
       display: flex;
-      flex-direction: column;
-      text-decoration: none;
-      color: inherit;
-      border-radius: 20px;
-      padding: 1.8rem 1.6rem;
-      box-shadow: 0 2px 12px rgba(0,0,0,.04);
-      transition: transform 0.25s, box-shadow 0.25s;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
     }
-    #outils-teaser .outils-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 36px rgba(0,0,0,.10);
-    }
-    #outils-teaser .outils-card-title {
-      font-size: 1.1rem;
+    .outils-autres h3 {
+      font-family: "Lora", serif;
+      font-size: 1.25rem;
       font-weight: 600;
+      color: var(--ink);
     }
-    #outils-teaser .outils-card p {
-      font-size: 0.85rem;
-      flex: 1;
+    .outils-autres-tous {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--clay-dk);
+      text-decoration: none;
     }
-    #outils-teaser .outils-card-arrow {
+    .outils-autres-tous:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .outils-autres ul {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+    .outils-autres li a {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      height: 100%;
+      padding: 0.9rem 1rem;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: inherit;
+      text-decoration: none;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .outils-autres li a:hover {
+      border-color: var(--clay);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .outils-autres li a:focus-visible {
+      outline: 3px solid var(--clay);
+      outline-offset: 2px;
+    }
+    .outils-autres-icone {
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
-      margin-top: 0.75rem;
-      font-size: 0.95rem;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 10px;
+      background: var(--sand);
+      color: var(--clay-dk);
+    }
+    .outils-autres-texte {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+    }
+    .outils-autres-texte strong {
+      font-size: 0.92rem;
       font-weight: 600;
-      color: var(--clay, #c47a52);
-      transition: transform 0.2s;
+      color: var(--ink);
     }
-    #outils-teaser .outils-card:hover .outils-card-arrow {
-      transform: translateX(4px);
+    .outils-autres-texte span {
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: var(--muted);
     }
-    #outils-teaser .outils-card--coming-soon {
-      border-style: dashed;
+    @media (max-width: 580px) {
+      .outils-autres {
+        margin-top: 2rem;
+      }
+      .outils-autres ul {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
     }
   </style>
 
