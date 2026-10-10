@@ -276,6 +276,41 @@ describe('enregistrerSignature', () => {
     expect(dossier.emprunteurs[0]!.reponses?.identiteCorrigee).toContain('anais@exemple.ca');
   });
 
+  it('reporte le téléphone et l’adresse corrigés dans le contrat, pour le signataire suivant', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca', 'bo@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+
+    const { dossier } = await service.enregistrerSignature(
+      ouvert.dossier,
+      ouvert.index,
+      signature(),
+      { ...reponses(), telephone: '438-555-0101', adresse: '12 rue Corrigée, Repentigny' },
+      { ...ouvert.dossier.emprunteurs[0]!.emprunteur },
+    );
+
+    // Le contrat lui-même porte la correction : l'aperçu du suivant et « Corriger le
+    // contrat » lisent `donnees`, pas les réponses.
+    expect(dossier.donnees.emprunteurs[0]!.telephone).toBe('438-555-0101');
+    expect(dossier.donnees.emprunteurs[0]!.adresse).toBe('12 rue Corrigée, Repentigny');
+    expect(dossier.emprunteurs[0]!.emprunteur.telephone).toBe('438-555-0101');
+    expect(dossier.donnees.emprunteurs[1]!.telephone).toBe('');
+  });
+
+  it('garde le téléphone saisi par la courtière quand l’emprunteur le laisse vide', async () => {
+    const service = await chargerService();
+    const d = donnees('ana@exemple.ca');
+    const { invitation } = await service.creerDossier({
+      ...d,
+      emprunteurs: [{ ...d.emprunteurs[0]!, telephone: '514-555-0000', adresse: '1 rue A' }],
+    });
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+
+    const { dossier } = await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+    expect(dossier.donnees.emprunteurs[0]!.telephone).toBe('514-555-0000');
+    expect(dossier.donnees.emprunteurs[0]!.adresse).toBe('1 rue A');
+  });
+
   it('ne note aucune correction quand l’identité est confirmée telle quelle', async () => {
     const service = await chargerService();
     const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
