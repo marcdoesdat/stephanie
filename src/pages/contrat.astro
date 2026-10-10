@@ -648,7 +648,10 @@ const RANGS = [0, 1, 2];
             <div class="ct-apercu" data-apercu hidden>
               <div class="ct-apercu-entete">
                 <strong>Aperçu du contrat</strong>
-                <button type="button" class="ct-lien" data-fermer-apercu>fermer</button>
+                <span class="ct-apercu-liens">
+                  <button type="button" class="ct-lien" data-apercu-plein-ecran>plein écran</button>
+                  <button type="button" class="ct-lien" data-fermer-apercu>fermer</button>
+                </span>
               </div>
               <iframe data-apercu-cadre title="Aperçu du contrat de courtage"></iframe>
             </div>
@@ -668,6 +671,20 @@ const RANGS = [0, 1, 2];
           </form>
         )
       }
+      {/* Hors de #ct-form : un formulaire ne s'imbrique pas dans un autre. Il poste le
+          contrat en cours de saisie vers un nouvel onglet, où le lecteur PDF du navigateur
+          montre toutes les pages. Rien n'est stocké : la route ne fait que rendre le PDF. */}
+      {autorise && (
+        <form
+          method="post"
+          action="/api/contrat-previsualiser"
+          target="_blank"
+          data-apercu-onglet
+          hidden
+        >
+          <input type="hidden" name="donnees" />
+        </form>
+      )}
     </section>
   </main>
 </MainLayout>
@@ -1222,6 +1239,11 @@ const RANGS = [0, 1, 2];
     background: #fff;
     border-bottom: 1px solid var(--line, #e3d9cc);
     font-size: 0.9rem;
+  }
+
+  .ct-apercu-liens {
+    display: flex;
+    gap: 1rem;
   }
 
   .ct-apercu iframe {
@@ -2766,12 +2788,37 @@ const RANGS = [0, 1, 2];
       if (apercu) apercu.hidden = true;
     });
 
+    /**
+     * Ouvre l'aperçu dans un nouvel onglet, par un vrai formulaire : le navigateur affiche
+     * alors le PDF avec son propre lecteur, toutes pages comprises. Un formulaire soumis
+     * pendant le clic n'est pas traité en fenêtre surgissante, contrairement à un
+     * `window.open` lancé après un `await`.
+     */
+    function ouvrirApercuOnglet(donnees: Record<string, unknown>): boolean {
+      const envoi = document.querySelector<HTMLFormElement>('[data-apercu-onglet]');
+      const champ = envoi?.querySelector<HTMLInputElement>('input[name="donnees"]');
+      if (!envoi || !champ) return false;
+      champ.value = JSON.stringify(donnees);
+      envoi.submit();
+      return true;
+    }
+
+    // Sur téléphone, un PDF dans un cadre n'affiche qu'une page, voire rien du tout.
+    const ecranEtroit = window.matchMedia('(max-width: 620px)');
+
+    formulaire.querySelector('[data-apercu-plein-ecran]')?.addEventListener('click', () => {
+      const donnees = collecter();
+      if (emprunteursValides(donnees)) ouvrirApercuOnglet(donnees);
+    });
+
     formulaire.querySelector('[data-previsualiser]')?.addEventListener('click', async (evenement) => {
       const declencheur = evenement.currentTarget as HTMLButtonElement;
       if (erreur) erreur.hidden = true;
 
       const donnees = collecter();
       if (!emprunteursValides(donnees)) return;
+
+      if (ecranEtroit.matches && ouvrirApercuOnglet(donnees)) return;
 
       declencheur.disabled = true;
       const libelle = declencheur.textContent;

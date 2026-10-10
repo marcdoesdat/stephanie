@@ -22,9 +22,19 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response('Session expirée. Rechargez la page.', { status: 401 });
   }
 
+  // Deux émetteurs : le cadre de l'écran (JSON, par fetch) et, sur téléphone, un
+  // formulaire posté vers un nouvel onglet — le seul moyen d'obtenir le lecteur PDF du
+  // téléphone, qui affiche toutes les pages, là où un cadre n'en montre qu'une ou aucune.
+  // Le formulaire porte le même JSON dans un champ caché ; la validation est identique.
   let payload: Record<string, unknown>;
   try {
-    payload = (await request.json()) as Record<string, unknown>;
+    const type = request.headers.get('content-type') ?? '';
+    if (type.includes('application/x-www-form-urlencoded') || type.includes('multipart/form-data')) {
+      const champ = (await request.formData()).get('donnees');
+      payload = { donnees: typeof champ === 'string' ? JSON.parse(champ) : null };
+    } else {
+      payload = (await request.json()) as Record<string, unknown>;
+    }
   } catch {
     return new Response('Requête invalide', { status: 400 });
   }

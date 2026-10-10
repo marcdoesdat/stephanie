@@ -513,6 +513,12 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   « 30 avril 2027 ») : le serveur reçoit et estampe le même texte qu'avant. Calcul sur les
   chiffres, jamais `new Date('2027-04-30')`, qui serait la veille au Québec. Un ancien texte
   qu'on ne sait pas relire n'est pas effacé : il est conservé et affiché sous la case.
+- **L'aperçu de `/contrat` a deux chemins.** Sur ordinateur, le PDF est rendu dans un cadre
+  depuis une adresse `blob:` — d'où `blob:` dans le `frame-src` de la CSP, sans quoi Chrome
+  refusait le cadre. Sur téléphone, un cadre n'affiche qu'une page, voire rien : un formulaire
+  caché poste le contrat vers un nouvel onglet, où le lecteur PDF du téléphone montre tout.
+  `/api/contrat-previsualiser` accepte donc le JSON **et** le formulaire (champ `donnees`),
+  avec la même validation. Rien n'est stocké dans un cas comme dans l'autre.
 - `/contrat` et `/api/contrat-creer` appliquent **le même** verdict d'accès : une page
   protégée devant une API ouverte ne protège rien.
 - Sans `CONTRAT_MOT_DE_PASSE` en production, la page se **ferme** (fail closed). En dev,
@@ -869,6 +875,8 @@ npx vitest              # mode watch
   correction : signatures écartées, anciens liens morts, historique conservé
 - `src/services/contratCorrigerRoute.test.ts` — la correction relance le premier signataire avec
   ce qui a changé, prévient les autres déjà atteints, n'écrit à personne en présentiel
+- `src/services/contratPrevisualiserRoute.test.ts` — l'aperçu rend le même PDF demandé en
+  JSON ou posté par formulaire, et refuse un formulaire abîmé
 - `src/services/accesCourtiere.test.ts` — porte de `/contrat` (fail closed, rotation du secret)
 - `src/utils/reseauCourtiers.test.ts` — gabarits rendus sans variable orpheline, whitelists
 - `src/services/reseauContactService.test.ts` — retrait définitif et idempotent, historique,
