@@ -7,6 +7,7 @@ import {
   AMORTISSEMENT_DEFAUT,
   FRAIS_DEFAUT,
   PART_FRAIS_CONDO,
+  PART_SOLDE_ROTATIF,
   tauxQualification,
 } from '../utils/capaciteEmprunt';
 
@@ -46,7 +47,16 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
         <input type="text" id="ce-dettes" inputmode="numeric" autocomplete="off" placeholder="0" aria-describedby="ce-dettes-aide" />
         <span class="ce-unite" aria-hidden="true">$/mois</span>
       </div>
-      <p class="ce-aide" id="ce-dettes-aide">Prêts auto, étudiants et personnels, pension alimentaire, cartes de crédit (3&nbsp;% du solde)</p>
+      <p class="ce-aide" id="ce-dettes-aide">Prêts auto, étudiants et personnels, pension alimentaire</p>
+    </div>
+
+    <div class="ce-champ">
+      <label for="ce-cartes">Solde des cartes de crédit et du crédit rotatif</label>
+      <div class="ce-saisie">
+        <input type="text" id="ce-cartes" inputmode="numeric" autocomplete="off" placeholder="0" aria-describedby="ce-cartes-aide" />
+        <span class="ce-unite" aria-hidden="true">$</span>
+      </div>
+      <p class="ce-aide" id="ce-cartes-aide">Cartes et marges de crédit&nbsp;: les prêteurs comptent {PART_SOLDE_ROTATIF * 100}&nbsp;% du solde chaque mois</p>
     </div>
 
     <div class="ce-champ ce-champ--case">
@@ -90,7 +100,7 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
     <div class="ce-res" aria-live="polite" aria-atomic="true">
       <div class="ce-res-label">Prix d'achat maximal estimé</div>
       <div class="ce-res-val" id="ce-prix">—</div>
-      <div class="ce-res-detail" id="ce-detail">Entrez votre revenu et votre mise de fonds</div>
+      <div class="ce-res-detail" id="ce-detail">Remplissez tous les champs pour voir votre prix d’achat</div>
       <p class="ce-alerte" id="ce-alerte" hidden></p>
     </div>
 
@@ -125,6 +135,7 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
     CLE_TRANSFERT_EXPRESS,
     FRAIS_DEFAUT,
     calculerCapacite,
+    dettesEquivalentes,
     formaterSaisie,
     lireMontant,
     messageEchec,
@@ -144,6 +155,7 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
     const revenuEl = $<HTMLInputElement>('ce-revenu')!;
     const miseEl = $<HTMLInputElement>('ce-mise')!;
     const dettesEl = $<HTMLInputElement>('ce-dettes')!;
+    const cartesEl = $<HTMLInputElement>('ce-cartes')!;
     const condoCase = $<HTMLInputElement>('ce-condo-case')!;
     const condoBloc = $<HTMLElement>('ce-condo-bloc')!;
     const condoEl = $<HTMLInputElement>('ce-condo')!;
@@ -172,11 +184,15 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
       return t >= 0.5 && t <= 20 ? t : null;
     }
 
+    /** Un « 0 » écrit compte : c'est une réponse. Un champ vide n'en est pas une. */
+    const rempli = (el: HTMLInputElement) => el.value.trim() !== '';
+
     function lireEntrees() {
       return {
         revenu: lireMontant(revenuEl.value),
         mise: lireMontant(miseEl.value),
-        dettes: lireMontant(dettesEl.value),
+        // Les cartes et marges pèsent dans les ratios à 3 % de leur solde, comme un paiement
+        dettes: dettesEquivalentes(lireMontant(dettesEl.value), lireMontant(cartesEl.value)),
         // Décocher retire les frais du calcul sans effacer la saisie : recocher la ramène
         condo: condoCase.checked ? lireMontant(condoEl.value) : 0,
       };
@@ -203,8 +219,11 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
       const { revenu, mise, dettes, condo } = lireEntrees();
       const taux = tauxRetenu();
 
-      if (!revenu || !miseEl.value.trim()) {
-        afficher('—', 'Entrez votre revenu et votre mise de fonds', null, 'attente');
+      // Le prix ne s'affiche que lorsque toutes les cases sont remplies : un chiffre calculé
+      // avec une case oubliée serait trop optimiste, et c'est celui que le visiteur retiendrait.
+      const champs = [revenuEl, miseEl, dettesEl, cartesEl, ...(condoCase.checked ? [condoEl] : [])];
+      if (!champs.every(rempli) || !revenu) {
+        afficher('—', 'Remplissez tous les champs pour voir votre prix d’achat', null, 'attente');
         return;
       }
       if (taux === null) {
@@ -222,7 +241,8 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
 
       if (!r.ok) {
         if (r.motif === 'revenu_insuffisant') {
-          afficher('Revenu insuffisant', '', 'Avec ce revenu et ces paiements, les ratios d’endettement des prêteurs ne laissent pas de place à un versement hypothécaire.', 'revenu', true);
+          // Pas de verdict : le calcul ne voit que quatre chiffres, et un humain voit le reste
+          afficher('Parlons-en', 'Votre situation mérite qu’on la regarde de plus près, avec le portrait complet.', null, 'revenu', true);
         } else {
           afficher('—', '', messageEchec(r.motif, entrees), 'mise');
         }
@@ -250,7 +270,7 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
     }
 
     // Montants : « 95 000 » au repos, chiffres nus pendant la saisie
-    [revenuEl, miseEl, dettesEl, condoEl].forEach((el) => {
+    [revenuEl, miseEl, dettesEl, cartesEl, condoEl].forEach((el) => {
       el.addEventListener('input', planifier);
       el.addEventListener('blur', () => {
         const v = lireMontant(el.value);
@@ -283,6 +303,7 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
       track('capacite_express_simulateur');
       const { revenu, mise, dettes, condo } = lireEntrees();
       if (!revenu) return;
+      // `dettes` porte déjà l'équivalent mensuel des cartes : le simulateur n'a qu'un champ
       const transfert: Record<string, number> = { ts: Date.now(), revenu, dettes, condo };
       if (miseEl.value.trim()) transfert.mise = mise;
       const taux = tauxRetenu();

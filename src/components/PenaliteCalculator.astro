@@ -298,6 +298,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
 </section>
 
 <script>
+  import { cheminLangue } from '../utils/cheminLangue';
   import { calculerPenalite, comparerMethodes, validerInputs, formatArgent, formaterDate, type PenaliteInput, type MethodeIRD, type TypeTaux } from '../lib/penalite';
   import { tousLesPreteurs } from '../data/preteurs';
 
@@ -676,7 +677,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
 
           document.body.dataset.outilsConverted = 'true';
           localStorage.setItem('penalite_email_sent', '1');
-          window.location.href = '/merci';
+          window.location.href = cheminLangue('/merci');
         } catch {
           if (capMsgEl) {
             capMsgEl.textContent = "Une erreur est survenue lors de l'envoi. Veuillez réessayer.";

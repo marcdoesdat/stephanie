@@ -106,8 +106,8 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
             <img src="/images/hypotheca-couleur.svg" alt="Hypotheca" width="76" height="76" style="display:block;" loading="lazy" />
           </div>
           {ratingLabel ? (
-            <a class="ribbon-card ribbon-card--reviews" href="#temoignages" aria-label={`${ratingLabel} sur 5 — voir les ${reviews!.totalReviews} avis Google`}>
-              <span class="card-sm">{reviews!.totalReviews} avis Google</span>
+            <a class="ribbon-card ribbon-card--reviews" href="#temoignages" aria-label={`${ratingLabel} sur 5 — voir les avis Google`}>
+              <span class="card-sm">Avis Google</span>
               <span class="card-val">⭐ {ratingLabel}&nbsp;/&nbsp;5</span>
             </a>
           ) : (

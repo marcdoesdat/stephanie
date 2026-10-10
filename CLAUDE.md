@@ -68,6 +68,7 @@ src/
 | `/conditions` | Statique | Conditions d'utilisation |
 | `/confidentialite` | Statique | Politique de confidentialité |
 | `/404` | Statique | Page d'erreur |
+| `/en/…` | SSR (middleware) | Version anglaise des pages publiques, traduite à la volée depuis le français — voir « Version anglaise » |
 | `/api/bdc-rate` | API | Taux directeur Banque du Canada (proxy, cache 6h) |
 | `/api/rappel-submit` | API | Soumission formulaire de rappel (`/rappel`) |
 | `/api/contact-submit` | API | Soumission formulaire de contact / quiz (accueil, section `#contact`) |
@@ -888,6 +889,59 @@ les cinq.
   chargement (via l'`ouvrirFiche` déjà présent) ; `/contrat#ct-suivi` déplie la section de suivi.
 - Les cartes de tâches sont bâties en JavaScript, donc habillées par un bloc `is:global`
   circonscrit par `#tb-app` — même raison que `#rs-app`, `#dc-app` et `#ct-suivi`.
+
+## Version anglaise (`/en/…`)
+
+Chaque page publique a un équivalent anglais, **à sa propre adresse** — `/en/`, `/en/outils/`,
+`/en/services/premier-achat/` — donc indexable. Il n'y a pas de second jeu de pages : le serveur
+va chercher la page française, la traduit avec un dictionnaire et la renvoie (cache CDN 1 h).
+Les deux versions ne peuvent donc pas diverger : taux du jour, composants et liens sont ceux du
+français.
+
+| Fichier | Rôle |
+|---------|------|
+| `src/data/pagesTraduites.json` | **La liste** des pages qui ont une version anglaise (sitemap, hreflang, middleware, extracteur) |
+| `src/utils/pagesAnglaises.ts` | Chemins FR ↔ EN, en fonctions pures (barre finale toujours présente en anglais) |
+| `src/services/servirAnglais.ts` | Va chercher la page française, la traduit ; redirige `/en/x` → `/en/x/` ; 404 non indexable hors liste |
+| `src/services/traductionPage.ts` | HTML français → HTML anglais (linkedom) : texte, `<noscript>`, liens `/en/`, canonique, `og:` |
+| `src/middleware.ts` | Branche `GET /en/…` sur `servirAnglais` avant tout le reste |
+| `public/js/i18n-core.js` | Moteur **partagé serveur / navigateur** : découpe le DOM en « unités », clés, `traducteur()` |
+| `public/js/i18n-en.json` | Le dictionnaire FR → EN |
+| `public/js/i18n-regles.js` | Phrases construites par les scripts avec des chiffres (`P(...)`, `R(...)`) et morceaux fixes (`frag`) |
+| `public/js/i18n.js` | Navigateur : bascule FR/EN, traduction du texte écrit **après coup** par les calculateurs, liens posés par script |
+| `src/utils/cheminLangue.ts` | Les navigations par code (`/merci` après un envoi) restent dans `/en/` |
+| `scripts/i18n-extraire.mjs`, `scripts/i18n-verifier-en.mjs` | Textes sans traduction ; contrôle des pages `/en/` d'un serveur lancé |
+
+**Règles :**
+- **Une clé = une unité de texte** : le plus haut élément qui ne contient que du texte et des
+  balises en ligne ; chaque balise en ligne devient un numéro (`Voyez <1>nos taux</1> ici`). La
+  traduction garde les numéros, ce qui permet de réordonner les mots **sans recréer les
+  éléments** — les écouteurs et références des scripts survivent.
+- **Ajouter ou modifier un texte français = ajouter sa traduction.** Lancer
+  `node scripts/i18n-extraire.mjs http://localhost:4321` : il liste les clés manquantes et les
+  traductions dont les balises ne correspondent pas. Un texte absent reste en français, jamais
+  inventé. Puis `node scripts/i18n-verifier-en.mjs …` contrôle les pages `/en/`.
+- **Ajouter une page publique** : l'inscrire dans `pagesTraduites.json` (sinon `/en/` la sert en 404).
+  Les pages privées ou de signature n'y figurent **jamais** (`sansTraduction` sur `MainLayout`) :
+  ce qui est signé se lit dans la langue du PDF signé, et `servirAnglais` n'appelle que les pages
+  de la liste — un test le verrouille.
+- **Redirection selon la préférence** : un visiteur qui a choisi « EN » (`localStorage.sw_lang`)
+  arrivant sur une page française est envoyé vers `/en/…` avant affichage (script de l'en-tête de
+  `MainLayout`). Un robot n'a pas de `localStorage` : il reste sur l'adresse demandée, ce qui laisse
+  chaque version s'indexer. `?lang=en|fr` force le choix, puis disparaît de l'adresse.
+- **SEO** : `SEO.astro` déclare `hreflang` (fr-CA, en-CA, x-default) sur chaque page indexable qui a
+  une version anglaise ; le serveur donne à la page anglaise son propre `canonical`, `og:url` et
+  `og:locale`. Le sitemap liste les adresses `/en/` (`customPages` dans `astro.config.mjs`), sans les
+  pages noindex. Une page inconnue sous `/en/` rend une 404 avec `X-Robots-Tag: noindex`.
+- **Le texte que les scripts écrivent après coup** (résultats, messages d'erreur) est traduit dans le
+  navigateur par un `MutationObserver` : phrase fixe → dictionnaire ; phrase avec chiffres → règle
+  dans `i18n-regles.js` (le texte y arrive déjà formaté à l'anglaise : `$1,234`, `3.45%`). Une
+  virgule suivie de **trois** chiffres n'est jamais convertie en point : c'est déjà un séparateur de
+  milliers anglais. `swI18n.reste()` et `swI18n.manquantes()` (console) listent ce qui échappe.
+- **`setTimeout`, jamais `requestAnimationFrame`**, pour retraiter une mutation : rAF est suspendu dans
+  un onglet en arrière-plan.
+- **Hors périmètre** : les courriels (accusés, notifications) et les PDF restent en français, produits
+  côté serveur.
 
 ## Configuration
 

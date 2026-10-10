@@ -10,7 +10,7 @@ export interface Props {
 
 const { reviews } = Astro.props;
 
-const { rating, totalReviews, reviews: reviewItems } = reviews;
+const { rating, reviews: reviewItems } = reviews;
 
 // Palette de 5 couleurs pour les avatars — cohérentes avec le design (vert sauge, violet, terracotta, bleu poudré, ocre)
 const AVATAR_COLORS = ['#7a9e7e', '#8b7a9e', '#c47a52', '#5a7a8a', '#d4a88c'];
@@ -49,8 +49,6 @@ const googleReviewsUrl = config.google_place_id
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#c47a52" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         {rating.toFixed(1)} sur Google
       </span>
-      <span class="temoignages-sep" aria-hidden="true">·</span>
-      <span>{totalReviews} avis vérifiés</span>
     </div>
 
     <!-- Carrousel -->

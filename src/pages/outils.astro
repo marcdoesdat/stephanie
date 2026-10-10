@@ -359,6 +359,7 @@ const outilsFaqSchema = {
   <Footer />
 
   <script>
+    import { cheminLangue } from '../utils/cheminLangue';
     document.documentElement.classList.add('js-enabled');
 
     const tablist = document.querySelector<HTMLElement>('.outils-tablist');
@@ -768,7 +769,7 @@ const outilsFaqSchema = {
 
         document.body.dataset.outilsConverted = 'true';
         window.dispatchEvent(new CustomEvent('outils:converted'));
-        window.location.href = '/merci';
+        window.location.href = cheminLangue('/merci');
       } catch {
         setContactStatus('error', "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
         if (submitBtn) submitBtn.disabled = false;

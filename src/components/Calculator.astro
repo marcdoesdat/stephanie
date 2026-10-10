@@ -164,6 +164,7 @@ const { defaultRate = 4.99 } = Astro.props;
 </section>
 
 <script>
+  import { cheminLangue } from '../utils/cheminLangue';
   import { calculateSCHL, formatMoney, calcPaiement, miseMinimale } from '../utils/mortgageCalc';
 
   function saveSimulationResult(type: string, resultat: string) {
@@ -458,7 +459,7 @@ const { defaultRate = 4.99 } = Astro.props;
         amort: amort.toString(),
         freq: freq.toString(),
       });
-      lienAmortEl.href = `/amortissement?${params.toString()}`;
+      lienAmortEl.href = cheminLangue(`/amortissement?${params.toString()}`);
       lienAmortEl.style.display = '';
 
       // Sauvegarder dans sessionStorage pour le formulaire « On en parle »

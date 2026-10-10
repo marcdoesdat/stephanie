@@ -27,6 +27,18 @@ export const RATIOS = {
 export const PART_FRAIS_CONDO = 0.5;
 
 /**
+ * Part du solde des cartes de crédit et du crédit rotatif (marges) que les prêteurs comptent
+ * comme paiement mensuel dans l'ATD. Le calculateur express demande le solde, pas un paiement :
+ * personne ne connaît « le paiement » d'une marge, tout le monde connaît ce qu'il doit.
+ */
+export const PART_SOLDE_ROTATIF = 0.03;
+
+/** Les paiements fixes d'un ménage, cartes et marges comprises — ce que le calcul appelle « dettes ». */
+export function dettesEquivalentes(paiementsFixes: number, soldeRotatif: number): number {
+  return paiementsFixes + soldeRotatif * PART_SOLDE_ROTATIF;
+}
+
+/**
  * Hypothèses de frais de propriété : valeurs par défaut du simulateur complet, et seules
  * valeurs du calculateur express. C'est ce partage qui garantit le même chiffre aux deux
  * endroits — le simulateur les lit d'ici plutôt que de les répéter dans son HTML.

@@ -1654,3 +1654,15 @@ footer strong{color:rgba(255,255,255,.85)}
 @media(max-width:540px){
   .outils-tablist{grid-template-columns:repeat(2, 1fr)}
 }
+
+/* --- Bascule FR / EN ---------------------------------------------------------------------
+   Discrète : deux abréviations, la langue courante en gras. Dans la barre de navigation elle
+   suit le téléphone ; sur les pages sans barre (landings, formulaires) elle flotte en haut à
+   droite, hors du flux pour ne rien déplacer. Rendue par Nav.astro ou, à défaut, par
+   public/js/i18n.js. */
+.lang-switch{display:inline-flex;align-items:center;gap:.15rem;flex-shrink:0;font-family:"DM Sans",sans-serif;font-size:.74rem;font-weight:500;color:var(--muted);letter-spacing:.04em;line-height:1}
+.lang-switch button{appearance:none;background:none;border:0;padding:.55rem .3rem;min-width:28px;min-height:36px;font:inherit;color:inherit;cursor:pointer;border-radius:6px}
+.lang-switch button:hover{color:var(--ink)}
+.lang-switch button[aria-pressed="true"]{color:var(--ink);font-weight:700;cursor:default}
+.lang-switch button:focus-visible{outline:2px solid var(--clay);outline-offset:1px}
+.lang-switch--flottant{position:absolute;top:.4rem;right:.75rem;z-index:150;background:rgba(253,250,246,.85);backdrop-filter:blur(6px);border-radius:999px;padding:0 .35rem}

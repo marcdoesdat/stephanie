@@ -28,9 +28,19 @@
 
 import { defineMiddleware } from 'astro:middleware';
 import { origineNonVerifiee, origineRefusee } from './utils/origineRequete';
+import { estAnglais } from './utils/pagesAnglaises';
+import { servirAnglais } from './services/servirAnglais';
+import { loadSiteConfig } from './config';
 
 export const onRequest = defineMiddleware((context, next) => {
   const { request, url, isPrerendered } = context;
+
+  // Version anglaise : /en/… n'existe pas comme fichier, le serveur la fabrique depuis la page
+  // française. Lecture seule — les formulaires de la version anglaise postent vers /api/….
+  if (estAnglais(url.pathname) && (request.method === 'GET' || request.method === 'HEAD')) {
+    return servirAnglais(url, loadSiteConfig().site_url);
+  }
+
   if (isPrerendered) return next();
   if (origineNonVerifiee(url.pathname)) return next();
 

@@ -6,6 +6,7 @@ import {
   TRANSFERT_VALIDITE_MS,
   calculerCapacite,
   decoderTransfert,
+  dettesEquivalentes,
   formaterSaisie,
   fraisProprietes,
   lireMontant,
@@ -174,5 +175,19 @@ describe('decoderTransfert', () => {
 
   it('a une clé de stockage stable', () => {
     expect(CLE_TRANSFERT_EXPRESS).toBe('capacite-express');
+  });
+});
+
+describe('cartes de crédit et crédit rotatif', () => {
+  it("comptent pour 3 % du solde, en plus des paiements fixes", () => {
+    expect(dettesEquivalentes(500, 0)).toBe(500);
+    expect(dettesEquivalentes(0, 10_000)).toBeCloseTo(300, 6);
+    expect(dettesEquivalentes(500, 10_000)).toBeCloseTo(800, 6);
+  });
+
+  it("réduisent la capacité exactement comme le ferait un paiement équivalent", () => {
+    const sans = reussi({ ...BASE, dettes: 500 });
+    const avec = reussi({ ...BASE, dettes: dettesEquivalentes(500, 10_000) });
+    expect(avec.prixMax).toBeLessThan(sans.prixMax);
   });
 });
