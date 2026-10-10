@@ -557,6 +557,66 @@ export async function ouvrirPourFinalisation(id: unknown): Promise<DossierContra
   return dossier.statut === 'a_finaliser' ? dossier : null;
 }
 
+/**
+ * Pourquoi un dossier n'est pas à finaliser — pour que `/finaliser-contrat` le dise.
+ *
+ * Un seul message pour cinq situations laissait croire à une panne : le cas courant est un
+ * contrat **corrigé** après l'avis « à finaliser » (la correction écarte les signatures et
+ * renvoie le contrat aux emprunteurs), et le lien de l'avis mène alors ici sans explication.
+ * Ne porte ni jeton ni tracé : seulement des noms, que la courtière connaît déjà.
+ */
+export type EtatFinalisation =
+  | { readonly etat: 'pret'; readonly dossier: DossierContrat }
+  | {
+      readonly etat: 'en_attente';
+      /** Celui dont c'est le tour, `null` si personne (ne devrait pas arriver). */
+      readonly courant: string | null;
+      /** Le contrat a été corrigé : les signatures recueillies avant ont été écartées. */
+      readonly corrige: boolean;
+    }
+  | { readonly etat: 'gele'; readonly refusePar: string | null }
+  | { readonly etat: 'annule' }
+  | { readonly etat: 'introuvable' };
+
+/**
+ * Comme `ouvrirPourFinalisation`, mais nomme la raison quand le dossier n'est pas prêt.
+ * « Introuvable » couvre le déjà finalisé (le dossier est supprimé dès le PDF produit) et
+ * l'expiré : on ne peut plus les distinguer, et l'un comme l'autre n'attend plus rien d'elle.
+ */
+export async function etatFinalisation(id: unknown): Promise<EtatFinalisation> {
+  const dossier = await ouvrirPourFinalisation(id);
+  if (dossier) return { etat: 'pret', dossier };
+
+  if (!identifiantPlausible(id, '')) return { etat: 'introuvable' };
+  const brut = await stockage.lire(id as string);
+  if (!brut) return { etat: 'introuvable' };
+
+  let relu: DossierContrat;
+  try {
+    relu = JSON.parse(brut) as DossierContrat;
+  } catch {
+    return { etat: 'introuvable' };
+  }
+  if (Date.parse(relu.expireLe) < Date.now()) return { etat: 'introuvable' };
+
+  switch (relu.statut) {
+    case 'en_attente': {
+      const courant = relu.emprunteurs[indexCourant(relu)];
+      return {
+        etat: 'en_attente',
+        courant: courant ? nomComplet(courant.emprunteur) : null,
+        corrige: (relu.corrections?.length ?? 0) > 0,
+      };
+    }
+    case 'gele':
+      return { etat: 'gele', refusePar: relu.refus?.nom ?? null };
+    case 'annule':
+      return { etat: 'annule' };
+    default:
+      return { etat: 'introuvable' };
+  }
+}
+
 /** Appose la signature de la courtière — dernier geste avant la production du PDF. */
 export async function signerParLaCourtiere(
   dossier: DossierContrat,

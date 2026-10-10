@@ -13,7 +13,7 @@ import BarreCourtiere from '../components/BarreCourtiere.astro';
 import ConnexionCourtiere from '../components/ConnexionCourtiere.astro';
 import { loadSiteConfig } from '../config';
 import { accesConfigure, accesLibreEnDev, requeteAutorisee } from '../services/accesCourtiere';
-import { ouvrirPourFinalisation } from '../services/contratDossierService';
+import { etatFinalisation } from '../services/contratDossierService';
 import { lireReglages } from '../services/reglagesCourtiere';
 import {
   nomComplet,
@@ -28,7 +28,8 @@ const autorise = await requeteAutorisee(Astro.request);
 const configureManquante = !accesConfigure() && !accesLibreEnDev();
 
 const dossierId = Astro.url.searchParams.get('d');
-const dossier = autorise ? await ouvrirPourFinalisation(dossierId) : null;
+const etat = autorise ? await etatFinalisation(dossierId) : null;
+const dossier = etat?.etat === 'pret' ? etat.dossier : null;
 
 const reglages = autorise ? await lireReglages() : null;
 const signatureEnregistree = reglages?.signature
@@ -73,10 +74,46 @@ Astro.response.headers.set('Cache-Control', 'no-store');
           />
         ) : !dossier ? (
           <div class="contact-form">
-            <h1 class="fc-titre">Ce dossier n’est plus à finaliser</h1>
+            {etat?.etat === 'en_attente' ? (
+              <>
+                <h1 class="fc-titre">Ce n’est pas encore votre tour</h1>
+                <p class="fc-texte">
+                  {etat.corrige
+                    ? 'Le contrat a été corrigé : les signatures recueillies avant la correction ont été écartées, et chaque emprunteur doit signer la nouvelle version.'
+                    : 'Tous les emprunteurs n’ont pas encore signé.'}{' '}
+                  {etat.courant && (
+                    <>
+                      C’est au tour de <strong>{etat.courant}</strong>.{' '}
+                    </>
+                  )}
+                  Vous serez prévenue par courriel dès que tout le monde aura signé, et ce
+                  lien fonctionnera alors.
+                </p>
+              </>
+            ) : etat?.etat === 'gele' ? (
+              <>
+                <h1 class="fc-titre">Un emprunteur a refusé de signer</h1>
+                <p class="fc-texte">
+                  {etat.refusePar ? `${etat.refusePar} a signalé un désaccord` : 'Un désaccord a été signalé'} :
+                  le dossier est gelé et aucun contrat ne sera produit.
+                </p>
+              </>
+            ) : etat?.etat === 'annule' ? (
+              <>
+                <h1 class="fc-titre">Ce contrat a été annulé</h1>
+                <p class="fc-texte">Il n’y a plus rien à signer pour ce dossier.</p>
+              </>
+            ) : (
+              <>
+                <h1 class="fc-titre">Ce dossier n’est plus à finaliser</h1>
+                <p class="fc-texte">
+                  Il a déjà été signé et envoyé, ou il a expiré. Un contrat finalisé vous
+                  parvient par courriel, avec son certificat de signature.
+                </p>
+              </>
+            )}
             <p class="fc-texte">
-              Il a peut-être déjà été signé, expiré, ou un emprunteur a signalé un désaccord.
-              Ouvrez <a href="/contrat">le générateur de contrats</a> pour en préparer un nouveau.
+              <a href="/contrat#ct-suivi">Voir le suivi des contrats</a>
             </p>
           </div>
         ) : (

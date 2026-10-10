@@ -464,6 +464,10 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   pour tout le monde. Un seul « oui » suffit à cocher PPV ; un seul refus suffit à cocher
   « Non » au transfert — un consentement ne se déduit pas d'une majorité. Rien n'est coché
   tant que personne n'a répondu.
+- **`/finaliser-contrat` dit pourquoi il n'y a rien à signer** (`etatFinalisation`) : au tour
+  d'un emprunteur (avec son nom — typiquement après « Corriger le contrat », qui renvoie le
+  contrat aux emprunteurs alors que l'avis « à finaliser » est déjà parti), refus, annulation,
+  ou déjà finalisé / expiré. Un seul message vague pour ces cinq cas passait pour une panne.
 - Sa signature mémorisée est exigée **dès la création**, bien qu'elle ne serve qu'à la fin :
   la découvrir absente une fois tout le monde signé laisserait un dossier impossible à clore.
 - Elle dessine son tracé **une seule fois** : il est
