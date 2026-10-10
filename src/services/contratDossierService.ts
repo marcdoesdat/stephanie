@@ -17,7 +17,13 @@
  * @module contratDossierService
  */
 
-import { decrireCorrectionIdentite, decrireCorrectionsContrat, estCourrielValide, nomComplet } from '../utils/contratCourtage';
+import {
+  appliquerCoordonnees,
+  decrireCorrectionIdentite,
+  decrireCorrectionsContrat,
+  estCourrielValide,
+  nomComplet,
+} from '../utils/contratCourtage';
 import type { DonneesContrat, Emprunteur, ReponsesEmprunteur } from '../utils/contratCourtage';
 import {
   creerStockage,
@@ -493,18 +499,16 @@ export async function enregistrerSignature(
 
   // Une erreur de saisie de la courtière se corrige ici, par celui qui la voit. Le contrat
   // (`donnees`) et l'entrée doivent rester d'accord : le PDF lit l'un, la suite l'autre.
-  if (identite) {
-    const corrige: Emprunteur = { ...entree.emprunteur, ...identite };
-    const correction = decrireCorrectionIdentite(entree.emprunteur, corrige);
-    if (correction) {
-      entree.emprunteur = corrige;
-      dossier.donnees = {
-        ...dossier.donnees,
-        emprunteurs: dossier.donnees.emprunteurs.map((e, i) => (i === index ? corrige : e)),
-      };
-      reponses = { ...reponses, identiteCorrigee: correction };
-    }
-  }
+  // Téléphone et adresse compris : tant qu'ils ne vivaient que dans `reponses`, l'aperçu du
+  // signataire suivant et « Corriger le contrat » montraient encore l'ancienne version.
+  const corrige = appliquerCoordonnees(entree.emprunteur, identite, reponses);
+  const correction = decrireCorrectionIdentite(entree.emprunteur, corrige);
+  if (correction) reponses = { ...reponses, identiteCorrigee: correction };
+  entree.emprunteur = corrige;
+  dossier.donnees = {
+    ...dossier.donnees,
+    emprunteurs: dossier.donnees.emprunteurs.map((e, i) => (i === index ? corrige : e)),
+  };
 
   entree.signature = signature;
   entree.reponses = reponses;

@@ -82,7 +82,7 @@ src/
 | `/api/profil-cosigner` | API | Signature (ou désaccord) d'un co-emprunteur via son lien nominatif |
 | `/api/contrat-acces` | API | Ouverture de session sur `/contrat` (mot de passe partagé → cookie signé) |
 | `/api/contrat-creer` | API | Création du contrat de courtage — estampe le modèle, ou ouvre un dossier de signature |
-| `/api/contrat-apercu` | API | Sert le contrat intégral (PDF) au signataire, via son jeton — sans le consommer |
+| `/api/contrat-apercu` | API | Sert le contrat intégral (PDF) au signataire, via son jeton — sans le consommer ; en `POST`, avec ses coordonnées en cours de correction |
 | `/api/contrat-previsualiser` | API | Aperçu PDF du contrat en cours de saisie, pour la courtière — rien n'est envoyé ni stocké |
 | `/api/contrat-reglages` | API | Signature mémorisée et valeurs par défaut de la courtière (GET/PUT/DELETE) |
 | `/api/contrat-signer` | API | Réponses, signature (ou refus) d'un emprunteur via son lien nominatif |
@@ -436,6 +436,13 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   lettre de son nom. Une identité invalide au moment de signer rouvre ce panneau plutôt
   que de désigner un champ hors de vue. Toute autre erreur (montant, taux) n'appartient
   qu'à la courtière : la note sous le récapitulatif mène au désaccord.
+- **La correction se voit sur le contrat avant la signature.** À « Enregistrer », le cadre
+  est rechargé par `POST /api/contrat-apercu`, qui pose les coordonnées saisies sur **la
+  ligne du signataire** — rien n'est stocké, le jeton n'est pas consommé. Sur téléphone, le
+  lien « plein écran » poste le même formulaire vers un nouvel onglet (jamais dans l'URL).
+  À la signature, nom, courriel, **téléphone et adresse** sont écrits dans `donnees` par
+  `appliquerCoordonnees` : tant que les deux derniers ne vivaient que dans `reponses`,
+  l'aperçu du signataire suivant et « Corriger le contrat » montraient l'ancienne version.
 - **Les écrans de fin de `/signer-contrat` ne sont pas des culs-de-sac.** La page n'a ni Nav
   ni pied de page : la confirmation et le lien périmé portent donc eux-mêmes les
   coordonnées de la courtière et la sortie vers l'accueil. Ce qu'annonce « la suite » doit
@@ -875,6 +882,8 @@ npx vitest              # mode watch
   correction : signatures écartées, anciens liens morts, historique conservé
 - `src/services/contratCorrigerRoute.test.ts` — la correction relance le premier signataire avec
   ce qui a changé, prévient les autres déjà atteints, n'écrit à personne en présentiel
+- `src/services/contratApercuRoute.test.ts` — la correction du signataire est posée sur sa
+  seule ligne de l'aperçu, en JSON comme par formulaire, sans rien enregistrer
 - `src/services/contratPrevisualiserRoute.test.ts` — l'aperçu rend le même PDF demandé en
   JSON ou posté par formulaire, et refuse un formulaire abîmé
 - `src/services/accesCourtiere.test.ts` — porte de `/contrat` (fail closed, rotation du secret)

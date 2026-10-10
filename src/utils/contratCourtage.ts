@@ -530,6 +530,38 @@ export function decrireCorrectionIdentite(avant: Emprunteur, apres: Emprunteur):
   return parties.length > 0 ? parties.join(' ; ') : null;
 }
 
+/**
+ * La ligne de l'emprunteur telle qu'il l'a confirmée : nom et courriel validés, téléphone et
+ * adresse s'il en a donné. Un téléphone ou une adresse laissé vide garde ce que la courtière
+ * avait saisi — même règle que l'estampage, qui ne doit jamais effacer une valeur connue.
+ */
+export function appliquerCoordonnees(
+  emprunteur: Emprunteur,
+  identite: IdentiteEmprunteur | undefined,
+  coordonnees: Pick<ReponsesEmprunteur, 'telephone' | 'adresse'>,
+): Emprunteur {
+  return {
+    ...emprunteur,
+    ...identite,
+    telephone: coordonnees.telephone || emprunteur.telephone,
+    adresse: coordonnees.adresse || emprunteur.adresse,
+  };
+}
+
+/**
+ * Coordonnées en cours de correction, reçues pour l'aperçu du signataire — mêmes règles que
+ * celles de la signature. `null` à la moindre valeur invalide : l'aperçu montre alors le
+ * document tel qu'il est enregistré, jamais un document deviné.
+ */
+export function parserCoordonneesEmprunteur(
+  payload: unknown,
+): { identite: IdentiteEmprunteur; telephone: string; adresse: string } | null {
+  const identite = parserIdentiteEmprunteur(payload);
+  if (!identite) return null;
+  const brut = payload as Record<string, unknown>;
+  return { identite, telephone: chaine(brut.telephone, 40), adresse: chaine(brut.adresse, 160) };
+}
+
 /** Libellé lisible des réponses d'un emprunteur — courriels et trace de preuve. */
 export function resumerReponsesEmprunteur(reponses: ReponsesEmprunteur): Array<[string, string]> {
   const paires: Array<[string, string]> = [

@@ -9,6 +9,12 @@
 // peut donc relire autant de fois qu'il veut avant de se décider, et le lien meurt de la même
 // façon qu'avant, au moment de la signature.
 //
+// `POST` rend le même document avec les coordonnées que le signataire est en train de
+// corriger, posées sur **sa** ligne : il voit sa correction sur le contrat avant de signer,
+// au lieu de devoir croire qu'elle y sera. Rien n'est enregistré — c'est la signature qui
+// l'inscrit au dossier. Deux émetteurs, comme `/api/contrat-previsualiser` : le cadre (JSON,
+// par fetch) et, sur téléphone, un formulaire posté vers un nouvel onglet.
+//
 // Ce que cet endpoint ne fait pas : servir le contrat **une fois signé**. Le lien est mort dès
 // la signature, et le document final ne part que vers la courtière, qui en remet copie.
 
@@ -17,7 +23,7 @@ import { loadSiteConfig } from '../../config';
 import { checkRateLimit, clientIpFromRequest } from '../../services/emailService';
 import { ouvrirParJeton } from '../../services/contratDossierService';
 import { genererContratPdf, type SignatureEstampee } from '../../services/contratPdfService';
-import { nomComplet } from '../../utils/contratCourtage';
+import { appliquerCoordonnees, nomComplet, parserCoordonneesEmprunteur } from '../../utils/contratCourtage';
 
 export const prerender = false;
 
@@ -36,16 +42,54 @@ function refus(message: string, statut: number): Response {
   });
 }
 
-export const GET: APIRoute = async ({ request, url }) => {
+export const GET: APIRoute = ({ request, url }) =>
+  servir(request, url.searchParams.get('d'), url.searchParams.get('j'), undefined);
+
+export const POST: APIRoute = async ({ request }) => {
+  let payload: Record<string, unknown>;
+  try {
+    const type = request.headers.get('content-type') ?? '';
+    if (type.includes('application/x-www-form-urlencoded') || type.includes('multipart/form-data')) {
+      const formulaire = await request.formData();
+      const champ = formulaire.get('coordonnees');
+      payload = {
+        d: formulaire.get('d'),
+        j: formulaire.get('j'),
+        coordonnees: typeof champ === 'string' ? JSON.parse(champ) : null,
+      };
+    } else {
+      payload = (await request.json()) as Record<string, unknown>;
+    }
+  } catch {
+    return refus('Requête invalide', 400);
+  }
+  return servir(request, payload.d, payload.j, payload.coordonnees);
+};
+
+async function servir(request: Request, id: unknown, jeton: unknown, coordonnees: unknown): Promise<Response> {
   const clientIp = clientIpFromRequest(request);
   if (!(await checkRateLimit(clientIp, 'contrat-apercu'))) {
     return refus('Trop de demandes. Réessayez dans une heure.', 429);
   }
 
-  const ouvert = await ouvrirParJeton(url.searchParams.get('d'), url.searchParams.get('j'));
+  const ouvert = await ouvrirParJeton(id, jeton);
   if (!ouvert) return refus('Ce lien n’est plus valide.', 410);
 
-  const { dossier } = ouvert;
+  const { dossier, index } = ouvert;
+
+  // Des coordonnées reçues mais invalides ne sont pas ignorées en silence : l'aperçu
+  // montrerait l'ancienne version en laissant croire qu'il montre la nouvelle.
+  let donnees = dossier.donnees;
+  if (coordonnees !== undefined) {
+    const corrigees = parserCoordonneesEmprunteur(coordonnees);
+    if (!corrigees) return refus('Vérifiez votre prénom, votre nom et votre courriel.', 400);
+    donnees = {
+      ...donnees,
+      emprunteurs: donnees.emprunteurs.map((e, i) =>
+        i === index ? appliquerCoordonnees(e, corrigees.identite, corrigees) : e,
+      ),
+    };
+  }
 
   let pdf: Uint8Array;
   try {
@@ -63,7 +107,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     }
 
     pdf = await genererContratPdf(
-      dossier.donnees,
+      donnees,
       aEstamper,
       dossier.signatureCourtiere
         ? {
@@ -94,4 +138,4 @@ export const GET: APIRoute = async ({ request, url }) => {
       'Content-Security-Policy': "frame-ancestors 'self'",
     },
   });
-};
+}

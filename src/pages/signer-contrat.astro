@@ -205,9 +205,8 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                             </div>
                             <p class="sc-precision">
                               C’est ce qui figurera sur le contrat, et c’est à cette adresse
-                              courriel que vous le recevrez. Le document plus bas montre encore
-                              la version de {prenomCourtiere} : votre correction y sera inscrite
-                              au moment où vous signerez.
+                              courriel que vous le recevrez. Le document plus bas se met à jour
+                              dès que vous enregistrez.
                             </p>
                           </div>
                           <p class="sc-erreur" data-erreur-edition hidden></p>
@@ -246,6 +245,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                 <a
                   href={`/api/contrat-apercu?d=${encodeURIComponent(dossierId ?? '')}&j=${encodeURIComponent(jeton ?? '')}`}
                   target="_blank"
+                  data-ouvrir-document
                   rel="noopener"
                   class="sc-ouvrir-document"
                 >
@@ -259,11 +259,21 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
                 <div class="sc-document">
                   <iframe
+                    data-document
                     src={`/api/contrat-apercu?d=${encodeURIComponent(dossierId ?? '')}&j=${encodeURIComponent(jeton ?? '')}`}
                     title="Contrat de courtage hypothécaire — document complet"
                     loading="eager"
                   ></iframe>
                 </div>
+
+                {/* Une fois les coordonnées corrigées, « plein écran » doit montrer la version
+                    corrigée : le contrat est alors posté vers un nouvel onglet — jamais mis
+                    dans l'adresse, où un nom et une adresse resteraient dans l'historique. */}
+                <form method="post" action="/api/contrat-apercu" target="_blank" data-form-document hidden>
+                  <input type="hidden" name="d" value={dossierId ?? ''} />
+                  <input type="hidden" name="j" value={jeton ?? ''} />
+                  <input type="hidden" name="coordonnees" value="" />
+                </form>
 
                 {/* Les navigateurs mobiles affichent mal un PDF encadré : le lien direct est
                     le seul moyen fiable de lire le contrat sur téléphone. */}
@@ -271,6 +281,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                   <a
                     href={`/api/contrat-apercu?d=${encodeURIComponent(dossierId ?? '')}&j=${encodeURIComponent(jeton ?? '')}`}
                     target="_blank"
+                    data-ouvrir-document
                     rel="noopener"
                     class="sc-lien-document"
                   >
@@ -938,6 +949,60 @@ Astro.response.headers.set('Cache-Control', 'no-store');
       return null;
     }
 
+    /* ---------- Le document suit la correction ---------- */
+
+    const cadreDocument = app.querySelector<HTMLIFrameElement>('[data-document]');
+    const formDocument = app.querySelector<HTMLFormElement>('[data-form-document]');
+    const srcOrigine = cadreDocument?.getAttribute('src') ?? '';
+    let urlDocument: string | null = null;
+    let documentCorrige = false;
+
+    function coordonneesSaisies(): Record<string, string> {
+      return {
+        prenom: valeurChamp('sc-prenom'),
+        nom: valeurChamp('sc-nom'),
+        courriel: valeurChamp('sc-courriel'),
+        telephone: valeurChamp('sc-telephone'),
+        adresse: valeurChamp('sc-adresse'),
+      };
+    }
+
+    /**
+     * Recharge le contrat avec la correction posée sur sa ligne — rien n'est enregistré, c'est
+     * la signature qui l'inscrit. Sans correction, on revient au document tel qu'il est.
+     */
+    async function rafraichirDocument(modifie: boolean): Promise<void> {
+      documentCorrige = modifie;
+      if (!cadreDocument) return;
+      if (!modifie) {
+        cadreDocument.src = srcOrigine;
+      } else {
+        try {
+          const reponse = await fetch('/api/contrat-apercu', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ d: dossier, j: jeton, coordonnees: coordonneesSaisies() }),
+          });
+          if (!reponse.ok) return; // le cadre garde la dernière version qu'il a pu montrer
+          cadreDocument.src = URL.createObjectURL(await reponse.blob());
+        } catch {
+          return;
+        }
+      }
+      if (urlDocument) URL.revokeObjectURL(urlDocument);
+      urlDocument = cadreDocument.src.startsWith('blob:') ? cadreDocument.src : null;
+    }
+
+    for (const lien of app.querySelectorAll<HTMLAnchorElement>('[data-ouvrir-document]')) {
+      lien.addEventListener('click', (evenement) => {
+        if (!documentCorrige || !formDocument) return;
+        evenement.preventDefault();
+        const champ = formDocument.querySelector<HTMLInputElement>('input[name="coordonnees"]');
+        if (champ) champ.value = JSON.stringify(coordonneesSaisies());
+        formDocument.submit();
+      });
+    }
+
     function ouvrirEdition(champ = 'sc-prenom'): void {
       if (!edition) return;
       edition.hidden = false;
@@ -962,7 +1027,9 @@ Astro.response.headers.set('Cache-Control', 'no-store');
       if (recapMoi) {
         recapMoi.textContent = `${nom} — ${valeurChamp('sc-courriel')}${telephone ? ` — ${telephone}` : ''}`;
       }
-      if (recapModifie) recapModifie.hidden = IDS_COORDONNEES.every((id) => valeurChamp(id) === origine[id]);
+      const modifie = !IDS_COORDONNEES.every((id) => valeurChamp(id) === origine[id]);
+      if (recapModifie) recapModifie.hidden = !modifie;
+      void rafraichirDocument(modifie);
 
       // Le cadre de signature annonce le nom de celui qui signe : il suit la correction.
       const qui = app!.querySelector<HTMLElement>('[data-sig-qui]');
