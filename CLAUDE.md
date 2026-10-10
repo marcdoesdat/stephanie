@@ -68,7 +68,7 @@ src/
 | `/conditions` | Statique | Conditions d'utilisation |
 | `/confidentialite` | Statique | Politique de confidentialité |
 | `/404` | Statique | Page d'erreur |
-| `/en/…` | SSR (middleware) | Version anglaise des pages publiques, traduite à la volée depuis le français — voir « Version anglaise » |
+| `/en/…` | SSR (`src/pages/en/[...chemin].ts`) | Version anglaise des pages publiques, traduite à la volée depuis le français — voir « Version anglaise » |
 | `/api/bdc-rate` | API | Taux directeur Banque du Canada (proxy, cache 6h) |
 | `/api/rappel-submit` | API | Soumission formulaire de rappel (`/rappel`) |
 | `/api/contact-submit` | API | Soumission formulaire de contact / quiz (accueil, section `#contact`) |
@@ -900,11 +900,11 @@ français.
 
 | Fichier | Rôle |
 |---------|------|
-| `src/data/pagesTraduites.json` | **La liste** des pages qui ont une version anglaise (sitemap, hreflang, middleware, extracteur) |
+| `src/data/pagesTraduites.json` | **La liste** des pages qui ont une version anglaise (sitemap, hreflang, route `/en/`, extracteur) |
 | `src/utils/pagesAnglaises.ts` | Chemins FR ↔ EN, en fonctions pures (barre finale toujours présente en anglais) |
 | `src/services/servirAnglais.ts` | Va chercher la page française, la traduit ; redirige `/en/x` → `/en/x/` ; 404 non indexable hors liste |
 | `src/services/traductionPage.ts` | HTML français → HTML anglais (linkedom) : texte, `<noscript>`, liens `/en/`, canonique, `og:` |
-| `src/middleware.ts` | Branche `GET /en/…` sur `servirAnglais` avant tout le reste |
+| `src/pages/en/[...chemin].ts` | La route SSR qui branche `GET /en/…` sur `servirAnglais`. **Une route, pas le middleware** : sur Netlify, une adresse sans route reçoit la 404 sans que le middleware ne s'exécute — c'est ce qui rendait « English » introuvable en production |
 | `public/js/i18n-core.js` | Moteur **partagé serveur / navigateur** : découpe le DOM en « unités », clés, `traducteur()` |
 | `public/js/i18n-en.json` | Le dictionnaire FR → EN |
 | `public/js/i18n-regles.js` | Phrases construites par les scripts avec des chiffres (`P(...)`, `R(...)`) et morceaux fixes (`frag`) |
