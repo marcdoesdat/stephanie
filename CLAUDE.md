@@ -467,6 +467,10 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   l'ordre, le lien en présentiel, « Nouveau contrat » (qui recharge la page, valeurs
   habituelles comprises) et le suivi. Un courriel manqué (`code: 'invitation'`) mène au
   même écran en ton d'alerte, jamais au bouton rendu : ce serait un second dossier.
+  **« Corriger le contrat » passe par la même fenêtre** : elle nomme les signatures qui
+  seront écartées et le nouveau lien qui partira, et l'écran de fin dit ce qui a changé.
+  Une correction tue des liens et efface des signatures — c'est le geste qui mérite le
+  plus un dernier regard.
 - **Les cartes du suivi sont bâties en JavaScript, donc habillées par un bloc `is:global`**
   (circonscrit par `#ct-form` / `#ct-suivi`). Astro scope son `<style>` en estampant un
   attribut de portée sur les éléments qu'il rend lui-même : une règle scopée n'atteint
