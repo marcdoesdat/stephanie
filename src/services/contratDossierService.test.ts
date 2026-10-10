@@ -808,3 +808,48 @@ describe('corrigerContrat', () => {
     ]);
   });
 });
+
+describe('etatFinalisation', () => {
+  it('rend le dossier quand tout le monde a signé', async () => {
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+    const etat = await service.etatFinalisation(invitation.dossierId);
+    expect(etat.etat).toBe('pret');
+  });
+
+  it('nomme le signataire attendu quand une correction a renvoyé le contrat aux emprunteurs', async () => {
+    // Le cas qui laissait croire à une panne : l'avis « à finaliser » est parti, puis le
+    // contrat a été corrigé — le lien de l'avis mène à un dossier redevenu en attente.
+    const service = await chargerService();
+    const { invitation } = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(invitation.dossierId, invitation.jeton))!;
+    await service.enregistrerSignature(ouvert.dossier, ouvert.index, signature(), reponses());
+    await service.corrigerContrat(invitation.dossierId, { ...donnees('ana@exemple.ca'), tauxInteret: '4,19' });
+
+    expect(await service.etatFinalisation(invitation.dossierId)).toEqual({
+      etat: 'en_attente',
+      courant: 'Ana Tremblay',
+      corrige: true,
+    });
+  });
+
+  it('distingue le refus, l’annulation et le dossier disparu', async () => {
+    const service = await chargerService();
+    const gele = await service.creerDossier(donnees('ana@exemple.ca'));
+    const ouvert = (await service.ouvrirParJeton(gele.invitation.dossierId, gele.invitation.jeton))!;
+    await service.marquerRefus(ouvert.dossier, ouvert.index, 'Non.');
+    expect(await service.etatFinalisation(gele.invitation.dossierId)).toEqual({
+      etat: 'gele',
+      refusePar: 'Ana Tremblay',
+    });
+
+    const annule = await service.creerDossier(donnees('bo@exemple.ca'));
+    await service.annulerDossier(annule.invitation.dossierId);
+    expect((await service.etatFinalisation(annule.invitation.dossierId)).etat).toBe('annule');
+
+    expect((await service.etatFinalisation('inconnu')).etat).toBe('introuvable');
+    expect((await service.etatFinalisation('../../secret')).etat).toBe('introuvable');
+  });
+});
