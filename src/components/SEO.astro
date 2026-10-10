@@ -1,5 +1,6 @@
 ---
 import { loadSiteConfig } from '../config';
+import { cheminAnglais } from '../utils/pagesAnglaises';
 
 const config = loadSiteConfig();
 
@@ -10,6 +11,8 @@ interface Props {
   canonicalURL?: string | URL;
   ogImage?: string;
   noindex?: boolean;
+  /** La page a une version anglaise : on déclare les deux (hreflang). */
+  alternates?: boolean;
 }
 
 const {
@@ -19,7 +22,10 @@ const {
   canonicalURL = new URL(Astro.url.pathname, config.site_url),
   ogImage = "/images/og-image.jpg",
   noindex = false,
+  alternates = false,
 } = Astro.props;
+
+const enURL = new URL(cheminAnglais(Astro.url.pathname), config.site_url);
 
 const formattedTitle = fullTitle ?? (title ? `${title} | ${config.nom}` : config.meta_title);
 const resolvedOgImage = new URL(ogImage, config.site_url);
@@ -100,6 +106,13 @@ const schema = {
 <meta name="robots" content={noindex ? "noindex, nofollow, noarchive" : "index, follow"} />
 <meta name="theme-color" content="#3d5a4a" />
 <link rel="canonical" href={canonicalURL} />
+{alternates && (
+  <>
+    <link rel="alternate" hreflang="fr-CA" href={canonicalURL} />
+    <link rel="alternate" hreflang="en-CA" href={enURL} />
+    <link rel="alternate" hreflang="x-default" href={canonicalURL} />
+  </>
+)}
 
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="manifest" href="/site.webmanifest" />

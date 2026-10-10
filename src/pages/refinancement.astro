@@ -630,6 +630,7 @@ const courrielHref = `mailto:${config.courriel}`;
 </style>
 
 <script>
+  import { cheminLangue } from '../utils/cheminLangue';
   interface RefiState {
     but_refinancement: string;
     proprietaire: string;
@@ -984,7 +985,7 @@ const courrielHref = `mailto:${config.courriel}`;
           // Le « Non » propriétaire redirige vers la page premier achat
           if (group === 'proprio' && value === 'non') {
             track('refi_funnel_exit_non_proprio');
-            window.location.assign('/services/premier-achat');
+            window.location.assign(cheminLangue('/services/premier-achat'));
             return;
           }
           selectCard(group, value);
@@ -1043,7 +1044,7 @@ const courrielHref = `mailto:${config.courriel}`;
         if (!response.ok) throw new Error(`Erreur ${response.status}`);
         track('refi_funnel_submit');
         clearPersist();
-        window.location.assign('/merci');
+        window.location.assign(cheminLangue('/merci'));
       } catch {
         if (submitBtn) submitBtn.disabled = false;
         if (submitLabel) submitLabel.textContent = 'Soumettre ma demande';

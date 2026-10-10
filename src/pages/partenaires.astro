@@ -729,6 +729,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=86400, stale-while-revalid
 </style>
 
 <script is:inline>
+  /* Les scripts en ligne ne peuvent rien importer : même règle que src/utils/cheminLangue.ts. */
+  function cheminLangue(p) { return location.pathname === '/en' || location.pathname.indexOf('/en/') === 0 ? '/en' + p + '/' : p; }
   (function () {
     var form = document.getElementById('part-form-el');
     if (!form) return;
@@ -773,7 +775,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=86400, stale-while-revalid
       })
         .then(function (res) {
           if (!res.ok) throw new Error('Erreur ' + res.status);
-          window.location.href = '/merci';
+          window.location.href = cheminLangue('/merci');
         })
         .catch(function () {
           btn.disabled = false;

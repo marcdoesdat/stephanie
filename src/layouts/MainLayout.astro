@@ -2,6 +2,7 @@
 import SEO from '../components/SEO.astro';
 import ConsentBanner from '../components/ConsentBanner.astro';
 import { loadSiteConfig } from '../config';
+import { estTraduite } from '../utils/pagesAnglaises';
 import '../styles/global.css';
 
 const config = loadSiteConfig();
@@ -25,9 +26,20 @@ interface Props {
    * a rien à consentir ni à mesurer sur un outil de travail.
    */
   sansConsentement?: boolean;
+  /**
+   * Retire la bascule FR/EN. Pour les écrans que la courtière seule utilise, et pour les
+   * pages où le texte est un engagement : attestation de signature, formulaire AMF. Ce qui
+   * est signé doit être lu dans la langue du document signé (le PDF est en français), et une
+   * traduction d'un énoncé juridique n'a pas à s'y substituer.
+   */
+  sansTraduction?: boolean;
 }
 
-const { title, fullTitle, description, ogImage, noindex, sansBarreCta, sansConsentement } = Astro.props;
+const { title, fullTitle, description, ogImage, noindex, sansBarreCta, sansConsentement, sansTraduction } = Astro.props;
+
+// Les deux versions d'une page se déclarent mutuellement (hreflang) — seulement les pages
+// indexables qui ont une version anglaise. Voir src/services/traductionPage.ts.
+const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname);
 ---
 
 <!doctype html>
@@ -71,11 +83,40 @@ const { title, fullTitle, description, ogImage, noindex, sansBarreCta, sansConse
          complète de gtag/js par compte Ads) chez tous les visiteurs, y compris
          ceux qui n'avaient rien accepté. Voir §5.1 de AUDIT-CONVERSION-2026-07.md. -->
 
+    {!sansTraduction && (
+      <script is:inline>
+        /* Version anglaise : /en/… (voir public/js/i18n.js). Un visiteur qui a choisi « EN » et
+           arrive sur une page française est envoyé vers son équivalent anglais avant tout
+           affichage. Un robot, sans localStorage, reste sur la page demandée : c'est ce qui
+           laisse chaque version s'indexer à sa propre adresse. ?lang=en|fr force le choix depuis
+           un lien, puis disparaît de l'adresse. */
+        (function () {
+          try {
+            var chemin = location.pathname;
+            var natif = chemin === '/en' || chemin.indexOf('/en/') === 0;
+            var versEn = '/en' + (chemin === '/' ? '/' : chemin);
+            var versFr = chemin.replace(/^\/en(?=\/|$)/, '') || '/';
+            var p = new URLSearchParams(location.search).get('lang');
+            var u = new URL(location.href);
+            u.searchParams.delete('lang');
+            var reste = u.search + u.hash;
+            if (p === 'en' || p === 'fr') {
+              localStorage.setItem('sw_lang', p);
+              if (p === 'en' && !natif) location.replace(versEn + reste);
+              else if (p === 'fr' && natif) location.replace(versFr + reste);
+              else history.replaceState(null, '', u.pathname + reste);
+              return;
+            }
+            if (!natif && localStorage.getItem('sw_lang') === 'en') location.replace(versEn + location.search + location.hash);
+          } catch (e) {}
+        })();
+      </script>
+    )}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
-    <SEO title={title} fullTitle={fullTitle} description={description} ogImage={ogImage} noindex={noindex} />
+    <SEO title={title} fullTitle={fullTitle} description={description} ogImage={ogImage} noindex={noindex} alternates={alternates} />
     <slot name="head" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -168,6 +209,10 @@ const { title, fullTitle, description, ogImage, noindex, sansBarreCta, sansConse
       </div>
     )}
     {!sansConsentement && <ConsentBanner />}
+
+    {!sansTraduction && <script is:inline defer src="/js/i18n-core.js"></script>}
+    {!sansTraduction && <script is:inline defer src="/js/i18n-regles.js"></script>}
+    {!sansTraduction && <script is:inline defer src="/js/i18n.js"></script>}
 
     <!-- Sticky scroll-aware + état conversion -->
     <script is:inline>

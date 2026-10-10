@@ -487,6 +487,7 @@ const villesSuggerees = [
 </style>
 
 <script>
+  import { cheminLangue } from '../utils/cheminLangue';
   import { evaluerEquite } from '../utils/refinancementV2';
   import { formatCAD } from '../utils/formatters';
 
@@ -818,7 +819,7 @@ const villesSuggerees = [
         // Le prénom sert à personnaliser /refinancement/merci — jamais en query string.
         try { sessionStorage.setItem(PRENOM_KEY, field('prenom')?.value.trim() ?? ''); } catch {}
         clearPersist();
-        window.location.assign('/refinancement/merci');
+        window.location.assign(cheminLangue('/refinancement/merci'));
       } catch {
         if (submitBtn) submitBtn.disabled = false;
         if (submitLabel) submitLabel.textContent = 'Voir mon économie';
