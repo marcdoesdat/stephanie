@@ -134,6 +134,15 @@ Toute page du tableau ci-dessus marquée « SSR » doit donc porter `prerender =
 - `ConsentBanner.astro`, `MessengerBtn.astro`
 
 **Outils interactifs (scripts inline) :**
+- `CapaciteExpress.astro` — Calculateur de capacité express de l'accueil (section `#outils-teaser`) :
+  revenu, mise de fonds, paiements fixes, et frais de condo si la case est cochée. **Son appel à
+  l'action est le rendez-vous** (`/rendez-vous`, `cta_booking_capacite`), pas la demande de
+  financement : la phrase au-dessus du bouton change selon ce que le calcul vient de montrer
+  (mise qui plafonne, revenu insuffisant, sans mise), pour que l'appel réponde à une question
+  que le visiteur se pose déjà. **Il vient juste sous le hero**, dont le 2ᵉ bouton
+  (« Calculer ma capacité d'emprunt ») y mène par `#outils-teaser` : relégué au 6ᵉ rang, il
+  commençait à 7,6 écrans de défilement sur mobile. L'ordre de l'accueil et sa raison sont
+  en commentaire dans `index.astro` — le menu de `Nav.astro` suit le même ordre
 - `Calculator.astro` — Calculateur de paiement (sliders)
 - `Simulator.astro` — Simulateur d'accessibilité (basé sur le revenu)
 - `Comparateur.astro` — Comparateur de scénarios hypothécaires
@@ -201,6 +210,24 @@ Calculs mathématiques hypothécaires partagés entre composants.
 - `prixMaxParMise(mise)` — Prix max à partir d'une mise donnée
 - `droitsMutation(prix)` — Taxe de bienvenue Québec (5 tranches, max 2%)
 - `calcAbsoluteMax(pretMax)` — Prix max finançable (boucle de convergence assuré/conventionnel)
+
+### `src/utils/capaciteEmprunt.ts`
+Le calcul de capacité d'emprunt, **à un seul exemplaire** : le simulateur complet
+(`/outils#simulateur`) et le calculateur express de l'accueil l'appellent tous deux.
+- `calculerCapacite(entrees)` — test de résistance, ratios ABD/ATD (39/44 assuré, 35/42
+  conventionnel), prime SCHL, plafond de la mise de fonds ; rend un motif d'échec plutôt
+  qu'un chiffre absurde (`mise_absente` au lieu de « 0 $ » et « NaN % »)
+- `FRAIS_DEFAUT`, `AMORTISSEMENT_DEFAUT` — les hypothèses du calculateur express **sont** les
+  valeurs par défaut du simulateur, qui les lit d'ici : mêmes entrées, même chiffre aux deux
+  endroits. Changer l'un sans l'autre ferait annoncer deux prix différents à une page d'écart.
+- **« Affiner » transporte la saisie par `sessionStorage`, jamais par l'URL** (clé
+  `capacite-express`) : un revenu n'a rien à faire dans l'historique. Écrit au clic, lu une
+  fois par le simulateur puis effacé, décodé champ par champ (`decoderTransfert`). Paiements
+  et condo partent même à zéro — sinon le simulateur reprendrait ses propres défauts.
+- **Sans taux du jour, aucun taux inventé** : le calculateur express affiche un champ
+  « Taux d'intérêt visé » vide et un lien vers hypotheca.ca.
+- Tests : `src/utils/capaciteEmprunt.test.ts` — valeurs relevées sur le calcul tel qu'il vivait
+  dans `Simulator.astro` avant d'en être sorti.
 
 ### `src/data/preteurs.ts`
 Base de données des prêteurs pour le calculateur de pénalité.
@@ -890,6 +917,9 @@ npx vitest              # mode watch
 ```
 
 - `src/lib/penalite.test.ts` — 35+ cas sur la logique de pénalité (3 mois, IRD, cas limites)
+- `src/utils/capaciteEmprunt.test.ts` — résultats du simulateur conservés au dollar près,
+  50 % des frais de condo, plancher de qualification, échecs nommés, transfert vers le
+  simulateur décodé champ par champ
 - `src/services/emailService.test.ts` — un 429 est réessayé (`Retry-After` respecté et
   plafonné), un 422 ne l'est pas, et l'abandon nomme le statut
 - `src/utils/profilPreparation.test.ts` — aller-retour du lien préparé (accents compris), champs

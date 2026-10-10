@@ -7,6 +7,8 @@ interface ServiceItem {
   icon: any;
   title: string;
   description: string;
+  /** Une ligne, pour la liste compacte sous 900 px — la description entière y prend trop de place */
+  court: string;
   cta: string;
   href?: string;
 }
@@ -16,13 +18,15 @@ const services: ServiceItem[] = [
     icon: House,
     title: "Premier achat",
     description: "Vous achetez votre première propriété ? Je vous guide à travers la mise de fonds, le test de résistance, et je négocie les meilleures conditions pour vous.",
-    cta: "Calculer ma capacité",
+    court: "Mise de fonds, test de résistance, meilleures conditions",
+    cta: "Préparer mon premier achat",
     href: "/services/premier-achat"
   },
   {
     icon: Repeat,
     title: "Renouvellement",
     description: "Votre hypothèque arrive à terme ? C'est le meilleur moment de magasiner. Je compare les offres de 20+ prêteurs pour vous obtenir un meilleur taux que votre banque.",
+    court: "20+ prêteurs comparés avant l'offre de votre banque",
     cta: "Comparer les taux",
     href: "/services/renouvellement"
   },
@@ -30,6 +34,7 @@ const services: ServiceItem[] = [
     icon: Lightbulb,
     title: "Refinancement",
     description: "Consolidation de dettes, rénovations, achat locatif — le refinancement peut libérer des liquidités importantes. Analysons ensemble si c'est la bonne décision.",
+    court: "Consolider vos dettes, rénover, investir",
     cta: "Découvrir mes options",
     href: "/services/refinancement"
   },
@@ -37,6 +42,7 @@ const services: ServiceItem[] = [
     icon: LockKeyholeOpen,
     title: "Dossier refusé",
     description: "Votre banque vous a dit non ? Un refus bancaire, ce n'est pas une fin. J'ai accès à des prêteurs alternatifs adaptés aux situations complexes.",
+    court: "Un non de votre banque n'est pas une fin",
     cta: "Trouver une solution",
     href: "/services/dossier-refuse"
   },
@@ -44,6 +50,7 @@ const services: ServiceItem[] = [
     icon: Briefcase,
     title: "Travailleur autonome",
     description: "Revenus variables, contrats, incorporation — je sais comment présenter votre dossier pour maximiser vos chances.",
+    court: "Revenus variables, dossier présenté pour convaincre",
     cta: "Maximiser mon dossier",
     href: "/services/travailleur-autonome"
   },
@@ -51,6 +58,7 @@ const services: ServiceItem[] = [
     icon: Globe,
     title: "Nouveaux arrivants",
     description: "Vous venez d'arriver au Canada ? Il existe des programmes spéciaux pour les résidents permanents et certains détenteurs de permis de travail.",
+    court: "Programmes pour résidents permanents et permis de travail",
     cta: "Voir les programmes",
     href: "/services/nouveaux-arrivants"
   }
@@ -79,7 +87,8 @@ const services: ServiceItem[] = [
           </div>
 
           <h3>{service.title}</h3>
-          <p>{service.description}</p>
+          <p class="service-desc">{service.description}</p>
+          <p class="service-court">{service.court}</p>
 
           <span class="learn">
             {service.cta}
@@ -123,7 +132,72 @@ const services: ServiceItem[] = [
     color: var(--clay);
   }
   
+  .service-court {
+    display: none;
+  }
+
+  /* Sous 900 px, les cartes empilées occupaient 2,6 écrans de téléphone — entre le
+     calculateur et les taux, que le visiteur en renouvellement cherche. On passe à une
+     liste compacte : icône, titre, une ligne d'accroche, flèche. La description entière
+     reste sur la sous-page du service, où mène chaque ligne. */
   @media (max-width: 900px) {
+    .services-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+      margin-top: 1.75rem;
+    }
+    .service-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "icone titre fleche"
+        "icone court fleche";
+      align-items: center;
+      column-gap: 0.9rem;
+      row-gap: 0.1rem;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+    }
+    .service-icon {
+      grid-area: icone;
+      width: 42px;
+      height: 42px;
+      margin: 0;
+      border-radius: 11px;
+    }
+    .service-icon :global(svg) {
+      width: 22px;
+      height: 22px;
+    }
+    .service-card h3 {
+      grid-area: titre;
+      align-self: end;
+      font-size: 1.05rem;
+      margin: 0;
+    }
+    .service-desc {
+      display: none;
+    }
+    .service-court {
+      display: block;
+      grid-area: court;
+      align-self: start;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+    /* Le libellé d'action s'efface au profit de la flèche ; le lien garde son aria-label */
+    .service-card .learn {
+      grid-area: fleche;
+      margin: 0;
+      padding: 0;
+      font-size: 0;
+    }
+    .service-card .learn::after {
+      font-size: 1.1rem;
+    }
+  }
+
+  @media (max-width: 600px) {
     .services-grid {
       grid-template-columns: 1fr;
     }

@@ -1,0 +1,510 @@
+---
+// Calculateur de capacité express — l'accueil. Trois champs essentiels, un quatrième si la
+// propriété visée est un condo, et un chiffre. Le calcul est celui du simulateur complet
+// (src/utils/capaciteEmprunt.ts) avec ses hypothèses par défaut : mêmes entrées, même
+// chiffre une page plus loin, où « Affiner » transporte la saisie.
+import {
+  AMORTISSEMENT_DEFAUT,
+  FRAIS_DEFAUT,
+  PART_FRAIS_CONDO,
+  tauxQualification,
+} from '../utils/capaciteEmprunt';
+
+interface Props {
+  /** Taux 5 ans fixe Hypotheca du jour — null si indisponible : jamais de taux inventé */
+  taux: number | null;
+}
+const { taux } = Astro.props;
+
+const pourcent = (t: number) => t.toFixed(2).replace('.', ',') + ' %';
+const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
+---
+
+<div class="ce fade-up" data-taux={taux ?? ''}>
+  <form class="ce-form" id="ce-form" novalidate>
+    <div class="ce-champ">
+      <label for="ce-revenu">Revenu annuel brut du ménage</label>
+      <div class="ce-saisie">
+        <input type="text" id="ce-revenu" inputmode="numeric" autocomplete="off" placeholder="95 000" aria-describedby="ce-revenu-aide" />
+        <span class="ce-unite" aria-hidden="true">$</span>
+      </div>
+      <p class="ce-aide" id="ce-revenu-aide">Vous et votre coemprunteur, avant impôts</p>
+    </div>
+
+    <div class="ce-champ">
+      <label for="ce-mise">Mise de fonds disponible</label>
+      <div class="ce-saisie">
+        <input type="text" id="ce-mise" inputmode="numeric" autocomplete="off" placeholder="40 000" aria-describedby="ce-mise-aide" />
+        <span class="ce-unite" aria-hidden="true">$</span>
+      </div>
+      <p class="ce-aide" id="ce-mise-aide">Épargne, CELIAPP, RAP, don familial</p>
+    </div>
+
+    <div class="ce-champ">
+      <label for="ce-dettes">Paiements fixes mensuels</label>
+      <div class="ce-saisie">
+        <input type="text" id="ce-dettes" inputmode="numeric" autocomplete="off" placeholder="0" aria-describedby="ce-dettes-aide" />
+        <span class="ce-unite" aria-hidden="true">$/mois</span>
+      </div>
+      <p class="ce-aide" id="ce-dettes-aide">Prêts auto, étudiants et personnels, pension alimentaire, cartes de crédit (3&nbsp;% du solde)</p>
+    </div>
+
+    <div class="ce-champ ce-champ--case">
+      <label class="ce-case">
+        <input type="checkbox" id="ce-condo-case" aria-controls="ce-condo-bloc" aria-expanded="false" />
+        <span>La propriété visée est un condo</span>
+      </label>
+      <div class="ce-condo" id="ce-condo-bloc" hidden>
+        <label for="ce-condo">Frais de condo mensuels</label>
+        <div class="ce-saisie">
+          <input type="text" id="ce-condo" inputmode="numeric" autocomplete="off" placeholder="300" aria-describedby="ce-condo-aide" />
+          <span class="ce-unite" aria-hidden="true">$/mois</span>
+        </div>
+        <p class="ce-aide" id="ce-condo-aide">Les prêteurs en comptent {PART_FRAIS_CONDO * 100}&nbsp;% dans vos ratios d'endettement</p>
+      </div>
+    </div>
+
+    {taux == null && (
+      <div class="ce-champ">
+        <label for="ce-taux">Taux d'intérêt visé</label>
+        <div class="ce-saisie">
+          <input type="text" id="ce-taux" inputmode="decimal" autocomplete="off" aria-describedby="ce-taux-aide" />
+          <span class="ce-unite" aria-hidden="true">%</span>
+        </div>
+        <p class="ce-aide" id="ce-taux-aide">
+          Le taux du jour n'a pas pu être chargé.
+          <a href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener noreferrer">Voir les taux sur hypotheca.ca</a>
+        </p>
+      </div>
+    )}
+
+    <p class="ce-hypotheses">
+      {taux != null
+        ? <>Taux 5 ans fixe du jour&nbsp;: {pourcent(taux)}, qualifié à {pourcent(tauxQualification(taux))} (test de résistance)</>
+        : <>Qualifié au plus élevé de votre taux + 2&nbsp;% ou 5,25&nbsp;% (test de résistance)</>}
+      · amortissement de {AMORTISSEMENT_DEFAUT}&nbsp;ans · taxes et chauffage estimés à {fraisFixes}&nbsp;$/mois
+    </p>
+  </form>
+
+  <div class="ce-resultat">
+    <div class="ce-res" aria-live="polite" aria-atomic="true">
+      <div class="ce-res-label">Prix d'achat maximal estimé</div>
+      <div class="ce-res-val" id="ce-prix">—</div>
+      <div class="ce-res-detail" id="ce-detail">Entrez votre revenu et votre mise de fonds</div>
+      <p class="ce-alerte" id="ce-alerte" hidden></p>
+    </div>
+
+    <!-- Le rendez-vous est la suite du calcul : la phrase au-dessus du bouton répond à ce que
+         le résultat vient de dire (mise qui plafonne, revenu insuffisant…), pour que l'appel
+         soit la réponse à une question que le visiteur se pose déjà. -->
+    <div class="ce-actions">
+      <p class="ce-incitation" id="ce-incitation">
+        Gratuit et sans engagement : en 15 minutes, je vous dis combien un prêteur vous accorderait vraiment.
+      </p>
+      <a href="/rendez-vous" class="btn-primary ce-cta" data-umami-event="cta_booking_capacite">Réserver un appel de 15 min</a>
+      <a href="/outils#simulateur" class="ce-affiner" id="ce-affiner">Affiner dans le simulateur complet →</a>
+    </div>
+
+    <p class="ce-note">
+      Estimation indicative. Votre capacité réelle dépend de votre dossier de crédit et du prêteur.
+    </p>
+  </div>
+</div>
+
+<noscript>
+  <style is:inline>.ce{display:none!important}</style>
+  <p class="ce-sans-js">
+    Le calculateur demande JavaScript. <a href="/outils#simulateur">Ouvrir le simulateur d'emprunt</a>
+  </p>
+</noscript>
+
+<script>
+  import { formatMoney } from '../utils/mortgageCalc';
+  import {
+    AMORTISSEMENT_DEFAUT,
+    CLE_TRANSFERT_EXPRESS,
+    FRAIS_DEFAUT,
+    calculerCapacite,
+    formaterSaisie,
+    lireMontant,
+    messageEchec,
+  } from '../utils/capaciteEmprunt';
+
+  function track(name: string) {
+    // @ts-ignore
+    if (typeof window.umami?.track === 'function') window.umami.track(name);
+    // @ts-ignore
+    if (typeof window.gtag === 'function') window.gtag('event', name);
+  }
+
+  const racine = document.querySelector<HTMLElement>('.ce');
+  if (racine) {
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+
+    const revenuEl = $<HTMLInputElement>('ce-revenu')!;
+    const miseEl = $<HTMLInputElement>('ce-mise')!;
+    const dettesEl = $<HTMLInputElement>('ce-dettes')!;
+    const condoCase = $<HTMLInputElement>('ce-condo-case')!;
+    const condoBloc = $<HTMLElement>('ce-condo-bloc')!;
+    const condoEl = $<HTMLInputElement>('ce-condo')!;
+    const tauxEl = $<HTMLInputElement>('ce-taux'); // présent seulement sans taux du jour
+    const prixEl = $<HTMLElement>('ce-prix')!;
+    const detailEl = $<HTMLElement>('ce-detail')!;
+    const alerteEl = $<HTMLElement>('ce-alerte')!;
+    const incitationEl = $<HTMLElement>('ce-incitation')!;
+
+    // Ce que l'appel apporterait, selon ce que le calcul vient de montrer
+    const INCITATION = {
+      attente: incitationEl.textContent?.trim() ?? '',
+      resultat: 'C’est une estimation. En 15 minutes, je vous dis ce qu’un prêteur vous accorderait vraiment, et à quel taux.',
+      plafonne: 'Votre mise de fonds limite votre achat. Voyons ensemble comment la bonifier : CELIAPP, RAP, don familial.',
+      revenu: 'Un coemprunteur, une consolidation de dettes, un autre prêteur : voyons ensemble ce qui est possible.',
+      mise: 'Pas encore de mise de fonds ? Voyons ensemble par où commencer : CELIAPP, RAP, don familial.',
+    };
+
+    const tauxDuJour = parseFloat(racine.dataset.taux ?? '');
+    const fmt = (n: number) => formatMoney(Math.round(n));
+
+    /** Le taux du jour, ou celui saisi quand il manque — null tant qu'il n'est pas utilisable. */
+    function tauxRetenu(): number | null {
+      if (Number.isFinite(tauxDuJour)) return tauxDuJour;
+      const t = tauxEl ? lireMontant(tauxEl.value) : 0;
+      return t >= 0.5 && t <= 20 ? t : null;
+    }
+
+    function lireEntrees() {
+      return {
+        revenu: lireMontant(revenuEl.value),
+        mise: lireMontant(miseEl.value),
+        dettes: lireMontant(dettesEl.value),
+        // Décocher retire les frais du calcul sans effacer la saisie : recocher la ramène
+        condo: condoCase.checked ? lireMontant(condoEl.value) : 0,
+      };
+    }
+
+    function afficher(
+      prix: string,
+      detail: string,
+      alerte: string | null,
+      incitation: keyof typeof INCITATION,
+      texte = false,
+    ) {
+      prixEl.textContent = prix;
+      prixEl.classList.toggle('ce-res-val--texte', texte);
+      detailEl.textContent = detail;
+      alerteEl.textContent = alerte ?? '';
+      alerteEl.hidden = !alerte;
+      incitationEl.textContent = INCITATION[incitation];
+    }
+
+    let resultatSignale = false;
+
+    function calculer() {
+      const { revenu, mise, dettes, condo } = lireEntrees();
+      const taux = tauxRetenu();
+
+      if (!revenu || !miseEl.value.trim()) {
+        afficher('—', 'Entrez votre revenu et votre mise de fonds', null, 'attente');
+        return;
+      }
+      if (taux === null) {
+        afficher('—', 'Entrez le taux d’intérêt visé (entre 0,5 % et 20 %)', null, 'attente');
+        return;
+      }
+
+      const entrees = {
+        revenu, mise, dettes, taux, condo,
+        amortAns: AMORTISSEMENT_DEFAUT,
+        taxes: FRAIS_DEFAUT.taxes,
+        chauffage: FRAIS_DEFAUT.chauffage,
+      };
+      const r = calculerCapacite(entrees);
+
+      if (!r.ok) {
+        if (r.motif === 'revenu_insuffisant') {
+          afficher('Revenu insuffisant', '', 'Avec ce revenu et ces paiements, les ratios d’endettement des prêteurs ne laissent pas de place à un versement hypothécaire.', 'revenu', true);
+        } else {
+          afficher('—', '', messageEchec(r.motif, entrees), 'mise');
+        }
+        return;
+      }
+
+      const type = r.assure ? 'Prêt assuré' : 'Prêt conventionnel';
+      let alerte: string | null = null;
+      const plafonne = r.plafonneParMise && r.maxAbsolu !== null && r.maxAbsolu.prix > r.prixMax;
+      if (plafonne && r.maxAbsolu) {
+        alerte = `C’est votre mise de fonds qui fixe ce prix : votre revenu suffirait pour une propriété de ${fmt(r.maxAbsolu.prix)}, avec une mise de ${fmt(r.maxAbsolu.miseMin)}.`;
+      }
+      afficher(fmt(r.prixMax), `${type} de ${fmt(r.pretTotal)} · ${fmt(r.versement)}/mois`, alerte, plafonne ? 'plafonne' : 'resultat');
+
+      if (!resultatSignale) {
+        resultatSignale = true;
+        track('capacite_express_resultat');
+      }
+    }
+
+    let minuterie: number | undefined;
+    function planifier() {
+      window.clearTimeout(minuterie);
+      minuterie = window.setTimeout(calculer, 200);
+    }
+
+    // Montants : « 95 000 » au repos, chiffres nus pendant la saisie
+    [revenuEl, miseEl, dettesEl, condoEl].forEach((el) => {
+      el.addEventListener('input', planifier);
+      el.addEventListener('blur', () => {
+        const v = lireMontant(el.value);
+        if (v > 0) el.value = formaterSaisie(v);
+      });
+      el.addEventListener('focus', () => {
+        const v = lireMontant(el.value);
+        if (v > 0) el.value = Math.round(v).toString();
+      });
+    });
+    tauxEl?.addEventListener('input', planifier);
+
+    condoCase.addEventListener('change', () => {
+      condoBloc.hidden = !condoCase.checked;
+      condoCase.setAttribute('aria-expanded', String(condoCase.checked));
+      if (condoCase.checked) condoEl.focus();
+      calculer();
+    });
+
+    $<HTMLFormElement>('ce-form')!.addEventListener('submit', (e) => {
+      e.preventDefault();
+      calculer();
+    });
+
+    // « Affiner » : la saisie suit dans le simulateur complet, par sessionStorage — jamais
+    // par l'URL, un revenu n'a rien à faire dans l'historique. Les paiements et le condo
+    // partent même à zéro : sinon le simulateur reprendrait ses propres valeurs par défaut
+    // et afficherait un autre chiffre que celui qu'on vient de lire.
+    $<HTMLAnchorElement>('ce-affiner')!.addEventListener('click', () => {
+      track('capacite_express_simulateur');
+      const { revenu, mise, dettes, condo } = lireEntrees();
+      if (!revenu) return;
+      const transfert: Record<string, number> = { ts: Date.now(), revenu, dettes, condo };
+      if (miseEl.value.trim()) transfert.mise = mise;
+      const taux = tauxRetenu();
+      if (taux !== null) transfert.taux = taux;
+      try {
+        sessionStorage.setItem(CLE_TRANSFERT_EXPRESS, JSON.stringify(transfert));
+      } catch { /* stockage indisponible : le simulateur s'ouvrira sur ses valeurs par défaut */ }
+    });
+
+  }
+</script>
+
+<style>
+  .ce {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+    align-items: stretch;
+  }
+
+  /* --- Formulaire --- */
+  .ce-form {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    box-shadow: var(--shadow-xs);
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+  }
+  .ce-champ > label:not(.ce-case),
+  .ce-condo > label {
+    display: block;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: .4rem;
+  }
+  .ce-saisie {
+    position: relative;
+  }
+  .ce-saisie input {
+    width: 100%;
+    padding: .8rem 4.2rem .8rem 1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: "DM Sans", sans-serif;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .ce-saisie input:focus {
+    outline: none;
+    border-color: var(--clay);
+    box-shadow: 0 0 0 3px rgba(196, 122, 82, .18);
+  }
+  .ce-saisie input::placeholder {
+    color: #a39888;
+  }
+  .ce-unite {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .85rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .ce-aide {
+    margin-top: .35rem;
+    font-size: .8rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .ce-aide a {
+    color: var(--clay-dk);
+  }
+
+  .ce-case {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .ce-case input {
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: var(--clay);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .ce-condo {
+    margin-top: .9rem;
+    padding-left: 1.75rem;
+  }
+
+  .ce-hypotheses {
+    margin-top: auto;
+    padding-top: .9rem;
+    border-top: 1px solid var(--border);
+    font-size: .75rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  /* --- Résultat --- */
+  .ce-resultat {
+    background: var(--forest);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.75rem;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    text-align: center;
+    box-shadow: var(--shadow-forest);
+  }
+  /* Le chiffre occupe le centre de la carte, les actions restent en bas */
+  .ce-res {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .ce-res-label {
+    font-size: .75rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .7);
+    margin-bottom: .6rem;
+  }
+  .ce-res-val {
+    font-family: "Lora", serif;
+    font-size: clamp(2.4rem, 5vw, 3.2rem);
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .ce-res-val--texte {
+    font-size: 1.8rem;
+  }
+  .ce-res-detail {
+    margin-top: .6rem;
+    font-size: .9rem;
+    color: rgba(255, 255, 255, .8);
+    min-height: 1.4em;
+  }
+  .ce-alerte {
+    margin-top: 1rem;
+    padding: .75rem 1rem;
+    background: rgba(255, 255, 255, .1);
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: var(--radius-sm);
+    font-size: .85rem;
+    line-height: 1.55;
+    text-align: left;
+  }
+
+  .ce-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .9rem;
+  }
+  .ce-incitation {
+    width: 100%;
+    padding-top: 1.1rem;
+    border-top: 1px solid rgba(255, 255, 255, .18);
+    font-size: .92rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, .92);
+  }
+  .ce-cta {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+  .ce-affiner {
+    color: white;
+    font-size: .9rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255, 255, 255, .45);
+  }
+  .ce-affiner:hover {
+    text-decoration-color: white;
+  }
+  .ce-affiner:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  .ce-note {
+    font-size: .72rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, .6);
+  }
+
+  .ce-sans-js {
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 820px) {
+    .ce {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .ce-form {
+      padding: 1.35rem;
+    }
+    .ce-resultat {
+      padding: 1.6rem 1.35rem;
+    }
+  }
+</style>
