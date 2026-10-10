@@ -458,6 +458,15 @@ par-dessus (valeurs saisies, coches vectorielles, initiales, tracés de signatur
   (courriel prérempli vers la courtière, depuis la messagerie du client). Les coordonnées
   sont deux boutons au pouce ; « Visiter le site », le geste le moins utile ici, n'est qu'un
   lien en dernier. Aucune étape n'annonce de délai ni d'accusé immédiat — un test le verrouille.
+- **L'envoi se confirme, et sa fin ne laisse pas de formulaire rempli.** Le bouton nomme
+  le geste (« Envoyer à Marie », « Faire signer sur place ») ; il ouvre une fenêtre qui
+  récapitule l'ordre de signature, l'adresse qui reçoit le lien et le fait qu'un lien parti
+  ne se retire qu'en annulant. Rien ne part avant « Confirmer ». Une erreur reste dans la
+  fenêtre — rien n'a été créé, on réessaie sans ressaisir. Une fois le contrat créé, le
+  formulaire laisse place à un écran de fin (`data-etat="envoye"`) : à qui c'est parti,
+  l'ordre, le lien en présentiel, « Nouveau contrat » (qui recharge la page, valeurs
+  habituelles comprises) et le suivi. Un courriel manqué (`code: 'invitation'`) mène au
+  même écran en ton d'alerte, jamais au bouton rendu : ce serait un second dossier.
 - **Les cartes du suivi sont bâties en JavaScript, donc habillées par un bloc `is:global`**
   (circonscrit par `#ct-form` / `#ct-suivi`). Astro scope son `<style>` en estampant un
   attribut de portée sur les éléments qu'il rend lui-même : une règle scopée n'atteint

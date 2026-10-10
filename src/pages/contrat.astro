@@ -78,6 +78,28 @@ const RANGS = [0, 1, 2];
               </p>
             </header>
 
+            {/* ---------------- Contrat parti ---------------- */}
+
+            {/* Remplace le formulaire une fois le contrat créé : un bouton figé sur « Contrat
+                envoyé » au bas d'un formulaire encore rempli ne disait ni à qui c'était parti,
+                ni quoi faire ensuite — et un nouveau contrat demandait de recharger la page.
+                Le suivi, juste dessous, reste visible : c'est là qu'elle reviendra. */}
+            <section class="ct-envoye" data-envoye hidden tabindex="-1" aria-live="polite">
+              <div class="ct-envoye-icone" aria-hidden="true" data-envoye-icone>✓</div>
+              <h2 class="ct-envoye-titre" data-envoye-titre></h2>
+              <p class="ct-envoye-texte" data-envoye-texte></p>
+              <ol class="ct-envoye-ordre" data-envoye-ordre></ol>
+              <div class="ct-envoye-lien" data-envoye-lien hidden></div>
+              <div class="ct-envoye-actions">
+                <button type="button" class="btn btn-primary" data-nouveau-contrat>
+                  Nouveau contrat
+                </button>
+                <button type="button" class="btn ct-bouton-secondaire" data-voir-suivi>
+                  Voir les contrats en cours
+                </button>
+              </div>
+            </section>
+
             {/* ---------------- Contrats en cours ---------------- */}
 
             {/* En tête de page, avant le formulaire : un dossier qui attend *sa* signature
@@ -664,10 +686,30 @@ const RANGS = [0, 1, 2];
                   Aperçu
                 </button>
                 <button type="submit" class="btn btn-primary" data-envoyer>
-                  Créer et envoyer
+                  Envoyer le contrat
                 </button>
               </div>
             </div>
+
+            {/* Dernier regard avant que le lien parte : une fois envoyé, il ne se rattrape
+                plus qu'en annulant le dossier. Le récapitulatif nomme qui reçoit quoi. */}
+            <dialog class="ct-confirmer" data-confirmer aria-labelledby="ct-confirmer-titre">
+              <h2 class="ct-confirmer-titre" id="ct-confirmer-titre" data-confirmer-titre>
+                Envoyer le contrat ?
+              </h2>
+              <p class="ct-confirmer-resume" data-confirmer-resume></p>
+              <ol class="ct-confirmer-ordre" data-confirmer-ordre></ol>
+              <p class="ct-confirmer-note" data-confirmer-note></p>
+              <p class="ct-confirmer-erreur" data-confirmer-erreur hidden></p>
+              <div class="ct-confirmer-actions">
+                <button type="button" class="btn ct-bouton-secondaire" data-confirmer-retour>
+                  Revenir
+                </button>
+                <button type="button" class="btn btn-primary" data-confirmer-ok>
+                  Confirmer l’envoi
+                </button>
+              </div>
+            </dialog>
           </form>
         )
       }
@@ -1696,6 +1738,253 @@ const RANGS = [0, 1, 2];
     line-height: 1.5;
     color: var(--muted);
   }
+
+  /* ---------- Contrat parti ---------- */
+
+  /* Une fois le contrat créé, le formulaire s'efface : il ne reste que l'écran de fin et le
+     suivi. Les champs restent dans la page — « Nouveau contrat » la recharge. */
+  #ct-form[data-etat='envoye'] > :not(.ct-envoye, .ct-suivi, dialog) {
+    display: none;
+  }
+
+  #ct-form .ct-envoye {
+    margin: 0 0 1.5rem;
+    padding: 2rem 1.5rem 1.6rem;
+    border: 1px solid #cfe5d5;
+    border-radius: 16px;
+    background: #f3faf5;
+    text-align: center;
+    outline: none;
+  }
+
+  #ct-form .ct-envoye[data-ton='alerte'] {
+    border-color: #f0d2b8;
+    background: #fdf6ee;
+  }
+
+  #ct-form .ct-envoye-icone {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    margin: 0 auto 0.9rem;
+    border-radius: 50%;
+    background: #2f7a4a;
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    animation: ct-apparition 0.35s ease-out;
+  }
+
+  #ct-form .ct-envoye[data-ton='alerte'] .ct-envoye-icone {
+    background: var(--clay-dk, #a85f38);
+  }
+
+  #ct-form .ct-envoye-titre {
+    margin: 0 0 0.5rem;
+    font-size: 1.3rem;
+    line-height: 1.3;
+  }
+
+  #ct-form .ct-envoye-texte {
+    max-width: 34rem;
+    margin: 0 auto 1rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  #ct-form .ct-envoye-ordre,
+  #ct-form .ct-confirmer-ordre {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0 auto 1.1rem;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+  }
+
+  #ct-form .ct-envoye-ordre {
+    max-width: 26rem;
+  }
+
+  #ct-form .ct-ordre-ligne {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border, #e3d9cc);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 0.88rem;
+  }
+
+  #ct-form .ct-ordre-rang {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: var(--warm, #f0e8da);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  #ct-form .ct-ordre-ligne[data-actif] .ct-ordre-rang {
+    background: var(--clay, #c47a52);
+    color: #fff;
+  }
+
+  #ct-form .ct-ordre-qui {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  #ct-form .ct-ordre-qui small {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #ct-form .ct-ordre-etat {
+    margin-left: auto;
+    flex: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  #ct-form .ct-ordre-ligne[data-actif] .ct-ordre-etat {
+    color: #2f7a4a;
+  }
+
+  #ct-form .ct-envoye-lien {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem 1rem;
+    margin: 0 0 1.2rem;
+  }
+
+  #ct-form .ct-envoye-lien .ct-lien-signature {
+    display: inline-block;
+    padding: 0.8rem 1.4rem;
+    border-radius: 50px;
+    background: var(--forest, #3d5a4a);
+    color: #fff;
+    text-decoration: none;
+  }
+
+  #ct-form .ct-envoye-actions,
+  #ct-form .ct-confirmer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.7rem;
+  }
+
+  /* ---------- Confirmation avant envoi ---------- */
+
+  #ct-form .ct-confirmer {
+    /* La remise à zéro de global.css retire la marge automatique qui centre un <dialog>. */
+    margin: auto;
+    width: min(30rem, calc(100vw - 2rem));
+    padding: 1.5rem 1.4rem 1.3rem;
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    color: var(--ink, #1f1e1c);
+  }
+
+  #ct-form .ct-confirmer::backdrop {
+    background: rgba(31, 30, 28, 0.45);
+  }
+
+  #ct-form .ct-confirmer-titre {
+    margin: 0 0 0.35rem;
+    font-size: 1.2rem;
+  }
+
+  #ct-form .ct-confirmer-resume,
+  #ct-form .ct-confirmer-note {
+    margin: 0 0 0.9rem;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  #ct-form .ct-confirmer-erreur {
+    margin: 0 0 0.9rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    background: #fdeceb;
+    color: #8f2f28;
+    font-size: 0.86rem;
+  }
+
+  #ct-form .ct-confirmer-actions {
+    justify-content: flex-end;
+  }
+
+  /* Pendant l'envoi, le bouton tourne : sans signe de vie, on clique une seconde fois. */
+  #ct-form [data-confirmer-ok][aria-busy='true']::before {
+    content: '';
+    display: inline-block;
+    width: 0.85em;
+    height: 0.85em;
+    margin-right: 0.5em;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-top-color: #fff;
+    border-radius: 50%;
+    vertical-align: -0.1em;
+    animation: ct-tourne 0.7s linear infinite;
+  }
+
+  #ct-form [data-confirmer-ok]:disabled,
+  #ct-form [data-confirmer-retour]:disabled {
+    cursor: wait;
+    opacity: 0.75;
+  }
+
+  @keyframes ct-tourne {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes ct-apparition {
+    from {
+      transform: scale(0.6);
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #ct-form .ct-envoye-icone {
+      animation: none;
+    }
+  }
+
+  @media (max-width: 620px) {
+    #ct-form .ct-envoye {
+      padding: 1.5rem 1rem 1.2rem;
+    }
+
+    #ct-form .ct-envoye-actions .btn,
+    #ct-form .ct-confirmer-actions .btn {
+      flex: 1 1 100%;
+      min-height: 46px;
+    }
+
+    #ct-form .ct-confirmer-actions {
+      flex-direction: column-reverse;
+    }
+  }
 </style>
 
 <script>
@@ -1875,6 +2164,31 @@ const RANGS = [0, 1, 2];
       if (ajouter) ajouter.hidden = visibles().length >= blocs().length;
       majColonnesIdentite();
       majResume();
+      majBouton();
+    }
+
+    /**
+     * Le bouton dit à qui part le contrat, et comment : « Créer et envoyer » ne disait ni
+     * l'un ni l'autre, et le même libellé couvrait un courriel et une signature sur place.
+     * Lit l'état dans la page plutôt que dans `bouton` / `correction`, déclarés plus bas :
+     * `rafraichir` s'exécute avant eux.
+     */
+    function majBouton(): void {
+      const cible = formulaire.querySelector<HTMLButtonElement>('[data-envoyer]');
+      // Désactivé : un envoi est en cours ou terminé, son libellé lui appartient.
+      if (!cible || cible.disabled) return;
+      if (formulaire.querySelector<HTMLElement>('[data-correction]')?.hidden === false) {
+        cible.textContent = 'Enregistrer la correction';
+        return;
+      }
+      const mode = formulaire.querySelector<HTMLInputElement>('input[name="ct-mode"]:checked')?.value;
+      if (mode === 'presence') {
+        cible.textContent = 'Faire signer sur place';
+        return;
+      }
+      const premier = visibles()[0];
+      const prenom = premier ? valeur(`ct-prenom-${premier.dataset.emprunteur}`) : '';
+      cible.textContent = prenom ? `Envoyer à ${prenom}` : 'Envoyer le contrat';
     }
 
     /**
@@ -2925,6 +3239,247 @@ const RANGS = [0, 1, 2];
       }
     }
 
+    /* ---------------- Confirmation, envoi, écran de fin ---------------- */
+
+    type Signataire = { nom: string; courriel: string };
+
+    const dialogue = formulaire.querySelector<HTMLDialogElement>('[data-confirmer]');
+    const confirmerOk = formulaire.querySelector<HTMLButtonElement>('[data-confirmer-ok]');
+    const confirmerRetour = formulaire.querySelector<HTMLButtonElement>('[data-confirmer-retour]');
+    const confirmerErreur = formulaire.querySelector<HTMLElement>('[data-confirmer-erreur]');
+    const envoye = formulaire.querySelector<HTMLElement>('[data-envoye]');
+    let envoiEnCours = false;
+    /** Ce que la confirmation s'apprête à envoyer — figé au moment où elle s'ouvre. */
+    let enAttente: { donnees: Record<string, unknown>; mode: string } | null = null;
+
+    /**
+     * L'ordre de signature, une ligne par personne, plus la courtière en dernier : c'est la
+     * même liste avant l'envoi (qui va recevoir quoi) et après (où en est le contrat).
+     */
+    function construireOrdre(liste: HTMLOListElement | null, ordre: Signataire[], etats: string[]): void {
+      if (!liste) return;
+      liste.replaceChildren();
+      const lignes = [...ordre, { nom: 'Vous', courriel: 'relecture et signature finale' }];
+      for (const [position, personne] of lignes.entries()) {
+        const ligne = document.createElement('li');
+        ligne.className = 'ct-ordre-ligne';
+        if (position === 0) ligne.dataset.actif = '';
+
+        const rang = document.createElement('span');
+        rang.className = 'ct-ordre-rang';
+        rang.textContent = position < ordre.length ? String(position + 1) : '✎';
+
+        const qui = document.createElement('span');
+        qui.className = 'ct-ordre-qui';
+        const nom = document.createElement('strong');
+        nom.textContent = personne.nom;
+        const detail = document.createElement('small');
+        detail.textContent = personne.courriel;
+        qui.append(nom, detail);
+
+        const etat = document.createElement('span');
+        etat.className = 'ct-ordre-etat';
+        etat.textContent = etats[position] ?? (position < ordre.length ? 'à son tour' : 'en dernier');
+
+        ligne.append(rang, qui, etat);
+        liste.append(ligne);
+      }
+      liste.hidden = ordre.length === 0;
+    }
+
+    function ouvrirConfirmation(donnees: Record<string, unknown>, mode: string): void {
+      const emprunteurs = donnees.emprunteurs as Array<Record<string, string>>;
+      const ordre = emprunteurs.map((e) => ({ nom: `${e.prenom} ${e.nom}`.trim(), courriel: e.courriel ?? '' }));
+      const premier = ordre[0];
+      const prenom = emprunteurs[0]?.prenom ?? '';
+      const presence = mode === 'presence';
+
+      const titre = formulaire.querySelector<HTMLElement>('[data-confirmer-titre]');
+      const resume = formulaire.querySelector<HTMLElement>('[data-confirmer-resume]');
+      const note = formulaire.querySelector<HTMLElement>('[data-confirmer-note]');
+      if (titre) titre.textContent = presence ? 'Faire signer sur place ?' : 'Envoyer le contrat ?';
+      if (resume) {
+        resume.textContent = formulaire.querySelector<HTMLElement>('[data-resume]')?.textContent ?? '';
+      }
+      construireOrdre(
+        formulaire.querySelector<HTMLOListElement>('[data-confirmer-ordre]'),
+        ordre,
+        [presence ? 'signe en premier' : 'reçoit le lien'],
+      );
+      if (note) {
+        note.textContent = presence
+          ? `Aucun courriel ne part. Le lien de signature s’affichera à l’écran : vous tendrez l’appareil à ${premier?.nom ?? 'l’emprunteur'}.`
+          : `Le lien part immédiatement à ${premier?.courriel ?? ''}.${
+              ordre.length > 1 ? ' Chacun des suivants recevra le sien dès que le précédent aura signé.' : ''
+            } Une fois parti, il ne se retire qu’en annulant le contrat.`;
+      }
+      if (confirmerOk) confirmerOk.textContent = presence ? 'Créer et faire signer' : `Envoyer à ${prenom || 'l’emprunteur'}`;
+      if (confirmerErreur) confirmerErreur.hidden = true;
+
+      enAttente = { donnees, mode };
+      dialogue?.showModal();
+      confirmerOk?.focus();
+    }
+
+    function occupe(oui: boolean, presence: boolean): void {
+      envoiEnCours = oui;
+      if (confirmerOk) {
+        confirmerOk.disabled = oui;
+        confirmerOk.setAttribute('aria-busy', String(oui));
+        if (oui) confirmerOk.textContent = presence ? 'Création…' : 'Envoi en cours…';
+      }
+      if (confirmerRetour) confirmerRetour.disabled = oui;
+      if (bouton) bouton.disabled = oui;
+    }
+
+    function fermerConfirmation(): void {
+      enAttente = null;
+      if (dialogue?.open) dialogue.close();
+    }
+
+    // Échap ne doit pas fermer la fenêtre pendant l'envoi : on ne saurait plus s'il a abouti.
+    dialogue?.addEventListener('cancel', (evenement) => {
+      if (envoiEnCours) evenement.preventDefault();
+    });
+    dialogue?.addEventListener('close', () => {
+      if (!envoiEnCours) enAttente = null;
+    });
+    confirmerRetour?.addEventListener('click', () => fermerConfirmation());
+    confirmerOk?.addEventListener('click', () => {
+      if (enAttente && !envoiEnCours) void envoyerContrat(enAttente.donnees, enAttente.mode);
+    });
+
+    /** Remplace le formulaire par l'écran de fin. */
+    function afficherEnvoye(options: {
+      alerte?: boolean;
+      titre: string;
+      texte: string;
+      ordre: Signataire[];
+      etats: string[];
+      lien?: { url: string; nom: string };
+    }): void {
+      if (!envoye) return;
+      envoye.dataset.ton = options.alerte ? 'alerte' : 'ok';
+      const icone = envoye.querySelector<HTMLElement>('[data-envoye-icone]');
+      const titre = envoye.querySelector<HTMLElement>('[data-envoye-titre]');
+      const texte = envoye.querySelector<HTMLElement>('[data-envoye-texte]');
+      const hoteLien = envoye.querySelector<HTMLElement>('[data-envoye-lien]');
+      if (icone) icone.textContent = options.alerte ? '!' : '✓';
+      if (titre) titre.textContent = options.titre;
+      if (texte) texte.textContent = options.texte;
+      construireOrdre(envoye.querySelector<HTMLOListElement>('[data-envoye-ordre]'), options.ordre, options.etats);
+      if (hoteLien) {
+        hoteLien.replaceChildren();
+        hoteLien.hidden = !options.lien;
+        if (options.lien) ajouterLienPresence(hoteLien, options.lien.url, options.lien.nom);
+      }
+
+      formulaire.dataset.etat = 'envoye';
+      envoye.hidden = false;
+      if (apercu) apercu.hidden = true;
+      envoye.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      envoye.focus({ preventScroll: true });
+
+      // Le dossier qui vient de partir doit apparaître dans le suivi sans rechargement :
+      // c'est là qu'elle reviendra pour relancer ou finaliser.
+      suiviCharge = true;
+      void chargerSuivi();
+    }
+
+    // Le serveur rend le formulaire neuf, valeurs habituelles comprises : plus sûr que de
+    // deviner ce qu'il faut vider.
+    formulaire.querySelector('[data-nouveau-contrat]')?.addEventListener('click', () => {
+      window.location.assign('/contrat');
+    });
+
+    formulaire.querySelector('[data-voir-suivi]')?.addEventListener('click', () => {
+      if (!suivi) return;
+      suivi.open = true;
+      suivi.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    async function envoyerContrat(donnees: Record<string, unknown>, mode: string): Promise<void> {
+      const presence = mode === 'presence';
+      const emprunteurs = donnees.emprunteurs as Array<Record<string, string>>;
+      const saisis = emprunteurs.map((e) => ({ nom: `${e.prenom} ${e.nom}`.trim(), courriel: e.courriel ?? '' }));
+      occupe(true, presence);
+
+      const echouer = (message: string): void => {
+        occupe(false, presence);
+        if (confirmerOk) confirmerOk.textContent = presence ? 'Réessayer' : 'Réessayer l’envoi';
+        if (confirmerErreur) {
+          confirmerErreur.textContent = message;
+          confirmerErreur.hidden = false;
+        }
+      };
+
+      try {
+        const reponse = await fetch('/api/contrat-creer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // Aucune signature ne circule : la sienne est mémorisée côté serveur et n'entrera
+          // en jeu qu'à la finalisation ; celles des emprunteurs n'existent pas encore.
+          body: JSON.stringify({ donnees, mode }),
+        });
+        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
+
+        if (!reponse.ok) {
+          // Le dossier est créé, seul le courriel a manqué. Rendre le bouton ferait créer un
+          // second dossier — deux liens vivants pour le même contrat. Le suivi rattrape.
+          if (data.code === 'invitation') {
+            envoiEnCours = false;
+            fermerConfirmation();
+            afficherEnvoye({
+              alerte: true,
+              titre: 'Contrat créé — le courriel n’est pas parti',
+              texte: `${String(data.error ?? 'Le lien de signature n’a pas pu être envoyé.')} Renvoyez-le depuis les contrats en cours, plus bas.`,
+              ordre: saisis,
+              etats: ['lien à renvoyer'],
+            });
+            if (suivi) suivi.open = true;
+            return;
+          }
+          echouer(
+            data.code === 'acces'
+              ? 'Votre session a expiré. Rechargez la page pour vous reconnecter — rien n’a été envoyé.'
+              : String(data.error ?? 'L’envoi a échoué. Réessayez.'),
+          );
+          return;
+        }
+
+        envoiEnCours = false;
+        fermerConfirmation();
+        if (bouton) bouton.textContent = presence ? 'Contrat créé' : 'Contrat envoyé';
+
+        const ordre = (data.ordre ?? saisis) as Signataire[];
+        const premier = ordre[0];
+        if (data.mode === 'presence' && typeof data.lien === 'string') {
+          // En présentiel, le lien ne part nulle part : il est remis ici, et la courtière
+          // tend l'appareil au premier signataire.
+          afficherEnvoye({
+            titre: 'Contrat prêt à signer',
+            texte: `Aucun courriel n’est parti. Tendez l’appareil à ${premier?.nom ?? 'l’emprunteur'} : le lien ci-dessous ouvre le contrat à signer.${
+              ordre.length > 1 ? ' Chacun signera ensuite à son tour.' : ''
+            }`,
+            ordre,
+            etats: ['signe maintenant'],
+            lien: { url: data.lien, nom: premier?.nom ?? 'le premier emprunteur' },
+          });
+        } else {
+          afficherEnvoye({
+            titre: `Contrat envoyé à ${premier?.nom ?? 'l’emprunteur'}`,
+            texte: `Le lien de signature est parti à ${premier?.courriel ?? ''}.${
+              ordre.length > 1 ? ' Le suivant recevra le sien dès que le précédent aura signé.' : ''
+            } Vous serez prévenue par courriel quand ce sera à vous de finaliser.`,
+            ordre,
+            etats: ['lien envoyé'],
+          });
+        }
+      } catch {
+        echouer('Connexion impossible. Vérifiez votre réseau et réessayez — rien n’a été envoyé.');
+      }
+    }
+
     formulaire.addEventListener('submit', async (evenement) => {
       evenement.preventDefault();
       if (erreur) erreur.hidden = true;
@@ -2947,78 +3502,7 @@ const RANGS = [0, 1, 2];
         return;
       }
 
-      if (bouton) {
-        bouton.disabled = true;
-        bouton.textContent = 'Envoi…';
-      }
-
-      try {
-        const reponse = await fetch('/api/contrat-creer', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          // Aucune signature ne circule : la sienne est mémorisée côté serveur et n'entrera
-          // en jeu qu'à la finalisation ; celles des emprunteurs n'existent pas encore.
-          body: JSON.stringify({ donnees, mode }),
-        });
-        const data = (await reponse.json().catch(() => ({}))) as Record<string, unknown>;
-
-        if (!reponse.ok) {
-          // Le dossier est créé, seul le courriel a manqué. Rendre le bouton ferait créer un
-          // second dossier — deux liens vivants pour le même contrat. Le suivi rattrape.
-          if (data.code === 'invitation') {
-            montrerErreur(String(data.error ?? 'Le contrat est créé, mais le lien n’est pas parti.'));
-            if (bouton) bouton.textContent = 'Contrat créé';
-            suiviCharge = true;
-            if (suivi) suivi.open = true;
-            void chargerSuivi();
-            return;
-          }
-          if (data.code === 'acces') {
-            montrerErreur('Votre session a expiré. Rechargez la page pour vous reconnecter.');
-          } else {
-            montrerErreur(String(data.error ?? 'L’envoi a échoué. Réessayez.'));
-          }
-          if (bouton) {
-            bouton.disabled = false;
-            bouton.textContent = 'Créer et envoyer';
-          }
-          return;
-        }
-
-        const ordre = (data.ordre ?? []) as Array<{ nom: string; courriel: string }>;
-        if (succes) {
-          if (data.mode === 'presence' && typeof data.lien === 'string') {
-            // En présentiel, le lien ne part nulle part : il est remis ici, et la courtière
-            // tend l'appareil au premier signataire.
-            succes.innerHTML = '';
-            succes.append(
-              `Ordre de signature : ${ordre.map((e, i) => `${i + 1}. ${e.nom}`).join(' · ')}. `,
-            );
-            ajouterLienPresence(succes, data.lien, ordre[0]?.nom ?? 'le premier emprunteur');
-          } else {
-            const premier = ordre[0];
-            succes.textContent = `Contrat envoyé à ${premier?.nom ?? 'l’emprunteur'} (${premier?.courriel ?? ''}). ${
-              ordre.length > 1
-                ? `Le suivant recevra son lien dès qu’il aura signé. Ordre : ${ordre.map((e) => e.nom).join(' · ')}.`
-                : ''
-            } Vous serez prévenue pour finaliser.`;
-          }
-          succes.hidden = false;
-          succes.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        if (bouton) bouton.textContent = 'Contrat envoyé';
-
-        // Le dossier qui vient de partir doit apparaître dans le suivi sans rechargement :
-        // c'est là qu'elle reviendra pour relancer ou finaliser.
-        suiviCharge = true;
-        void chargerSuivi();
-      } catch {
-        montrerErreur('Connexion impossible. Vérifiez votre réseau et réessayez.');
-        if (bouton) {
-          bouton.disabled = false;
-          bouton.textContent = 'Créer et envoyer';
-        }
-      }
+      ouvrirConfirmation(donnees, mode);
     });
   }
 </script>
