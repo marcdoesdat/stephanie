@@ -56,7 +56,11 @@ Astro.response.headers.set('Cache-Control', 'no-store');
           />
           <div>
             <p class="quiz-trust-nom">{config.nom}</p>
-            <p class="quiz-trust-titre">{config.titre} — AMF {config.amf}</p>
+            {/* Le numéro de permis ne se coupe pas : « AMF » seul en fin de ligne et
+                le numéro sur la suivante se lisaient comme deux choses. */}
+            <p class="quiz-trust-titre">
+              {config.titre} — <span class="sc-insecable">AMF {config.amf}</span>
+            </p>
           </div>
         </div>
 
@@ -236,6 +240,23 @@ Astro.response.headers.set('Cache-Control', 'no-store');
                   signé.
                 </p>
 
+                {/* Sur téléphone, le cadre n'affiche souvent qu'une page, voire rien : le bouton
+                    d'ouverture passe alors avant lui, là où l'œil arrive. Le même lien reste
+                    sous le cadre sur ordinateur. */}
+                <a
+                  href={`/api/contrat-apercu?d=${encodeURIComponent(dossierId ?? '')}&j=${encodeURIComponent(jeton ?? '')}`}
+                  target="_blank"
+                  rel="noopener"
+                  class="sc-ouvrir-document"
+                >
+                  <span class="sc-ouvrir-icone" aria-hidden="true">📄</span>
+                  <span class="sc-ouvrir-texte">
+                    <strong>Lire le contrat au complet</strong>
+                    <span class="sc-ouvrir-detail">4 pages — s’ouvre en plein écran</span>
+                  </span>
+                  <span class="sc-ouvrir-fleche" aria-hidden="true">→</span>
+                </a>
+
                 <div class="sc-document">
                   <iframe
                     src={`/api/contrat-apercu?d=${encodeURIComponent(dossierId ?? '')}&j=${encodeURIComponent(jeton ?? '')}`}
@@ -246,7 +267,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
                 {/* Les navigateurs mobiles affichent mal un PDF encadré : le lien direct est
                     le seul moyen fiable de lire le contrat sur téléphone. */}
-                <p class="sc-texte">
+                <p class="sc-texte sc-ouvrir-bureau">
                   <a
                     href={`/api/contrat-apercu?d=${encodeURIComponent(dossierId ?? '')}&j=${encodeURIComponent(jeton ?? '')}`}
                     target="_blank"
@@ -730,10 +751,147 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     margin: 0.7rem 0 0;
   }
 
+  /* Un titre de plusieurs lignes dans la bordure d'un fieldset la coupe en deux et
+     chevauche le cadre. Flottant, il passe à l'intérieur, comme un titre ordinaire. */
+  .sc-questions legend {
+    float: left;
+    width: 100%;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    line-height: 1.4;
+  }
+
+  .sc-questions legend + * {
+    clear: both;
+  }
+
+  .sc-attestation input {
+    accent-color: var(--clay);
+  }
+
+  .sc-ouvrir-document {
+    display: none;
+  }
+
+  .sc-insecable {
+    white-space: nowrap;
+  }
+
+  /* Un <button> n'hérite pas de la police : `.btn-primary` la laissait au système
+     (Arial), au milieu d'une page en DM Sans. */
+  .signer-shell :global(button.btn-primary) {
+    font-family: inherit;
+  }
+
   @media (max-width: 560px) {
+    /* Trois marges s'empilaient (page, section, carte) : 60 px de chaque côté sur un
+       écran de 390. Le contenu en regagne près de 70. */
+    .signer-page {
+      padding: 0.75rem 0.5rem 2rem;
+    }
+
+    .signer-shell {
+      padding: 0;
+    }
+
+    .signer-shell :global(.contact-form.quiz) {
+      padding: 1rem;
+    }
+
+    .sc-titre {
+      font-size: 1.3rem;
+      line-height: 1.25;
+    }
+
+    .sc-sous-titre {
+      line-height: 1.3;
+    }
+
+    /* 16 px : sous ce seuil, Safari sur iPhone zoome sur la case touchée. */
+    .signer-shell :global(.cform-input),
+    .signer-shell :global([data-sig-nom]) {
+      font-size: 1rem;
+    }
+
     .sc-recap-ligne {
       grid-template-columns: 1fr;
       gap: 0.15rem;
+    }
+
+    .sc-modifier {
+      min-height: 40px;
+      padding: 0.35rem 1rem;
+    }
+
+    .sc-questions {
+      padding: 0.85rem 0.8rem 0.9rem;
+    }
+
+    /* Le contrat intégral, en carte franche avant le cadre : sur téléphone, c'est par là
+       qu'on le lit vraiment. */
+    .sc-ouvrir-document {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin: 0 0 0.8rem;
+      padding: 0.9rem 1rem;
+      border: 1.5px solid var(--clay);
+      border-radius: 12px;
+      background: var(--white);
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .sc-ouvrir-icone {
+      font-size: 1.4rem;
+    }
+
+    .sc-ouvrir-texte {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .sc-ouvrir-detail {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .sc-ouvrir-fleche {
+      color: var(--clay);
+      font-weight: 700;
+    }
+
+    .sc-ouvrir-bureau {
+      display: none;
+    }
+
+    .sc-document iframe {
+      height: 60vh;
+      min-height: 360px;
+    }
+
+    /* L'action principale au pouce, pleine largeur ; le désaccord reste à portée, centré
+       dessous, sur une cible de 44 px. */
+    .sc-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.4rem;
+    }
+
+    .sc-actions .btn-primary {
+      width: 100%;
+      text-align: center;
+    }
+
+    .sc-actions .sc-refus-lien {
+      min-height: 44px;
+    }
+
+    .sc-retour {
+      display: block;
+      text-align: center;
     }
   }
 </style>

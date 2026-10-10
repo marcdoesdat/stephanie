@@ -1432,6 +1432,11 @@ const RANGS = [0, 1, 2];
     color: #6f241f;
   }
 
+  /* Un <button> n'hérite pas de la police : `.btn-primary` la laissait au système. */
+  #ct-form button.btn-primary {
+    font-family: inherit;
+  }
+
   #ct-form .ct-bouton,
   #ct-form .ct-bouton-petit {
     margin-top: 0.6rem;
