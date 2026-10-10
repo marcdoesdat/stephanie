@@ -950,11 +950,163 @@ const adresseEnvoi = adresseDediee();
 
   @media (max-width: 640px) {
     .rs-page {
-      padding: 1.5rem 0.9rem 4rem;
+      padding: 1.25rem 0.75rem 4rem;
+    }
+
+    .rs-titre {
+      font-size: 1.35rem;
+    }
+
+    /* 16 px : sous ce seuil, Safari sur iPhone zoome sur chaque case touchée. */
+    .rs-page :global(input:not([type='checkbox']):not([type='radio'])),
+    .rs-page :global(select),
+    .rs-page :global(textarea),
+    .rs-filtres input,
+    .rs-filtres select,
+    .rs-lot-filtre input,
+    .rs-lot-filtre select,
+    .rs-fiche-actions select,
+    .rs-fiche-relance input,
+    .rs-note-ligne input,
+    .rs-composer select,
+    .rs-composer input,
+    .rs-composer textarea {
+      font-size: 1rem;
+    }
+
+    /* Recherche pleine largeur, les deux filtres côte à côte. */
+    .rs-outils {
+      display: block;
+    }
+
+    .rs-filtres {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 0.75rem;
+    }
+
+    .rs-champ-recherche {
+      grid-column: 1 / -1;
+    }
+
+    .rs-champ-recherche input,
+    .rs-filtres select {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+    }
+
+    /* Les deux actions franches côte à côte, sur une ligne chacune ; les liens dessous,
+       en cibles de 44 px. Ils s'empilaient en boutons de trois lignes. */
+    .rs-actions-globales {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .rs-actions-globales :global(.btn-secondary) {
+      padding: 0.7rem 0.5rem;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .rs-actions-globales .rs-lien {
+      min-height: 44px;
+    }
+
+    /* Les panneaux (nouveau contact, import, lot) portaient les 2,5 rem du formulaire
+       de contact du site : sur 390 px, des champs de 250. */
+    .rs-page :global(.contact-form.rs-panneau) {
+      padding: 1.25rem 1rem;
+      border-radius: 18px;
+    }
+
+    .rs-lot-filtres {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .rs-lot-filtre {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+
+    .rs-lot-filtre:last-of-type {
+      grid-column: 1 / -1;
+    }
+
+    .rs-lot-filtre input,
+    .rs-lot-filtre select {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+    }
+
+    .rs-lot-barre .rs-lien,
+    .rs-panneau-actions .rs-lien {
+      min-height: 44px;
     }
 
     .rs-page .rs-fiche {
-      padding: 1.25rem;
+      padding: 1.1rem 1rem;
+    }
+
+    .rs-fiche-entete .rs-lien {
+      min-height: 44px;
+      padding: 0 0.25rem;
+    }
+
+    /* État et date de relance pleine largeur ; corriger et supprimer côte à côte. */
+    .rs-fiche-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .rs-fiche-actions select,
+    .rs-fiche-relance {
+      grid-column: 1 / -1;
+    }
+
+    .rs-fiche-actions select,
+    .rs-fiche-relance input {
+      min-height: 44px;
+    }
+
+    .rs-fiche-relance input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .rs-fiche-actions :global(.btn-secondary) {
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .rs-fiche-actions .rs-lien {
+      min-height: 44px;
+    }
+
+    .rs-gabarit-ligne .rs-lien {
+      min-height: 40px;
+    }
+
+    /* L'action d'un panneau (envoyer, enregistrer, importer) prend la largeur ; « Annuler »
+       passe dessous, centré. */
+    .rs-panneau-actions {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .rs-panneau-actions :global(.btn-cta),
+    .rs-panneau-actions :global(.btn-primary) {
+      flex: 1 1 100%;
+      justify-content: center;
+      font-family: inherit;
     }
   }
 </style>
@@ -1166,8 +1318,8 @@ const adresseEnvoi = adresseDediee();
   }
 
   #rs-app .rs-lot-item input[type='checkbox'] {
-    width: 1rem;
-    height: 1rem;
+    width: 1.2rem;
+    height: 1.2rem;
     accent-color: var(--clay);
     flex-shrink: 0;
   }
@@ -1181,6 +1333,26 @@ const adresseEnvoi = adresseDediee();
     font-weight: 600;
     color: var(--ink);
     flex: 1;
+  }
+
+  /* Sur téléphone, l'état passe sous le nom : à droite, il réduisait le nom à une colonne
+     de trois mots par ligne. */
+  @media (max-width: 640px) {
+    #rs-app .rs-lot-liste {
+      padding: 0.25rem 0.5rem;
+    }
+
+    #rs-app .rs-lot-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: 0.75rem;
+      row-gap: 0.35rem;
+    }
+
+    #rs-app .rs-lot-item > :last-child {
+      grid-column: 2;
+      justify-self: start;
+    }
   }
 
   #rs-app .rs-lot-item-meta {
@@ -1579,6 +1751,17 @@ const adresseEnvoi = adresseDediee();
       rendreHistorique(contact);
     }
 
+    /**
+     * Un changement d'état est journalisé avec les clés du catalogue (« a_contacter →
+     * en_discussion ») : c'est ce qui permet de le relire sans ambiguïté, et l'historique
+     * ne se réécrit pas. L'écran, lui, montre les libellés.
+     */
+    function resumeLisible(evenement: Evenement): string {
+      if (evenement.type !== 'etat') return evenement.resume;
+      const libelle = (cle: string): string => (ETATS as Record<string, string>)[cle] ?? cle;
+      return evenement.resume.replace(/^(\w+) → (\w+)/, (_, de: string, vers: string) => `${libelle(de)} → ${libelle(vers)}`);
+    }
+
     function rendreHistorique(contact: Fiche): void {
       const cible = fiche?.querySelector<HTMLElement>('[data-historique]');
       if (!cible) return;
@@ -1587,7 +1770,7 @@ const adresseEnvoi = adresseDediee();
       for (const evenement of [...contact.historique].reverse()) {
         const ligne = document.createElement('li');
         ligne.append(texte('span', 'rs-evenement-date', dateComplete(evenement.le)));
-        ligne.append(texte('p', 'rs-evenement-texte', evenement.resume));
+        ligne.append(texte('p', 'rs-evenement-texte', resumeLisible(evenement)));
 
         // Le texte réellement envoyé, replié : c'est ce qui permet de dire, un an plus tard,
         // ce qui a été écrit — sans encombrer la lecture courante.
@@ -1604,9 +1787,16 @@ const adresseEnvoi = adresseDediee();
     }
 
     fiche?.querySelector('[data-fermer-fiche]')?.addEventListener('click', () => {
+      const quittee = selection;
       selection = null;
       fiche.hidden = true;
       rendreListe();
+      // La fiche s'ouvre sous le carnet : la fermer laissait l'écran en bas de page, loin
+      // de la carte d'où l'on venait — sur téléphone, plusieurs écrans plus haut.
+      const carte = quittee
+        ? document.querySelector<HTMLElement>(`.rs-carte[data-id="${CSS.escape(String(quittee))}"]`)
+        : null;
+      (carte ?? document.querySelector<HTMLElement>('.rs-carnet'))?.scrollIntoView({ block: 'center' });
     });
 
     /* ---------------- Actions sur la fiche ---------------- */
