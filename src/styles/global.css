@@ -393,9 +393,11 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
   background:transparent;color:var(--muted);
   font-size:.7rem;font-weight:600;
   display:inline-flex;align-items:center;justify-content:center;
-  cursor:pointer;padding:0;line-height:1;
+  cursor:pointer;padding:0;line-height:1;position:relative;
   transition:background .2s,color .2s,border-color .2s;
 }
+/* Le cercle reste à 18 px, la zone de toucher fait ~42 px. */
+#comparateur .comp-tooltip-trigger::before{content:"";position:absolute;inset:-12px}
 #comparateur .comp-tooltip-trigger:hover,
 #comparateur .comp-tooltip-trigger[aria-expanded="true"]{
   background:var(--clay);color:white;border-color:var(--clay);
@@ -1666,3 +1668,20 @@ footer strong{color:rgba(255,255,255,.85)}
 .lang-switch button[aria-pressed="true"]{color:var(--ink);font-weight:700;cursor:default}
 .lang-switch button:focus-visible{outline:2px solid var(--clay);outline-offset:1px}
 .lang-switch--flottant{position:absolute;top:.4rem;right:.75rem;z-index:150;background:rgba(253,250,246,.85);backdrop-filter:blur(6px);border-radius:999px;padding:0 .35rem}
+/* ── OUTILS SUR MOBILE ──
+   Une colonne de grille vaut au moins la largeur de son contenu le plus large
+   (min-width:auto) : « 417 555 $ » dans deux petites cartes suffisait à élargir
+   la colonne du calculateur, décalant tout le bloc hors de l'écran. */
+.calc-wrapper>*,.sim-wrapper>*{min-width:0}
+@media(max-width:768px){
+  /* Sous 16 px, Safari iOS zoome la page au toucher d'un champ et ne revient pas. */
+  .form-group input,.form-group select,.sim-group input,.sim-group select{font-size:16px}
+}
+@media(max-width:480px){
+  /* La marge de bureau (2,5 rem) prenait 80 px de largeur sur un téléphone. */
+  .calc-form,.sim-form{padding:1.5rem 1.25rem}
+  .result-card{padding:1.5rem 1.25rem}
+}
+@media(max-width:420px){
+  .results-grid{grid-template-columns:1fr}
+}
