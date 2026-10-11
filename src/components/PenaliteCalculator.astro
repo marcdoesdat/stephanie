@@ -725,6 +725,8 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
   .penalite-tooltip{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--muted);font-size:.6rem;font-weight:700;color:var(--muted);cursor:help;line-height:1;flex-shrink:0;position:relative;background:none;padding:0;}
   .penalite-tooltip:hover::after,.penalite-tooltip:focus-visible::after,.penalite-tooltip:focus::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(calc(-50% + var(--tip-decalage, 0px)));background:var(--ink);color:white;font-size:.7rem;font-weight:400;letter-spacing:0;padding:.5rem .75rem;border-radius:8px;white-space:normal;width:min(240px, calc(100vw - 2rem));text-align:left;line-height:1.5;z-index:10;pointer-events:none;}
   .penalite-tooltip:focus-visible{outline:2px solid var(--forest);outline-offset:2px;}
+  /* Le cercle reste à 18 px, la zone de toucher fait ~42 px. */
+  .penalite-tooltip::before{content:"";position:absolute;inset:-12px;}
 
   .penalite-input,.penalite-select{min-width:0;padding:.75rem 1rem;border:1.5px solid var(--border);border-radius:12px;font-family:"DM Sans",sans-serif;font-size:.92rem;color:var(--ink);background:var(--sand);transition:border-color .2s,background .2s;width:100%;}
   .penalite-input:focus,.penalite-select:focus{outline:none;border-color:var(--clay);background:white;}
