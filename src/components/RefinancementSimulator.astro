@@ -2015,6 +2015,17 @@ const nouveauTauxDefaut =
     .rsim-compare-grid { grid-template-columns: 1fr; }
     .rsim-row { grid-template-columns: 1fr; }
 
+    /* En une colonne, rien à aligner : la hauteur réservée aux libellés
+       ne laissait qu'un grand vide entre chaque libellé et son champ. */
+    .rsim-row .rsim-label { min-height: 0; }
+
+    /* Plus de largeur utile, et une légende « (optionnel) » qui tient sur sa ligne. */
+    .rsim-fieldset { padding: 1.25rem 1rem; }
+    .rsim-legend { padding: 0 .35rem; }
+
+    /* Sous 16 px, Safari iOS zoome la page au toucher d'un champ et ne revient pas. */
+    .rsim-input { font-size: 16px; }
+
     /* Barre sticky mobile — fixed sous la nav pour rester visible pendant le remplissage */
     .rsim-sticky-mobile { display: none; }
     .rsim-sticky-mobile.js-visible {
