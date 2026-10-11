@@ -169,7 +169,8 @@ const config = loadSiteConfig();
     color: rgba(255,255,255,.78);
     text-decoration: none;
     font-weight: 500;
-    margin-bottom: 1.8rem;
+    padding: .6rem 0;
+    margin-bottom: 1.2rem;
     transition: color .2s;
   }
   .back-link:hover,
@@ -299,14 +300,32 @@ const config = loadSiteConfig();
 
   /* ── RESPONSIVE ── */
   @media (max-width: 700px) {
-    .amort-summary { grid-template-columns: 1fr 1fr; }
+    .amort-hero { padding-left: 1.25rem; padding-right: 1.25rem; }
+    .amort-hero h1 { font-size: 1.8rem; }
+
+    /* Deux cartes par rangée : sans min-width:0, « 727 843,27 $ » élargissait
+       sa colonne et la seconde carte sortait de l'écran. */
+    .amort-summary-wrap { padding: 1.25rem 1rem; }
+    .amort-summary { grid-template-columns: 1fr 1fr; gap: .65rem; }
+    .summary-card { min-width: 0; padding: 1rem .9rem; }
+    .s-label { font-size: .62rem; letter-spacing: .06em; }
+    .s-val { font-size: 1.1rem; }
+
+    /* Le tableau doit se lire sans glisser de côté. Le versement est identique à
+       chaque ligne et figure déjà dans la carte « Versement » au-dessus : sa colonne
+       laisse la place à ce qui change d'une ligne à l'autre (capital, intérêts, solde). */
+    .amort-body { padding: 1.75rem 1rem 3rem; }
     .amort-table-wrap { overflow-x: auto; }
-    .amort-table { min-width: 520px; }
+    .amort-table { font-size: .75rem; }
+    .amort-table th:nth-child(2),
+    .amort-table td:nth-child(2) { display: none; }
     .amort-table th,
     .amort-table td {
-      padding-left: 0.75rem;
-      padding-right: 0.75rem;
+      padding-left: 0.45rem;
+      padding-right: 0.45rem;
     }
-    .amort-hero h1 { font-size: 1.8rem; }
+    .amort-table th { font-size: .62rem; letter-spacing: .04em; }
+    .amort-table th:first-child { width: 2.25rem; }
+    .amort-table td:first-child { font-size: .7rem; }
   }
 </style>
