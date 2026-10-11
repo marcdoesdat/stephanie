@@ -18,7 +18,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
 <MainLayout
   title="Refus de prêt hypothécaire ? Plan B rapide"
-  description="Votre banque vous a dit non ? Votre promesse d'achat mérite une seconde évaluation. Accès à 20+ prêteurs alternatifs réglementés au Québec — diagnostic gratuit en 60 secondes, plan d'action dans les meilleurs délais."
+  description="Votre banque a refusé votre prêt hypothécaire ? Accès à plus de 20 prêteurs, dont des prêteurs alternatifs réglementés. Diagnostic gratuit, au Québec."
 >
   <Fragment slot="head">
     <script type="application/ld+json" is:inline set:html={JSON.stringify({
@@ -56,6 +56,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
 
             <h1 class="sp-h1">
+              <span class="sp-h1-sujet">Prêt hypothécaire refusé</span>
               Votre banque a dit non ?<br />Votre projet <em>mérite une seconde évaluation.</em>
             </h1>
 

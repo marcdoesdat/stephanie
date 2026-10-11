@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { servirAnglais } from './servirAnglais';
 import { traduirePage } from './traductionPage';
-import { cheminAnglais, cheminFrancais, estTraduite, estAnglais } from '../utils/pagesAnglaises';
+import { cheminAnglais, cheminCanonique, cheminFrancais, estTraduite, estAnglais, redirectionCanonique } from '../utils/pagesAnglaises';
 
 const SITE = 'https://stephanieweyman.ca';
 
@@ -30,6 +30,22 @@ describe('chemins anglais', () => {
     }
     expect(estTraduite('/outils/')).toBe(true);
   });
+  it("donne à chaque page française une seule adresse : celle à barre finale", () => {
+    expect(cheminCanonique('/')).toBe('/');
+    expect(cheminCanonique('/outils')).toBe('/outils/');
+    expect(cheminCanonique('/outils/')).toBe('/outils/');
+    expect(redirectionCanonique('GET', '/outils')).toBe('/outils/');
+    expect(redirectionCanonique('HEAD', '/outils/calculateur-penalite-hypothecaire')).toBe('/outils/calculateur-penalite-hypothecaire/');
+    expect(redirectionCanonique('GET', '/outils/')).toBeNull();
+    expect(redirectionCanonique('GET', '/')).toBeNull();
+  });
+  it("ne redirige ni les API, ni les envois, ni les écrans privés (liens à jeton)", () => {
+    expect(redirectionCanonique('POST', '/outils')).toBeNull();
+    expect(redirectionCanonique('GET', '/api/bdc-rate')).toBeNull();
+    expect(redirectionCanonique('GET', '/mon-dossier')).toBeNull();
+    expect(redirectionCanonique('GET', '/signer-contrat')).toBeNull();
+    expect(redirectionCanonique('GET', '/images/og-image.jpg')).toBeNull();
+  });
   it('reconnaît une adresse /en', () => {
     expect(estAnglais('/en')).toBe(true);
     expect(estAnglais('/en/outils/')).toBe(true);
@@ -55,6 +71,21 @@ describe('traduirePage', () => {
     expect(html).toContain('href="/contrat"'); // pas de version anglaise : le lien reste français
   });
 
+  it("ne garde en anglais que la fiche de l'entreprise, décrite dans la langue de la page", () => {
+    const page = PAGE.replace('</head>', `<meta name="description" content="Passer au contenu principal">
+<meta property="og:locale:alternate" content="en_CA">
+<script type="application/ld+json">{"@id":"https://stephanieweyman.ca#business","@type":"FinancialService","description":"Courtière"}</script>
+<script type="application/ld+json">{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Combien coûte un courtier ?"}]}</script>
+<script type="application/ld+json">{"@type":"Person","name":"Stéphanie Weyman","jobTitle":"Courtière hypothécaire"}</script>
+</head>`);
+    const en = traduirePage(page, '/outils', SITE);
+    expect(en).not.toContain('FAQPage'); // questions balisées en français sous une FAQ affichée en anglais
+    expect(en).not.toContain('"Person"');
+    expect(en).toContain('"@id":"https://stephanieweyman.ca#business"');
+    expect(en).toContain('"description":"Skip to main content"'); // la description traduite de la page
+    expect(en).toContain('<meta property="og:locale:alternate" content="fr_CA">');
+  });
+
   it("donne à la page anglaise sa propre adresse canonique", () => {
     expect(html).toContain('<link rel="canonical" href="https://stephanieweyman.ca/en/outils/">');
     expect(html).toContain('content="https://stephanieweyman.ca/en/outils/"');
@@ -78,7 +109,7 @@ describe('servirAnglais', () => {
       demande = u.pathname;
       return page()();
     });
-    expect(demande).toBe('/outils');
+    expect(demande).toBe('/outils/');
     expect(rep.status).toBe(200);
     expect(rep.headers.get('cache-control')).toContain('s-maxage');
     expect(await rep.text()).toContain('lang="en-CA"');

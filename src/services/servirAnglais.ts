@@ -11,7 +11,7 @@
  * - L'URL de la page française est appelée telle quelle, sans en-tête de session : ce sont des
  *   pages publiques.
  */
-import { cheminFrancais, estTraduite } from '../utils/pagesAnglaises';
+import { cheminCanonique, cheminFrancais, estTraduite } from '../utils/pagesAnglaises';
 import { traduirePage } from './traductionPage';
 
 const CACHE = 'public, max-age=0, s-maxage=3600, stale-while-revalidate=3600';
@@ -27,7 +27,8 @@ export async function servirAnglais(
 
   const cheminFr = cheminFrancais(url.pathname);
   const traduite = estTraduite(cheminFr);
-  const cible = traduite ? cheminFr : '/404';
+  // L'adresse canonique de la page française : la forme sans barre ferait un détour par la 301.
+  const cible = traduite ? cheminCanonique(cheminFr) : '/404';
 
   const rep = await chercher(new URL(cible + (traduite ? url.search : ''), url.origin));
   const type = rep.headers.get('content-type') ?? '';

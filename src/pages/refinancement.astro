@@ -294,7 +294,7 @@ const courrielHref = `mailto:${config.courriel}`;
                 En soumettant ce formulaire, j'accepte de recevoir des communications par courriel
                 ou par texto concernant mon analyse personnalisée et d'autres informations pertinentes
                 sur le refinancement. Je comprends que je peux me désabonner à tout moment — voir la
-                <a href="/confidentialite" target="_blank" rel="noopener">politique de confidentialité</a>. <span class="refi-req">*</span>
+                <a href="/confidentialite/" target="_blank" rel="noopener">politique de confidentialité</a>. <span class="refi-req">*</span>
               </span>
             </label>
 
@@ -340,7 +340,7 @@ const courrielHref = `mailto:${config.courriel}`;
     <footer class="refi-footer">
       <p>
         {config.nom} · {config.titre} · N° AMF {config.amf} ·
-        <a href="/confidentialite">Confidentialité</a> · <a href="/conditions">Conditions</a>
+        <a href="/confidentialite/">Confidentialité</a> · <a href="/conditions/">Conditions</a>
       </p>
     </footer>
   </main>
@@ -985,7 +985,7 @@ const courrielHref = `mailto:${config.courriel}`;
           // Le « Non » propriétaire redirige vers la page premier achat
           if (group === 'proprio' && value === 'non') {
             track('refi_funnel_exit_non_proprio');
-            window.location.assign(cheminLangue('/services/premier-achat'));
+            window.location.assign(cheminLangue('/services/premier-achat/'));
             return;
           }
           selectCard(group, value);

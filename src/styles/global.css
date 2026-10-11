@@ -1192,6 +1192,14 @@ td:last-child{text-align:center}
   margin:0 0 1.2rem;letter-spacing:-.015em;
 }
 .sp-h1 em{font-style:italic;color:var(--clay)}
+/* Le sujet de la page, en surtitre mais dans le H1 : la phrase d'accroche ne contient pas le
+   mot-clé que le visiteur a cherché (« premier achat hypothécaire »), le titre de page si. */
+.sp-h1-sujet{
+  display:block;width:fit-content;
+  font-family:"DM Sans",sans-serif;font-size:.8rem;font-weight:600;font-style:normal;
+  line-height:1.4;letter-spacing:0;color:var(--clay);
+  margin-bottom:1.1rem;padding-bottom:.5rem;border-bottom:2px solid var(--clay);
+}
 .sp-h2{
   font-family:"DM Sans",sans-serif;font-weight:400;
   font-size:clamp(1.05rem,1.5vw,1.2rem);

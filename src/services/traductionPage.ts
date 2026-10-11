@@ -28,6 +28,32 @@ function lienAnglais(href: string, base: URL): string | null {
   return cheminAnglais(u.pathname) + u.search + u.hash;
 }
 
+/**
+ * Données structurées de la page anglaise. Le dictionnaire ne traduit pas le JSON-LD, et Google
+ * exige qu'il décrive ce que la page affiche : une FAQ balisée en français sous des questions
+ * affichées en anglais est un balisage trompeur. On ne garde que la fiche de l'entreprise
+ * (`#business`), la même dans les deux langues, avec la description de la page — déjà traduite.
+ * Le reste (FAQ, service local, personne, application) est retiré plutôt que laissé en français.
+ */
+function donneesStructurees(document: ReturnType<typeof parseHTML>['document']): void {
+  const description = document.querySelector('meta[name="description"]')?.getAttribute('content');
+  for (const script of document.querySelectorAll('script[type="application/ld+json"]')) {
+    let donnees: Record<string, unknown> | null = null;
+    try {
+      donnees = JSON.parse(script.textContent ?? '');
+    } catch {
+      // Illisible : rien à garder.
+    }
+    const id = donnees?.['@id'];
+    if (!donnees || typeof id !== 'string' || !id.endsWith('#business')) {
+      script.remove();
+      continue;
+    }
+    if (description) donnees.description = description;
+    script.textContent = JSON.stringify(donnees);
+  }
+}
+
 export function traduirePage(html: string, cheminFr: string, siteUrl: string): string {
   const { document } = parseHTML(html);
   const base = new URL(cheminFr, siteUrl);
@@ -58,6 +84,9 @@ export function traduirePage(html: string, cheminFr: string, siteUrl: string): s
   document.querySelector('link[rel="canonical"]')?.setAttribute('href', urlEn);
   document.querySelector('meta[property="og:url"]')?.setAttribute('content', urlEn);
   document.querySelector('meta[property="og:locale"]')?.setAttribute('content', 'en_CA');
+  document.querySelector('meta[property="og:locale:alternate"]')?.setAttribute('content', 'fr_CA');
+
+  donneesStructurees(document);
 
   return document.toString();
 }

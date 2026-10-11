@@ -42,7 +42,7 @@
 
 [[redirects]]
   from = "/outils/penalite"
-  to = "/outils/calculateur-penalite-hypothecaire"
+  to = "/outils/calculateur-penalite-hypothecaire/"
   status = 301
   force = true
 
@@ -55,37 +55,37 @@
 # Redirections des anciennes pages standalone d'outils vers les onglets
 [[redirects]]
   from = "/outils/simulateur"
-  to = "/outils#simulateur"
+  to = "/outils/#simulateur"
   status = 301
   force = true
 
 [[redirects]]
   from = "/outils/simulateur/"
-  to = "/outils#simulateur"
+  to = "/outils/#simulateur"
   status = 301
   force = true
 
 [[redirects]]
   from = "/outils/calculateur"
-  to = "/outils#calculateur"
+  to = "/outils/#calculateur"
   status = 301
   force = true
 
 [[redirects]]
   from = "/outils/calculateur/"
-  to = "/outils#calculateur"
+  to = "/outils/#calculateur"
   status = 301
   force = true
 
 [[redirects]]
   from = "/outils/comparateur"
-  to = "/outils#comparateur"
+  to = "/outils/#comparateur"
   status = 301
   force = true
 
 [[redirects]]
   from = "/outils/comparateur/"
-  to = "/outils#comparateur"
+  to = "/outils/#comparateur"
   status = 301
   force = true
 

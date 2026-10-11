@@ -23,16 +23,26 @@
  * atteignable serait de la désabonner. Faire cesser des courriels n'est pas un dommage ;
  * ne pas les faire cesser en est un.
  *
+ * Le middleware porte aussi la redirection 301 des pages publiques demandées sans barre
+ * finale (`/outils` → `/outils/`) : une page, une adresse — celle de la canonique et du
+ * sitemap. Les pages statiques n'y passent pas, Netlify les sert déjà sous cette forme.
+ *
  * @module middleware
  */
 
 import { defineMiddleware } from 'astro:middleware';
 import { origineNonVerifiee, origineRefusee } from './utils/origineRequete';
+import { redirectionCanonique } from './utils/pagesAnglaises';
 
 export const onRequest = defineMiddleware((context, next) => {
   const { request, url, isPrerendered } = context;
 
   if (isPrerendered) return next();
+
+  const canonique = redirectionCanonique(request.method, url.pathname);
+  if (canonique) {
+    return new Response(null, { status: 301, headers: { location: canonique + url.search } });
+  }
   if (origineNonVerifiee(url.pathname)) return next();
 
   if (

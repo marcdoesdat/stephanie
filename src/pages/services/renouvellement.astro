@@ -18,8 +18,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 ---
 
 <MainLayout
-  title="Renouvellement hypothécaire au Québec | Comparez avant de signer"
-  description="Votre hypothèque arrive à échéance en 2026 ? Avant de signer le renouvellement de votre banque, comparez 20+ prêteurs. Service gratuit, sans engagement, avec une courtière hypothécaire au Québec."
+  title="Renouvellement hypothécaire au Québec"
+  description="Votre hypothèque arrive à échéance ? Avant de signer l'offre de votre banque, comparez plus de 20 prêteurs. Gratuit et sans engagement, au Québec."
 >  <Fragment slot="head">
     <script type="application/ld+json" is:inline set:html={JSON.stringify({
       "@context": "https://schema.org",
@@ -78,6 +78,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
 
             <h1 class="sp-h1">
+              <span class="sp-h1-sujet">Renouvellement hypothécaire au Québec</span>
               Ne signez <em>jamais</em> le premier renouvellement<br />que votre banque vous envoie.
             </h1>
 
@@ -92,7 +93,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
                 <span>Comparer mon renouvellement gratuitement</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </a>
-              <a href="/outils#simulateur" class="btn-secondary sp-cta-secondary">Estimer mon nouveau paiement</a>
+              <a href="/outils/#simulateur" class="btn-secondary sp-cta-secondary">Estimer mon nouveau paiement</a>
             </div>
 
             <ul class="sp-hero-proof">

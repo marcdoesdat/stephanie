@@ -45,6 +45,9 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
 <!doctype html>
 <html lang="fr-CA">
   <head>
+    <!-- En tête : l'encodage doit être déclaré dans les 1 024 premiers octets, avant les scripts. -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Google Consent Mode v2 — DOIT précéder GTM.
          Défaut : tout refusé (Loi 25). Si le visiteur a déjà accepté lors d'une
          visite précédente (localStorage sw_consent_v1, géré par /js/consent.js),
@@ -112,8 +115,6 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
         })();
       </script>
     )}
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
     <SEO title={title} fullTitle={fullTitle} description={description} ogImage={ogImage} noindex={noindex} alternates={alternates} />
@@ -203,7 +204,7 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
          (position:fixed, rendu par page) vient se placer dans cette bande à droite. -->
     {!sansBarreCta && (
       <div class="mobile-sticky-cta">
-        <a href="/rendez-vous" class="sticky-btn" data-umami-event="cta_booking_sticky">
+        <a href="/rendez-vous/" class="sticky-btn" data-umami-event="cta_booking_sticky">
           <span class="sticky-label">Prendre rendez-vous</span>
         </a>
       </div>
