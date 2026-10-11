@@ -17,6 +17,9 @@ Site Astro 6 hybride (SSR + statique) déployé sur Netlify. Taux hypothécaires
 - `npm run check` — type-check Astro/TS
 - `npx vitest run` — lance les tests unitaires (ou `npx vitest`)
 - `netlify dev` — émule l'environnement Netlify (Blobs) sur http://localhost:8888
+- `node scripts/audit-mobile.mjs http://localhost:4321 [--captures dossier]` — audit des outils sur
+  téléphone (320, 375, 390 px) contre un serveur lancé : débordements hors de l'écran et champs sous
+  16 px (Safari iOS zoome au toucher). Chromium via `CHROMIUM_PATH`. Code de sortie 1 en cas d'échec
 
 ## Structure du projet
 
