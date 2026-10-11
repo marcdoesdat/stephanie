@@ -36,18 +36,18 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(hypothecaRates));
 // Sous le calculateur express : les cinq autres outils de /outils (le simulateur complet
 // est déjà proposé par « Affiner » dans le calculateur).
 const autresOutils = [
-  { href: '/outils#calculateur', titre: 'Calculateur de versement', sous: 'Vos mensualités selon le taux et l’amortissement', Icone: Calculator },
-  { href: '/outils#comparateur', titre: 'Comparateur de taux', sous: 'Banque ou courtier : l’écart en dollars', Icone: Scale },
-  { href: '/outils#penalite', titre: 'Calculateur de pénalité', sous: 'IRD ou 3 mois d’intérêts', Icone: ClipboardList },
-  { href: '/outils#refinancement', titre: 'Simulateur de refinancement', sous: 'Consolider ses dettes, dégager de l’équité', Icone: RefreshCw },
-  { href: '/outils#droits-mutation', titre: 'Droits de mutation', sous: 'La taxe de bienvenue, calculée d’avance', Icone: Receipt },
+  { href: '/outils/#calculateur', titre: 'Calculateur de versement', sous: 'Vos mensualités selon le taux et l’amortissement', Icone: Calculator },
+  { href: '/outils/#comparateur', titre: 'Comparateur de taux', sous: 'Banque ou courtier : l’écart en dollars', Icone: Scale },
+  { href: '/outils/#penalite', titre: 'Calculateur de pénalité', sous: 'IRD ou 3 mois d’intérêts', Icone: ClipboardList },
+  { href: '/outils/#refinancement', titre: 'Simulateur de refinancement', sous: 'Consolider ses dettes, dégager de l’équité', Icone: RefreshCw },
+  { href: '/outils/#droits-mutation', titre: 'Droits de mutation', sous: 'La taxe de bienvenue, calculée d’avance', Icone: Receipt },
 ];
 
 ---
 
 <MainLayout
   fullTitle="Courtière hypothécaire Repentigny & Rive-Nord | Stéphanie Weyman"
-  description="Pré-approbation hypothécaire à Repentigny, dans Lanaudière et sur la Rive-Nord. Achat, renouvellement, refinancement, travailleurs autonomes. Réponse rapide – Stéphanie Weyman, AMF."
+  description="Courtière hypothécaire à Repentigny, Lanaudière et Rive-Nord : pré-approbation, achat, renouvellement, refinancement. 20+ prêteurs comparés, sans frais."
 >
   <!-- JSON-LD : AggregateRating (émis seulement si les avis sont live/cache, pas fallback) -->
   {googleReviews.source !== 'fallback' && (
@@ -97,7 +97,7 @@ const autresOutils = [
         <nav class="outils-autres fade-up" aria-labelledby="outils-autres-titre">
           <div class="outils-autres-tete">
             <h3 id="outils-autres-titre">Allez plus loin avec mes autres outils</h3>
-            <a href="/outils" class="outils-autres-tous">Voir tous les outils →</a>
+            <a href="/outils/" class="outils-autres-tous">Voir tous les outils →</a>
           </div>
           <ul>
             {autresOutils.map(({ href, titre, sous, Icone }) => (

@@ -1,6 +1,6 @@
 ---
 import { loadSiteConfig } from '../config';
-import { cheminAnglais } from '../utils/pagesAnglaises';
+import { cheminAnglais, cheminCanonique } from '../utils/pagesAnglaises';
 
 const config = loadSiteConfig();
 
@@ -19,7 +19,8 @@ const {
   title,
   fullTitle,
   description = config.meta_description,
-  canonicalURL = new URL(Astro.url.pathname, config.site_url),
+  // Toujours la forme à barre finale : /outils et /outils/ sont une seule page (voir middleware).
+  canonicalURL = new URL(cheminCanonique(Astro.url.pathname), config.site_url),
   ogImage = "/images/og-image.jpg",
   noindex = false,
   alternates = false,
@@ -119,6 +120,7 @@ const schema = {
 <meta name="apple-mobile-web-app-title" content={config.nom} />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="fr_CA" />
+{alternates && <meta property="og:locale:alternate" content="en_CA" />}
 <meta property="og:site_name" content={config.nom} />
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:title" content={formattedTitle} />

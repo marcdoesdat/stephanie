@@ -276,7 +276,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
               <input type="hidden" name="penalite" id="pen-cap-penalite" value="" />
               <label class="penalite-capture-consent" for="pen-cap-consent">
                 <input type="checkbox" id="pen-cap-consent" name="consentement" required />
-                <span>J'accepte de recevoir ce rapport et de partager mes coordonnées avec {config.nom}, {config.titre}. Aucun partage sans mon consentement — <a href="/confidentialite">politique de confidentialité</a>.</span>
+                <span>J'accepte de recevoir ce rapport et de partager mes coordonnées avec {config.nom}, {config.titre}. Aucun partage sans mon consentement — <a href="/confidentialite/">politique de confidentialité</a>.</span>
               </label>
               <button type="submit" id="pen-cap-submit" class="penalite-capture-submit" disabled>Envoyer mon rapport →</button>
               <div id="pen-cap-msg" class="penalite-capture-msg" style="display:none;"></div>

@@ -36,7 +36,7 @@ src/
 ├── styles/           # global.css
 ├── types/            # Déclarations de types supplémentaires
 ├── utils/            # Fonctions utilitaires pures
-└── middleware.ts     # Vérification d'origine (CSRF) — voir « Réseau de partenaires »
+└── middleware.ts     # Vérification d'origine (CSRF) — voir « Réseau de partenaires » — et 301 vers la barre finale (« Référencement »)
 ```
 
 ## Pages et routes
@@ -46,7 +46,7 @@ src/
 | `/` | SSR | Accueil (taux live, hero, services, avis, FAQ) |
 | `/outils` | SSR | Hub outils avec onglets (`#simulateur`, `#calculateur`, `#comparateur`) |
 | `/outils/calculateur-penalite-hypothecaire` | SSR | Calculateur de pénalité dédié |
-| `/amortissement` | Statique | Tableau d'amortissement |
+| `/amortissement` | Statique | Tableau d'amortissement (noindex : vide sans les paramètres du calculateur) |
 | `/rappel` | Statique | Formulaire de prise de rappel |
 | `/profil-emprunteur` | Statique | Formulaire AMF « Profil des emprunteurs » en tuiles + signature dessinée (noindex, sans Nav/Footer) |
 | `/preparer-profil` | SSR | Préparation du lien « Profil des emprunteurs » avec les noms et courriels — réservé à la courtière, protégé par mot de passe (noindex) |
@@ -123,7 +123,7 @@ Toute page du tableau ci-dessus marquée « SSR » doit donc porter `prerender =
 **Navigation & structure :**
 - `Nav.astro` — Navigation principale
 - `Footer.astro` — Pied de page
-- `SEO.astro` — Meta tags, JSON-LD (LocalBusiness, FAQSchema, AggregateRating)
+- `SEO.astro` — Meta tags, canonique à barre finale, hreflang, JSON-LD de l'entreprise (`#business`) — voir « Référencement »
 - `MainLayout.astro` — Layout global (Nav + Footer + scripts analytics/consent)
 - `ConnexionCourtiere.astro` — L'écran de connexion partagé par les cinq pages réservées à la
   courtière (`/tableau-de-bord`, `/contrat`, `/finaliser-contrat`, `/reseau`, `/dossiers`).
@@ -936,6 +936,10 @@ français.
   une version anglaise ; le serveur donne à la page anglaise son propre `canonical`, `og:url` et
   `og:locale`. Le sitemap liste les adresses `/en/` (`customPages` dans `astro.config.mjs`), sans les
   pages noindex. Une page inconnue sous `/en/` rend une 404 avec `X-Robots-Tag: noindex`.
+- **En anglais, le JSON-LD se réduit à la fiche de l'entreprise** (`#business`), sa description
+  remplacée par celle de la page, déjà traduite. Le dictionnaire ne traduit pas le JSON-LD : une FAQ
+  balisée en français sous des questions affichées en anglais est un balisage trompeur pour Google.
+  FAQ, service local, personne et application sont donc retirés par `traductionPage.ts`.
 - **Le texte que les scripts écrivent après coup** (résultats, messages d'erreur) est traduit dans le
   navigateur par un `MutationObserver` : phrase fixe → dictionnaire ; phrase avec chiffres → règle
   dans `i18n-regles.js` (le texte y arrive déjà formaté à l'anglaise : `$1,234`, `3.45%`). Une
@@ -945,6 +949,42 @@ français.
   un onglet en arrière-plan.
 - **Hors périmètre** : les courriels (accusés, notifications) et les PDF restent en français, produits
   côté serveur.
+
+## Référencement (SEO)
+
+Les règles qui suivent corrigent des fautes réellement trouvées à l'audit d'octobre 2026.
+
+- **Une page, une adresse : celle à barre finale.** `/outils` et `/outils/` répondaient tous deux,
+  et chacun se déclarait sa propre canonique — la page la plus liée du site existait en double, et
+  le hreflang de l'anglais ne retombait pas sur la canonique française. Désormais :
+  `cheminCanonique` (`src/utils/pagesAnglaises.ts`) fixe la canonique dans `SEO.astro`, le
+  middleware redirige en 301 les pages publiques **rendues à la demande** demandées sans barre
+  (`redirectionCanonique` : GET/HEAD seulement, jamais les API ni les écrans privés à lien à
+  jeton), et les liens internes s'écrivent avec la barre (`/outils/#simulateur`). Les pages
+  statiques, Netlify les sert déjà sous cette forme.
+- **Le sitemap est une liste blanche** : `pagesTraduites.json` moins `NOINDEX`
+  (`astro.config.mjs`), en français et en anglais. Une liste d'exclusion laissait passer chaque
+  nouvel écran privé — `/contrat`, `/reseau`, `/tableau-de-bord`… y figuraient, noindex et
+  pourtant soumis à Google, leurs adresses publiées. Une page publique en noindex doit être
+  ajoutée à `NOINDEX`.
+- **Jamais de `<link rel="canonical">` dans le slot `head` d'une page** : `SEO.astro` en émet déjà
+  une. Les pages villes en portaient une seconde, sans barre finale — deux canoniques
+  contradictoires, que Google ignore toutes deux.
+- **Une seule entreprise : `#business`.** Elle est déclarée par `SEO.astro` sur chaque page
+  indexable ; les autres nœuds s'y rattachent par `@id` (`provider`, …). Les pages villes
+  déclaraient une seconde `FinancialService`, sans `@id`, sous un autre nom : pour Google, une
+  deuxième entreprise. Elles déclarent désormais un `Service` local.
+- **Aucun nom de fichier haché écrit à la main** (`/_astro/stephanie.Cm30Blgc.jpg`) : il meurt au
+  build suivant. Importer l'image et prendre son `.src`.
+- **Titres ≤ ~60 caractères, descriptions ≤ ~155** — au-delà, Google coupe. `title` reçoit déjà
+  « | Stéphanie Weyman » : ne pas en ajouter un second séparateur, ni le nom une deuxième fois.
+  Changer un titre ou une description, c'est **changer sa clé** dans `i18n-en.json` (la clé d'un
+  titre inclut le suffixe).
+- **Le H1 des pages services porte le mot-clé**, en surtitre (`.sp-h1-sujet`) : la phrase
+  d'accroche (« Votre premier achat, sans les nuits blanches ») ne contient pas ce que le
+  visiteur a cherché. Le surtitre est visible — pas de texte caché pour les moteurs.
+- **`<meta charset>` vient en premier dans `<head>`** : l'encodage doit être déclaré dans les
+  1 024 premiers octets, avant les scripts de consentement et de langue.
 
 ## Configuration
 
@@ -1014,6 +1054,9 @@ npx vitest              # mode watch
   envoyer ; sans Resend, tout est simulé et journalisé comme tel
 - `src/utils/origineRequete.test.ts` — la vérification d'origine réécrite est identique à
   celle d'Astro, et la dispense ne couvre que `/api/reseau-retrait`
+- `src/services/servirAnglais.test.ts` — chemins FR ↔ EN ; une seule adresse par page (301 vers
+  la barre finale, jamais pour une API, un envoi ou un écran privé) ; en anglais, seul le JSON-LD
+  de l'entreprise survit, avec la description traduite
 - `src/services/reseauGabaritsService.test.ts` — réécriture des gabarits : portée par
   profession, original récupérable, refus des modèles qui ne se rendent pas
 - `src/utils/dossiersClients.test.ts` — semis de la checklist selon le statut d'emploi, verrou

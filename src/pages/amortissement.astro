@@ -7,18 +7,22 @@ import Footer from '../components/Footer.astro';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
+
+// noindex : sans les paramètres que lui passe le calculateur, la page n'a qu'un tableau vide
+// — et aucun taux par défaut ne peut le remplir (jamais de taux fictif).
 ---
 
-<Layout 
+<Layout
   title="Tableau d'amortissement hypothécaire Québec"
   description="Consultez votre tableau d'amortissement hypothécaire : capital, intérêts et solde restant pour chaque versement au Québec."
+  noindex={true}
 >
   <Nav />
 
   <main id="main-content" class="amort-page">
     <div class="amort-hero">
       <div class="amort-hero-inner">
-        <a href="/outils#calculateur" class="back-link">← Retour au calculateur</a>
+        <a href="/outils/#calculateur" class="back-link">← Retour au calculateur</a>
         <h1>Tableau d'<em>amortissement</em> complet</h1>
         <p class="amort-params" id="amort-params"></p>
       </div>

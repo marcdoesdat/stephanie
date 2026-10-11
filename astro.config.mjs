@@ -5,15 +5,24 @@ import { readFileSync } from 'node:fs';
 
 const SITE = 'https://stephanieweyman.ca';
 
-// Pages noindex : ni en français ni en anglais dans le sitemap (signaux contradictoires sinon).
-const NOINDEX = ['/demande/', '/merci/', '/profil-emprunteur/', '/refinancement/', '/refinancement-v2/', '/refinancement/merci/', '/signer/'];
+// Pages publiques mais noindex : ni en français ni en anglais dans le sitemap (signaux
+// contradictoires sinon). /amortissement est vide sans les paramètres du calculateur.
+const NOINDEX = ['/amortissement/', '/demande/', '/merci/', '/refinancement/', '/refinancement-v2/', '/refinancement/merci/'];
+
+// Le sitemap est une liste blanche : les pages publiques (src/data/pagesTraduites.json), moins
+// les noindex. Une liste d'exclusion laissait passer chaque nouvel écran privé — /contrat,
+// /reseau, /tableau-de-bord… s'y étaient retrouvés, publiant leurs adresses. Comparaison sur le
+// pathname exact : /refinancement/ (noindex) n'est pas /services/refinancement/ (indexée).
+const INDEXABLES = JSON.parse(readFileSync(new URL('./src/data/pagesTraduites.json', import.meta.url), 'utf8'))
+  .map((p) => (p === '/' ? '/' : `${p}/`))
+  .filter((p) => !NOINDEX.includes(p));
 
 // Les équivalents anglais (/en/…) n'existent pas au build : le serveur les fabrique (voir
 // src/services/servirAnglais.ts). On les déclare ici à partir de la même liste de pages.
-const pagesEn = JSON.parse(readFileSync(new URL('./src/data/pagesTraduites.json', import.meta.url), 'utf8'))
-  .map((p) => (p === '/' ? '/en/' : `/en${p}/`))
-  .filter((p) => !NOINDEX.includes(p.slice(3) || '/'))
-  .map((p) => SITE + p);
+const pagesEn = INDEXABLES.map((p) => `/en${p}`);
+
+// Le filtre s'applique aussi aux pages déclarées à la main : il doit laisser passer les deux langues.
+const AU_SITEMAP = new Set([...INDEXABLES, ...pagesEn]);
 
 export default defineConfig({
   // L'URL est indispensable pour générer les liens du sitemap
@@ -25,19 +34,8 @@ export default defineConfig({
   security: { checkOrigin: false },
   integrations: [
     sitemap({
-      customPages: pagesEn,
-      // Exclut les pages noindex du sitemap (sinon signaux contradictoires).
-      // Comparaison sur le pathname exact : un endsWith('/refinancement/') exclurait
-      // aussi la page SEO /services/refinancement/, qui doit rester indexée.
-      filter: (page) => ![
-        '/demande/',
-        '/merci/',
-        '/profil-emprunteur/',
-        '/refinancement/',
-        '/refinancement-v2/',
-        '/refinancement/merci/',
-        '/signer/',
-      ].includes(new URL(page).pathname),
+      customPages: pagesEn.map((p) => SITE + p),
+      filter: (page) => AU_SITEMAP.has(new URL(page).pathname),
     })
   ],
 });

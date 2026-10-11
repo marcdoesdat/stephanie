@@ -17,8 +17,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 ---
 
 <MainLayout
-  title="Refinancement hypothécaire au Québec | Débloquez l'équité de votre maison"
-  description="Votre maison vaut probablement plus que vous pensez. Découvrez en 60 secondes combien d'équité vous pouvez débloquer pour consolider vos dettes, rénover ou acheter une 2e propriété — analyse gratuite avec une courtière hypothécaire au Québec."
+  title="Refinancement hypothécaire au Québec"
+  description="Consolider vos dettes, rénover ou acheter une 2e propriété : découvrez l'équité que vous pouvez débloquer. Analyse gratuite avec une courtière au Québec."
 >
   <Fragment slot="head">
     <script type="application/ld+json" is:inline set:html={JSON.stringify({
@@ -56,6 +56,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
             <a href="/#services" class="sp-breadcrumb">← Tous les services</a>
 
             <h1 class="sp-h1">
+              <span class="sp-h1-sujet">Refinancement hypothécaire au Québec</span>
               Votre maison vaut une fortune.<br />Et si vous arrêtiez <em>de la regarder dormir</em> ?
             </h1>
 
@@ -70,7 +71,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
                 <span>Évaluer mon équité gratuitement</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </a>
-              <a href="/outils#simulateur" class="btn-secondary sp-cta-secondary">Estimer mes économies</a>
+              <a href="/outils/#simulateur" class="btn-secondary sp-cta-secondary">Estimer mes économies</a>
             </div>
 
             <ul class="sp-hero-proof">

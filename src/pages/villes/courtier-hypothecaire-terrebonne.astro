@@ -15,8 +15,10 @@ import RappelCTA from '../../components/RappelCTA.astro';
 const config = loadSiteConfig();
 const prenom = config.nom.split(' ')[0];
 
-const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-terrebonne`;
-const STEPHANIE_IMAGE = `${config.site_url}/_astro/stephanie.Cm30Blgc.jpg`;
+const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-terrebonne/`;
+// L'adresse de la photo telle que le build la produit : un nom de fichier haché écrit à la main
+// (stephanie.Cm30Blgc.jpg) ne survivait pas au build suivant, et le schéma pointait sur une 404.
+const STEPHANIE_IMAGE = new URL(stephaniePhoto.src, config.site_url).toString();
 
 const faq = [
   {
@@ -54,35 +56,29 @@ const faq = [
 ];
 
 // === Schemas JSON-LD ===
-const schemaLocalBusiness = {
+// Le service offert dans cette ville, rattaché à l'entreprise que déclare chaque page (SEO.astro,
+// `#business`). Une seconde entité FinancialService — sans @id, sous un autre nom et une autre
+// adresse web — se présentait à Google comme une deuxième entreprise.
+const schemaService = {
   "@context": "https://schema.org",
-  "@type": "FinancialService",
-  "name": "Stéphanie Weyman - Courtière hypothécaire",
-  "image": STEPHANIE_IMAGE,
+  "@type": "Service",
+  "serviceType": "Courtage hypothécaire",
+  "name": "Courtière hypothécaire à Terrebonne",
   "url": PAGE_URL,
-  "telephone": "+15149497627",
-  "email": "sweyman@hypotheca.ca",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "3344 Fleury Est",
-    "addressLocality": "Montréal",
-    "addressRegion": "QC",
-    "postalCode": "H1H 2R5",
-    "addressCountry": "CA"
-  },
+  "provider": { "@id": `${config.site_url}#business` },
   "areaServed": [
     { "@type": "City", "name": "Terrebonne" },
     { "@type": "City", "name": "Lachenaie" },
     { "@type": "City", "name": "La Plaine" },
     { "@type": "City", "name": "Mascouche" },
     { "@type": "City", "name": "Bois-des-Filion" }
-  ],
-  "priceRange": "Free"
+  ]
 };
 
 const schemaPerson = {
   "@context": "https://schema.org",
   "@type": "Person",
+  "@id": `${config.site_url}#stephanie`,
   "name": "Stéphanie Weyman",
   "jobTitle": "Courtière hypothécaire",
   "worksFor": { "@type": "Organization", "name": "Hypotheca" },
@@ -115,8 +111,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   description="Courtière hypothécaire à Terrebonne (Lachenaie, La Plaine, Urbanova). Pré-approbation, achat, construction neuve, renouvellement. 20+ prêteurs. Service gratuit."
 >
   <Fragment slot="head">
-    <link rel="canonical" href={PAGE_URL} />
-    <script type="application/ld+json" set:html={JSON.stringify(schemaLocalBusiness)} is:inline />
+    <script type="application/ld+json" set:html={JSON.stringify(schemaService)} is:inline />
     <script type="application/ld+json" set:html={JSON.stringify(schemaPerson)} is:inline />
     <script type="application/ld+json" set:html={JSON.stringify(schemaFAQ)} is:inline />
   </Fragment>
@@ -185,37 +180,37 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <h2 class="rep-section-title">Six parcours, une seule personne pour vous accompagner.</h2>
 
         <div class="rep-cards-grid">
-          <a href="/services/premier-achat" class="rep-card">
+          <a href="/services/premier-achat/" class="rep-card">
             <span class="rep-card-icon" aria-hidden="true">🏠</span>
             <h3 class="rep-card-title">Premier achat à Terrebonne</h3>
             <p class="rep-card-text">Pré-approbation, RAP, CELIAPP, mise de fonds optimale.</p>
             <span class="rep-card-cta">En savoir plus →</span>
           </a>
-          <a href="/services/renouvellement" class="rep-card">
+          <a href="/services/renouvellement/" class="rep-card">
             <span class="rep-card-icon" aria-hidden="true">🔄</span>
             <h3 class="rep-card-title">Renouvellement hypothécaire</h3>
             <p class="rep-card-text">Comparer avant de signer l'offre de votre banque actuelle.</p>
             <span class="rep-card-cta">En savoir plus →</span>
           </a>
-          <a href="/services/refinancement" class="rep-card">
+          <a href="/services/refinancement/" class="rep-card">
             <span class="rep-card-icon" aria-hidden="true">💰</span>
             <h3 class="rep-card-title">Refinancement</h3>
             <p class="rep-card-text">Libérer de l'équité pour rénover, consolider ou investir.</p>
             <span class="rep-card-cta">En savoir plus →</span>
           </a>
-          <a href="/services/travailleur-autonome" class="rep-card">
+          <a href="/services/travailleur-autonome/" class="rep-card">
             <span class="rep-card-icon" aria-hidden="true">💼</span>
             <h3 class="rep-card-title">Travailleur autonome</h3>
             <p class="rep-card-text">Revenus non traditionnels ? Des prêteurs comprennent votre réalité.</p>
             <span class="rep-card-cta">En savoir plus →</span>
           </a>
-          <a href="/services/dossier-refuse" class="rep-card">
+          <a href="/services/dossier-refuse/" class="rep-card">
             <span class="rep-card-icon" aria-hidden="true">🚫</span>
             <h3 class="rep-card-title">Dossier refusé</h3>
             <p class="rep-card-text">Un refus bancaire n'est pas une fin — des solutions alternatives existent.</p>
             <span class="rep-card-cta">En savoir plus →</span>
           </a>
-          <a href="/services/nouveaux-arrivants" class="rep-card">
+          <a href="/services/nouveaux-arrivants/" class="rep-card">
             <span class="rep-card-icon" aria-hidden="true">🌍</span>
             <h3 class="rep-card-title">Nouveaux arrivants</h3>
             <p class="rep-card-text">Résidence permanente ou permis de travail ? Des prêteurs s'adaptent à votre profil.</p>
@@ -264,7 +259,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <p>
           Je dessers Terrebonne, Lachenaie et La Plaine, ainsi que les villes voisines :
           <strong>Mascouche, Bois-des-Filion, Sainte-Anne-des-Plaines</strong> et, de l'autre côté
-          de la MRC, <a href="/villes/courtier-hypothecaire-repentigny">Repentigny</a> et
+          de la MRC, <a href="/villes/courtier-hypothecaire-repentigny/">Repentigny</a> et
           Charlemagne. Avec l'autoroute 25, la 640 et la gare Terrebonne de la ligne de train
           Mascouche, le secteur attire beaucoup d'acheteurs qui travaillent à Laval ou à Montréal.
           Quand les taux bougent, je suis le marché en continu pour saisir la bonne fenêtre à
