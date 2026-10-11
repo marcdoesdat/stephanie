@@ -23,6 +23,7 @@
     "@astrojs/check": "^0.9.9",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.5.0",
+    "playwright-core": "^1.56.0",
     "potrace": "^2.1.8",
     "typescript": "^5.9.3",
     "vitest": "^4.1.6"
