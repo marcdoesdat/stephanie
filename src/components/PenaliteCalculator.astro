@@ -717,7 +717,11 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
   .penalite-fieldset{border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;}
   .penalite-legend{font-family:"Lora",serif;font-size:1.05rem;font-weight:600;color:var(--ink);padding:0 .5rem;}
   .penalite-field{display:flex;flex-direction:column;gap:.35rem;flex:1;min-width:0;}
-  .penalite-row{display:flex;gap:1rem;}
+  /* Les deux champs d'une rangée partagent leurs pistes (subgrid) : une étiquette qui passe
+     sur deux lignes abaisse aussi le champ voisin, et les cases restent alignées. */
+  .penalite-row{display:grid;grid-template-columns:1fr 1fr;column-gap:1rem;row-gap:.35rem;}
+  .penalite-row>.penalite-field{display:grid;grid-row:span 3;grid-template-rows:subgrid;align-content:start;}
+  .penalite-row>.penalite-field>.penalite-label{align-self:end;}
   .penalite-label{font-size:.78rem;font-weight:600;color:var(--muted);letter-spacing:.02em;display:flex;align-items:center;gap:.35rem;}
   .penalite-hint{font-size:.7rem;color:var(--muted);line-height:1.5;}
   .penalite-error{font-size:.7rem;color:#d9534f;min-height:1.2em;}
@@ -864,10 +868,13 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     .penalite-input,.penalite-select,.penalite-capture-input{font-size:16px;}
     /* Safari iOS donne au champ date une largeur propre qui déborde de sa colonne. */
     .penalite-input[type="date"]{-webkit-appearance:none;appearance:none;min-height:3rem;}
+    /* Même hauteur que la liste voisine, sans quoi les deux cases d'une rangée diffèrent. */
+    .penalite-select{min-height:3rem;}
     .penalite-input[type="date"]::-webkit-date-and-time-value{text-align:left;}
   }
   @media (max-width:420px){
     /* Deux demi-colonnes de ~130 px tronquent la date à 16 px : une colonne par champ. */
-    .penalite-row{flex-direction:column;}
+    .penalite-row{grid-template-columns:1fr;row-gap:1rem;}
+    .penalite-row>.penalite-field{display:flex;grid-row:auto;}
   }
 </style>
