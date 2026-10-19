@@ -11,8 +11,30 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Vieux-Terrebonne",
+    texte: "Maisons de caractère et petits <strong>plex</strong> près de l'Île-des-Moulins. Dans un plex que vous habitez, une partie des loyers peut compter dans vos revenus ; dans une maison ancienne, une <strong>inspection</strong> poussée (toiture, fondation, électricité) protège votre budget autant que l'approbation du prêteur."
+  },
+  {
+    nom: "Lachenaie",
+    texte: "Des unifamiliales plus récentes et des quartiers pensés pour les familles — souvent un <strong>premier achat</strong>. Le <strong>RAP</strong> et le <strong>CELIAPP</strong> peuvent se cumuler pour la mise de fonds ; sous 20 %, la prime SCHL s'ajoute au prêt, d'où l'intérêt de comparer les scénarios d'avance."
+  },
+  {
+    nom: "La Plaine",
+    texte: "Le secteur le plus champêtre : grands terrains et maisons plus isolées. Selon l'adresse, la propriété peut être desservie par un <strong>puits</strong> et une <strong>fosse septique</strong> ; le prêteur demandera alors une analyse d'eau et une preuve de conformité avant le déboursé."
+  },
+  {
+    nom: "Urbanova",
+    texte: "Unifamiliales, maisons de ville et condos neufs dans un même projet planifié. En <strong>copropriété</strong>, la moitié des frais de condo entre dans vos ratios d'endettement ; sur un immeuble neuf, le <strong>budget prévisionnel</strong> du syndicat dit si ces frais sont réalistes."
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-terrebonne/`;
@@ -38,8 +60,8 @@ const faq = [
     a: `Non — le <strong>Vieux-Terrebonne</strong> (maisons anciennes, plex), <strong>Lachenaie</strong> (unifamiliales plus récentes), <strong>La Plaine</strong> (grands terrains) et les développements neufs d'<strong>Urbanova</strong> ont chacun leur réalité de prix. Plutôt qu'un chiffre qui se périme, je vous propose d'évaluer votre capacité d'emprunt par rapport au secteur que vous visez, gratuitement.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "Je vends ma maison à Terrebonne pour en acheter une plus grande : dans quel ordre faire les choses ?",
+    a: `D'abord, connaître votre <strong>équité</strong> réelle et la <strong>pénalité</strong> éventuelle sur votre prêt actuel : si votre contrat est <strong>transférable</strong>, le reporter sur la nouvelle propriété coûte parfois moins cher que de le rembourser. Ensuite, la pré-approbation du nouvel achat. Et si l'achat se conclut avant la vente, un <strong>prêt-relais</strong> peut avancer la mise de fonds dès que la vente est ferme.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
@@ -50,8 +72,8 @@ const faq = [
     a: `Plus encadré, oui ; impossible, non. Plusieurs de mes prêteurs acceptent les revenus autonomes documentés par vos <strong>avis de cotisation</strong> des deux dernières années, et il existe des programmes alternatifs quand le dossier sort du cadre. Certaines conditions s'appliquent — on en discute franchement dès le premier appel.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Comment se passe l'accompagnement si j'achète à Terrebonne ?",
+    a: `Simplement, et à votre rythme. Lanaudière et la couronne nord, c'est là que vivent la plupart de mes clients : on se parle sur <strong>Teams</strong>, par <strong>téléphone</strong> ou par <strong>texto</strong>, et vos documents se transmettent et se signent <strong>en ligne</strong>. Pas de déplacement à prévoir, y compris le soir et la fin de semaine.`
   }
 ];
 
@@ -235,9 +257,11 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Terrebonne en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Terrebonne</h2>
 
         <p>
+          Vous cherchez un courtier hypothécaire à Terrebonne ? Voici ce qu'il faut savoir du marché,
+          secteur par secteur, avant de faire une offre.
           Plus grande ville de Lanaudière et cœur de la MRC Les Moulins, Terrebonne a plusieurs
           visages — et autant de réalités de marché. Le <strong>Vieux-Terrebonne</strong>, autour de
           l'Île-des-Moulins, concentre maisons de caractère et petits plex ; <strong>Lachenaie</strong>
@@ -265,8 +289,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           Quand les taux bougent, je suis le marché en continu pour saisir la bonne fenêtre à
           votre place.
         </p>
+        <VillesVoisines actuelle="terrebonne" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Terrebonne" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">

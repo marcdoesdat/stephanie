@@ -986,6 +986,41 @@ Les règles qui suivent corrigent des fautes réellement trouvées à l'audit d'
 - **`<meta charset>` vient en premier dans `<head>`** : l'encodage doit être déclaré dans les
   1 024 premiers octets, avant les scripts de consentement et de langue.
 
+## Pages villes (`/villes/courtier-hypothecaire-<ville>/`)
+
+Treize pages sur un même gabarit (classes `rep-*`). Ce qui les distingue : le paragraphe
+« marché », la section **« Secteur par secteur »** et la moitié de la FAQ — le reste est commun.
+
+| Fichier | Rôle |
+|---------|------|
+| `src/data/villes.ts` | **La liste** des villes et de leurs voisines — pied de page et maillage la lisent d'ici |
+| `src/components/VillesVoisines.astro` | Liens vers les villes voisines, dans le texte de la section « marché » |
+| `src/components/SecteursVille.astro` | La grille « Secteur par secteur », remplie par le tableau `secteurs` de chaque page |
+| `src/data/villes.test.ts` | Verrous : page et version anglaise pour chaque ville, voisines valides, ≥ 2 liens entrants |
+
+**Règles :**
+- **Ajouter une ville** : l'inscrire dans `villes.ts` (et dans les voisines d'au moins deux autres)
+  et dans `pagesTraduites.json`, puis traduire ses textes. Le pied de page suit seul.
+- **Un lien dans le texte pèse plus qu'un lien de pied de page.** Avant `VillesVoisines`, Gatineau,
+  Sherbrooke et Saguenay n'étaient atteintes par aucune page hors du pied. Un test exige que chaque
+  ville figure parmi les voisines d'au moins deux autres.
+- **Aucune année dans les titres** (« Acheter ou refinancer une propriété à … »). L'année entre dans
+  la clé de traduction : calculée au build, elle ferait retomber le titre en français sur `/en/`
+  chaque 1ᵉʳ janvier ; écrite à la main, elle date la page.
+- **La forme cherchée du mot-clé est au masculin** — « courtier hypothécaire à <Ville> », comme
+  l'adresse. Le H1 et le titre disent « Courtière » ; le 1ᵉʳ paragraphe du marché porte l'autre forme.
+- **L'accompagnement se fait par Teams, téléphone ou texto — jamais « en personne ».** C'est la
+  réalité du service (confirmé par la courtière en octobre 2026), y compris à Montréal, Laval ou
+  Terrebonne : une page qui promet une rencontre sur place promet ce qui ne sera pas offert. Le
+  formulaire de contact commun et la FAQ de l'accueil disent la même chose.
+- **Un fait local dont on n'est pas sûr est retiré, pas nuancé.** Zone inondable rattachée à un
+  secteur précis, histoire d'un quartier, golf ou bâtiment situé dans la mauvaise ville (Le Versant
+  est à Terrebonne, pas à Mascouche) : une erreur de géographie se voit d'abord par ceux qui y
+  habitent, c'est-à-dire exactement le public de la page.
+- **Hors de la grande région de Montréal, l'accompagnement est dit à distance.** Jamais de bureau
+  local, de prix, de statistique ni de délai inventés : une page locale qui ment sur sa proximité
+  perd la confiance qu'elle venait chercher.
+
 ## Configuration
 
 ### `src/config/siteConfig.json`

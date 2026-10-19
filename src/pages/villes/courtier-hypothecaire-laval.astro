@@ -11,8 +11,38 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Chomedey",
+    texte: `Plex, maisons et tours de condos, dans une communauté très diversifiée. Sur un plex que vous habitez, une partie des <strong>loyers</strong> peut compter pour vous qualifier ; pour un acheteur arrivé récemment au pays, des prêteurs offrent des programmes <strong>nouveaux arrivants</strong>.`
+  },
+  {
+    nom: "Pont-Viau et Laval-des-Rapides",
+    texte: `Plex, maisons d'après-guerre et condos autour des stations <strong>Cartier</strong> et <strong>De La Concorde</strong>. Pour un premier achat, le <strong>RAP</strong> et le <strong>CELIAPP</strong> peuvent se combiner pour la mise de fonds — et près du métro, une voiture en moins allège aussi vos ratios.`
+  },
+  {
+    nom: "Duvernay",
+    texte: `Beaucoup de bungalows et de cottages des années 60 et 70, parfois vendus par une <strong>succession</strong>, souvent <strong>sans garantie légale</strong>. Faites inspecter : vous ne pourrez pas vous retourner contre le vendeur, et votre mise de fonds doit laisser place aux travaux à prévoir.`
+  },
+  {
+    nom: "Vimont, Auteuil et Fabreville",
+    texte: `Des unifamiliales de banlieue et des développements plus récents, prisés des familles. Pour une <strong>construction neuve</strong> bâtie sur votre terrain, le prêt est versé par <strong>déboursés progressifs</strong>, à chaque étape inspectée ; achetée d'un promoteur, la maison se finance plutôt à la livraison.`
+  },
+  {
+    nom: "Sainte-Rose",
+    texte: `Le Vieux-Sainte-Rose garde ses maisons anciennes près de la rivière des Mille Îles. Elles se financent bien, à condition d'être <strong>assurables</strong> : chauffage au mazout, filage ancien ou réservoir enfoui peuvent compliquer l'assurance habitation, que le prêteur exige avant le déboursé.`
+  },
+  {
+    nom: "Sainte-Dorothée et Laval-sur-le-Lac",
+    texte: `À l'ouest de l'île, de grandes propriétés sur de vastes terrains. Au-delà de <strong>1,5 M$</strong>, l'assurance SCHL n'est plus offerte : la <strong>mise de fonds minimale passe à 20 %</strong>, et la valeur du terrain pèse davantage dans l'évaluation du prêteur.`
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-laval/`;
@@ -42,16 +72,16 @@ const faq = [
     a: `Non — un condo du <strong>centre-ville</strong> près du métro, un bungalow à rafraîchir à <strong>Duvernay</strong> ou <strong>Pont-Viau</strong>, un plex de <strong>Chomedey</strong> et une unifamiliale récente à <strong>Fabreville</strong> ou <strong>Auteuil</strong> n'ont pas la même réalité de prix. Plutôt qu'un chiffre qui se périme, je vous propose d'évaluer votre capacité d'emprunt par rapport au quartier que vous visez, gratuitement.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "J'achète au bord de la rivière des Mille Îles ou des Prairies : la zone inondable change-t-elle quelque chose ?",
+    a: `Oui, et mieux vaut le savoir avant l'offre. Laval étant une île, plusieurs rues riveraines se trouvent en <strong>zone inondable</strong> : vérifiez la cartographie auprès de la Ville et posez la question au vendeur. Le prêteur exige une <strong>assurance habitation</strong> en vigueur au déboursé, et la protection contre les inondations n'est pas offerte partout ni au même prix. Certains prêteurs ajoutent leurs propres conditions sur ces propriétés : on obtient la soumission d'assurance pendant le délai de vos conditions, pas la veille du notaire.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
     a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Laval sans pression.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Puis-je aménager un logement intergénérationnel dans ma maison à Laval ?",
+    a: `C'est possible, à condition que la <strong>réglementation municipale</strong> le permette pour votre adresse : vérifiez auprès de la Ville avant de signer quoi que ce soit. Côté financement, les travaux peuvent passer par un <strong>refinancement</strong>, jusqu'à 80 % de la valeur de la propriété, ou par un financement achat-rénovation si vous achetez la maison pour l'aménager. Attention : un logement occupé par vos parents ne compte comme <strong>revenu de location</strong> que s'il y a un bail et un loyer réellement payé — et chaque prêteur le traite à sa façon.`
   }
 ];
 
@@ -236,10 +266,11 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Laval en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Laval</h2>
 
         <p>
-          Troisième ville du Québec, Laval occupe toute l'île Jésus, entre la rivière des Prairies et
+          Vous cherchez un courtier hypothécaire à Laval ? Voici ce qu'il faut savoir du marché,
+          quartier par quartier, avant de faire une offre. Troisième ville du Québec, Laval occupe toute l'île Jésus, entre la rivière des Prairies et
           la rivière des Mille Îles — et chacun de ses quartiers a sa propre réalité de marché. Autour
           de la station <strong>Montmorency</strong>, le centre-ville aligne des tours de
           <strong>condos</strong> prisées des premiers acheteurs et des navetteurs. <strong>Chomedey</strong>,
@@ -263,19 +294,23 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         </p>
 
         <p>
-          Mon adresse d'affaires est à Montréal, dans Ahuntsic, juste de l'autre côté de la rivière
-          des Prairies : on peut se rencontrer en personne, ou se parler au téléphone ou en
-          visioconférence, selon ce qui vous convient. Laval touche
+          Mon adresse d'affaires est à Montréal-Nord, juste de l'autre côté de la rivière
+          des Prairies. On se parle sur Teams, par téléphone ou par texto, selon ce qui vous
+          convient, et vos documents se transmettent et se signent en ligne. Laval touche
           <a href="/villes/courtier-hypothecaire-terrebonne/">Terrebonne</a> de l'autre côté de la
-          rivière des Mille Îles, ainsi que <strong>Bois-des-Filion, Rosemère et Boisbriand</strong> ;
+          rivière des Mille Îles, ainsi que <strong>Bois-des-Filion et Rosemère</strong> ;
           au sud, <a href="/villes/courtier-hypothecaire-montreal/">Montréal</a> est à un pont de
           distance. Avec les autoroutes <strong>15, 13 et 440</strong>, la ligne orange du métro et le
           train de banlieue vers Saint-Jérôme, beaucoup de Lavallois travaillent à Montréal — un
           profil de navetteur que les prêteurs connaissent bien. Quand les taux bougent, je suis le
           marché en continu pour saisir la bonne fenêtre à votre place.
         </p>
+        <VillesVoisines actuelle="laval" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Laval" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">

@@ -1,5 +1,6 @@
 ---
 import { loadSiteConfig } from '../config';
+import { VILLES, cheminVille } from '../data/villes';
 
 const config = loadSiteConfig();
 
@@ -72,19 +73,7 @@ const googleReviewsUrl = config.google_place_id
     <div class="footer-col">
       <strong class="footer-col-title">Zones desservies</strong>
       <div class="footer-villes">
-        <a href="/villes/courtier-hypothecaire-repentigny/">Repentigny</a>
-        <a href="/villes/courtier-hypothecaire-terrebonne/">Terrebonne</a>
-        <a href="/villes/courtier-hypothecaire-mascouche/">Mascouche</a>
-        <a href="/villes/courtier-hypothecaire-montreal/">Montréal</a>
-        <a href="/villes/courtier-hypothecaire-laval/">Laval</a>
-        <a href="/villes/courtier-hypothecaire-longueuil/">Longueuil</a>
-        <a href="/villes/courtier-hypothecaire-quebec/">Québec</a>
-        <a href="/villes/courtier-hypothecaire-levis/">Lévis</a>
-        <a href="/villes/courtier-hypothecaire-gatineau/">Gatineau</a>
-        <a href="/villes/courtier-hypothecaire-sherbrooke/">Sherbrooke</a>
-        <a href="/villes/courtier-hypothecaire-saguenay/">Saguenay</a>
-        <a href="/villes/courtier-hypothecaire-trois-rivieres/">Trois-Rivières</a>
-        <a href="/villes/courtier-hypothecaire-saint-jean-sur-richelieu/">Saint-Jean-sur-Richelieu</a>
+        {VILLES.map((v) => <a href={cheminVille(v.slug)}>{v.nom}</a>)}
       </div>
       <span class="footer-col-note">Aussi : L'Assomption, Lavaltrie, Charlemagne</span>
       <span class="footer-col-note">Partout au Québec, à distance</span>

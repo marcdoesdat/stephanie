@@ -11,8 +11,34 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Vieux-Saint-Jean",
+    texte: "Autour du centre-ville, on achète surtout des <strong>plex</strong> et des maisons anciennes. Si vous habitez l'un des logements, une partie des <strong>loyers</strong> peut compter dans vos revenus de qualification — à condition de documenter les baux en vigueur."
+  },
+  {
+    nom: "Iberville",
+    texte: "Sur la rive est, des quartiers établis où bien des maisons attendent une mise à jour. Un <strong>financement achat-rénovation</strong> peut intégrer le coût des travaux au prêt, sur la foi de soumissions et de la valeur estimée après travaux."
+  },
+  {
+    nom: "Saint-Luc",
+    texte: "Des unifamiliales plus récentes, recherchées par les familles et souvent par les premiers acheteurs. Le <strong>RAP</strong> et le <strong>CELIAPP</strong> peuvent se combiner pour la mise de fonds ; sous 20 %, la prime <strong>SCHL</strong> s'ajoute au prêt — un calcul à faire d'avance."
+  },
+  {
+    nom: "L'Acadie",
+    texte: "Un caractère agricole : maisons sur grands terrains, parfois de petites fermettes. Hors réseau, le prêteur peut exiger une analyse de l'<strong>eau du puits</strong> et la conformité de la <strong>fosse septique</strong> ; sur une très grande superficie, il ne finance parfois qu'une partie du terrain."
+  },
+  {
+    nom: "Saint-Athanase",
+    texte: "Sur la rive est, entre quartiers résidentiels et terres agricoles, certains y font <strong>construire</strong>. Le prêt construction se verse par <strong>déboursés progressifs</strong>, et le terrain, acheté d'abord, se finance souvent à part, avec une mise de fonds plus élevée."
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-saint-jean-sur-richelieu/`;
@@ -27,7 +53,7 @@ const faq = [
   },
   {
     q: "Vous êtes à Montréal : pouvez-vous m'accompagner à Saint-Jean-sur-Richelieu ?",
-    a: `Oui. Mon permis de l'AMF couvre tout le Québec, et j'accompagne mes clients de Saint-Jean-sur-Richelieu <strong>à distance</strong> : appels, rencontres en <strong>visioconférence</strong>, documents transmis et signés en ligne. Le prêteur, l'évaluateur et le notaire, eux, sont choisis en fonction de votre propriété — la distance ne change rien à l'accès aux prêteurs ni aux conditions que je négocie pour vous.`
+    a: `Oui. Mon permis de l'AMF couvre tout le Québec, et j'accompagne mes clients de Saint-Jean-sur-Richelieu <strong>à distance</strong> : rencontres sur <strong>Teams</strong>, appels ou textos, documents transmis et signés en ligne. Le prêteur, l'évaluateur et le notaire, eux, sont choisis en fonction de votre propriété — la distance ne change rien à l'accès aux prêteurs ni aux conditions que je négocie pour vous.`
   },
   {
     q: "Quelle mise de fonds pour acheter une maison à Saint-Jean-sur-Richelieu ?",
@@ -42,16 +68,16 @@ const faq = [
     a: `Il peut l'être. Pour une propriété située en <strong>zone inondable</strong>, certains prêteurs et assureurs se montrent plus prudents : l'assurance contre les inondations peut être plus coûteuse ou plus difficile à obtenir, et le prêteur voudra s'assurer que la propriété est bien assurable. Le bon réflexe : consulter la cartographie des zones inondables et obtenir une soumission d'assurance <strong>avant</strong> de lever vos conditions. Je présente ensuite le dossier aux prêteurs à l'aise avec ce type de propriété.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "Une deuxième voiture pour faire la navette change-t-elle mon budget d'achat à Saint-Jean-sur-Richelieu ?",
+    a: `Elle peut le changer beaucoup. Le paiement d'un prêt ou d'une location auto entre dans votre <strong>ratio d'endettement total</strong> : chaque dollar versé chaque mois pour le véhicule réduit le montant que les prêteurs vous accorderont. Le bon ordre : obtenir votre <strong>pré-approbation</strong> avant de financer la voiture, et ne contracter aucun nouveau crédit d'ici la signature chez le notaire — le prêteur peut revérifier votre dossier avant le déboursé.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
     a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Saint-Jean-sur-Richelieu sans pression.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Je change d'emploi en déménageant à Saint-Jean-sur-Richelieu : est-ce un problème pour mon financement ?",
+    a: `Pas forcément — tout dépend du type d'emploi et du moment. Un poste <strong>permanent</strong> dans le même domaine est souvent accepté, parfois même pendant la <strong>période de probation</strong>, avec une lettre d'emploi ; un contrat, des commissions ou des heures variables demandent en général plus d'historique. Le plus sûr : m'en parler <strong>avant</strong> de démissionner, car l'ordre des démarches peut changer ce que les prêteurs accepteront.`
   }
 ];
 
@@ -236,9 +262,11 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Saint-Jean-sur-Richelieu en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Saint-Jean-sur-Richelieu</h2>
 
         <p>
+          Vous cherchez un courtier hypothécaire à Saint-Jean-sur-Richelieu ? Je vous accompagne à
+          distance ; voici d'abord ce qu'il faut savoir du marché avant de faire une offre.
           Chef-lieu du Haut-Richelieu, Saint-Jean-sur-Richelieu s'étend des deux côtés de la
           rivière — et chaque secteur a sa propre réalité. Le <strong>Vieux-Saint-Jean</strong>,
           près du centre-ville, concentre maisons anciennes, <strong>plex</strong> et condos ;
@@ -267,15 +295,19 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
         <p>
           Je suis basée à Montréal, et j'accompagne mes clients de Saint-Jean-sur-Richelieu
-          <strong>à distance</strong> : appels, rencontres en visioconférence, documents et
+          <strong>à distance</strong> : rencontres sur Teams, appels ou textos, documents et
           signatures en ligne. Le service est le même à Iberville, Saint-Luc et L'Acadie que dans
           les villes voisines — <strong>Chambly, Carignan, Mont-Saint-Grégoire</strong> — et, plus
           près de Montréal, à <a href="/villes/courtier-hypothecaire-longueuil/">Longueuil</a>.
           Quand les taux bougent, je suis le marché en continu pour saisir la bonne fenêtre à
           votre place.
         </p>
+        <VillesVoisines actuelle="saint-jean-sur-richelieu" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Saint-Jean-sur-Richelieu" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">

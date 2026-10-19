@@ -11,8 +11,38 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Centre-ville et Vieux-Trois-Rivières",
+    texte: `Maisons anciennes, plex et condos aménagés dans des bâtiments d'époque. Dans une vieille copropriété, lisez le <strong>fonds de prévoyance</strong> et les procès-verbaux : une <strong>cotisation spéciale</strong> à venir change votre budget, et le prêteur peut en tenir compte.`
+  },
+  {
+    nom: "Cap-de-la-Madeleine",
+    texte: `Plex et unifamiliales, parfois avec des travaux à prévoir. Un prêt <strong>achat-rénovation</strong> ajoute le coût des rénovations à l'hypothèque, sur la base de la <strong>valeur après travaux</strong> ; les fonds sont versés une fois les travaux faits.`
+  },
+  {
+    nom: "Trois-Rivières-Ouest",
+    texte: `Quartiers résidentiels plus récents, unifamiliales familiales. Vous y montez en gamme ? Avant de rompre votre hypothèque actuelle, on compare la <strong>pénalité</strong> au <strong>transfert</strong> de votre prêt vers la nouvelle maison : selon le prêteur, l'écart peut être important.`
+  },
+  {
+    nom: "Pointe-du-Lac",
+    texte: `Terrains plus grands, en bordure du lac Saint-Pierre. Sur un terrain plus vaste que la moyenne, certains prêteurs ne financent que la maison et une partie du terrain : on le vérifie avant l'offre, pas après.`
+  },
+  {
+    nom: "Sainte-Marthe-du-Cap",
+    texte: `Maisons de campagne et terrains le long du fleuve. Là où il n'y a pas d'aqueduc, le prêteur demande souvent un <strong>test d'eau du puits</strong> et la conformité de l'<strong>installation septique</strong> : prévoyez-les dans les conditions de votre offre.`
+  },
+  {
+    nom: "Saint-Louis-de-France",
+    texte: `Développements plus récents et terrains boisés. Faire construire, c'est un financement en <strong>déboursés progressifs</strong> : le prêteur verse par étapes, et vous payez les intérêts sur les sommes versées pendant le chantier.`
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-trois-rivieres/`;
@@ -27,7 +57,7 @@ const faq = [
   },
   {
     q: "Vous êtes à Montréal : pouvez-vous vraiment m'accompagner à Trois-Rivières ?",
-    a: `Oui, et franchement. Mon permis de l'AMF couvre <strong>tout le Québec</strong>, et je travaille à Trois-Rivières <strong>à distance</strong> : premier appel au téléphone, rencontres en <strong>visioconférence</strong>, documents transmis en ligne et <strong>signature électronique</strong>. Je n'ai pas de bureau en Mauricie et je ne prétends pas en avoir un — ce qui ne change rien à l'accès aux prêteurs ni au suivi de votre dossier, de la pré-approbation jusqu'au notaire.`
+    a: `Oui, et franchement. Mon permis de l'AMF couvre <strong>tout le Québec</strong>, et je travaille à Trois-Rivières <strong>à distance</strong> : premier appel au téléphone, rencontres sur <strong>Teams</strong>, questions par texto, documents transmis en ligne et <strong>signature électronique</strong>. Je n'ai pas de bureau en Mauricie et je ne prétends pas en avoir un — ce qui ne change rien à l'accès aux prêteurs ni au suivi de votre dossier, de la pré-approbation jusqu'au notaire.`
   },
   {
     q: "Quelle mise de fonds pour acheter une maison à Trois-Rivières ?",
@@ -42,16 +72,16 @@ const faq = [
     a: `Les prêteurs regardent surtout la <strong>stabilité de votre emploi</strong> et de vos revenus, pas la distance avec le bureau. Une lettre d'emploi qui confirme votre poste — et, idéalement, l'entente de télétravail — renforce le dossier. Si vous vendez une propriété ailleurs pour acheter à Trois-Rivières, on planifie aussi l'enchaînement des deux transactions (prêt-relais, dates de notaire) pour éviter d'être coincé entre les deux.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "Je travaille par quarts en usine, ici ou à Bécancour : mes heures supplémentaires comptent-elles ?",
+    a: `Elles peuvent compter, à condition d'être régulières et documentées. La plupart des prêteurs retiennent le <strong>salaire de base</strong> sans difficulté, et les <strong>heures supplémentaires</strong>, primes de quart ou de soir sur une moyenne d'environ deux ans, appuyée par vos <strong>avis de cotisation</strong> et une lettre d'emploi. Un emploi saisonnier ou des mises à pied temporaires se documentent aussi. Les prêteurs ne font pas tous la même moyenne : le montant accordé peut varier sensiblement de l'un à l'autre.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
     a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Trois-Rivières sans pression. Tout se fait à distance : vous transmettez vos documents en ligne, sans déplacement.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Je prends ma retraite et je veux m'installer à Trois-Rivières : puis-je encore obtenir une hypothèque ?",
+    a: `Oui. L'âge n'est pas un motif de refus : ce sont vos <strong>revenus de retraite</strong> qui comptent — rentes du Régime de rentes du Québec et de la Sécurité de la vieillesse, régime de retraite d'employeur, retraits planifiés de vos placements. On documente chaque source, et on choisit l'<strong>amortissement</strong> et la mise de fonds qui laissent un versement confortable. Si vous vendez une maison ailleurs, une bonne partie du produit de la vente peut servir de mise de fonds.`
   }
 ];
 
@@ -236,9 +266,10 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Trois-Rivières en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Trois-Rivières</h2>
 
         <p>
+          Vous cherchez un courtier hypothécaire à Trois-Rivières ? Avant de faire une offre, voici ce que le marché trifluvien a de particulier.
           Depuis la fusion de 2002, Trois-Rivières réunit plusieurs anciennes municipalités — et
           autant de réalités de marché. Le <strong>centre-ville</strong> et ses quartiers anciens,
           autour du Vieux-Trois-Rivières, comptent beaucoup de <strong>plex</strong> et de maisons de
@@ -263,7 +294,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
         <p>
           Je suis basée à Montréal et j'accompagne Trois-Rivières <strong>à distance</strong> :
-          appels, rencontres en visioconférence, documents et signatures en ligne. Le même service
+          rencontres sur Teams, appels ou textos, documents et signatures en ligne. Le même service
           s'étend aux villes voisines — <strong>Shawinigan</strong>, et, par le
           <strong>pont Laviolette</strong> et l'autoroute 55, <strong>Bécancour</strong> et
           <strong>Nicolet</strong> sur la rive sud. À mi-chemin entre Montréal et Québec par
@@ -273,8 +304,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           <a href="/villes/courtier-hypothecaire-repentigny/">Repentigny</a>. Quand les taux bougent,
           je suis le marché en continu pour saisir la bonne fenêtre à votre place.
         </p>
+        <VillesVoisines actuelle="trois-rivieres" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Trois-Rivières" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">

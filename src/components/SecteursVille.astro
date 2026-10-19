@@ -1,0 +1,102 @@
+---
+// « Secteur par secteur » : ce qui distingue chaque page ville des autres. Le reste du gabarit
+// (comparatif, étapes, cartes de services) est commun aux treize pages ; sans une section propre
+// à la ville, les pages ne différaient que par un paragraphe et quelques questions.
+//
+// Règles du contenu (voir CLAUDE.md, « Pages villes ») : de vrais secteurs, ce qu'on y achète
+// et ce que ça change au financement — jamais de prix, de statistique ni de délai inventés.
+
+interface Secteur {
+  nom: string;
+  texte: string;
+}
+
+interface Props {
+  ville: string;
+  secteurs: Secteur[];
+}
+
+const { ville, secteurs } = Astro.props;
+---
+
+<section class="sv-secteurs">
+  <div class="sv-inner">
+    <div class="sv-tag">Secteur par secteur</div>
+    <h2 class="sv-title">Où acheter à {ville}, et comment le financer</h2>
+    <div class="sv-grid">
+      {secteurs.map((s) => (
+        <article class="sv-card">
+          <h3 class="sv-card-title">{s.nom}</h3>
+          <p class="sv-card-text" set:html={s.texte} />
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Mêmes mesures que les sections rep-* des pages villes. */
+  .sv-secteurs {
+    padding: 4rem 0;
+  }
+  .sv-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  .sv-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--clay, #c47a52);
+    font-weight: 600;
+    margin-bottom: 0.9rem;
+  }
+  .sv-title {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1.2;
+    margin: 0 0 1.5rem;
+    color: var(--ink, #1a1a1a);
+    font-weight: 700;
+  }
+  .sv-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  @media (max-width: 980px) {
+    .sv-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 580px) {
+    .sv-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .sv-card {
+    padding: 1.5rem 1.6rem;
+    background: var(--white, #fff);
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+    border-left: 3px solid var(--clay, #c47a52);
+    border-radius: 12px;
+  }
+  .sv-card-title {
+    font-family: 'Lora', serif;
+    font-size: 1.15rem;
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+    color: var(--ink, #1a1a1a);
+  }
+  .sv-card-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--ink-soft, #4a4a4a);
+    margin: 0;
+  }
+  .sv-card-text :global(strong) {
+    color: var(--ink, #1a1a1a);
+  }
+</style>

@@ -11,8 +11,34 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Le Vieux-Longueuil",
+    texte: `Autour de la rue Saint-Charles, le noyau ancien aligne maisons d'époque et petits immeubles. Une maison de plus d'un siècle mérite une <strong>inspection</strong> poussée — fondations, drain, toiture — et un <strong>budget de rénovation</strong> prévu dès le départ, à côté de la mise de fonds.`
+  },
+  {
+    nom: "Le secteur du métro",
+    texte: `Autour de la station Longueuil–Université-de-Sherbrooke et de la place Charles-Le Moyne, surtout des <strong>condos</strong>. Pour une unité achetée <strong>sur plan</strong>, la livraison peut survenir après l'échéance de votre pré-approbation : une nouvelle qualification est alors à prévoir avant le notaire.`
+  },
+  {
+    nom: "LeMoyne",
+    texte: `Petit secteur dense voisin de Saint-Lambert, où l'on trouve des plex. Un <strong>duplex</strong> dont vous habitez un logement s'achète avec la même mise de fonds minimale qu'une maison (<strong>5 %</strong> sur la première tranche) : un premier achat qui rapporte un loyer.`
+  },
+  {
+    nom: "Saint-Hubert",
+    texte: `Surtout résidentiel : unifamiliales, jumelés et développements plus récents. Pour une famille qui veut s'agrandir, le <strong>transfert d'hypothèque</strong> (portabilité) permet parfois de garder son taux en changeant de maison et d'éviter une pénalité — à vérifier dans votre contrat avant de vendre.`
+  },
+  {
+    nom: "Greenfield Park",
+    texte: `Communauté historiquement bilingue, aux rues tranquilles bordées de maisons d'après-guerre. Propriétaire depuis longtemps ? Au <strong>renouvellement</strong>, comparez avant de signer l'offre de votre banque, et pensez au <strong>refinancement</strong> si la maison demande des travaux.`
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-longueuil/`;
@@ -42,16 +68,16 @@ const faq = [
     a: `Non — le <strong>Vieux-Longueuil</strong> (plex, maisons anciennes, condos autour du métro), <strong>Saint-Hubert</strong> (surtout des unifamiliales), <strong>Greenfield Park</strong> et le secteur <strong>LeMoyne</strong> ont chacun leur réalité de prix. Plutôt qu'un chiffre qui se périme, je vous propose d'évaluer votre capacité d'emprunt par rapport au secteur que vous visez, gratuitement.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique si j'achète à Longueuil ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "Je quitte Montréal pour Longueuil : comment comparer les deux scénarios ?",
+    a: `En mettant les coûts complets côte à côte, pas seulement le prix. Les <strong>droits de mutation</strong> ne suivent pas les mêmes tranches partout — certaines villes, dont Montréal, appliquent des tranches supérieures sur les propriétés plus chères — et ils se paient comptant, en plus de la mise de fonds. Ajoutez les <strong>taxes municipales et scolaires</strong> et le transport (métro, pont ou tunnel). Votre <strong>pré-approbation</strong> vaut pour les deux rives : on la fait une fois, puis on compare.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
     a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Longueuil sans pression.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Puis-je acheter un condo près du campus de l'Université de Sherbrooke pour le louer ?",
+    a: `Oui, mais ce n'est plus le financement d'une résidence principale. Pour un logement que vous n'habitez pas, l'assurance SCHL ne s'applique pas : prévoyez une <strong>mise de fonds d'au moins 20 %</strong>. Le loyer prévu est pris en compte selon la méthode du prêteur, et les <strong>frais de copropriété</strong> restent dans vos ratios. Lisez aussi la <strong>déclaration de copropriété</strong> : elle peut encadrer, voire interdire, certaines locations, notamment de courte durée. Un bassin étudiant aide à louer, mais le prêteur, lui, regarde d'abord vos revenus.`
   }
 ];
 
@@ -236,10 +262,11 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Longueuil en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Longueuil</h2>
 
         <p>
-          Porte d'entrée de la Rive-Sud, Longueuil réunit trois arrondissements aux marchés bien
+          Vous cherchez un courtier hypothécaire à Longueuil ? Voici ce qu'il faut savoir du marché
+          avant de faire une offre. Porte d'entrée de la Rive-Sud, Longueuil réunit trois arrondissements aux marchés bien
           distincts. Le <strong>Vieux-Longueuil</strong> — du vieux noyau de la rue Saint-Charles au
           secteur <strong>LeMoyne</strong> — est le territoire des <strong>plex</strong> et des maisons
           de caractère ; autour du métro <strong>Longueuil–Université-de-Sherbrooke</strong>, ce sont
@@ -270,12 +297,16 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           Avec la ligne jaune du métro, les ponts Jacques-Cartier et Samuel-De Champlain, le tunnel
           Louis-Hippolyte-La Fontaine et le REM tout près, à Brossard, beaucoup d'acheteurs d'ici
           travaillent à <a href="/villes/courtier-hypothecaire-montreal/">Montréal</a>. Depuis
-          l'est de Montréal, où je suis établie, la Rive-Sud n'est qu'à un tunnel : on peut se rencontrer en personne, ou tout
-          régler à distance — appel, visioconférence, documents et signature en ligne. Quand les taux
+          l'est de Montréal, où je suis établie, la Rive-Sud n'est qu'à un tunnel, mais tout se
+          règle à distance — Teams, appel ou texto, documents et signature en ligne. Quand les taux
           bougent, je suis le marché en continu pour saisir la bonne fenêtre à votre place.
         </p>
+        <VillesVoisines actuelle="longueuil" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Longueuil" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">

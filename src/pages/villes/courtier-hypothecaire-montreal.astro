@@ -11,8 +11,38 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Le Plateau-Mont-Royal",
+    texte: `Des triplex centenaires et de nombreux condos issus de conversions, parfois en <strong>indivision</strong>. Sur un bâtiment de cet âge, l'<strong>inspection</strong> pèse lourd : fondations, toiture, plomberie ou électricité d'origine peuvent réduire l'évaluation du prêteur ou annoncer des travaux à court terme.`
+  },
+  {
+    nom: "Rosemont–La Petite-Patrie",
+    texte: `Le duplex et le triplex de propriétaire occupant y sont rois. Si les logements sont à moderniser, le <strong>financement achat-rénovation</strong> ajoute les travaux au prêt, sur soumissions, selon la valeur après travaux — les sommes étant versées une fois les travaux faits.`
+  },
+  {
+    nom: "Villeray–Saint-Michel–Parc-Extension",
+    texte: `Surtout des plex, dans des quartiers où beaucoup de familles sont arrivées récemment au pays. Pour un <strong>nouvel arrivant</strong>, certains prêteurs acceptent un historique de crédit canadien court, complété par d'autres preuves (loyers payés, lettre de votre banque d'origine), selon le statut et l'emploi.`
+  },
+  {
+    nom: "Verdun et L'Île-des-Sœurs",
+    texte: `Plex en rangée à Verdun, tours de condos à L'Île-des-Sœurs. En <strong>copropriété</strong>, la moitié des frais de condo entre dans vos ratios d'endettement : un immeuble avec beaucoup de services coûte plus cher à financer qu'il n'y paraît.`
+  },
+  {
+    nom: "Ahuntsic-Cartierville",
+    texte: `Jumelés, unifamiliales et plex, jusqu'aux berges de la rivière des Prairies. En bord d'eau, vérifiez si le terrain est en <strong>zone inondable</strong> : l'assurance habitation exigée par le prêteur peut être plus difficile à obtenir, et certains prêteurs se montrent plus prudents.`
+  },
+  {
+    nom: "Rivière-des-Prairies–Pointe-aux-Trembles",
+    texte: `Davantage d'unifamiliales, de bungalows et de maisons de ville, prisés des familles. Un <strong>logement au sous-sol</strong> peut aider à vous qualifier, mais seulement s'il est conforme au zonage et loué par bail : un prêteur ne compte pas un loyer qu'il ne peut documenter.`
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-montreal/`;
@@ -42,16 +72,16 @@ const faq = [
     a: `Loin de là — un triplex du <strong>Plateau-Mont-Royal</strong>, un condo de <strong>Verdun</strong>, un jumelé d'<strong>Ahuntsic-Cartierville</strong> et une unifamiliale de <strong>Rivière-des-Prairies–Pointe-aux-Trembles</strong> n'ont pas grand-chose en commun. Plutôt qu'un chiffre qui se périme, je vous propose d'évaluer votre capacité d'emprunt par rapport à l'arrondissement et au type de propriété que vous visez, gratuitement.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "Peut-on acheter un plex à Montréal à deux ménages, entre amis ou en famille ?",
+    a: `Oui, et c'est fréquent. Les deux ménages signent alors <strong>le même prêt</strong> : le prêteur additionne vos revenus, mais aussi toutes vos dettes, et chacun est <strong>solidairement responsable</strong> de la totalité de l'hypothèque — pas seulement de « sa » moitié. Avant l'offre, prévoyez une <strong>convention d'indivision</strong> chez le notaire : qui paie quoi, qui occupe quel logement et ce qui arrive si l'un veut vendre. Une conversion en copropriété divise plus tard est un tout autre processus, encadré et sans garantie : on finance l'immeuble tel qu'il est.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
     a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Montréal sans pression.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Puis-je acheter un plex à Montréal pour le louer, sans y habiter ?",
+    a: `Oui, mais les règles changent. Sans propriétaire occupant, l'assurance SCHL ne s'applique pas : comptez une <strong>mise de fonds d'au moins 20 %</strong>, parfois davantage selon le prêteur. Les loyers sont pris en compte, mais chaque prêteur applique sa propre méthode — une part des revenus ajoutée aux vôtres, ou portée en déduction des dépenses de l'immeuble — et vos autres dettes restent dans le calcul. Avant de faire une offre, réunissez les <strong>baux en vigueur</strong> : ce sont eux, d'abord, qui serviront à l'analyse.`
   }
 ];
 
@@ -236,10 +266,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Montréal en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Montréal</h2>
 
         <p>
-          Montréal n'est pas un marché, c'est une mosaïque d'arrondissements. Le
+          Vous cherchez un courtier hypothécaire à Montréal qui travaille sur l'île même ? Voici ce
+          qu'il faut savoir du marché avant de faire une offre. Montréal n'est pas un marché, c'est
+          une mosaïque d'arrondissements. Le
           <strong>Plateau-Mont-Royal</strong>, <strong>Rosemont–La Petite-Patrie</strong>,
           <strong>Villeray</strong> et <strong>Verdun</strong> sont le royaume du <strong>plex</strong> —
           duplex et triplex à escaliers extérieurs, souvent achetés par un propriétaire occupant qui
@@ -268,9 +300,9 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         </p>
 
         <p>
-          Je suis établie sur la <strong>rue Fleury Est</strong>, dans le nord-est de l'île : on
-          peut donc se rencontrer en personne aussi bien qu'en visioconférence, selon ce qui vous
-          convient. Je dessers toute l'île — de Montréal-Nord à Verdun, d'Ahuntsic à
+          Je suis établie sur la <strong>rue Fleury Est</strong>, dans le nord-est de l'île. On se
+          parle sur Teams, par téléphone ou par texto, selon ce qui vous convient, et vos documents
+          se transmettent et se signent en ligne. Je dessers toute l'île — de Montréal-Nord à Verdun, d'Ahuntsic à
           Pointe-aux-Trembles — ainsi que les villes voisines :
           <a href="/villes/courtier-hypothecaire-laval/">Laval</a>,
           <a href="/villes/courtier-hypothecaire-longueuil/">Longueuil</a> sur la Rive-Sud et, sur la
@@ -279,8 +311,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           les autoroutes 40 et 25, bien des acheteurs hésitent entre l'île et la couronne : je vous
           aide à mettre les deux scénarios côte à côte avant de choisir.
         </p>
+        <VillesVoisines actuelle="montreal" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Montréal" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">

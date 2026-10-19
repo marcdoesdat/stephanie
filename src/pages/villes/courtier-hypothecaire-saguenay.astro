@@ -11,8 +11,38 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Chicoutimi, centre-ville et UQAC",
+    texte: `Duplex, triplex et petits immeubles, souvent loués à des étudiants. Les loyers comptent dans votre qualification s'ils sont appuyés par des <strong>baux</strong>, mais les prêteurs en retiennent rarement la totalité : on bâtit votre budget sur la part retenue, pas sur le <strong>loyer affiché</strong>.`
+  },
+  {
+    nom: "Jonquière et Kénogami",
+    texte: `Quartiers résidentiels bien établis, où l'unifamiliale reste à la portée d'un <strong>premier achat</strong>. Avec 5 % de mise de fonds, la prime SCHL s'ajoute au prêt ; le <strong>RAP</strong> et le <strong>CELIAPP</strong> peuvent financer cette mise. Les frais de notaire se prévoient à part.`
+  },
+  {
+    nom: "Arvida",
+    texte: `Maisons d'époque à l'architecture homogène, certaines rénovées, d'autres encore d'origine. Elles se financent bien, mais se lisent avec une <strong>inspection</strong> : isolation, fenêtres, plomberie. Si des travaux s'imposent, l'<strong>achat-rénovation</strong> les intègre au prêt dès l'achat.`
+  },
+  {
+    nom: "La Baie",
+    texte: `Maisons avec vue sur la baie des Ha! Ha! et propriétés près de l'eau. Une propriété avec vue se compare mal : l'<strong>évaluation</strong> du prêteur peut prendre plus de temps, prévoyez une condition de financement assez longue.`
+  },
+  {
+    nom: "Laterrière",
+    texte: `Secteur champêtre au sud de Chicoutimi, avec de grands terrains. Certaines propriétés y ont un <strong>puits</strong> et une <strong>installation septique</strong> : le prêteur peut demander une analyse d'eau potable et une preuve de conformité, à obtenir avant la levée des conditions de l'offre.`
+  },
+  {
+    nom: "Shipshaw et Canton Tremblay",
+    texte: `Grands terrains sur la rive nord du Saguenay, dont certains se prêtent à la construction. Faire bâtir se finance par <strong>déboursés progressifs</strong>, versés selon l'avancement : le <strong>terrain</strong> se paie souvent d'abord, et votre loyer actuel court pendant le chantier.`
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-saguenay/`;
@@ -31,7 +61,7 @@ const faq = [
   },
   {
     q: "Vous êtes à Montréal : comment m'accompagnez-vous à Saguenay ?",
-    a: `Entièrement <strong>à distance</strong>, et sans rien perdre en accompagnement. On se parle au téléphone ou en <strong>visioconférence</strong>, vous transmettez vos documents en ligne et vous signez <strong>électroniquement</strong>. Mon permis de l'AMF couvre tout le Québec, et les prêteurs avec qui je travaille financent les propriétés de Chicoutimi, de Jonquière ou de La Baie comme partout ailleurs. Votre notaire, lui, peut tout à fait être de la région.`
+    a: `Entièrement <strong>à distance</strong>, et sans rien perdre en accompagnement. On se parle sur <strong>Teams</strong>, au téléphone ou par texto, vous transmettez vos documents en ligne et vous signez <strong>électroniquement</strong>. Mon permis de l'AMF couvre tout le Québec, et les prêteurs avec qui je travaille financent les propriétés de Chicoutimi, de Jonquière ou de La Baie comme partout ailleurs. Votre notaire, lui, peut tout à fait être de la région.`
   },
   {
     q: "Je travaille sur des quarts avec des heures supplémentaires et des primes : comment les prêteurs comptent-ils mes revenus ?",
@@ -42,16 +72,16 @@ const faq = [
     a: `Oui, mais un chalet ne se finance pas toujours comme une maison en ville. Les prêteurs regardent notamment l'<strong>accès à l'année</strong>, le chauffage, l'alimentation en eau (puits) et l'installation septique. Un chalet habitable en toute saison se finance souvent comme une résidence secondaire ; un chalet saisonnier ou plus rustique peut exiger une mise de fonds plus importante, et certains prêteurs ne le financent pas du tout. On vérifie ces points avant votre offre d'achat, pas après.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "Je suis militaire à la Base de Bagotville : que se passe-t-il si je suis muté ?",
+    a: `On le prévoit dès le départ plutôt que de le subir. Trois options s'offrent généralement à vous : <strong>vendre</strong>, en tenant compte de la pénalité de remboursement anticipé ; <strong>transférer</strong> votre prêt vers la propriété de votre nouvelle affectation, si le prêteur le permet ; ou <strong>louer</strong> la maison, en avisant votre prêteur. Le choix du prêteur, du terme et du type de taux change le coût de chacun de ces scénarios.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
     a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Saguenay sans pression.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Je viens d'obtenir un emploi permanent dans la région, encore en probation : puis-je acheter ?",
+    a: `Souvent, oui. Certains prêteurs acceptent un emploi en <strong>période de probation</strong>, surtout si vous restez dans le même domaine qu'avant ou si vous sortez d'une formation qui y mène, à l'UQAC ou au cégep par exemple. On présente une <strong>lettre d'emploi</strong> qui précise le poste, le salaire et le statut, et on cible les prêteurs dont les critères correspondent à votre situation.`
   }
 ];
 
@@ -235,9 +265,10 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Saguenay en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Saguenay</h2>
 
         <p>
+          Vous cherchez un courtier hypothécaire à Saguenay ? Voici ce qu'il faut savoir du marché avant de faire une offre.
           Née du regroupement de Chicoutimi, de Jonquière, de La Baie et de plusieurs municipalités
           voisines, Saguenay se vit en trois arrondissements — et en autant de réalités de marché.
           <strong>Chicoutimi</strong>, ville de services et d'université autour de l'<strong>UQAC</strong>,
@@ -271,7 +302,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
         <p>
           Je suis basée à Montréal et je vous accompagne à Saguenay <strong>entièrement à
-          distance</strong> : rencontres en visioconférence ou au téléphone, documents transmis en ligne,
+          distance</strong> : rencontres sur Teams, appels ou textos, documents transmis en ligne,
           <strong>signature électronique</strong>. Mon permis de l'AMF couvre tout le Québec, et je
           dessers aussi les villes voisines — <strong>Saint-Honoré, Saint-Fulgence, Larouche,
           Saint-David-de-Falardeau</strong> et, côté Lac-Saint-Jean, <strong>Alma</strong>. Si votre
@@ -279,8 +310,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           <a href="/villes/courtier-hypothecaire-quebec/">Québec</a>. Quand les taux bougent, je suis le
           marché en continu pour saisir la bonne fenêtre à votre place.
         </p>
+        <VillesVoisines actuelle="saguenay" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Saguenay" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">
