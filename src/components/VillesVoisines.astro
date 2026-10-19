@@ -1,0 +1,39 @@
+---
+// Liens vers les pages des villes voisines, posés dans le texte de la section « marché ».
+// La liste vient de src/data/villes.ts — voir la raison d'être du maillage là-bas.
+import { villePar, cheminVille } from '../data/villes';
+
+interface Props {
+  actuelle: string;
+}
+
+const ville = villePar(Astro.props.actuelle);
+if (!ville) throw new Error(`Ville inconnue : ${Astro.props.actuelle}`);
+const voisines = ville.voisines.map((slug) => {
+  const v = villePar(slug);
+  if (!v) throw new Error(`Voisine inconnue pour ${ville.slug} : ${slug}`);
+  return v;
+});
+---
+
+<p class="villes-voisines">
+  Vous magasinez aussi ailleurs ? J'accompagne également les acheteurs et les propriétaires de
+  {voisines.map((v, i) => (
+    <>{i > 0 && (i === voisines.length - 1 ? ' et ' : ', ')}<a href={cheminVille(v.slug)}>{v.nom}</a></>
+  ))}.
+</p>
+
+<style>
+  .villes-voisines {
+    font-size: 0.98rem;
+    line-height: 1.7;
+    margin: 1.5rem 0 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+    color: var(--ink, #1a1a1a);
+  }
+  .villes-voisines a {
+    color: var(--clay, #c47a52);
+    font-weight: 600;
+  }
+</style>

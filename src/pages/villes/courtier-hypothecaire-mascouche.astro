@@ -11,8 +11,13 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-mascouche/`;
@@ -231,7 +236,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Mascouche en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Mascouche</h2>
 
         <p>
           Mascouche attire de plus en plus de jeunes familles et de <strong>premiers acheteurs</strong> :
@@ -262,8 +267,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           <strong>Votre projet est à Mascouche ?</strong>
           <a href="#contact" class="rep-inline-cta">On jase de votre projet →</a>
         </p>
+        <VillesVoisines actuelle="mascouche" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Mascouche" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">

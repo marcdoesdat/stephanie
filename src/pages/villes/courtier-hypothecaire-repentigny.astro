@@ -11,8 +11,13 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-repentigny/`;
@@ -234,7 +239,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Repentigny en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Repentigny</h2>
 
         <p>
           Repentigny est une ville recherchée pour son équilibre rare entre tranquillité résidentielle
@@ -265,8 +270,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           Canada bouge, la fenêtre pour magasiner son hypothèque se rétrécit — d'où l'intérêt de
           travailler avec une courtière qui suit le marché en continu.
         </p>
+        <VillesVoisines actuelle="repentigny" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Repentigny" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">

@@ -11,8 +11,13 @@ import stephaniePhoto from '../../assets/stephanie.webp';
 import { loadSiteConfig } from '../../config';
 import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
+import VillesVoisines from '../../components/VillesVoisines.astro';
+import SecteursVille from '../../components/SecteursVille.astro';
 
 const config = loadSiteConfig();
+
+// Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
+const secteurs: { nom: string; texte: string }[] = [];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-montreal/`;
@@ -236,7 +241,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <section class="rep-market">
       <div class="rep-inner rep-inner--narrow">
         <div class="rep-section-tag">Le marché immobilier</div>
-        <h2 class="rep-section-title">Acheter ou refinancer à Montréal en 2026</h2>
+        <h2 class="rep-section-title">Acheter ou refinancer une propriété à Montréal</h2>
 
         <p>
           Montréal n'est pas un marché, c'est une mosaïque d'arrondissements. Le
@@ -279,8 +284,12 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
           les autoroutes 40 et 25, bien des acheteurs hésitent entre l'île et la couronne : je vous
           aide à mettre les deux scénarios côte à côte avant de choisir.
         </p>
+        <VillesVoisines actuelle="montreal" />
       </div>
     </section>
+
+    <!-- ============ SECTEURS ============ -->
+    <SecteursVille ville="Montréal" secteurs={secteurs} />
 
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">
