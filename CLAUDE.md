@@ -1120,3 +1120,28 @@ Push sur `main` → Netlify build automatique.
 | `DEBUG_RATES=1` | Non | Logs détaillés du scraping des taux |
 
 `netlify.toml` configure `included_files` pour embarquer `src/services/`, `src/utils/`, `src/config/` dans les fonctions SSR.
+
+## Travail en parallèle (sous-agents)
+
+Quatre sous-agents vivent dans `.claude/agents/` : `seo`, `contenu`, `calculateurs`, `design`.
+Chacun travaille dans son propre worktree (`.claude/worktrees/`, ignoré par git), sur sa propre
+branche, et chacun a une **zone de fichiers** décrite dans sa fiche. Exemple :
+« Lance en parallèle les agents seo et contenu sur les pages services. »
+
+**Zone protégée — aucun sous-agent n'y touche sans demande explicite :**
+- écrans de la courtière : `contrat`, `finaliser-contrat`, `reseau`, `dossiers`, `tableau-de-bord`, `preparer-profil`
+- signature et portail client : `profil-emprunteur`, `signer`, `signer-contrat`, `mon-dossier`
+- `src/pages/api/`, `src/services/`, `src/middleware.ts`, `netlify.toml`, `src/config/siteConfig.json`
+- `astro.config.mjs` (seule exception : la constante `NOINDEX`, pour l'agent `seo`)
+
+**Règles communes :**
+- Hors de ta zone, tu ne modifies rien : tu le notes dans ton résumé final.
+- `public/js/i18n-en.json` est partagé : ajoute ou modifie seulement tes clés, sans réordonner ni
+  reformater le fichier, pour que les fusions restent propres.
+- Texte client : vouvoiement, ton chaleureux et professionnel, aucune promesse de taux ni
+  d'approbation (AMF).
+- Dans un worktree neuf, lance `npm ci` d'abord.
+- Avant de terminer : `npx vitest run`, `npm run check` et `npm run build` passent sans erreur.
+- Commits petits, en français, préfixés par l'agent : `seo: descriptions des pages villes`.
+- Tu ne pousses pas sur `main` (chaque push déploie en production) : tu laisses ta branche.
+- Résumé final : branche, fichiers modifiés, ce que Stéphanie doit valider, demandes hors zone.
