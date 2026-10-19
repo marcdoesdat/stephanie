@@ -17,7 +17,32 @@ import SecteursVille from '../../components/SecteursVille.astro';
 const config = loadSiteConfig();
 
 // Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
-const secteurs: { nom: string; texte: string }[] = [];
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Hull",
+    texte: `Plex de l'Île de Hull et condos près de la Place du Portage. Sur un plex que vous habitez, une partie des <strong>loyers</strong> peut compter ; sur un condo, les <strong>frais de copropriété</strong> entrent dans vos ratios d'endettement.`
+  },
+  {
+    nom: "Aylmer",
+    texte: `Maisons de caractère du Vieux-Aylmer et quartiers familiaux plus récents. Vous vendez une première propriété pour y monter en gamme ? On vérifie si votre hypothèque actuelle est <strong>transférable</strong> avant de payer une <strong>pénalité</strong> pour la rompre.`
+  },
+  {
+    nom: "Plateau",
+    texte: `Unifamiliales, maisons en rangée et condos neufs. Acheter sur plan, c'est financer un bien livré dans plusieurs mois : <strong>déboursés progressifs</strong> si vous faites construire, et un engagement du prêteur qui doit tenir jusqu'à la <strong>livraison</strong>.`
+  },
+  {
+    nom: "Gatineau et Pointe-Gatineau",
+    texte: `Bungalows et jumelés de toutes les époques, jusqu'à Pointe-Gatineau, au confluent de la Gatineau et des Outaouais. Près de l'eau, vérifiez la <strong>zone inondable</strong> avant l'offre : l'<strong>assurance habitation</strong>, que le prêteur exige, peut s'en trouver limitée ou plus coûteuse.`
+  },
+  {
+    nom: "Buckingham",
+    texte: `Maisons plus anciennes autour du vieux centre, au bord de la rivière du Lièvre. Chauffage au mazout, filage d'origine, fondations : l'<strong>inspection</strong> pèse lourd, car l'assureur et le prêteur posent leurs questions avant le déboursé.`
+  },
+  {
+    nom: "Masson-Angers",
+    texte: `Unifamiliales sur des terrains plus grands, à l'est, le long de l'autoroute 50. Piscine, garage détaché, terrain hors norme : ce qu'ils vous ont coûté ne se retrouve pas toujours dans l'<strong>évaluation</strong> du prêteur, et c'est elle qui fixe le prêt.`
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-gatineau/`;
@@ -47,16 +72,16 @@ const faq = [
     a: `Les règles fédérales — mise de fonds minimale, stress test, assurance SCHL — sont les mêmes des deux côtés de la rivière. Ce qui change, c'est la province de la propriété : à Gatineau, l'achat suit les <strong>règles québécoises</strong>, avec un <strong>notaire</strong> pour l'acte de vente et l'acte hypothécaire, et des <strong>droits de mutation</strong> (la « taxe de bienvenue ») payables à la municipalité. En Ontario, c'est un avocat et une taxe provinciale de transfert foncier. Mon permis AMF couvre les propriétés au Québec ; pour un achat à Ottawa, il vous faudra un courtier titulaire d'un permis ontarien. Je peux toutefois vous aider à chiffrer le scénario québécois pour comparer en connaissance de cause.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "Je suis muté à Gatineau : puis-je acheter avant d'arriver dans la région ?",
+    a: `Oui, et c'est fréquent dans la région de la capitale. La <strong>pré-approbation</strong> se fait à distance, sur la foi d'une <strong>lettre d'emploi</strong> qui précise votre poste et votre date d'entrée en fonction — certains prêteurs acceptent une offre signée avant le premier jour, d'autres attendent la fin de la période d'essai, d'où l'intérêt de comparer. Vos visites peuvent se concentrer sur un seul voyage ; l'<strong>inspection</strong>, elle, mérite un inspecteur sur place même si vous ne pouvez pas y être. Si vous ne pouvez pas vous déplacer pour la signature, demandez tôt au notaire les options possibles, comme la <strong>procuration</strong>.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
     a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Gatineau sans pression, même si vous préparez une mutation depuis une autre région.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Chelsea, Cantley ou Val-des-Monts plutôt que la ville : le financement change-t-il ?",
+    a: `Les règles de base restent les mêmes, mais une propriété en milieu rural demande plus de vérifications. Le prêteur voudra souvent un <strong>test d'eau du puits</strong> et la preuve que l'<strong>installation septique</strong> est conforme ; un très grand terrain ou une terre boisée n'est pas évalué de la même façon par tous les prêteurs ; et un <strong>chemin privé</strong> doit être entretenu à l'année. Mieux vaut inscrire ces vérifications dans les conditions de votre promesse d'achat que de les découvrir chez le notaire.`
   }
 ];
 
@@ -244,6 +269,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <h2 class="rep-section-title">Acheter ou refinancer une propriété à Gatineau</h2>
 
         <p>
+          Vous cherchez un courtier hypothécaire à Gatineau ? Avant de faire une offre, voici ce que le marché de l'Outaouais a de particulier.
           Née de la fusion de 2002, Gatineau réunit cinq anciennes villes — et autant de réalités de
           marché. Le secteur <strong>Hull</strong>, face au centre-ville d'Ottawa, mêle plex, maisons
           anciennes de l'Île de Hull et condos à deux pas des tours fédérales de la Place du Portage ;

@@ -17,7 +17,28 @@ import SecteursVille from '../../components/SecteursVille.astro';
 const config = loadSiteConfig();
 
 // Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
-const secteurs: { nom: string; texte: string }[] = [];
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Vieux Repentigny",
+    texte: "Le long de la rue Notre-Dame, on trouve des <strong>maisons plus anciennes</strong>, souvent rénovées par étapes. Faites inspecter fondation, toiture et électricité avant de lever les conditions : un <strong>prêt achat-rénovation</strong> permet d'intégrer certains travaux au financement dès l'achat."
+  },
+  {
+    nom: "Repentigny-Centre",
+    texte: "Des <strong>unifamiliales détachées</strong> sur des rues établies, très prisées des familles. Quand plusieurs offres se font concurrence, gardez une marge : si l'<strong>évaluation du prêteur</strong> arrive sous le prix accepté, c'est votre mise de fonds qui comble l'écart."
+  },
+  {
+    nom: "Le Gardeur",
+    texte: "Des <strong>bungalows des années 70</strong> côtoient des développements plus récents. Si le sous-sol abrite un logement, son <strong>revenu de location</strong> n'aide votre dossier que s'il est conforme et déclaré — sinon, le prêteur risque de l'ignorer."
+  },
+  {
+    nom: "Bord du fleuve",
+    texte: "Les propriétés riveraines du <strong>Saint-Laurent</strong> se paient pour la vue et l'accès à l'eau. Au-delà de 1,5 M$, l'assurance SCHL n'est plus offerte : la <strong>mise de fonds minimale passe à 20 %</strong>. Vérifiez aussi si le terrain est en <strong>zone inondable</strong>."
+  },
+  {
+    nom: "Rives de la rivière L'Assomption",
+    texte: "Des terrains en bordure de la rivière, recherchés pour leur calme. Un agrandissement, une piscine ou un garage peuvent y être limités par la <strong>bande de protection riveraine</strong> : vérifiez auprès de la Ville avant de compter ces travaux dans un <strong>refinancement</strong> futur."
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-repentigny/`;
@@ -39,8 +60,8 @@ const faq = [
     a: `Les prix varient beaucoup selon le quartier (Le Gardeur, vieux Repentigny, Repentigny-Centre) et le type de propriété. Plutôt que de citer un chiffre qui se périme rapidement, je vous propose une consultation gratuite où on analyse votre capacité d'emprunt en fonction du marché actuel et de votre situation personnelle.`
   },
   {
-    q: "Comment fonctionne le stress test fédéral au Québec ?",
-    a: `Le test de résistance (stress test) fédéral oblige les prêteurs à qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. C'est ce taux fictif qui sert à calculer votre capacité d'emprunt — pas celui que vous allez réellement payer. L'objectif : s'assurer que vous pouvez absorber une hausse éventuelle de taux.`
+    q: "Je travaille à Montréal et j'achète à Repentigny : mes frais de transport comptent-ils dans mon dossier ?",
+    a: `Pas directement. Le prêteur calcule vos <strong>ratios d'endettement</strong> avec l'hypothèque, les taxes, le chauffage et vos dettes : le titre de transport ou l'essence n'y figurent pas. Par contre, la mensualité d'un <strong>prêt ou d'une location auto</strong> compte. Une deuxième voiture pour la navette peut donc réduire votre capacité d'emprunt — on fait le calcul avant que vous signiez.`
   },
   {
     q: "Combien de temps pour obtenir une pré-approbation ?",
@@ -55,8 +76,8 @@ const faq = [
     a: `Un conseiller bancaire vous propose <strong>les produits de sa propre banque</strong>. Comme courtière indépendante, j'ai accès à plus de 20 prêteurs (banques, caisses, prêteurs alternatifs) et je négocie pour vous, pas pour eux. Mon rôle est de défendre votre intérêt, pas de vendre un produit maison.`
   },
   {
-    q: "Que se passe-t-il si ma banque a refusé ma demande ?",
-    a: `Un refus de banque n'est pas un refus du marché. Chaque prêteur a ses propres critères, et ce qui ne passe pas chez l'un peut très bien passer ailleurs — notamment chez les prêteurs alternatifs. On reprend votre dossier, on identifie ce qui a bloqué, et on cherche la voie qui fonctionne pour votre profil.`
+    q: "Je vends à Montréal pour acheter à Repentigny : comment arrimer les deux transactions ?",
+    a: `Si l'achat passe chez le notaire avant la vente, un <strong>prêt-relais</strong> peut avancer la somme que votre vente libérera, une fois celle-ci ferme. Si votre hypothèque actuelle n'est pas échue, on compare la <strong>portabilité</strong> du prêt avec la pénalité de remboursement anticipé. Et on planifie les dates de notaire ensemble, pour éviter de payer deux hypothèques trop longtemps.`
   }
 ];
 
@@ -242,7 +263,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <h2 class="rep-section-title">Acheter ou refinancer une propriété à Repentigny</h2>
 
         <p>
-          Repentigny est une ville recherchée pour son équilibre rare entre tranquillité résidentielle
+          Vous cherchez un courtier hypothécaire à Repentigny ? Vous êtes au cœur de ma clientèle :
+          Repentigny, Mascouche et Terrebonne, c'est là que je travaille le plus. Repentigny est une ville recherchée pour son équilibre rare entre tranquillité résidentielle
           et proximité de Montréal. Coincée entre le fleuve Saint-Laurent et l'autoroute 40, elle
           attire chaque année une cohorte importante de <strong>premiers acheteurs</strong> et de
           familles qui veulent plus d'espace sans s'éloigner du centre-ville. Les secteurs du

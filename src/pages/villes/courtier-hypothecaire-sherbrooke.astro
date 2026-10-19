@@ -17,7 +17,32 @@ import SecteursVille from '../../components/SecteursVille.astro';
 const config = loadSiteConfig();
 
 // Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
-const secteurs: { nom: string; texte: string }[] = [];
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Mont-Bellevue",
+    texte: `Autour du campus principal de l'Université de Sherbrooke, des plex et des immeubles loués aux étudiants. Attention au seuil : à partir de <strong>cinq logements</strong>, l'immeuble relève du <strong>financement commercial</strong>, avec d'autres exigences de mise de fonds et d'évaluation.`
+  },
+  {
+    nom: "Lennoxville",
+    texte: `Maisons anciennes et rues paisibles autour de l'Université Bishop's. Une maison centenaire se finance mieux quand l'<strong>inspection</strong> est faite tôt : toiture, fondations et électricité chiffrées, un prêt <strong>achat-rénovation</strong> peut intégrer les travaux à l'hypothèque.`
+  },
+  {
+    nom: "Fleurimont",
+    texte: `Quartiers établis et développements récents, près du CHUS. Condos et maisons en rangée y côtoient les unifamiliales : en <strong>copropriété</strong>, le prêteur regarde les frais mensuels, mais aussi le <strong>fonds de prévoyance</strong> et l'état de l'immeuble.`
+  },
+  {
+    nom: "Rock Forest",
+    texte: `Unifamiliales prisées des familles, souvent pour un deuxième achat. Vendre et acheter en même temps demande d'arrimer les dates de notaire ; sinon, un <strong>prêt-relais</strong> finance l'écart. On vérifie aussi si votre hypothèque actuelle est <strong>transférable</strong>.`
+  },
+  {
+    nom: "Saint-Élie-d'Orford",
+    texte: `Secteur plus récent, aux terrains souvent grands. Faire construire signifie des <strong>déboursés progressifs</strong> au fil du chantier ; là où il n'y a pas d'aqueduc, le prêteur demandera aussi les documents du <strong>puits</strong> et de l'installation septique.`
+  },
+  {
+    nom: "Deauville",
+    texte: `Au bord du lac Magog, maisons riveraines et chalets devenus résidences principales. Vérifiez la <strong>zone inondable</strong> et les règles de la <strong>bande riveraine</strong> avant d'acheter pour agrandir ; une propriété riveraine se compare mal, et l'évaluation peut surprendre.`
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-sherbrooke/`;
@@ -47,16 +72,16 @@ const faq = [
     a: `Oui. Une <strong>résidence secondaire</strong> ne se finance pas tout à fait comme une maison principale : la mise de fonds exigée, l'admissibilité à l'assurance prêt hypothécaire et les prêteurs prêts à financer dépendent du type de propriété — accès routier à l'année, chauffage, puits et installation septique, chalet saisonnier ou quatre saisons. Votre capacité d'emprunt doit aussi absorber les deux propriétés. On vérifie tout ça avant que vous tombiez en amour avec la vue sur le lac.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "Je suis chargé de cours ou chercheur à contrat à l'université : les prêteurs me suivront-ils ?",
+    a: `Souvent, oui, mais le dossier se monte autrement qu'avec un poste permanent. Pour des revenus faits de <strong>contrats successifs</strong> ou de charges de cours, les prêteurs veulent voir la régularité dans le temps : en général deux ans d'<strong>avis de cotisation</strong>, les contrats en cours et, si possible, une lettre qui confirme le renouvellement prévu. Tous ne lisent pas ces revenus de la même façon — c'est justement là que comparer plusieurs prêteurs fait la différence.`
   },
   {
     q: "Vous êtes à Montréal : en combien de temps puis-je être pré-approuvé à Sherbrooke ?",
     a: `La distance ne change rien aux délais : tout se fait <strong>à distance</strong>, au téléphone ou en visioconférence, et vos documents se transmettent et se signent en ligne. Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Sherbrooke sans pression.`
   },
   {
-    q: "J'habite Sherbrooke et ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "J'ai étudié à Sherbrooke et je travaille ici avec un permis de travail : puis-je acheter ?",
+    a: `C'est possible. Plusieurs prêteurs financent les acheteurs titulaires d'un <strong>permis de travail</strong>, à des conditions qui varient : durée restante du permis, emploi à temps plein, <strong>historique de crédit</strong> canadien et mise de fonds dont la provenance est documentée. On regarde votre situation exacte avant que vous commenciez les visites.`
   }
 ];
 
@@ -243,6 +268,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <h2 class="rep-section-title">Acheter ou refinancer une propriété à Sherbrooke</h2>
 
         <p>
+          Vous cherchez un courtier hypothécaire à Sherbrooke ? Le bon point de départ, c'est de comprendre ce qu'on y achète, quartier par quartier.
           Capitale régionale de l'Estrie, au confluent des rivières Magog et Saint-François,
           Sherbrooke est d'abord une ville universitaire — et son marché immobilier en porte la
           marque. Les quartiers centraux et les abords du campus principal de l'<strong>Université

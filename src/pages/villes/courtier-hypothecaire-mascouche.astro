@@ -17,7 +17,28 @@ import SecteursVille from '../../components/SecteursVille.astro';
 const config = loadSiteConfig();
 
 // Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
-const secteurs: { nom: string; texte: string }[] = [];
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Vieux Mascouche",
+    texte: "Autour du domaine seigneurial et de la rivière, des <strong>maisons anciennes</strong> sur des terrains matures, souvent agrandies au fil des ans. Exigez un <strong>certificat de localisation</strong> à jour : un agrandissement ou un cabanon non conforme peut retarder le déboursé."
+  },
+  {
+    nom: "Mascouche Heights",
+    texte: "<strong>Unifamiliales</strong> établies et <strong>constructions plus récentes</strong> s'y côtoient. Une maison achetée sur plan peut être livrée après l'échéance de votre pré-approbation : demandez une <strong>garantie de taux</strong> qui couvre la livraison, et vérifiez si le prix inclut la TPS et la TVQ."
+  },
+  {
+    nom: "Secteur de la gare",
+    texte: "Le terminus de la <strong>ligne de train Mascouche</strong> et l'autoroute 25 attirent les navetteurs. Si vous y visez une <strong>copropriété</strong>, le prêteur ajoute une part des frais de condo à vos ratios et voudra connaître l'état du <strong>fonds de prévoyance</strong>."
+  },
+  {
+    nom: "Rives de la rivière Mascouche",
+    texte: "Les <strong>terrains riverains</strong> séduisent par leur calme, mais certains peuvent se trouver en <strong>zone inondable</strong>. Faites coter votre <strong>assurance habitation</strong> avant de lever les conditions : sans assurance en vigueur, le prêteur ne débourse pas."
+  },
+  {
+    nom: "Secteur rural et zone agricole",
+    texte: "On y achète de <strong>grands terrains</strong> et des fermettes. Le prêteur demandera souvent une analyse de l'eau du <strong>puits</strong> et la conformité de la <strong>fosse septique</strong> ; au-delà d'une certaine superficie, certains ne financent que la maison et une partie du terrain."
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-mascouche/`;
@@ -39,8 +60,8 @@ const faq = [
     a: `Les prix varient beaucoup selon le secteur (vieux Mascouche, Mascouche Heights, secteur du Golf) et le type de propriété. Plutôt que de citer un chiffre qui se périme rapidement, je vous propose une consultation gratuite où on analyse votre capacité d'emprunt en fonction du marché actuel et de votre situation personnelle.`
   },
   {
-    q: "Comment fonctionne le stress test fédéral au Québec ?",
-    a: `Le test de résistance (stress test) fédéral oblige les prêteurs à qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. C'est ce taux fictif qui sert à calculer votre capacité d'emprunt — pas celui que vous allez réellement payer. L'objectif : s'assurer que vous pouvez absorber une hausse éventuelle de taux.`
+    q: "Mascouche ou Terrebonne : le choix de la ville change-t-il mon financement ?",
+    a: `Les règles des prêteurs sont les mêmes d'une ville à l'autre. Ce qui change, c'est la propriété et ses coûts : les <strong>taxes municipales et scolaires</strong> entrent dans le calcul de vos ratios, et les <strong>droits de mutation</strong> (taxe de bienvenue) dépendent du prix et des tranches qu'applique la municipalité. À prix égal, deux maisons peuvent donc donner deux capacités d'emprunt différentes.`
   },
   {
     q: "Combien de temps pour obtenir une pré-approbation ?",
@@ -55,8 +76,8 @@ const faq = [
     a: `Un conseiller bancaire vous propose <strong>les produits de sa propre banque</strong>. Comme courtière indépendante, j'ai accès à plus de 20 prêteurs (banques, caisses, prêteurs alternatifs) et je négocie pour vous, pas pour eux. Mon rôle est de défendre votre intérêt, pas de vendre un produit maison.`
   },
   {
-    q: "Que se passe-t-il si ma banque a refusé ma demande ?",
-    a: `Un refus de banque n'est pas un refus du marché. Chaque prêteur a ses propres critères, et ce qui ne passe pas chez l'un peut très bien passer ailleurs — notamment chez les prêteurs alternatifs. On reprend votre dossier, on identifie ce qui a bloqué, et on cherche la voie qui fonctionne pour votre profil.`
+    q: "Ma maison à Mascouche a pris de la valeur : puis-je refinancer pour un agrandissement ?",
+    a: `Oui, si l'équité le permet : un <strong>refinancement</strong> peut aller jusqu'à 80 % de la valeur de la propriété, dont au plus 65 % sous forme de <strong>marge de crédit hypothécaire</strong>. Avant l'échéance de votre terme, une pénalité peut s'appliquer — on la compare à l'économie attendue. Pour un agrandissement, certains prêteurs tiennent aussi compte de la valeur après travaux, sur devis.`
   }
 ];
 
@@ -239,7 +260,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <h2 class="rep-section-title">Acheter ou refinancer une propriété à Mascouche</h2>
 
         <p>
-          Mascouche attire de plus en plus de jeunes familles et de <strong>premiers acheteurs</strong> :
+          Vous cherchez un courtier hypothécaire à Mascouche ? C'est l'un des secteurs où j'accompagne
+          le plus d'acheteurs, avec Repentigny et Terrebonne. Mascouche attire de plus en plus de jeunes familles et de <strong>premiers acheteurs</strong> :
           des prix encore plus accessibles que dans la première couronne montréalaise, des espaces verts
           partout, et un accès direct au centre-ville en moins d'une heure grâce à l'<strong>autoroute 25</strong>
           et la <strong>ligne de train de banlieue Mascouche</strong>. Pour les travailleurs hybrides qui

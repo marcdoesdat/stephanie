@@ -17,7 +17,32 @@ import SecteursVille from '../../components/SecteursVille.astro';
 const config = loadSiteConfig();
 
 // Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
-const secteurs: { nom: string; texte: string }[] = [];
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Limoilou",
+    texte: `Duplex, triplex et quadruplex dominent. Si vous habitez l'un des logements, une partie des <strong>loyers</strong> peut compter dans votre qualification : on rassemble les <strong>baux</strong> dès le départ, et on prévoit une inspection sérieuse, ces immeubles ayant souvent près d'un siècle.`
+  },
+  {
+    nom: "Montcalm et Saint-Jean-Baptiste",
+    texte: `Maisons de ville et immeubles anciens, souvent détenus en <strong>copropriété indivise</strong>. Avant l'offre, on lit la <strong>convention d'indivision</strong> : partage des dépenses, travaux communs à venir, droit de préemption. Le prêteur la lira aussi, et elle peut décider de son acceptation.`
+  },
+  {
+    nom: "Sainte-Foy–Sillery–Cap-Rouge",
+    texte: `Condos près de l'Université Laval et des grands axes, bungalows et maisons cossues du côté de Sillery. Pour un condo, les <strong>frais de copropriété</strong> entrent dans vos ratios ; lisez aussi les procès-verbaux et l'état du <strong>fonds de prévoyance</strong>.`
+  },
+  {
+    nom: "Charlesbourg",
+    texte: `Beaucoup de bungalows et de cottages construits à partir des années 1960, sur des terrains généreux. Une maison à moderniser peut se financer avec ses travaux : l'<strong>achat-rénovation</strong> ajoute le coût des rénovations au prêt, versé une fois les travaux faits.`
+  },
+  {
+    nom: "Lebourgneuf",
+    texte: `Secteur plus récent, autour des bureaux et des grands commerces, où l'on trouve des <strong>condos neufs</strong>. Acheter sur plan, c'est signer bien avant la livraison : une pré-approbation dure au plus 120 jours, on planifie donc l'<strong>approbation finale</strong> selon la prise de possession.`
+  },
+  {
+    nom: "Val-Bélair",
+    texte: `Unifamiliales sur de plus grands terrains, à proximité de la garnison Valcartier. Pour un militaire, une <strong>mutation</strong> est toujours possible : on choisit un prêt <strong>transférable</strong> et un terme réaliste, et on vérifie s'il permettrait de louer la maison plutôt que de la vendre.`
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-quebec/`;
@@ -47,16 +72,16 @@ const faq = [
     a: `Pour un <strong>plex</strong> que vous habitez, une partie des <strong>revenus de location</strong> peut être prise en compte dans votre qualification, selon le prêteur et les baux en vigueur ; les règles de mise de fonds varient aussi selon le nombre de logements. Une <strong>copropriété indivise</strong>, elle, se finance chez un nombre plus restreint de prêteurs, souvent avec une mise de fonds plus élevée qu'un condo divis. Dans les deux cas, on vérifie avant l'offre d'achat quels prêteurs acceptent la propriété.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "J'achète un condo près de l'Université Laval pour mon enfant aux études : comment le financer ?",
+    a: `Le bon montage dépend de qui habitera la propriété et de qui la paiera. Vous pouvez être <strong>emprunteur</strong>, ou <strong>co-emprunteur</strong> avec votre enfant s'il a des revenus ; si le prêteur considère plutôt la propriété comme un <strong>immeuble locatif</strong>, la mise de fonds exigée est généralement plus élevée. Chez certains prêteurs, le loyer d'un colocataire peut aussi entrer dans le calcul. On établit le montage avant l'offre d'achat, pas après.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
     a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Québec sans pression.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Peut-on financer une maison dans le Vieux-Québec, un site patrimonial ?",
+    a: `Oui. Le <strong>Vieux-Québec</strong> est un site patrimonial : plusieurs travaux, à commencer par ceux qui touchent l'extérieur, y demandent une <strong>autorisation</strong> avant d'être entrepris. Ce n'est pas un obstacle au financement, mais ça change le budget : une <strong>inspection</strong> approfondie, des matériaux parfois imposés et des délais à prévoir si vous comptez rénover. Si la propriété est en copropriété, fréquent dans ces immeubles anciens, on vérifie aussi quels prêteurs l'acceptent.`
   }
 ];
 
@@ -244,7 +269,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <h2 class="rep-section-title">Acheter ou refinancer une propriété à Québec</h2>
 
         <p>
-          Capitale nationale, la ville de Québec réunit sous un même nom des marchés très
+          Vous cherchez un courtier hypothécaire à Québec ? Voici ce qu'il faut savoir du marché avant de faire une offre. Capitale nationale, la ville de Québec réunit sous un même nom des marchés très
           différents. Au centre, dans La Cité-Limoilou, <strong>Limoilou</strong>,
           <strong>Saint-Roch</strong> et <strong>Saint-Sauveur</strong> comptent beaucoup de
           <strong>plex</strong> et de condos, tandis que <strong>Montcalm</strong> et la
