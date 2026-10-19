@@ -68,6 +68,7 @@ const pourcent = (t: number) => t.toFixed(2).replace('.', ',') + ' %';
         <div class="cv-ligne"><dt>Prêt hypothécaire total</dt><dd data-cv="pret">—</dd></div>
         {taux !== null && (
           <>
+            <div class="cv-ligne"><dt>Taux 5 ans fixe d'Hypotheca du jour</dt><dd>{pourcent(taux)}</dd></div>
             <div class="cv-ligne"><dt>Versement mensuel estimé</dt><dd data-cv="versement">—</dd></div>
             <div class="cv-ligne cv-ligne--fort"><dt>Revenu familial approximatif pour vous qualifier</dt><dd data-cv="revenu">—</dd></div>
           </>
@@ -76,7 +77,7 @@ const pourcent = (t: number) => t.toFixed(2).replace('.', ',') + ' %';
 
       <p class="cv-note">
         {taux !== null ? (
-          <>Au taux 5 ans fixe d'Hypotheca du jour ({pourcent(taux)}), sur 25 ans, sans autres dettes, avec les frais de propriété par défaut du simulateur. Une estimation, pas une approbation.</>
+          <>Au taux du jour ci-dessus, sur 25 ans, sans autres dettes, avec les frais de propriété par défaut du simulateur. Une estimation, pas une approbation.</>
         ) : (
           <>Le taux du jour n'est pas disponible pour l'instant : le versement et le revenu nécessaire ne sont pas calculés. Consultez les <a href="https://www.hypotheca.ca/" target="_blank" rel="noopener noreferrer">taux d'Hypotheca</a>.</>
         )}

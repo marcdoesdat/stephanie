@@ -13,6 +13,9 @@ interface Props {
 const { reviews } = Astro.props;
 const config = loadSiteConfig();
 
+// Chiffres et mots dans des éléments séparés : la traduction anglaise se fait par clé de texte, et
+// une clé qui contient la note ou le nombre d'avis changerait à chaque nouvel avis (voir i18n-core.js,
+// `conteneur`).
 const note = reviews.rating.toFixed(1).replace('.', ',');
 // Les étoiles suivent la note réelle, arrondie : cinq étoiles pleines sous un 4,2 mentiraient.
 const pleines = Math.max(0, Math.min(5, Math.round(reviews.rating)));
@@ -27,9 +30,9 @@ const lienAvis = config.google_place_id
   <div class="av-inner">
     <div class="av-entete">
       <span class="av-etoiles" aria-hidden="true">{etoiles}</span>
-      <span class="av-note"><strong>{note}&nbsp;/&nbsp;5</strong> sur Google</span>
+      <span class="av-note"><strong>{note}&nbsp;/&nbsp;5</strong> <span>sur Google</span></span>
       <span class="av-sep" aria-hidden="true">·</span>
-      <a class="av-lien" href={lienAvis} target="_blank" rel="noopener noreferrer">{reviews.totalReviews} avis</a>
+      <a class="av-lien" href={lienAvis} target="_blank" rel="noopener noreferrer"><span>{reviews.totalReviews}</span> <span>avis</span></a>
     </div>
 
     {temoignages.length > 0 && (
