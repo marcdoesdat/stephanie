@@ -71,11 +71,23 @@ const googleReviewsUrl = config.google_place_id
 
     <div class="footer-col">
       <strong class="footer-col-title">Zones desservies</strong>
-      <a href="/villes/courtier-hypothecaire-repentigny/">Repentigny</a>
-      <a href="/villes/courtier-hypothecaire-terrebonne/">Terrebonne</a>
-      <a href="/villes/courtier-hypothecaire-mascouche/">Mascouche</a>
-      <span class="footer-col-note">Aussi : L'Assomption, Lavaltrie, Charlemagne, Montréal</span>
-      <span class="footer-col-note">Lanaudière et la couronne nord</span>
+      <div class="footer-villes">
+        <a href="/villes/courtier-hypothecaire-repentigny/">Repentigny</a>
+        <a href="/villes/courtier-hypothecaire-terrebonne/">Terrebonne</a>
+        <a href="/villes/courtier-hypothecaire-mascouche/">Mascouche</a>
+        <a href="/villes/courtier-hypothecaire-montreal/">Montréal</a>
+        <a href="/villes/courtier-hypothecaire-laval/">Laval</a>
+        <a href="/villes/courtier-hypothecaire-longueuil/">Longueuil</a>
+        <a href="/villes/courtier-hypothecaire-quebec/">Québec</a>
+        <a href="/villes/courtier-hypothecaire-levis/">Lévis</a>
+        <a href="/villes/courtier-hypothecaire-gatineau/">Gatineau</a>
+        <a href="/villes/courtier-hypothecaire-sherbrooke/">Sherbrooke</a>
+        <a href="/villes/courtier-hypothecaire-saguenay/">Saguenay</a>
+        <a href="/villes/courtier-hypothecaire-trois-rivieres/">Trois-Rivières</a>
+        <a href="/villes/courtier-hypothecaire-saint-jean-sur-richelieu/">Saint-Jean-sur-Richelieu</a>
+      </div>
+      <span class="footer-col-note">Aussi : L'Assomption, Lavaltrie, Charlemagne</span>
+      <span class="footer-col-note">Partout au Québec, à distance</span>
     </div>
 
     <div class="footer-col">
@@ -279,6 +291,13 @@ const googleReviewsUrl = config.google_place_id
     color: #fff;
     text-decoration: underline;
   }
+  /* Treize villes : sur deux colonnes, la colonne garde la hauteur de ses voisines. */
+  .footer-villes {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-content: start;
+    column-gap: 1rem;
+  }
   .footer-col-note {
     font-size: 0.74rem;
     color: rgba(255, 255, 255, 0.55);
@@ -403,6 +422,9 @@ const googleReviewsUrl = config.google_place_id
     }
     .footer-col {
       align-items: center;
+    }
+    .footer-villes {
+      justify-content: center;
     }
     .footer-head-nap {
       flex-direction: column;
