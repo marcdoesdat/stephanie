@@ -27,3 +27,6 @@ pnpm-debug.log*
 
 # macOS-specific files
 .DS_Store
+
+# Claude Code — worktrees des sous-agents
+.claude/worktrees/
