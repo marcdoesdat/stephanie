@@ -17,7 +17,7 @@
 - Nom : Stéphanie Weyman, courtière hypothécaire
 - Organisation : Hypotheca
 - Permis AMF : 255885
-- Région desservie : Repentigny, Terrebonne, Mascouche, L'Assomption, Charlemagne, Lanaudière et Rive-Nord de Montréal
+- Région desservie : Repentigny, Terrebonne, Mascouche, L'Assomption, Charlemagne, Lanaudière, Montréal, Laval et Rive-Nord ; partout ailleurs au Québec à distance (visioconférence, signature électronique)
 - Adresse : 3344 Fleury Est, Montréal QC, H1H 2R5
 - Téléphone : 514-949-7627
 - Courriel : sweyman@hypotheca.ca
@@ -46,6 +46,16 @@
 - [Courtier hypothécaire à Repentigny](https://stephanieweyman.ca/villes/courtier-hypothecaire-repentigny) : Page locale pour Repentigny, Le Gardeur et Charlemagne.
 - [Courtier hypothécaire à Terrebonne](https://stephanieweyman.ca/villes/courtier-hypothecaire-terrebonne) : Page locale pour Terrebonne, Lachenaie, La Plaine et Urbanova.
 - [Courtier hypothécaire à Mascouche](https://stephanieweyman.ca/villes/courtier-hypothecaire-mascouche) : Page locale pour Mascouche et Mascouche Heights.
+- [Courtier hypothécaire à Montréal](https://stephanieweyman.ca/villes/courtier-hypothecaire-montreal/) : Page locale pour Plateau, Rosemont, Ahuntsic, plex et copropriétés.
+- [Courtier hypothécaire à Laval](https://stephanieweyman.ca/villes/courtier-hypothecaire-laval/) : Page locale pour Chomedey, Sainte-Rose, Vimont, Auteuil.
+- [Courtier hypothécaire à Longueuil](https://stephanieweyman.ca/villes/courtier-hypothecaire-longueuil/) : Page locale pour Vieux-Longueuil, Saint-Hubert, Greenfield Park.
+- [Courtier hypothécaire à Québec](https://stephanieweyman.ca/villes/courtier-hypothecaire-quebec/) : Page locale pour Sainte-Foy, Charlesbourg, Beauport, Limoilou — à distance.
+- [Courtier hypothécaire à Lévis](https://stephanieweyman.ca/villes/courtier-hypothecaire-levis/) : Page locale pour Saint-Romuald, Saint-Nicolas, Charny — à distance.
+- [Courtier hypothécaire à Gatineau](https://stephanieweyman.ca/villes/courtier-hypothecaire-gatineau/) : Page locale pour Hull, Aylmer, Plateau, revenus gagnés en Ontario — à distance.
+- [Courtier hypothécaire à Sherbrooke](https://stephanieweyman.ca/villes/courtier-hypothecaire-sherbrooke/) : Page locale pour Fleurimont, Rock Forest, Lennoxville — à distance.
+- [Courtier hypothécaire à Saguenay](https://stephanieweyman.ca/villes/courtier-hypothecaire-saguenay/) : Page locale pour Chicoutimi, Jonquière, La Baie — à distance.
+- [Courtier hypothécaire à Trois-Rivières](https://stephanieweyman.ca/villes/courtier-hypothecaire-trois-rivieres/) : Page locale pour Cap-de-la-Madeleine, Trois-Rivières-Ouest, Pointe-du-Lac — à distance.
+- [Courtier hypothécaire à Saint-Jean-sur-Richelieu](https://stephanieweyman.ca/villes/courtier-hypothecaire-saint-jean-sur-richelieu/) : Page locale pour Iberville, Saint-Luc, L'Acadie — à distance.
 
 ## Optional
 

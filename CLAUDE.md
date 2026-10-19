@@ -67,7 +67,7 @@ src/
 | `/services/travailleur-autonome` | Statique | Page travailleur autonome |
 | `/services/dossier-refuse` | Statique | Page dossier refusé |
 | `/services/nouveaux-arrivants` | Statique | Page nouveaux arrivants |
-| `/villes/courtier-hypothecaire-repentigny` | Statique | Landing page géolocalisée |
+| `/villes/courtier-hypothecaire-<ville>` | Statique | Landing pages géolocalisées (13) : repentigny, terrebonne, mascouche, montreal, laval, longueuil, quebec, levis, gatineau, sherbrooke, saguenay, trois-rivieres, saint-jean-sur-richelieu. Même gabarit (classes `rep-*`) ; hors de la grande région de Montréal, le texte dit que l'accompagnement se fait **à distance** — jamais de bureau local inventé |
 | `/conditions` | Statique | Conditions d'utilisation |
 | `/confidentialite` | Statique | Politique de confidentialité |
 | `/404` | Statique | Page d'erreur |

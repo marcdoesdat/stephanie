@@ -1,0 +1,921 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import Contact from '../../components/Contact.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.webp';
+import { loadSiteConfig } from '../../config';
+import PhoneLink from '../../components/PhoneLink.astro';
+import RappelCTA from '../../components/RappelCTA.astro';
+
+const config = loadSiteConfig();
+const prenom = config.nom.split(' ')[0];
+
+const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-saint-jean-sur-richelieu/`;
+// L'adresse de la photo telle que le build la produit : un nom de fichier haché écrit à la main
+// (stephanie.Cm30Blgc.jpg) ne survivait pas au build suivant, et le schéma pointait sur une 404.
+const STEPHANIE_IMAGE = new URL(stephaniePhoto.src, config.site_url).toString();
+
+const faq = [
+  {
+    q: "Combien coûte un courtier hypothécaire à Saint-Jean-sur-Richelieu ?",
+    a: `Rien pour vous : mon service est <strong>gratuit</strong>. C'est le prêteur qui finance votre dossier qui me rémunère, au moment du déboursé. Vous ne recevez aucune facture et vous ne vous engagez à rien tant qu'on n'a pas trouvé la bonne solution.`
+  },
+  {
+    q: "Vous êtes à Montréal : pouvez-vous m'accompagner à Saint-Jean-sur-Richelieu ?",
+    a: `Oui. Mon permis de l'AMF couvre tout le Québec, et j'accompagne mes clients de Saint-Jean-sur-Richelieu <strong>à distance</strong> : appels, rencontres en <strong>visioconférence</strong>, documents transmis et signés en ligne. Le prêteur, l'évaluateur et le notaire, eux, sont choisis en fonction de votre propriété — la distance ne change rien à l'accès aux prêteurs ni aux conditions que je négocie pour vous.`
+  },
+  {
+    q: "Quelle mise de fonds pour acheter une maison à Saint-Jean-sur-Richelieu ?",
+    a: `La règle canadienne s'applique : <strong>5 %</strong> de mise de fonds minimale sur la première tranche de 500 000 $, puis <strong>10 %</strong> entre 500 000 $ et 1,5 M$. Avec moins de 20 % de mise de fonds, une prime d'assurance SCHL s'ajoute à votre prêt. On calcule ensemble le scénario le plus avantageux selon votre situation.`
+  },
+  {
+    q: "Je suis militaire et muté à la Garnison Saint-Jean : comment financer mon achat ?",
+    a: `Une mutation impose souvent un <strong>calendrier serré</strong> : acheter avant d'arriver, parfois vendre ailleurs en même temps. On peut obtenir votre pré-approbation à distance, prévoir un <strong>prêt-relais</strong> au besoin et vérifier comment le prêteur traite vos primes et indemnités. Si une nouvelle affectation est possible avant la fin du terme, une hypothèque <strong>transférable</strong> ou une pénalité raisonnable peut valoir davantage qu'un taux à peine plus bas.`
+  },
+  {
+    q: "Acheter une propriété au bord du Richelieu : le financement est-il différent ?",
+    a: `Il peut l'être. Pour une propriété située en <strong>zone inondable</strong>, certains prêteurs et assureurs se montrent plus prudents : l'assurance contre les inondations peut être plus coûteuse ou plus difficile à obtenir, et le prêteur voudra s'assurer que la propriété est bien assurable. Le bon réflexe : consulter la cartographie des zones inondables et obtenir une soumission d'assurance <strong>avant</strong> de lever vos conditions. Je présente ensuite le dossier aux prêteurs à l'aise avec ce type de propriété.`
+  },
+  {
+    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
+    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+  },
+  {
+    q: "En combien de temps puis-je être pré-approuvé ?",
+    a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Saint-Jean-sur-Richelieu sans pression.`
+  },
+  {
+    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
+    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+  }
+];
+
+// === Schemas JSON-LD ===
+// Le service offert dans cette ville, rattaché à l'entreprise que déclare chaque page (SEO.astro,
+// `#business`). Une seconde entité FinancialService — sans @id, sous un autre nom et une autre
+// adresse web — se présentait à Google comme une deuxième entreprise.
+const schemaService = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "serviceType": "Courtage hypothécaire",
+  "name": "Courtière hypothécaire à Saint-Jean-sur-Richelieu",
+  "url": PAGE_URL,
+  "provider": { "@id": `${config.site_url}#business` },
+  "areaServed": [
+    { "@type": "City", "name": "Saint-Jean-sur-Richelieu" },
+    { "@type": "Place", "name": "Iberville" },
+    { "@type": "Place", "name": "Saint-Luc" },
+    { "@type": "Place", "name": "L'Acadie" },
+    { "@type": "City", "name": "Chambly" },
+    { "@type": "City", "name": "Carignan" }
+  ]
+};
+
+const schemaPerson = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "@id": `${config.site_url}#stephanie`,
+  "name": "Stéphanie Weyman",
+  "jobTitle": "Courtière hypothécaire",
+  "worksFor": { "@type": "Organization", "name": "Hypotheca" },
+  "image": STEPHANIE_IMAGE,
+  "url": config.site_url,
+  "identifier": `AMF ${config.amf}`
+};
+
+// Le FAQPage est généré à partir du tableau `faq` ci-dessus.
+const schemaFAQ = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faq.map((item) => ({
+    "@type": "Question",
+    "name": item.q,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      // On retire le HTML pour la version texte du schema.
+      "text": item.a.replace(/<[^>]+>/g, '')
+    }
+  }))
+};
+
+// Cache CDN — page éditoriale, change rarement.
+Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+---
+
+<MainLayout
+  fullTitle="Courtière hypothécaire à Saint-Jean-sur-Richelieu"
+  description="Courtière hypothécaire à Saint-Jean-sur-Richelieu (Iberville, Saint-Luc, L'Acadie). Accompagnement à distance, 20+ prêteurs. Service gratuit."
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schemaService)} is:inline />
+    <script type="application/ld+json" set:html={JSON.stringify(schemaPerson)} is:inline />
+    <script type="application/ld+json" set:html={JSON.stringify(schemaFAQ)} is:inline />
+  </Fragment>
+
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ SECTION 1 — HÉRO ============ -->
+    <section class="rep-hero">
+      <div class="rep-inner">
+        <div class="rep-hero-grid">
+          <div class="rep-hero-text">
+            <div class="rep-eyebrow">Saint-Jean-sur-Richelieu · Montérégie</div>
+            <h1 class="rep-h1">Courtière hypothécaire à Saint-Jean-sur-Richelieu</h1>
+            <p class="rep-subtitle">
+              Pré-approbation rapide. Accès à 20+ prêteurs. Frais de courtage&nbsp;: 0&nbsp;$<span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>.
+            </p>
+
+            <ul class="rep-trust-list" aria-label="Garanties de service">
+              <li>
+                <span class="rep-trust-icon" aria-hidden="true">💰</span>
+                <span>Service gratuit (rémunérée par le prêteur)</span>
+              </li>
+              <li>
+                <span class="rep-trust-icon" aria-hidden="true">⏱️</span>
+                <span>Premier contact <strong>dans les meilleurs délais</strong></span>
+              </li>
+            </ul>
+
+            <div class="rep-hero-ctas">
+              <a href="#contact" class="btn-cta rep-cta-primary" aria-label="Obtenir ma pré-approbation gratuite">
+                <span>Obtenir ma pré-approbation gratuite</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+              <span class="rep-cta-secondary">
+                ou appelez le <PhoneLink variant="text" trackId="tel_click_saint_jean_sur_richelieu" aria-label={`Appeler ${prenom} au ${config.telephone}`} />
+              </span>
+            </div>
+          </div>
+
+          <aside class="rep-hero-photo" aria-label="Votre courtière">
+            <Image
+              src={stephaniePhoto}
+              alt={`${config.nom}, courtière hypothécaire à Saint-Jean-sur-Richelieu`}
+              width={320}
+              height={400}
+              loading="eager"
+              decoding="async"
+              class="rep-photo"
+            />
+            <div class="rep-photo-caption">
+              <strong>{prenom} Weyman</strong>
+              <span>Courtière hypothécaire · Hypotheca</span>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 2 — POUR QUI ============ -->
+    <section class="rep-services">
+      <div class="rep-inner">
+        <div class="rep-section-tag">Pour qui je travaille à Saint-Jean-sur-Richelieu</div>
+        <h2 class="rep-section-title">Six parcours, une seule personne pour vous accompagner.</h2>
+
+        <div class="rep-cards-grid">
+          <a href="/services/premier-achat/" class="rep-card">
+            <span class="rep-card-icon" aria-hidden="true">🏠</span>
+            <h3 class="rep-card-title">Premier achat à Saint-Jean-sur-Richelieu</h3>
+            <p class="rep-card-text">Pré-approbation, RAP, CELIAPP, mise de fonds optimale.</p>
+            <span class="rep-card-cta">En savoir plus →</span>
+          </a>
+          <a href="/services/renouvellement/" class="rep-card">
+            <span class="rep-card-icon" aria-hidden="true">🔄</span>
+            <h3 class="rep-card-title">Renouvellement hypothécaire</h3>
+            <p class="rep-card-text">Comparer avant de signer l'offre de votre banque — ou avant une mutation qui changera vos plans.</p>
+            <span class="rep-card-cta">En savoir plus →</span>
+          </a>
+          <a href="/services/refinancement/" class="rep-card">
+            <span class="rep-card-icon" aria-hidden="true">💰</span>
+            <h3 class="rep-card-title">Refinancement</h3>
+            <p class="rep-card-text">Libérer de l'équité pour rénover, consolider ou investir.</p>
+            <span class="rep-card-cta">En savoir plus →</span>
+          </a>
+          <a href="/services/travailleur-autonome/" class="rep-card">
+            <span class="rep-card-icon" aria-hidden="true">💼</span>
+            <h3 class="rep-card-title">Travailleur autonome</h3>
+            <p class="rep-card-text">Revenus non traditionnels ? Des prêteurs comprennent votre réalité.</p>
+            <span class="rep-card-cta">En savoir plus →</span>
+          </a>
+          <a href="/services/dossier-refuse/" class="rep-card">
+            <span class="rep-card-icon" aria-hidden="true">🚫</span>
+            <h3 class="rep-card-title">Dossier refusé</h3>
+            <p class="rep-card-text">Un refus bancaire n'est pas une fin — des solutions alternatives existent.</p>
+            <span class="rep-card-cta">En savoir plus →</span>
+          </a>
+          <a href="/services/nouveaux-arrivants/" class="rep-card">
+            <span class="rep-card-icon" aria-hidden="true">🌍</span>
+            <h3 class="rep-card-title">Nouveaux arrivants</h3>
+            <p class="rep-card-text">Résidence permanente ou permis de travail ? Des prêteurs s'adaptent à votre profil.</p>
+            <span class="rep-card-cta">En savoir plus →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RAPPEL RENOUVELLEMENT ============ -->
+    <section class="rep-rappel" aria-label="Rappel de renouvellement">
+      <div class="rep-inner">
+        <RappelCTA
+          titre="Votre hypothèque arrive à échéance ?"
+          texte="Le meilleur moment pour magasiner se situe 4 à 6 mois avant la fin de votre terme — avant que votre banque n'envoie son offre de renouvellement. Laissez vos coordonnées : je vous rappelle personnellement au bon moment."
+          cta="Être rappelé·e au bon moment"
+        />
+      </div>
+    </section>
+
+    <!-- ============ SECTION 3 — MARCHÉ LOCAL ============ -->
+    <section class="rep-market">
+      <div class="rep-inner rep-inner--narrow">
+        <div class="rep-section-tag">Le marché immobilier</div>
+        <h2 class="rep-section-title">Acheter ou refinancer à Saint-Jean-sur-Richelieu en 2026</h2>
+
+        <p>
+          Chef-lieu du Haut-Richelieu, Saint-Jean-sur-Richelieu s'étend des deux côtés de la
+          rivière — et chaque secteur a sa propre réalité. Le <strong>Vieux-Saint-Jean</strong>,
+          près du centre-ville, concentre maisons anciennes, <strong>plex</strong> et condos ;
+          <strong>Iberville</strong>, sur la rive est, offre un tissu résidentiel bien établi ;
+          <strong>Saint-Luc</strong> aligne des quartiers d'unifamiliales plus récentes prisés des
+          familles ; <strong>L'Acadie</strong> et <strong>Saint-Athanase</strong> gardent un
+          caractère plus champêtre, avec de grands terrains. Le long du Richelieu, les
+          <strong>propriétés riveraines</strong> demandent une vérification de plus : en
+          <strong>zone inondable</strong>, certains prêteurs et assureurs sont plus prudents, et
+          l'assurabilité se valide avant de lever ses conditions.
+        </p>
+
+        <p>
+          L'économie locale a aussi ses particularités. La <strong>Garnison Saint-Jean</strong> et
+          le <strong>Collège militaire royal</strong> amènent des militaires qui achètent au rythme
+          des <strong>mutations</strong> : calendrier serré, vente ailleurs, parfois un
+          <strong>prêt-relais</strong>, et une hypothèque qu'on voudra peut-être transférer à la
+          prochaine affectation. Beaucoup de résidents font aussi la navette vers Montréal par
+          l'<strong>autoroute 35</strong> et l'<strong>autoroute 10</strong> ; leurs revenus sont
+          souvent stables, mais heures supplémentaires, primes et indemnités ne sont pas traitées
+          de la même façon d'un prêteur à l'autre. Dans tous les cas, la
+          <strong>pré-approbation</strong> reste l'étape numéro un : elle fixe votre budget réel en
+          intégrant le <strong>stress test fédéral</strong>, la mise de fonds minimale et, sous
+          20 % de mise, la prime SCHL ajoutée au prêt.
+        </p>
+
+        <p>
+          Je suis basée à Montréal, et j'accompagne mes clients de Saint-Jean-sur-Richelieu
+          <strong>à distance</strong> : appels, rencontres en visioconférence, documents et
+          signatures en ligne. Le service est le même à Iberville, Saint-Luc et L'Acadie que dans
+          les villes voisines — <strong>Chambly, Carignan, Mont-Saint-Grégoire</strong> — et, plus
+          près de Montréal, à <a href="/villes/courtier-hypothecaire-longueuil/">Longueuil</a>.
+          Quand les taux bougent, je suis le marché en continu pour saisir la bonne fenêtre à
+          votre place.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
+    <section class="rep-compare">
+      <div class="rep-inner">
+        <div class="rep-section-tag">Banque vs courtière</div>
+        <h2 class="rep-section-title">Ta banque te connaît. <em>Moi, je te défends.</em></h2>
+
+        <div class="rep-compare-cards">
+          <div class="rep-compare-card rep-compare-card--bad">
+            <div class="rep-compare-card-icon" aria-hidden="true">🏦</div>
+            <h3 class="rep-compare-card-title">Avec votre banque</h3>
+            <ul class="rep-compare-list">
+              <li><span class="rep-x" aria-hidden="true">✕</span> Une seule offre : la leur</li>
+              <li><span class="rep-x" aria-hidden="true">✕</span> Le conseiller travaille pour la banque, pas pour vous</li>
+              <li><span class="rep-x" aria-hidden="true">✕</span> Heures d'ouverture restrictives</li>
+              <li><span class="rep-x" aria-hidden="true">✕</span> Pas de magasinage de taux pour vous</li>
+              <li><span class="rep-x" aria-hidden="true">✕</span> Un refus = fin de la discussion</li>
+            </ul>
+          </div>
+
+          <div class="rep-compare-card rep-compare-card--good">
+            <div class="rep-compare-card-icon" aria-hidden="true">🤝</div>
+            <h3 class="rep-compare-card-title">Avec {prenom} Weyman</h3>
+            <ul class="rep-compare-list">
+              <li><span class="rep-check" aria-hidden="true">✓</span> 20+ prêteurs comparés pour vous</li>
+              <li><span class="rep-check" aria-hidden="true">✓</span> Je travaille pour <strong>vous,</strong> pas pour un prêteur</li>
+              <li><span class="rep-check" aria-hidden="true">✓</span> Dispo soirs et fins de semaine</li>
+              <li><span class="rep-check" aria-hidden="true">✓</span> Je négocie les taux et les conditions</li>
+              <li><span class="rep-check" aria-hidden="true">✓</span> Un refus bancaire ? J'ai des solutions alternatives</li>
+            </ul>
+            <p class="rep-compare-bonus">💰 <strong>Service gratuit</strong> — rémunérée par le prêteur, pas par vous.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 5 — PROCESSUS ============ -->
+    <section class="rep-process">
+      <div class="rep-inner">
+        <div class="rep-section-tag">Comment ça se passe</div>
+        <h2 class="rep-section-title">Trois étapes, zéro stress.</h2>
+
+        <ol class="rep-steps">
+          <li class="rep-step">
+            <div class="rep-step-num" aria-hidden="true">1</div>
+            <h3 class="rep-step-title">Vous remplissez le formulaire</h3>
+            <p class="rep-step-text">Deux minutes. Aucun pointage de crédit, aucun engagement.</p>
+          </li>
+          <li class="rep-step">
+            <div class="rep-step-num" aria-hidden="true">2</div>
+            <h3 class="rep-step-title">On se parle 15 minutes</h3>
+            <p class="rep-step-text">J'analyse votre dossier et je vous explique vos vraies options.</p>
+          </li>
+          <li class="rep-step">
+            <div class="rep-step-num" aria-hidden="true">3</div>
+            <h3 class="rep-step-title">Vous recevez vos options</h3>
+            <p class="rep-step-text">Vous choisissez celle qui vous convient — sans pression.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 6 — FAQ ============ -->
+    <section class="rep-faq">
+      <div class="rep-inner rep-inner--narrow">
+        <div class="rep-section-tag">FAQ — Saint-Jean-sur-Richelieu</div>
+        <h2 class="rep-section-title">Les questions qu'on me pose le plus souvent.</h2>
+
+        <div class="faq-list">
+          {faq.map((item, i) => (
+            <div class={`faq-item${i === 0 ? ' open' : ''}`} id={`faq-ville-${i}`}>
+              <h3>
+                <button
+                  class="faq-q"
+                  id={`faq-question-ville-${i}`}
+                  aria-expanded={i === 0 ? 'true' : 'false'}
+                  aria-controls={`faq-answer-ville-${i}`}
+                >
+                  <span class="faq-q-text">{item.q}</span>
+                  <span class="faq-icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </span>
+                </button>
+              </h3>
+              <div
+                class="faq-a"
+                role="region"
+                id={`faq-answer-ville-${i}`}
+                aria-labelledby={`faq-question-ville-${i}`}
+                aria-hidden={i === 0 ? 'false' : 'true'}
+              >
+                <div class="faq-a-inner" set:html={item.a} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 8 — CTA FINAL + FORMULAIRE ============ -->
+    <section class="rep-final-cta">
+      <div class="rep-inner">
+        <div class="rep-final-header">
+          <h2 class="rep-section-title rep-section-title--center">Prêt à obtenir votre pré-approbation à Saint-Jean-sur-Richelieu ?</h2>
+          <p class="rep-final-sub">Aucun engagement. Aucun frais. Réponse dans les meilleurs délais.</p>
+        </div>
+      </div>
+      <Contact />
+    </section>
+
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<style>
+  /* ===========================================================
+     Page Saint-Jean-sur-Richelieu — styles scopés
+     Mêmes classes (préfixe rep-) que la page Repentigny pour
+     garder les deux gabarits villes synchronisés.
+     S'appuie sur les variables globales de global.css.
+     =========================================================== */
+
+  .rep-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  .rep-inner--narrow {
+    max-width: 820px;
+  }
+
+  .rep-section-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--clay, #c47a52);
+    font-weight: 600;
+    margin-bottom: 0.9rem;
+  }
+  .rep-section-title {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1.2;
+    margin: 0 0 1.5rem;
+    color: var(--ink, #1a1a1a);
+    font-weight: 700;
+  }
+  .rep-section-title em {
+    color: var(--clay, #c47a52);
+    font-style: italic;
+  }
+  .rep-section-title--center {
+    text-align: center;
+  }
+
+  /* ============ HÉRO ============ */
+  .rep-hero {
+    padding: 5rem 0 3.5rem;
+    background: linear-gradient(180deg, var(--cream, #f7f2ec) 0%, var(--white, #fff) 100%);
+  }
+  .rep-hero-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+  .rep-eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--clay, #c47a52);
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .rep-h1 {
+    font-family: 'Lora', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1.15;
+    margin: 0 0 1rem;
+    color: var(--ink, #1a1a1a);
+    font-weight: 700;
+  }
+  .rep-subtitle {
+    font-size: 1.15rem;
+    line-height: 1.5;
+    color: var(--ink-soft, #4a4a4a);
+    margin: 0 0 2rem;
+  }
+  .rep-trust-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .rep-trust-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.95rem;
+  }
+  .rep-trust-icon {
+    font-size: 1.1rem;
+    flex: 0 0 auto;
+  }
+  .rep-hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem;
+  }
+  .rep-cta-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.95rem 1.6rem;
+    background: linear-gradient(135deg, var(--clay, #c47a52), #b56f4c);
+    color: #fff;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(196, 122, 82, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .rep-cta-primary:hover,
+  .rep-cta-primary:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(196, 122, 82, 0.4);
+  }
+  .rep-cta-secondary {
+    color: var(--ink, #1a1a1a);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  /* Le strong est rendu dans PhoneLink (scope différent) — :global obligatoire */
+  .rep-cta-secondary :global(strong) {
+    color: var(--clay, #c47a52);
+    text-decoration: underline;
+  }
+  .rep-hero-photo {
+    text-align: center;
+  }
+  .rep-photo {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  }
+  .rep-photo-caption {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .rep-photo-caption strong {
+    font-family: 'Lora', serif;
+    font-size: 1.15rem;
+  }
+  .rep-photo-caption span {
+    font-size: 0.85rem;
+    color: var(--ink-soft, #6a6a6a);
+  }
+
+  /* ============ SECTIONS GÉNÉRIQUES ============ */
+  .rep-services,
+  .rep-market,
+  .rep-compare,
+  .rep-process,
+  .rep-faq {
+    padding: 4rem 0;
+  }
+  .rep-market,
+  .rep-process {
+    background: var(--cream, #f7f2ec);
+  }
+
+  /* ============ CARTES SERVICES ============ */
+  /* Grille fixe 3×2 sur desktop, 2 colonnes en tablette, 1 en mobile */
+  .rep-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  @media (max-width: 980px) {
+    .rep-cards-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 580px) {
+    .rep-cards-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .rep-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.75rem;
+    background: var(--white, #fff);
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--ink, #1a1a1a);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .rep-card:hover,
+  .rep-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+    border-color: var(--clay, #c47a52);
+  }
+  .rep-card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.6rem;
+  }
+  .rep-card-title {
+    font-family: 'Lora', serif;
+    font-size: 1.2rem;
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+  }
+  .rep-card-text {
+    font-size: 0.95rem;
+    color: var(--ink-soft, #4a4a4a);
+    margin: 0 0 1rem;
+    flex: 1;
+  }
+  .rep-card-cta {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--clay, #c47a52);
+  }
+
+  /* ============ MARCHÉ ============ */
+  .rep-market p {
+    font-size: 1.02rem;
+    line-height: 1.7;
+    color: var(--ink, #1a1a1a);
+    margin: 0 0 1.2rem;
+  }
+  .rep-market a {
+    color: var(--clay, #c47a52);
+    font-weight: 600;
+  }
+
+  /* ============ TABLEAU COMPARATIF ============ */
+  .rep-compare-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .rep-compare-card {
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .rep-compare-card--bad {
+    background: #fef5f5;
+    border: 1.5px solid #f0c0c0;
+  }
+  .rep-compare-card--good {
+    background: #f2f9f4;
+    border: 1.5px solid #b8d4c4;
+    box-shadow: 0 8px 30px rgba(61, 90, 74, 0.12);
+    position: relative;
+  }
+  .rep-compare-card--good::before {
+    content: "Le choix futé";
+    position: absolute;
+    top: -12px;
+    left: 1.5rem;
+    background: var(--forest, #3d5a4a);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.25rem 0.85rem;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+  }
+  .rep-compare-card-icon {
+    font-size: 1.8rem;
+  }
+  .rep-compare-card-title {
+    font-family: 'Lora', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--ink, #1a1a1a);
+  }
+  .rep-compare-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .rep-compare-list li {
+    font-size: 0.92rem;
+    line-height: 1.4;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .rep-compare-bonus {
+    margin: 0;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(61, 90, 74, 0.15);
+    font-size: 0.9rem;
+    color: var(--forest, #3d5a4a);
+  }
+  .rep-check {
+    color: #2d7a4d;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .rep-x {
+    color: #b04545;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 700px) {
+    .rep-compare-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ============ PROCESSUS ============ */
+  .rep-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    counter-reset: step;
+  }
+  .rep-step {
+    background: var(--white, #fff);
+    padding: 2rem 1.75rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+  }
+  .rep-step-num {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: var(--clay, #c47a52);
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  .rep-step-title {
+    font-family: 'Lora', serif;
+    font-size: 1.15rem;
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+  }
+  .rep-step-text {
+    font-size: 0.95rem;
+    color: var(--ink-soft, #4a4a4a);
+    margin: 0;
+  }
+
+  /* ============ FAQ ============ */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .faq-item {
+    background: var(--white, #fff);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+  .faq-item:hover {
+    border-color: var(--clay);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+  }
+  .faq-item.open {
+    border-color: var(--clay);
+  }
+  .faq-item h3 {
+    margin: 0;
+    padding: 0;
+  }
+  button.faq-q {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    padding: 1.15rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .faq-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--sand);
+    color: var(--clay);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 1.5rem;
+  }
+  .faq-item:hover .faq-icon {
+    background: rgba(196, 122, 82, 0.1);
+  }
+  .faq-item.open .faq-icon {
+    background: var(--clay);
+    color: #fff;
+    transform: rotate(45deg);
+  }
+  .faq-a {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+  }
+  .faq-item.open .faq-a {
+    grid-template-rows: 1fr;
+  }
+  .faq-a-inner {
+    overflow: hidden;
+    padding: 0 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+  .faq-item.open .faq-a-inner {
+    padding: 0 1.5rem 1.25rem 1.5rem;
+  }
+  .faq-a-inner :global(strong) {
+    color: var(--ink);
+  }
+
+  /* ============ CTA FINAL ============ */
+  .rep-final-cta {
+    padding-top: 4rem;
+  }
+  .rep-final-header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 2rem;
+  }
+  .rep-final-sub {
+    font-size: 1.05rem;
+    color: var(--ink-soft, #4a4a4a);
+    margin: 0;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 860px) {
+    .rep-hero-grid {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    .rep-hero-photo {
+      order: -1;
+    }
+    .rep-photo {
+      max-width: 220px;
+    }
+    .rep-hero {
+      padding: 3rem 0 2rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .rep-hero-ctas {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .rep-cta-primary {
+      justify-content: center;
+    }
+    .rep-cta-secondary {
+      text-align: center;
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    document.querySelectorAll('.faq-q').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        if (!item) return;
+
+        const isOpen = item.classList.contains('open');
+
+        document.querySelectorAll('.faq-item.open').forEach((openItem) => {
+          openItem.classList.remove('open');
+          const ob = openItem.querySelector('.faq-q');
+          const oa = openItem.querySelector('.faq-a');
+          if (ob) ob.setAttribute('aria-expanded', 'false');
+          if (oa) oa.setAttribute('aria-hidden', 'true');
+        });
+
+        if (!isOpen) {
+          item.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+          const ans = item.querySelector('.faq-a');
+          if (ans) ans.setAttribute('aria-hidden', 'false');
+
+          if (!reduceMotion) {
+            setTimeout(() => {
+              item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 150);
+          }
+        }
+      });
+    });
+  });
+</script>
