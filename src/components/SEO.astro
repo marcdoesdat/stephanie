@@ -1,4 +1,5 @@
 ---
+import { ADRESSE_ENTREPRISE } from '../utils/schemaVille';
 import { loadSiteConfig } from '../config';
 import { cheminAnglais, cheminCanonique } from '../utils/pagesAnglaises';
 
@@ -53,14 +54,8 @@ const schema = {
     { "@type": "City", "name": "L'Assomption" },
     { "@type": "AdministrativeArea", "name": "Lanaudière" }
   ],
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "3344 Fleury Est",
-    "addressLocality": "Montréal",
-    "addressRegion": "QC",
-    "postalCode": "H1H 2R5",
-    "addressCountry": "CA"
-  },
+  // L'adresse d'Hypotheca, partagée avec les pages villes (src/utils/schemaVille.ts).
+  "address": ADRESSE_ENTREPRISE,
   "geo": {
     "@type": "GeoCoordinates",
     "latitude": 45.5794,

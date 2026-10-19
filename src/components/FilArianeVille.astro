@@ -1,0 +1,35 @@
+---
+// Fil d'Ariane des pages villes — le même que le BreadcrumbList de src/utils/schemaVille.ts :
+// Google attend que le balisage décrive ce que la page affiche.
+interface Props {
+  ville: string;
+}
+const { ville } = Astro.props;
+---
+
+<nav class="fil-ariane" aria-label="Fil d'Ariane">
+  <a href="/">Accueil</a>
+  <span class="fil-ariane-sep" aria-hidden="true">›</span>
+  <span aria-current="page">Courtier hypothécaire {ville}</span>
+</nav>
+
+<style>
+  .fil-ariane {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--ink-soft, #6a6a6a);
+    margin-bottom: 1.1rem;
+  }
+  .fil-ariane a {
+    color: var(--ink-soft, #6a6a6a);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .fil-ariane a:hover,
+  .fil-ariane a:focus-visible {
+    color: var(--clay, #c47a52);
+  }
+</style>

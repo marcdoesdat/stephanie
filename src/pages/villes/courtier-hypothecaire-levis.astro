@@ -1,5 +1,7 @@
 ---
-export const prerender = true;
+// SSR : la page lit les avis Google et le taux du jour à chaque requête (voir CLAUDE.md,
+// « Le défaut est le statique ») — le cache CDN ci-dessous évite de les relire à chaque visite.
+export const prerender = false;
 
 import MainLayout from '../../layouts/MainLayout.astro';
 import Nav from '../../components/Nav.astro';
@@ -13,6 +15,13 @@ import PhoneLink from '../../components/PhoneLink.astro';
 import RappelCTA from '../../components/RappelCTA.astro';
 import VillesVoisines from '../../components/VillesVoisines.astro';
 import SecteursVille from '../../components/SecteursVille.astro';
+import FilArianeVille from '../../components/FilArianeVille.astro';
+import AvisVille from '../../components/AvisVille.astro';
+import CalculVille from '../../components/CalculVille.astro';
+import stephaniePortrait from '../../assets/stephanie.jpg';
+import { getReviews } from '../../services/reviewsService';
+import { fetchHypothecaRates, rateCacheControl } from '../../services/ratesService';
+import { schemasVille } from '../../utils/schemaVille';
 
 const config = loadSiteConfig();
 
@@ -53,19 +62,19 @@ const STEPHANIE_IMAGE = new URL(stephaniePhoto.src, config.site_url).toString();
 const faq = [
   {
     q: "Combien coûte un courtier hypothécaire à Lévis ?",
-    a: `Rien pour vous : mon service est <strong>gratuit</strong>. C'est le prêteur qui finance votre dossier qui me rémunère, au moment du déboursé. Vous ne recevez aucune facture et vous ne vous engagez à rien tant qu'on n'a pas trouvé la bonne solution.`
+    a: `Pour la vaste majorité des dossiers, rien : mon service est <strong>gratuit</strong>. C'est le prêteur qui finance votre dossier qui me rémunère, au moment du déboursé. Certains financements alternatifs ou privés comportent des frais : si c'est votre cas, je vous le dis <strong>avant toute démarche</strong>, et vous ne vous engagez à rien tant qu'on n'a pas trouvé la bonne solution.`
   },
   {
-    q: "Vous êtes basée à Montréal : pouvez-vous m'accompagner à Lévis ?",
+    q: "Vous êtes basée à Repentigny : pouvez-vous m'accompagner à Lévis ?",
     a: `Oui, et je vous le dis franchement : je vous accompagne <strong>à distance</strong>. Mon permis de l'AMF couvre tout le Québec, et le courtage hypothécaire se fait très bien sans bureau à côté de chez vous : on se parle sur <strong>Teams</strong>, au téléphone ou par texto, vous me transmettez vos documents en ligne et les signatures se font électroniquement. Le notaire et l'inspecteur, eux, vous les choisissez près de chez vous.`
   },
   {
     q: "Quelle mise de fonds pour acheter une maison à Lévis ?",
-    a: `La règle canadienne s'applique : <strong>5 %</strong> de mise de fonds minimale sur la première tranche de 500 000 $, puis <strong>10 %</strong> entre 500 000 $ et 1,5 M$. Avec moins de 20 % de mise de fonds, une prime d'assurance SCHL s'ajoute à votre prêt. On calcule ensemble le scénario le plus avantageux selon votre situation.`
+    a: `La règle canadienne s'applique : <strong>5 %</strong> de <a href="/outils/#simulateur">mise de fonds minimale</a> sur la première tranche de 500 000 $, puis <strong>10 %</strong> entre 500 000 $ et 1,5 M$. Avec moins de 20 % de mise de fonds, une prime d'assurance SCHL s'ajoute à votre prêt. On calcule ensemble le scénario le plus avantageux selon votre situation.`
   },
   {
     q: "Les prix sont-ils les mêmes dans tous les secteurs de Lévis ?",
-    a: `Non — le <strong>Vieux-Lévis</strong> (maisons anciennes, plex), <strong>Saint-Romuald</strong> et <strong>Saint-Nicolas</strong> (près des ponts), <strong>Saint-Jean-Chrysostome</strong>, <strong>Charny</strong> et <strong>Saint-Rédempteur</strong> (quartiers résidentiels familiaux) ou <strong>Pintendre</strong> (plus champêtre) ont chacun leur réalité de prix, sans compter les constructions neuves. Plutôt qu'un chiffre qui se périme, je vous propose d'évaluer votre capacité d'emprunt par rapport au secteur que vous visez, gratuitement.`
+    a: `Non — le <strong>Vieux-Lévis</strong> (maisons anciennes, plex), <strong>Saint-Romuald</strong> et <strong>Saint-Nicolas</strong> (près des ponts), <strong>Saint-Jean-Chrysostome</strong>, <strong>Charny</strong> et <strong>Saint-Rédempteur</strong> (quartiers résidentiels familiaux) ou <strong>Pintendre</strong> (plus champêtre) ont chacun leur réalité de prix, sans compter les constructions neuves. Plutôt qu'un chiffre qui se périme, je vous propose d'évaluer votre <a href="/outils/#simulateur">capacité d'emprunt</a> par rapport au secteur que vous visez, gratuitement.`
   },
   {
     q: "J'habite Lévis mais je travaille à Québec : est-ce que ça change mon financement ?",
@@ -73,11 +82,11 @@ const faq = [
   },
   {
     q: "Je vends ma maison à Québec pour acheter à Lévis : comment arrimer les deux transactions ?",
-    a: `Tout dépend des dates. Si l'achat se conclut <strong>avant</strong> la vente, un <strong>prêt-relais</strong> peut avancer la mise de fonds que la vente doit libérer, à condition que celle-ci soit ferme. Votre hypothèque actuelle, elle, peut parfois être <strong>transférée</strong> vers la nouvelle propriété plutôt que remboursée, ce qui évite une pénalité. On compare les scénarios avant que vous signiez quoi que ce soit.`
+    a: `Tout dépend des dates. Si l'achat se conclut <strong>avant</strong> la vente, un <strong>prêt-relais</strong> peut avancer la mise de fonds que la vente doit libérer, à condition que celle-ci soit ferme. Votre hypothèque actuelle, elle, peut parfois être <strong>transférée</strong> vers la nouvelle propriété plutôt que remboursée, ce qui évite une <a href="/outils/calculateur-penalite-hypothecaire/">pénalité</a>. On compare les scénarios avant que vous signiez quoi que ce soit.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
-    a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Lévis sans pression.`
+    a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vous donne moi-même un premier retour, <strong>habituellement le jour ouvrable même</strong> ; la réponse du prêteur suit selon ses propres délais. La <a href="/services/premier-achat/">pré-approbation</a> reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Lévis sans pression.`
   },
   {
     q: "Je fais construire à Lévis avec un entrepreneur : quand demander mon financement ?",
@@ -85,38 +94,15 @@ const faq = [
   }
 ];
 
-// === Schemas JSON-LD ===
-// Le service offert dans cette ville, rattaché à l'entreprise que déclare chaque page (SEO.astro,
-// `#business`). Une seconde entité FinancialService — sans @id, sous un autre nom et une autre
-// adresse web — se présentait à Google comme une deuxième entreprise.
-const schemaService = {
-  "@context": "https://schema.org",
-  "@type": "Service",
-  "serviceType": "Courtage hypothécaire",
-  "name": "Courtière hypothécaire à Lévis",
-  "url": PAGE_URL,
-  "provider": { "@id": `${config.site_url}#business` },
-  "areaServed": [
-    { "@type": "City", "name": "Lévis" },
-    { "@type": "City", "name": "Saint-Nicolas" },
-    { "@type": "City", "name": "Saint-Romuald" },
-    { "@type": "City", "name": "Saint-Jean-Chrysostome" },
-    { "@type": "City", "name": "Charny" },
-    { "@type": "City", "name": "Pintendre" }
-  ]
-};
+// === Schemas JSON-LD === — voir src/utils/schemaVille.ts
+const [schemaService, schemaPerson, schemaFil] = schemasVille({
+  config,
+  ville: "Lévis",
+  pageUrl: PAGE_URL,
+  secteurs: ["Saint-Nicolas", "Saint-Romuald", "Saint-Jean-Chrysostome", "Charny", "Pintendre"],
+  image: STEPHANIE_IMAGE,
+});
 
-const schemaPerson = {
-  "@context": "https://schema.org",
-  "@type": "Person",
-  "@id": `${config.site_url}#stephanie`,
-  "name": "Stéphanie Weyman",
-  "jobTitle": "Courtière hypothécaire",
-  "worksFor": { "@type": "Organization", "name": "Hypotheca" },
-  "image": STEPHANIE_IMAGE,
-  "url": config.site_url,
-  "identifier": `AMF ${config.amf}`
-};
 
 // Le FAQPage est généré à partir du tableau `faq` ci-dessus.
 const schemaFAQ = {
@@ -133,17 +119,21 @@ const schemaFAQ = {
   }))
 };
 
-// Cache CDN — page éditoriale, change rarement.
-Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+// Lectures en séquence, jamais en parallèle (voir CLAUDE.md, « ficheUnifiee »).
+const tauxDuJour = await fetchHypothecaRates();
+const avis = await getReviews();
+// Cache CDN : 6 h, raccourci quand les taux manquent (même règle que l'accueil).
+Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
 ---
 
 <MainLayout
-  fullTitle="Courtière hypothécaire à Lévis – Stéphanie Weyman"
-  description="Courtière hypothécaire à Lévis, à distance : Saint-Nicolas, Saint-Romuald, Saint-Jean-Chrysostome. Pré-approbation, achat, renouvellement. Service gratuit."
+  title="Courtier hypothécaire Lévis"
+  description="Courtière hypothécaire à Lévis : 20+ prêteurs comparés pour votre achat, renouvellement ou refinancement. Appel de 15 min sans engagement."
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(schemaService)} is:inline />
     <script type="application/ld+json" set:html={JSON.stringify(schemaPerson)} is:inline />
+    <script type="application/ld+json" set:html={JSON.stringify(schemaFil)} is:inline />
     <script type="application/ld+json" set:html={JSON.stringify(schemaFAQ)} is:inline />
   </Fragment>
 
@@ -157,20 +147,21 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <div class="rep-inner">
         <div class="rep-hero-grid">
           <div class="rep-hero-text">
+            <FilArianeVille ville="Lévis" />
             <div class="rep-eyebrow">Lévis · Chaudière-Appalaches</div>
             <h1 class="rep-h1">Courtière hypothécaire à Lévis</h1>
             <p class="rep-subtitle">
-              Pré-approbation rapide. Accès à 20+ prêteurs. Frais de courtage&nbsp;: 0&nbsp;$<span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>.
+              Pré-approbation rapide. Accès à 20+ prêteurs. Frais de courtage&nbsp;: 0&nbsp;$.<span class="fee-tooltip-wrap"><button class="fee-info-btn" aria-label="En savoir plus sur les frais de courtage" aria-expanded="false" type="button">i</button><span class="fee-tooltip" role="tooltip">Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</span></span>
             </p>
 
             <ul class="rep-trust-list" aria-label="Garanties de service">
               <li>
                 <span class="rep-trust-icon" aria-hidden="true">💰</span>
-                <span>Service gratuit (rémunérée par le prêteur)</span>
+                <span>Gratuit pour la vaste majorité des dossiers<a class="rep-asterisque" href="#note-frais" aria-label="Voir la note sur les frais">*</a> (rémunérée par le prêteur)</span>
               </li>
               <li>
                 <span class="rep-trust-icon" aria-hidden="true">⏱️</span>
-                <span>Premier contact <strong>dans les meilleurs délais</strong></span>
+                <span>Je vous réponds moi-même, <strong>habituellement le jour ouvrable même</strong></span>
               </li>
             </ul>
 
@@ -187,9 +178,9 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
           <aside class="rep-hero-photo" aria-label="Votre courtière">
             <Image
-              src={stephaniePhoto}
+              src={stephaniePortrait}
               alt={`${config.nom}, courtière hypothécaire à Lévis`}
-              width={320}
+              width={400}
               height={400}
               loading="eager"
               decoding="async"
@@ -203,6 +194,9 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         </div>
       </div>
     </section>
+
+    <!-- ============ AVIS GOOGLE ============ -->
+    <AvisVille reviews={avis} />
 
     <!-- ============ SECTION 2 — POUR QUI ============ -->
     <section class="rep-services">
@@ -298,7 +292,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         </p>
 
         <p>
-          Je vous accompagne <strong>à distance</strong> : je suis basée à Montréal, mais mon permis
+          Je vous accompagne <strong>à distance</strong> : je suis basée à Repentigny, mais mon permis
           de l'AMF couvre tout le Québec. Rencontres sur Teams, appels ou textos, documents et signatures en
           ligne — vous avancez à votre rythme, le soir ou la fin de semaine s'il le faut. Je dessers
           tous les secteurs de Lévis, de Saint-Nicolas à Pintendre, ainsi que les municipalités
@@ -314,11 +308,14 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
     <!-- ============ SECTEURS ============ -->
     <SecteursVille ville="Lévis" secteurs={secteurs} />
 
+    <!-- ============ CALCUL RAPIDE ============ -->
+    <CalculVille slug="levis" ville="Lévis" taux={tauxDuJour?.fixe_5ans ?? null} />
+
     <!-- ============ SECTION 4 — BANQUE VS COURTIÈRE ============ -->
     <section class="rep-compare">
       <div class="rep-inner">
         <div class="rep-section-tag">Banque vs courtière</div>
-        <h2 class="rep-section-title">Ta banque te connaît. <em>Moi, je te défends.</em></h2>
+        <h2 class="rep-section-title">Votre banque vous connaît. <em>Moi, je vous défends.</em></h2>
 
         <div class="rep-compare-cards">
           <div class="rep-compare-card rep-compare-card--bad">
@@ -343,7 +340,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
               <li><span class="rep-check" aria-hidden="true">✓</span> Je négocie les taux et les conditions</li>
               <li><span class="rep-check" aria-hidden="true">✓</span> Un refus bancaire ? J'ai des solutions alternatives</li>
             </ul>
-            <p class="rep-compare-bonus">💰 <strong>Service gratuit</strong> — rémunérée par le prêteur, pas par vous.</p>
+            <p class="rep-compare-bonus">💰 <strong>Gratuit pour la vaste majorité des dossiers<a class="rep-asterisque" href="#note-frais" aria-label="Voir la note sur les frais">*</a></strong> — rémunérée par le prêteur, pas par vous.</p>
           </div>
         </div>
       </div>
@@ -419,10 +416,13 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       <div class="rep-inner">
         <div class="rep-final-header">
           <h2 class="rep-section-title rep-section-title--center">Prêt à obtenir votre pré-approbation à Lévis ?</h2>
-          <p class="rep-final-sub">Aucun engagement. Aucun frais. Réponse dans les meilleurs délais.</p>
+          <p class="rep-final-sub">Aucun engagement. Gratuit pour la vaste majorité des dossiers<a class="rep-asterisque" href="#note-frais" aria-label="Voir la note sur les frais">*</a>. Je vous réponds moi-même, habituellement le jour ouvrable même.</p>
         </div>
       </div>
-      <Contact />
+      <Contact ville="levis" />
+      <div class="rep-inner">
+        <p class="rep-note-frais" id="note-frais">* Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.</p>
+      </div>
     </section>
 
   </main>
@@ -473,8 +473,9 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   }
 
   /* ============ HÉRO ============ */
+  /* L'en-tête est fixe (68 px) : sans ce dégagement, le haut de la photo passait dessous. */
   .rep-hero {
-    padding: 5rem 0 3.5rem;
+    padding: 7rem 0 3.5rem;
     background: linear-gradient(180deg, var(--cream, #f7f2ec) 0%, var(--white, #fff) 100%);
   }
   .rep-hero-grid {
@@ -561,10 +562,14 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
   .rep-hero-photo {
     text-align: center;
   }
+  /* Portrait recadré en 4:5 dans la photo carrée, avec de l'air au-dessus de la tête. */
   .rep-photo {
     width: 100%;
     max-width: 320px;
     height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: 50% 30%;
     border-radius: 12px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
   }
@@ -902,7 +907,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       max-width: 220px;
     }
     .rep-hero {
-      padding: 3rem 0 2rem;
+      padding: 6rem 0 2rem;
     }
   }
 
@@ -918,6 +923,20 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
       text-align: center;
       display: block;
     }
+  }
+  /* ============ NOTE SUR LES FRAIS ============ */
+  .rep-asterisque {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .rep-note-frais {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--ink-soft, #6a6a6a);
+    margin: 1.5rem auto 0;
+    max-width: 820px;
+    text-align: center;
   }
 </style>
 

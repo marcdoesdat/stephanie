@@ -19,6 +19,7 @@ import {
 } from '../../services/emailService';
 import { creerDossier } from '../../services/dossierClientService';
 import { depuisContact } from '../../utils/entreesProspect';
+import { villePar } from '../../data/villes';
 
 export const prerender = false;
 
@@ -38,6 +39,7 @@ interface ContactPayload {
   telephone?: unknown;
   message?: unknown;
   lcap_consent?: unknown;
+  ville?: unknown;
   'bot-field'?: unknown; // honeypot
 }
 
@@ -88,6 +90,8 @@ export const POST: APIRoute = async ({ request }) => {
   const paMise = asTrimmedString(payload.pa_mise);
   const message = asTrimmedString(payload.message);
   const lcapConsent = asTrimmedString(payload.lcap_consent) === 'oui';
+  // La page ville d'où vient la demande : seule une ville du catalogue est retenue, jamais un texte libre.
+  const villePage = villePar(asTrimmedString(payload.ville))?.nom ?? '';
 
   // Ouvrir la fiche au carnet.
   //
@@ -149,6 +153,7 @@ export const POST: APIRoute = async ({ request }) => {
     ['Téléphone', eTel],
     ['Préférence de contact', ePref],
     ['Parcours', eParcours],
+    ...(villePage ? [['Page ville', escapeHtml(villePage)] as [string, string]] : []),
     ...parcoursRows,
     ['Message', eMessage],
     ['Consentement LCAP (communications marketing)', lcapConsent ? 'Oui' : 'Non'],

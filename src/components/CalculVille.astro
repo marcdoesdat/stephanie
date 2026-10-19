@@ -1,0 +1,295 @@
+---
+// « Combien coûte un achat à … » — le calcul rapide des pages villes.
+//
+// - Le prix de départ est le **prix médian APCIQ** de la ville (src/data/prixMedians.ts), avec son
+//   secteur, sa période et son lien. Sans chiffre vérifié, le champ s'ouvre vide : jamais un prix
+//   deviné.
+// - La taxe de bienvenue suit le **barème de la municipalité** (src/data/droitsMutation.ts, le même
+//   que l'outil de /outils).
+// - Le revenu nécessaire sort de `calculerCapacite`, le calcul du simulateur complet, avec ses
+//   hypothèses par défaut : la même réponse qu'une page plus loin. Sans taux du jour, il n'est pas
+//   affiché — aucun taux inventé.
+import { VILLES as BAREMES } from '../data/droitsMutation';
+import { PRIX_MEDIANS } from '../data/prixMedians';
+
+interface Props {
+  slug: string;
+  ville: string;
+  /** Taux 5 ans fixe Hypotheca du jour — null si indisponible */
+  taux: number | null;
+}
+
+const { slug, ville, taux } = Astro.props;
+const median = PRIX_MEDIANS[slug] ?? null;
+const bareme = BAREMES.find((b) => b.value === slug) ?? BAREMES[0]!;
+// Infinity ne survit pas au JSON : la dernière tranche devient `null`.
+const tranches = JSON.stringify(bareme.tranches.map((t) => ({ max: Number.isFinite(t.max) ? t.max : null, taux: t.taux })));
+const prixInitial = median ? median.prix.toLocaleString('fr-CA').replace(/\s/g, ' ') : '';
+const pourcent = (t: number) => t.toFixed(2).replace('.', ',') + ' %';
+---
+
+<section class="cv-section" id="calcul-ville">
+  <div class="cv-inner">
+    <div class="cv-tag">Calcul rapide</div>
+    <h2 class="cv-titre">Combien coûte un achat à {ville}&nbsp;?</h2>
+
+    <div class="cv" data-tranches={tranches} data-taux={taux ?? ''} data-ville={slug}>
+      <form class="cv-form" novalidate>
+        <div class="cv-champ">
+          <label for="cv-prix">Prix de la propriété</label>
+          <div class="cv-saisie">
+            <input type="text" id="cv-prix" inputmode="numeric" autocomplete="off" value={prixInitial} placeholder="450 000" />
+            <span class="cv-unite" aria-hidden="true">$</span>
+          </div>
+          {median ? (
+            <p class="cv-source">
+              Prix médian d'une maison unifamiliale — {median.secteur}, {median.periode}. Source&nbsp;:
+              <a href={median.url} target="_blank" rel="noopener noreferrer">APCIQ</a>.
+            </p>
+          ) : (
+            <p class="cv-source">Inscrivez le prix de la propriété que vous visez.</p>
+          )}
+        </div>
+
+        <div class="cv-champ">
+          <label for="cv-mise">Mise de fonds</label>
+          <div class="cv-saisie">
+            <input type="text" id="cv-mise" inputmode="numeric" autocomplete="off" placeholder="Minimum calculé" />
+            <span class="cv-unite" aria-hidden="true">$</span>
+          </div>
+          <p class="cv-source">Laissez vide pour partir de la mise de fonds minimale.</p>
+        </div>
+      </form>
+
+      <dl class="cv-resultats" aria-live="polite">
+        <div class="cv-ligne"><dt>Mise de fonds minimale</dt><dd data-cv="miseMin">—</dd></div>
+        <div class="cv-ligne"><dt>Prime d'assurance SCHL</dt><dd data-cv="schl">—</dd></div>
+        <div class="cv-ligne"><dt>Taxe de bienvenue ({bareme.value === 'autres' ? 'barème provincial' : ville})</dt><dd data-cv="taxe">—</dd></div>
+        <div class="cv-ligne"><dt>Prêt hypothécaire total</dt><dd data-cv="pret">—</dd></div>
+        {taux !== null && (
+          <>
+            <div class="cv-ligne"><dt>Taux 5 ans fixe d'Hypotheca du jour</dt><dd>{pourcent(taux)}</dd></div>
+            <div class="cv-ligne"><dt>Versement mensuel estimé</dt><dd data-cv="versement">—</dd></div>
+            <div class="cv-ligne cv-ligne--fort"><dt>Revenu familial approximatif pour vous qualifier</dt><dd data-cv="revenu">—</dd></div>
+          </>
+        )}
+      </dl>
+
+      <p class="cv-note">
+        {taux !== null ? (
+          <>Au taux du jour ci-dessus, sur 25 ans, sans autres dettes, avec les frais de propriété par défaut du simulateur. Une estimation, pas une approbation.</>
+        ) : (
+          <>Le taux du jour n'est pas disponible pour l'instant : le versement et le revenu nécessaire ne sont pas calculés. Consultez les <a href="https://www.hypotheca.ca/" target="_blank" rel="noopener noreferrer">taux d'Hypotheca</a>.</>
+        )}
+      </p>
+
+      <div class="cv-actions">
+        <a href="#contact" class="cv-cta" data-cv-cta>Faire valider ce calcul par Stéphanie</a>
+        <a href="/outils/#simulateur" class="cv-lien">Simulateur complet</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cv-section {
+    padding: 4rem 0;
+    background: var(--cream, #f7f2ec);
+  }
+  .cv-inner {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  .cv-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--clay, #c47a52);
+    font-weight: 600;
+    margin-bottom: 0.9rem;
+  }
+  .cv-titre {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1.2;
+    margin: 0 0 1.5rem;
+    color: var(--ink, #1a1a1a);
+    font-weight: 700;
+  }
+  .cv {
+    background: var(--white, #fff);
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+    border-radius: 16px;
+    padding: 1.75rem;
+  }
+  .cv-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 640px) {
+    .cv-form {
+      grid-template-columns: 1fr;
+    }
+    .cv {
+      padding: 1.25rem;
+    }
+  }
+  .cv-champ label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
+  }
+  .cv-saisie {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--border, rgba(0, 0, 0, 0.15));
+    border-radius: 10px;
+    background: var(--white, #fff);
+    padding: 0 0.85rem;
+  }
+  .cv-saisie:focus-within {
+    border-color: var(--clay, #c47a52);
+  }
+  .cv-saisie input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: 1rem; /* 16 px : Safari iOS ne zoome pas au toucher */
+    padding: 0.75rem 0;
+  }
+  .cv-unite {
+    color: var(--ink-soft, #6a6a6a);
+  }
+  .cv-source {
+    margin: 0.45rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--ink-soft, #6a6a6a);
+  }
+  .cv-source a,
+  .cv-note a {
+    color: var(--clay, #c47a52);
+  }
+  .cv-resultats {
+    margin: 0;
+    border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  }
+  .cv-ligne {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  }
+  .cv-ligne dt {
+    font-size: 0.95rem;
+    color: var(--ink, #1a1a1a);
+  }
+  .cv-ligne dd {
+    margin: 0;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .cv-ligne--fort dd {
+    color: var(--clay, #c47a52);
+    font-size: 1.1rem;
+  }
+  .cv-note {
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--ink-soft, #6a6a6a);
+    margin: 1rem 0 1.25rem;
+  }
+  .cv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+  }
+  .cv-cta {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.85rem 1.4rem;
+    background: linear-gradient(135deg, var(--clay, #c47a52), #b56f4c);
+    color: #fff;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .cv-lien {
+    color: var(--clay, #c47a52);
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  import { AMORTISSEMENT_DEFAUT, lireMontant, formaterSaisie, revenuNecessaire } from '../utils/capaciteEmprunt';
+  import { calculateSCHL, droitsMutation, miseMinimale, formatMoney, calcPaiement } from '../utils/mortgageCalc';
+
+  function track(name: string, params?: Record<string, string>) {
+    // @ts-ignore
+    if (typeof window.umami?.track === 'function') window.umami.track(name, params);
+    // @ts-ignore
+    if (typeof window.gtag === 'function') window.gtag('event', name, params);
+  }
+
+  const racine = document.querySelector<HTMLElement>('.cv');
+  if (racine) {
+    const tranches = (JSON.parse(racine.dataset.tranches || '[]') as { max: number | null; taux: number }[])
+      .map((t) => ({ max: t.max ?? Infinity, taux: t.taux }));
+    const taux = racine.dataset.taux ? Number(racine.dataset.taux) : null;
+    const ville = racine.dataset.ville || '';
+    const champPrix = racine.querySelector<HTMLInputElement>('#cv-prix')!;
+    const champMise = racine.querySelector<HTMLInputElement>('#cv-mise')!;
+    const sortie = (cle: string) => racine.querySelector<HTMLElement>(`[data-cv="${cle}"]`);
+    const ecrire = (cle: string, texte: string) => { const el = sortie(cle); if (el) el.textContent = texte; };
+
+    function calculer() {
+      const prix = lireMontant(champPrix.value);
+      if (!(prix > 0)) {
+        ['miseMin', 'schl', 'taxe', 'pret', 'versement', 'revenu'].forEach((c) => ecrire(c, '—'));
+        return;
+      }
+      const min = miseMinimale(prix);
+      const saisie = lireMontant(champMise.value);
+      const mise = saisie > 0 ? saisie : min;
+      ecrire('miseMin', formatMoney(min));
+      ecrire('taxe', formatMoney(droitsMutation(prix, tranches)));
+      if (mise < min) {
+        ecrire('schl', '—');
+        ecrire('pret', '—');
+        ecrire('versement', '—');
+        ecrire('revenu', 'Mise de fonds insuffisante');
+        return;
+      }
+      const prime = mise / prix < 0.2 ? calculateSCHL(prix, mise) : 0;
+      const pret = prix - mise + prime;
+      ecrire('schl', prime > 0 ? formatMoney(prime) : 'Aucune (20 % et plus)');
+      ecrire('pret', formatMoney(pret));
+      if (taux !== null) {
+        ecrire('versement', formatMoney(calcPaiement(pret, taux, AMORTISSEMENT_DEFAUT, 12)));
+        const revenu = revenuNecessaire(prix, mise, taux);
+        ecrire('revenu', revenu ? formatMoney(revenu) : '—');
+      }
+    }
+
+    [champPrix, champMise].forEach((champ) => {
+      champ.addEventListener('input', calculer);
+      champ.addEventListener('blur', () => {
+        const n = lireMontant(champ.value);
+        if (n > 0) champ.value = formaterSaisie(n);
+      });
+    });
+    racine.querySelector('[data-cv-cta]')?.addEventListener('click', () => track('calcul_ville_cta', { ville }));
+    calculer();
+  }
+</script>
