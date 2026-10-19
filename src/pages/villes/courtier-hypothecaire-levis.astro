@@ -22,20 +22,24 @@ const STEPHANIE_IMAGE = new URL(stephaniePhoto.src, config.site_url).toString();
 
 const faq = [
   {
-    q: "Combien coûte un courtier hypothécaire à Terrebonne ?",
+    q: "Combien coûte un courtier hypothécaire à Lévis ?",
     a: `Rien pour vous : mon service est <strong>gratuit</strong>. C'est le prêteur qui finance votre dossier qui me rémunère, au moment du déboursé. Vous ne recevez aucune facture et vous ne vous engagez à rien tant qu'on n'a pas trouvé la bonne solution.`
   },
   {
-    q: "Quelle mise de fonds pour acheter une maison à Terrebonne ?",
+    q: "Vous êtes basée dans Lanaudière : pouvez-vous m'accompagner à Lévis ?",
+    a: `Oui, et je vous le dis franchement : je vous accompagne <strong>à distance</strong>. Mon permis de l'AMF couvre tout le Québec, et le courtage hypothécaire se fait très bien sans bureau à côté de chez vous : on se parle au téléphone ou en <strong>visioconférence</strong>, vous me transmettez vos documents en ligne et les signatures se font électroniquement. Le notaire et l'inspecteur, eux, vous les choisissez près de chez vous.`
+  },
+  {
+    q: "Quelle mise de fonds pour acheter une maison à Lévis ?",
     a: `La règle canadienne s'applique : <strong>5 %</strong> de mise de fonds minimale sur la première tranche de 500 000 $, puis <strong>10 %</strong> entre 500 000 $ et 1,5 M$. Avec moins de 20 % de mise de fonds, une prime d'assurance SCHL s'ajoute à votre prêt. On calcule ensemble le scénario le plus avantageux selon votre situation.`
   },
   {
-    q: "Comment financer une construction neuve dans Urbanova ?",
-    a: `Le financement d'une propriété neuve ne fonctionne pas comme celui d'une revente : selon le projet, il peut y avoir des <strong>déboursés progressifs</strong>, des délais de livraison à couvrir et des conditions particulières du constructeur. Certains prêteurs sont beaucoup plus flexibles que d'autres sur le neuf — c'est exactement le genre de dossier où magasiner fait une vraie différence.`
+    q: "Les prix sont-ils les mêmes dans tous les secteurs de Lévis ?",
+    a: `Non — le <strong>Vieux-Lévis</strong> (maisons anciennes, plex), <strong>Saint-Romuald</strong> et <strong>Saint-Nicolas</strong> (près des ponts), <strong>Saint-Jean-Chrysostome</strong>, <strong>Charny</strong> et <strong>Saint-Rédempteur</strong> (quartiers résidentiels familiaux) ou <strong>Pintendre</strong> (plus champêtre) ont chacun leur réalité de prix, sans compter les constructions neuves. Plutôt qu'un chiffre qui se périme, je vous propose d'évaluer votre capacité d'emprunt par rapport au secteur que vous visez, gratuitement.`
   },
   {
-    q: "Les prix sont-ils les mêmes dans tous les secteurs de Terrebonne ?",
-    a: `Non — le <strong>Vieux-Terrebonne</strong> (maisons anciennes, plex), <strong>Lachenaie</strong> (unifamiliales plus récentes), <strong>La Plaine</strong> (grands terrains) et les développements neufs d'<strong>Urbanova</strong> ont chacun leur réalité de prix. Plutôt qu'un chiffre qui se périme, je vous propose d'évaluer votre capacité d'emprunt par rapport au secteur que vous visez, gratuitement.`
+    q: "J'habite Lévis mais je travaille à Québec : est-ce que ça change mon financement ?",
+    a: `Pas en soi : le prêteur analyse vos <strong>revenus</strong> et vos <strong>dettes</strong>, pas la longueur de votre trajet. Ce qui compte, c'est ce que le trajet entraîne : un deuxième véhicule financé, par exemple, entre dans vos ratios d'endettement et réduit votre capacité d'emprunt. On en tient compte dès la pré-approbation pour viser un budget qui reste confortable une fois les ponts ou le traversier ajoutés à votre quotidien.`
   },
   {
     q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
@@ -43,11 +47,7 @@ const faq = [
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
-    a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Terrebonne sans pression.`
-  },
-  {
-    q: "Je suis travailleur autonome à Terrebonne : est-ce plus compliqué ?",
-    a: `Plus encadré, oui ; impossible, non. Plusieurs de mes prêteurs acceptent les revenus autonomes documentés par vos <strong>avis de cotisation</strong> des deux dernières années, et il existe des programmes alternatifs quand le dossier sort du cadre. Certaines conditions s'appliquent — on en discute franchement dès le premier appel.`
+    a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Lévis sans pression.`
   },
   {
     q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
@@ -63,15 +63,16 @@ const schemaService = {
   "@context": "https://schema.org",
   "@type": "Service",
   "serviceType": "Courtage hypothécaire",
-  "name": "Courtière hypothécaire à Terrebonne",
+  "name": "Courtière hypothécaire à Lévis",
   "url": PAGE_URL,
   "provider": { "@id": `${config.site_url}#business` },
   "areaServed": [
-    { "@type": "City", "name": "Terrebonne" },
-    { "@type": "City", "name": "Lachenaie" },
-    { "@type": "City", "name": "La Plaine" },
-    { "@type": "City", "name": "Mascouche" },
-    { "@type": "City", "name": "Bois-des-Filion" }
+    { "@type": "City", "name": "Lévis" },
+    { "@type": "City", "name": "Saint-Nicolas" },
+    { "@type": "City", "name": "Saint-Romuald" },
+    { "@type": "City", "name": "Saint-Jean-Chrysostome" },
+    { "@type": "City", "name": "Charny" },
+    { "@type": "City", "name": "Pintendre" }
   ]
 };
 
@@ -107,8 +108,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 ---
 
 <MainLayout
-  fullTitle="Courtière hypothécaire à Terrebonne – Stéphanie Weyman"
-  description="Courtière hypothécaire à Terrebonne (Lachenaie, La Plaine, Urbanova). Pré-approbation, achat, construction neuve, renouvellement. 20+ prêteurs. Service gratuit."
+  fullTitle="Courtière hypothécaire à Lévis – Stéphanie Weyman"
+  description="Courtière hypothécaire à Lévis, à distance : Saint-Nicolas, Saint-Romuald, Saint-Jean-Chrysostome. Pré-approbation, achat, renouvellement. Service gratuit."
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(schemaService)} is:inline />
@@ -238,32 +239,42 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <h2 class="rep-section-title">Acheter ou refinancer à Lévis en 2026</h2>
 
         <p>
-          Plus grande ville de Lanaudière et cœur de la MRC Les Moulins, Terrebonne a plusieurs
-          visages — et autant de réalités de marché. Le <strong>Vieux-Terrebonne</strong>, autour de
-          l'Île-des-Moulins, concentre maisons de caractère et petits plex ; <strong>Lachenaie</strong>
-          aligne des unifamiliales plus récentes prisées des jeunes familles ; <strong>La Plaine</strong>
-          offre les grands terrains d'un secteur encore champêtre. S'ajoute <strong>Urbanova</strong>,
-          l'un des plus vastes projets résidentiels planifiés au Québec, qui alimente une offre
-          importante de <strong>constructions neuves</strong> — un type d'achat dont le financement
-          obéit à ses propres règles (déboursés, délais de livraison, conditions du constructeur).
+          Issue du regroupement municipal de 2002, Lévis réunit d'anciennes villes qui ont gardé
+          chacune leur caractère — et leur réalité de marché. Le <strong>Vieux-Lévis</strong>, face au
+          Vieux-Québec, et <strong>Lauzon</strong> concentrent maisons anciennes et <strong>plex</strong>,
+          dont les revenus de location peuvent compter dans votre qualification ;
+          <strong>Saint-Romuald</strong> et <strong>Saint-Nicolas</strong>, en bordure du fleuve,
+          sont à la tête des ponts ; <strong>Saint-Jean-Chrysostome</strong>, <strong>Charny</strong>
+          et <strong>Saint-Rédempteur</strong> alignent des quartiers résidentiels très prisés des
+          jeunes familles, tandis que <strong>Pintendre</strong> offre un cadre plus champêtre. Plusieurs
+          secteurs accueillent aussi des <strong>constructions neuves</strong>, dont le financement obéit
+          à ses propres règles : déboursés progressifs, délais de livraison, conditions du constructeur.
         </p>
 
         <p>
-          Peu importe le secteur, la <strong>pré-approbation</strong> reste l'étape numéro un : elle
-          fixe votre budget réel en intégrant le <strong>stress test fédéral</strong>, la mise de
-          fonds minimale et, sous 20 % de mise, la prime SCHL ajoutée au prêt. Sur le neuf, elle
-          permet en plus de sécuriser votre financement avant de signer un contrat préliminaire —
-          un détail qui évite bien des mauvaises surprises entre la signature et la livraison.
+          Beaucoup d'acheteurs de Lévis travaillent à Québec — fonction publique, santé,
+          enseignement — et franchissent chaque jour le <strong>pont Pierre-Laporte</strong>, le
+          <strong>pont de Québec</strong> ou prennent le <strong>traversier Québec-Lévis</strong>.
+          D'autres travaillent sur la rive sud même, dans le secteur financier, le chantier maritime ou
+          l'industrie, avec souvent des <strong>heures supplémentaires</strong>, des primes ou un
+          horaire sur projets : des revenus que les prêteurs ne traitent pas tous de la même façon.
+          C'est là qu'une courtière fait la différence. Vous faites peut-être affaire avec la même
+          institution depuis toujours ; je compare plusieurs prêteurs, y compris celle où vous êtes déjà
+          client, pour que vous sachiez que l'offre retenue est vraiment la bonne. Et dans tous
+          les cas, la <strong>pré-approbation</strong> reste l'étape numéro un : elle fixe votre budget
+          réel en intégrant le <strong>stress test fédéral</strong>, la mise de fonds minimale et, sous
+          20 % de mise, la prime SCHL ajoutée au prêt.
         </p>
 
         <p>
-          Je dessers Terrebonne, Lachenaie et La Plaine, ainsi que les villes voisines :
-          <strong>Mascouche, Bois-des-Filion, Sainte-Anne-des-Plaines</strong> et, de l'autre côté
-          de la MRC, <a href="/villes/courtier-hypothecaire-repentigny/">Repentigny</a> et
-          Charlemagne. Avec l'autoroute 25, la 640 et la gare Terrebonne de la ligne de train
-          Mascouche, le secteur attire beaucoup d'acheteurs qui travaillent à Laval ou à Montréal.
-          Quand les taux bougent, je suis le marché en continu pour saisir la bonne fenêtre à
-          votre place.
+          Je vous accompagne <strong>à distance</strong> : je suis basée dans Lanaudière, mais mon permis
+          de l'AMF couvre tout le Québec. Rencontres en visioconférence, documents et signatures en
+          ligne — vous avancez à votre rythme, le soir ou la fin de semaine s'il le faut. Je dessers
+          tous les secteurs de Lévis, de Saint-Nicolas à Pintendre, ainsi que les municipalités
+          voisines comme <strong>Saint-Lambert-de-Lauzon, Saint-Henri</strong> et
+          <strong>Beaumont</strong>, et bien sûr, de l'autre côté du fleuve,
+          <a href="/villes/courtier-hypothecaire-quebec/">Québec</a>. Quand les taux bougent, je suis
+          le marché en continu pour saisir la bonne fenêtre à votre place.
         </p>
       </div>
     </section>
