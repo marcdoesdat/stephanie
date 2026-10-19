@@ -17,7 +17,32 @@ import SecteursVille from '../../components/SecteursVille.astro';
 const config = loadSiteConfig();
 
 // Les secteurs de la ville (section « Secteur par secteur ») — voir SecteursVille.astro.
-const secteurs: { nom: string; texte: string }[] = [];
+const secteurs: { nom: string; texte: string }[] = [
+  {
+    nom: "Vieux-Lévis",
+    texte: `Maisons anciennes et plex, souvent avec vue sur le fleuve. Ce cachet a son revers : fondations, toiture et électricité d'origine se vérifient à l'<strong>inspection</strong>, et l'<strong>assureur habitation</strong> peut poser ses conditions — à connaître avant le passage chez le notaire.`
+  },
+  {
+    nom: "Lauzon",
+    texte: `Ancien quartier ouvrier, riche en <strong>duplex</strong> et en <strong>triplex</strong>. Sur un plex que vous habitez, la mise de fonds minimale dépend du <strong>nombre de logements</strong>, et les loyers retenus s'appuient sur des baux en règle : on les réunit dès la pré-approbation.`
+  },
+  {
+    nom: "Saint-Romuald",
+    texte: `Un mélange de <strong>condos</strong> et d'unifamiliales, près des grands axes vers Québec. Pour un condo, les <strong>frais de copropriété</strong> entrent dans vos ratios d'endettement ; le procès-verbal des assemblées et le fonds de prévoyance disent si une cotisation spéciale se prépare.`
+  },
+  {
+    nom: "Saint-Nicolas",
+    texte: `Unifamiliales, parfois sur de grands terrains près du fleuve. Passé de <strong>500 000 $</strong>, la mise de fonds minimale passe à 10 % sur la portion excédentaire ; près de la rive, on vérifie aussi les <strong>zones de contraintes</strong> (érosion, glissement de terrain) avant l'offre.`
+  },
+  {
+    nom: "Saint-Jean-Chrysostome et Charny",
+    texte: `Quartiers familiaux établis, où l'on achète souvent sa première ou sa deuxième maison. Déjà propriétaire ? Un <strong>refinancement</strong>, jusqu'à 80 % de la valeur, peut payer un agrandissement ; on le compare d'abord à la <strong>pénalité</strong> de rupture de votre prêt actuel.`
+  },
+  {
+    nom: "Pintendre et Breakeyville",
+    texte: `Cadre champêtre et grands terrains, parfois desservis par un <strong>puits</strong> et une <strong>fosse septique</strong> : le prêteur peut demander une analyse d'eau et la conformité de l'installation. Le long de la rivière Chaudière, on vérifie aussi la <strong>zone inondable</strong>.`
+  }
+];
 const prenom = config.nom.split(' ')[0];
 
 const PAGE_URL = `${config.site_url}/villes/courtier-hypothecaire-levis/`;
@@ -47,16 +72,16 @@ const faq = [
     a: `Pas en soi : le prêteur analyse vos <strong>revenus</strong> et vos <strong>dettes</strong>, pas la longueur de votre trajet. Ce qui compte, c'est ce que le trajet entraîne : un deuxième véhicule financé, par exemple, entre dans vos ratios d'endettement et réduit votre capacité d'emprunt. On en tient compte dès la pré-approbation pour viser un budget qui reste confortable une fois les ponts ou le traversier ajoutés à votre quotidien.`
   },
   {
-    q: "C'est quoi, le stress test, et est-ce qu'il s'applique à moi ?",
-    a: `Oui, il s'applique à presque tous les emprunteurs au Canada. Les prêteurs doivent qualifier votre dossier au <strong>plus élevé</strong> entre votre taux contractuel + 2 % et 5,25 %. Ce taux fictif sert uniquement au calcul de votre capacité d'emprunt — ce n'est pas celui que vous paierez. Il faut simplement en tenir compte dès le départ pour viser le bon budget.`
+    q: "Je vends ma maison à Québec pour acheter à Lévis : comment arrimer les deux transactions ?",
+    a: `Tout dépend des dates. Si l'achat se conclut <strong>avant</strong> la vente, un <strong>prêt-relais</strong> peut avancer la mise de fonds que la vente doit libérer, à condition que celle-ci soit ferme. Votre hypothèque actuelle, elle, peut parfois être <strong>transférée</strong> vers la nouvelle propriété plutôt que remboursée, ce qui évite une pénalité. On compare les scénarios avant que vous signiez quoi que ce soit.`
   },
   {
     q: "En combien de temps puis-je être pré-approuvé ?",
     a: `Dès que votre dossier est complet (documents de revenus et de mise de fonds fournis), je vise une <strong>réponse dans les meilleurs délais</strong>. La pré-approbation reste ensuite valide jusqu'à 120 jours — le temps de magasiner à Lévis sans pression.`
   },
   {
-    q: "Ma banque a refusé mon dossier. Est-ce que ça vaut la peine de vous appeler ?",
-    a: `Oui. Chaque prêteur applique ses propres critères : un refus chez l'un ne veut pas dire un refus partout. On identifie ce qui a bloqué — ratio d'endettement, crédit, type de revenus — et on cible les prêteurs (y compris alternatifs) dont les critères correspondent à votre profil.`
+    q: "Je fais construire à Lévis avec un entrepreneur : quand demander mon financement ?",
+    a: `Avant de signer le contrat. Une construction neuve se finance soit par <strong>déboursés progressifs</strong>, versés par étapes sur inspection de l'avancement, soit en un seul versement à la livraison quand l'entrepreneur porte le chantier : deux formules très différentes pour votre budget. Vérifiez aussi que la maison est couverte par la <strong>garantie de construction résidentielle</strong> (GCR). Et comme la livraison dépasse souvent la durée d'une pré-approbation, on planifie le calendrier ensemble.`
   }
 ];
 
@@ -244,6 +269,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
         <h2 class="rep-section-title">Acheter ou refinancer une propriété à Lévis</h2>
 
         <p>
+          Vous cherchez un courtier hypothécaire à Lévis ? Voici ce qu'il faut savoir du marché de la rive sud avant de faire une offre.
           Issue du regroupement municipal de 2002, Lévis réunit d'anciennes villes qui ont gardé
           chacune leur caractère — et leur réalité de marché. Le <strong>Vieux-Lévis</strong>, face au
           Vieux-Québec, et <strong>Lauzon</strong> concentrent maisons anciennes et <strong>plex</strong>,
