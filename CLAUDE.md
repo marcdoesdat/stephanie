@@ -1009,6 +1009,14 @@ Treize pages sur un même gabarit (classes `rep-*`). Ce qui les distingue : le p
   chaque 1ᵉʳ janvier ; écrite à la main, elle date la page.
 - **La forme cherchée du mot-clé est au masculin** — « courtier hypothécaire à <Ville> », comme
   l'adresse. Le H1 et le titre disent « Courtière » ; le 1ᵉʳ paragraphe du marché porte l'autre forme.
+- **L'accompagnement se fait par Teams, téléphone ou texto — jamais « en personne ».** C'est la
+  réalité du service (confirmé par la courtière en octobre 2026), y compris à Montréal, Laval ou
+  Terrebonne : une page qui promet une rencontre sur place promet ce qui ne sera pas offert. Le
+  formulaire de contact commun et la FAQ de l'accueil disent la même chose.
+- **Un fait local dont on n'est pas sûr est retiré, pas nuancé.** Zone inondable rattachée à un
+  secteur précis, histoire d'un quartier, golf ou bâtiment situé dans la mauvaise ville (Le Versant
+  est à Terrebonne, pas à Mascouche) : une erreur de géographie se voit d'abord par ceux qui y
+  habitent, c'est-à-dire exactement le public de la page.
 - **Hors de la grande région de Montréal, l'accompagnement est dit à distance.** Jamais de bureau
   local, de prix, de statistique ni de délai inventés : une page locale qui ment sur sa proximité
   perd la confiance qu'elle venait chercher.

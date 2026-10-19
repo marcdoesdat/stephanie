@@ -32,7 +32,7 @@ const secteurs: { nom: string; texte: string }[] = [
   },
   {
     nom: "Pointe-du-Lac",
-    texte: `Terrains plus grands, en bordure du lac Saint-Pierre. Près de l'eau, vérifiez la <strong>zone inondable</strong> avant l'offre : elle peut limiter l'<strong>assurance habitation</strong>, que le prêteur exige, et peser sur la revente.`
+    texte: `Terrains plus grands, en bordure du lac Saint-Pierre. Sur un terrain plus vaste que la moyenne, certains prêteurs ne financent que la maison et une partie du terrain : on le vérifie avant l'offre, pas après.`
   },
   {
     nom: "Sainte-Marthe-du-Cap",
@@ -40,7 +40,7 @@ const secteurs: { nom: string; texte: string }[] = [
   },
   {
     nom: "Saint-Louis-de-France",
-    texte: `Développements plus récents et terrains boisés, sur la rive est du Saint-Maurice. Faire construire, c'est un financement en <strong>déboursés progressifs</strong> : le prêteur verse par étapes, et vous payez les intérêts sur les sommes versées pendant le chantier.`
+    texte: `Développements plus récents et terrains boisés. Faire construire, c'est un financement en <strong>déboursés progressifs</strong> : le prêteur verse par étapes, et vous payez les intérêts sur les sommes versées pendant le chantier.`
   }
 ];
 const prenom = config.nom.split(' ')[0];
@@ -57,7 +57,7 @@ const faq = [
   },
   {
     q: "Vous êtes à Montréal : pouvez-vous vraiment m'accompagner à Trois-Rivières ?",
-    a: `Oui, et franchement. Mon permis de l'AMF couvre <strong>tout le Québec</strong>, et je travaille à Trois-Rivières <strong>à distance</strong> : premier appel au téléphone, rencontres en <strong>visioconférence</strong>, documents transmis en ligne et <strong>signature électronique</strong>. Je n'ai pas de bureau en Mauricie et je ne prétends pas en avoir un — ce qui ne change rien à l'accès aux prêteurs ni au suivi de votre dossier, de la pré-approbation jusqu'au notaire.`
+    a: `Oui, et franchement. Mon permis de l'AMF couvre <strong>tout le Québec</strong>, et je travaille à Trois-Rivières <strong>à distance</strong> : premier appel au téléphone, rencontres sur <strong>Teams</strong>, questions par texto, documents transmis en ligne et <strong>signature électronique</strong>. Je n'ai pas de bureau en Mauricie et je ne prétends pas en avoir un — ce qui ne change rien à l'accès aux prêteurs ni au suivi de votre dossier, de la pré-approbation jusqu'au notaire.`
   },
   {
     q: "Quelle mise de fonds pour acheter une maison à Trois-Rivières ?",
@@ -294,7 +294,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
         <p>
           Je suis basée à Montréal et j'accompagne Trois-Rivières <strong>à distance</strong> :
-          appels, rencontres en visioconférence, documents et signatures en ligne. Le même service
+          rencontres sur Teams, appels ou textos, documents et signatures en ligne. Le même service
           s'étend aux villes voisines — <strong>Shawinigan</strong>, et, par le
           <strong>pont Laviolette</strong> et l'autoroute 55, <strong>Bécancour</strong> et
           <strong>Nicolet</strong> sur la rive sud. À mi-chemin entre Montréal et Québec par

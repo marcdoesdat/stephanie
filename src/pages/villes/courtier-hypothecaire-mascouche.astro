@@ -20,7 +20,7 @@ const config = loadSiteConfig();
 const secteurs: { nom: string; texte: string }[] = [
   {
     nom: "Vieux Mascouche",
-    texte: "Autour du domaine seigneurial et de la rivière, des <strong>maisons anciennes</strong> sur des terrains matures, souvent agrandies au fil des ans. Exigez un <strong>certificat de localisation</strong> à jour : un agrandissement ou un cabanon non conforme peut retarder le déboursé."
+    texte: "Des <strong>maisons anciennes</strong> sur des terrains matures, souvent agrandies au fil des ans. Exigez un <strong>certificat de localisation</strong> à jour : un agrandissement ou un cabanon non conforme peut retarder le déboursé."
   },
   {
     nom: "Mascouche Heights",
@@ -33,10 +33,6 @@ const secteurs: { nom: string; texte: string }[] = [
   {
     nom: "Rives de la rivière Mascouche",
     texte: "Les <strong>terrains riverains</strong> séduisent par leur calme, mais certains peuvent se trouver en <strong>zone inondable</strong>. Faites coter votre <strong>assurance habitation</strong> avant de lever les conditions : sans assurance en vigueur, le prêteur ne débourse pas."
-  },
-  {
-    nom: "Secteur rural et zone agricole",
-    texte: "On y achète de <strong>grands terrains</strong> et des fermettes. Le prêteur demandera souvent une analyse de l'eau du <strong>puits</strong> et la conformité de la <strong>fosse septique</strong> ; au-delà d'une certaine superficie, certains ne financent que la maison et une partie du terrain."
   }
 ];
 const prenom = config.nom.split(' ')[0];
@@ -270,8 +266,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=21600, stale-while-revalid
 
         <p>
           Le marché mascouchois est diversifié : <strong>maisons unifamiliales</strong> dans le vieux
-          Mascouche, <strong>constructions récentes</strong> dans Mascouche Heights et autour du
-          <strong>club de golf Le Versant</strong>, et de plus en plus de <strong>condos</strong> pour
+          Mascouche, <strong>constructions récentes</strong> dans Mascouche Heights, et de plus en plus de <strong>condos</strong> pour
           les jeunes actifs. Avec cette variété, une <strong>préapprobation</strong> solide est votre
           meilleur atout pour négocier — elle vous donne la crédibilité d'un acheteur sérieux et vous évite
           de tomber en amour avec une propriété hors de portée.
