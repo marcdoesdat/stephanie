@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  revenuNecessaire,
   AMORTISSEMENT_DEFAUT,
   CLE_TRANSFERT_EXPRESS,
   FRAIS_DEFAUT,
@@ -189,5 +190,28 @@ describe('cartes de crédit et crédit rotatif', () => {
     const sans = reussi({ ...BASE, dettes: 500 });
     const avec = reussi({ ...BASE, dettes: dettesEquivalentes(500, 10_000) });
     expect(avec.prixMax).toBeLessThan(sans.prixMax);
+  });
+});
+
+describe('revenuNecessaire — calcul rapide des pages villes', () => {
+  it('rend le revenu le plus bas que le simulateur accepte pour ce prix', () => {
+    const revenu = revenuNecessaire(450_000, 22_500, 4.5)!;
+    expect(revenu).toBeGreaterThan(0);
+    const avec = (r: number) => calculerCapacite({ revenu: r, dettes: 0, mise: 22_500, taux: 4.5, amortAns: AMORTISSEMENT_DEFAUT, taxes: FRAIS_DEFAUT.taxes, chauffage: FRAIS_DEFAUT.chauffage, condo: 0 });
+    const ok = avec(revenu);
+    expect(ok.ok && ok.prixMax).toBeGreaterThanOrEqual(450_000);
+    // 1 000 $ de moins (l'arrondi) et 1 000 $ encore : le prix n'est plus accordé.
+    const moins = avec(revenu - 2_000);
+    expect(moins.ok && moins.prixMax >= 450_000).toBe(false);
+  });
+
+  it('grimpe avec le prix et avec le taux', () => {
+    expect(revenuNecessaire(600_000, 35_000, 4.5)!).toBeGreaterThan(revenuNecessaire(450_000, 22_500, 4.5)!);
+    expect(revenuNecessaire(450_000, 22_500, 6)!).toBeGreaterThan(revenuNecessaire(450_000, 22_500, 4.5)!);
+  });
+
+  it('ne promet rien quand la mise de fonds est sous le minimum ou le prix absent', () => {
+    expect(revenuNecessaire(450_000, 5_000, 4.5)).toBeNull();
+    expect(revenuNecessaire(0, 20_000, 4.5)).toBeNull();
   });
 });

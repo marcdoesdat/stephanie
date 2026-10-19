@@ -67,7 +67,7 @@ src/
 | `/services/travailleur-autonome` | Statique | Page travailleur autonome |
 | `/services/dossier-refuse` | Statique | Page dossier refusé |
 | `/services/nouveaux-arrivants` | Statique | Page nouveaux arrivants |
-| `/villes/courtier-hypothecaire-<ville>` | Statique | Landing pages géolocalisées (13) : repentigny, terrebonne, mascouche, montreal, laval, longueuil, quebec, levis, gatineau, sherbrooke, saguenay, trois-rivieres, saint-jean-sur-richelieu. Même gabarit (classes `rep-*`) ; hors de la grande région de Montréal, le texte dit que l'accompagnement se fait **à distance** — jamais de bureau local inventé |
+| `/villes/courtier-hypothecaire-<ville>` | SSR | Landing pages géolocalisées (13) : repentigny, terrebonne, mascouche, montreal, laval, longueuil, quebec, levis, gatineau, sherbrooke, saguenay, trois-rivieres, saint-jean-sur-richelieu. Même gabarit (classes `rep-*`) ; hors de la grande région de Montréal, le texte dit que l'accompagnement se fait **à distance** — jamais de bureau local inventé |
 | `/conditions` | Statique | Conditions d'utilisation |
 | `/confidentialite` | Statique | Politique de confidentialité |
 | `/404` | Statique | Page d'erreur |
@@ -996,19 +996,48 @@ Treize pages sur un même gabarit (classes `rep-*`). Ce qui les distingue : le p
 | `src/data/villes.ts` | **La liste** des villes et de leurs voisines — pied de page et maillage la lisent d'ici |
 | `src/components/VillesVoisines.astro` | Liens vers les villes voisines, dans le texte de la section « marché » |
 | `src/components/SecteursVille.astro` | La grille « Secteur par secteur », remplie par le tableau `secteurs` de chaque page |
-| `src/data/villes.test.ts` | Verrous : page et version anglaise pour chaque ville, voisines valides, ≥ 2 liens entrants |
+| `src/components/AvisVille.astro` | Note Google, nombre d'avis et trois témoignages, sous le héro |
+| `src/components/CalculVille.astro` + `src/data/prixMedians.ts` | Calcul rapide : prix médian APCIQ, taxe de bienvenue au barème de la ville, revenu nécessaire |
+| `src/components/FilArianeVille.astro` + `src/utils/schemaVille.ts` | Fil d'Ariane visible et données structurées (FinancialService `#business`, Person AMF, BreadcrumbList) |
+| `src/data/villes.test.ts` | Verrous : page et version anglaise pour chaque ville, voisines valides (une à trois) |
 
 **Règles :**
-- **Ajouter une ville** : l'inscrire dans `villes.ts` (et dans les voisines d'au moins deux autres)
-  et dans `pagesTraduites.json`, puis traduire ses textes. Le pied de page suit seul.
-- **Un lien dans le texte pèse plus qu'un lien de pied de page.** Avant `VillesVoisines`, Gatineau,
-  Sherbrooke et Saguenay n'étaient atteintes par aucune page hors du pied. Un test exige que chaque
-  ville figure parmi les voisines d'au moins deux autres.
+- **Ajouter une ville** : l'inscrire dans `villes.ts`, dans `pagesTraduites.json`, dans
+  `prixMedians.ts` (à `null` tant qu'aucun chiffre APCIQ n'est vérifié) et dans `droitsMutation.ts`
+  si son barème n'y est pas ; puis traduire ses textes. Le pied de page suit seul.
+- **Les voisines sont les 2 ou 3 villes les plus proches par la route**, choisies à la main — un
+  lien vers une ville sans rapport (Sherbrooke depuis Saint-Jean-sur-Richelieu) ne sert personne.
+  Gatineau et Saguenay ne sont la voisine de personne : le pied de page les relie, c'est assez.
+- **Pages rendues côté serveur** : elles lisent les avis Google et le taux du jour (cache CDN de
+  `rateCacheControl`). Lectures en séquence, comme partout.
+- **Une seule entreprise, même ici.** Le `FinancialService` des pages porte l'`@id` `#business` de
+  SEO.astro : il ne fait qu'ajouter la ville à la zone desservie. L'adresse est celle d'Hypotheca
+  (`ADRESSE_ENTREPRISE`), jamais une adresse dans la ville visée.
+- **Basée à Repentigny.** C'est ce que disent le texte des pages et le bloc de contact. L'adresse
+  postale de la fiche Google et du schéma est celle d'Hypotheca, ce n'est pas une contradiction : on
+  ne l'écrit simplement pas comme « où je suis établie ».
+- **« Gratuit pour la vaste majorité des dossiers* »**, jamais « gratuit » ni « aucuns frais » seuls :
+  certains financements alternatifs ou privés comportent des frais, et la note `#note-frais` le dit
+  sous l'appel final. Même règle dans le formulaire de contact commun.
+- **« Je vous réponds moi-même, habituellement le jour ouvrable même »** remplace « dans les meilleurs
+  délais ». C'est un délai de réponse, pas un délai de financement : la réponse du prêteur suit selon
+  ses propres délais, et la FAQ de la pré-approbation le dit.
+- **Les avis ne sont jamais attribués à une ville.** On ne sait pas où habite celui qui a écrit : un
+  témoignage présenté comme local serait un faux témoignage local.
+- **Le prix médian vient de l'APCIQ, avec secteur, période et lien — ou n'est pas affiché.** Le
+  calculateur s'ouvre alors sur un champ vide. Un chiffre de RMR est présenté comme tel.
+- **Suivi** : le formulaire de contact porte un champ caché `ville` (validé contre `villes.ts` par
+  `/api/contact-submit`, repris dans le courriel interne) et envoie `generate_lead` à GA4 avec la
+  ville. Google Ads l'obtient en important cet événement depuis GA4 ; la dimension `ville` doit être
+  déclarée dans GA4 pour apparaître dans les rapports.
 - **Aucune année dans les titres** (« Acheter ou refinancer une propriété à … »). L'année entre dans
   la clé de traduction : calculée au build, elle ferait retomber le titre en français sur `/en/`
   chaque 1ᵉʳ janvier ; écrite à la main, elle date la page.
 - **La forme cherchée du mot-clé est au masculin** — « courtier hypothécaire à <Ville> », comme
   l'adresse. Le H1 et le titre disent « Courtière » ; le 1ᵉʳ paragraphe du marché porte l'autre forme.
+- **Titre : « Courtier hypothécaire <Ville> »** (SEO.astro ajoute « | Stéphanie Weyman »), au masculin
+  parce que c'est ce qu'on cherche ; le H1 garde « Courtière ». Description commune : « Courtière
+  hypothécaire à <Ville> : 20+ prêteurs comparés… Appel de 15 min sans engagement. »
 - **L'accompagnement se fait par Teams, téléphone ou texto — jamais « en personne ».** C'est la
   réalité du service (confirmé par la courtière en octobre 2026), y compris à Montréal, Laval ou
   Terrebonne : une page qui promet une rencontre sur place promet ce qui ne sera pas offert. Le

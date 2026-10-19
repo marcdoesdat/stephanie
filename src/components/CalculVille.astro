@@ -231,7 +231,7 @@ const pourcent = (t: number) => t.toFixed(2).replace('.', ',') + ' %';
 </style>
 
 <script>
-  import { calculerCapacite, AMORTISSEMENT_DEFAUT, FRAIS_DEFAUT, lireMontant, formaterSaisie } from '../utils/capaciteEmprunt';
+  import { AMORTISSEMENT_DEFAUT, lireMontant, formaterSaisie, revenuNecessaire } from '../utils/capaciteEmprunt';
   import { calculateSCHL, droitsMutation, miseMinimale, formatMoney, calcPaiement } from '../utils/mortgageCalc';
 
   function track(name: string, params?: Record<string, string>) {
@@ -251,25 +251,6 @@ const pourcent = (t: number) => t.toFixed(2).replace('.', ',') + ' %';
     const champMise = racine.querySelector<HTMLInputElement>('#cv-mise')!;
     const sortie = (cle: string) => racine.querySelector<HTMLElement>(`[data-cv="${cle}"]`);
     const ecrire = (cle: string, texte: string) => { const el = sortie(cle); if (el) el.textContent = texte; };
-
-    // Le revenu le plus bas pour lequel le simulateur accorde ce prix avec cette mise : recherche
-    // par dichotomie sur `calculerCapacite`, sans réécrire le calcul.
-    function revenuNecessaire(prix: number, mise: number, t: number): number | null {
-      const accorde = (revenu: number) => {
-        const r = calculerCapacite({
-          revenu, dettes: 0, mise, taux: t, amortAns: AMORTISSEMENT_DEFAUT,
-          taxes: FRAIS_DEFAUT.taxes, chauffage: FRAIS_DEFAUT.chauffage, condo: 0,
-        });
-        return r.ok && r.prixMax >= prix;
-      };
-      let bas = 10_000, haut = 2_000_000;
-      if (!accorde(haut)) return null;
-      while (haut - bas > 500) {
-        const milieu = (bas + haut) / 2;
-        if (accorde(milieu)) haut = milieu; else bas = milieu;
-      }
-      return Math.ceil(haut / 1000) * 1000;
-    }
 
     function calculer() {
       const prix = lireMontant(champPrix.value);

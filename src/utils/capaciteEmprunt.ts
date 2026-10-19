@@ -190,6 +190,32 @@ export function calculerCapacite(e: EntreesCapacite): ResultatCapacite {
   };
 }
 
+/**
+ * Le revenu annuel le plus bas pour lequel `calculerCapacite` accorde ce prix avec cette mise,
+ * sans autres dettes, avec les frais de propriété par défaut — le calcul rapide des pages villes.
+ * Recherche par dichotomie sur le calcul du simulateur plutôt qu'une formule réécrite : la réponse
+ * reste celle que donnerait le simulateur. Arrondi au millier supérieur. `null` si même un très
+ * haut revenu ne suffit pas (mise de fonds sous le minimum, par exemple).
+ */
+export function revenuNecessaire(prix: number, mise: number, taux: number): number | null {
+  const accorde = (revenu: number) => {
+    const r = calculerCapacite({
+      revenu, dettes: 0, mise, taux, amortAns: AMORTISSEMENT_DEFAUT,
+      taxes: FRAIS_DEFAUT.taxes, chauffage: FRAIS_DEFAUT.chauffage, condo: 0,
+    });
+    return r.ok && r.prixMax >= prix;
+  };
+  let bas = 10_000;
+  let haut = 2_000_000;
+  if (!(prix > 0) || !accorde(haut)) return null;
+  while (haut - bas > 100) {
+    const milieu = (bas + haut) / 2;
+    if (accorde(milieu)) haut = milieu;
+    else bas = milieu;
+  }
+  return Math.ceil(haut / 1000) * 1000;
+}
+
 /** La phrase qui explique un échec — partagée par les deux calculateurs. */
 export function messageEchec(motif: MotifEchec, e: Pick<EntreesCapacite, 'dettes' | 'taxes' | 'chauffage' | 'condo'>): string | null {
   switch (motif) {
