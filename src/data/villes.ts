@@ -2,10 +2,11 @@
 // de chaque page les lisent d'ici. Ajouter une ville, c'est l'ajouter ici (et à
 // pagesTraduites.json, pour sa version anglaise).
 //
-// `voisines` sert le maillage interne : un lien dans le texte d'une page proche pèse plus qu'un
-// lien de pied de page, et sans lui Gatineau, Sherbrooke et Saguenay n'étaient atteintes par
-// aucune page du site hors du pied. Chaque ville doit figurer dans les voisines d'au moins deux
-// autres — un test le verrouille.
+// `voisines` : les 2 ou 3 villes **les plus proches par la route**, et seulement elles. Un lien vers
+// une ville sans rapport (Sherbrooke depuis Saint-Jean-sur-Richelieu) n'aide ni le visiteur ni le
+// référencement ; mieux vaut une seule voisine pertinente que trois au hasard. Choisies à la main :
+// la distance à vol d'oiseau ignore les rivières et les ponts (elle rapprochait Repentigny de
+// Longueuil plutôt que de Montréal).
 
 export interface Ville {
   slug: string;
@@ -14,19 +15,19 @@ export interface Ville {
 }
 
 export const VILLES: Ville[] = [
-  { slug: 'repentigny', nom: 'Repentigny', voisines: ['terrebonne', 'mascouche', 'montreal', 'laval'] },
-  { slug: 'terrebonne', nom: 'Terrebonne', voisines: ['mascouche', 'repentigny', 'laval', 'montreal'] },
+  { slug: 'repentigny', nom: 'Repentigny', voisines: ['terrebonne', 'mascouche', 'montreal'] },
+  { slug: 'terrebonne', nom: 'Terrebonne', voisines: ['mascouche', 'repentigny', 'laval'] },
   { slug: 'mascouche', nom: 'Mascouche', voisines: ['terrebonne', 'repentigny', 'laval'] },
-  { slug: 'montreal', nom: 'Montréal', voisines: ['laval', 'longueuil', 'repentigny', 'gatineau', 'trois-rivieres'] },
-  { slug: 'laval', nom: 'Laval', voisines: ['montreal', 'terrebonne', 'mascouche', 'gatineau'] },
-  { slug: 'longueuil', nom: 'Longueuil', voisines: ['montreal', 'saint-jean-sur-richelieu', 'sherbrooke'] },
-  { slug: 'quebec', nom: 'Québec', voisines: ['levis', 'saguenay', 'trois-rivieres'] },
-  { slug: 'levis', nom: 'Lévis', voisines: ['quebec', 'sherbrooke', 'trois-rivieres'] },
+  { slug: 'montreal', nom: 'Montréal', voisines: ['laval', 'longueuil', 'repentigny'] },
+  { slug: 'laval', nom: 'Laval', voisines: ['montreal', 'terrebonne', 'mascouche'] },
+  { slug: 'longueuil', nom: 'Longueuil', voisines: ['montreal', 'saint-jean-sur-richelieu'] },
+  { slug: 'quebec', nom: 'Québec', voisines: ['levis', 'trois-rivieres'] },
+  { slug: 'levis', nom: 'Lévis', voisines: ['quebec', 'trois-rivieres'] },
   { slug: 'gatineau', nom: 'Gatineau', voisines: ['montreal', 'laval'] },
-  { slug: 'sherbrooke', nom: 'Sherbrooke', voisines: ['longueuil', 'saint-jean-sur-richelieu', 'trois-rivieres', 'levis'] },
-  { slug: 'saguenay', nom: 'Saguenay', voisines: ['quebec', 'levis', 'trois-rivieres'] },
-  { slug: 'trois-rivieres', nom: 'Trois-Rivières', voisines: ['quebec', 'montreal', 'sherbrooke', 'saguenay'] },
-  { slug: 'saint-jean-sur-richelieu', nom: 'Saint-Jean-sur-Richelieu', voisines: ['longueuil', 'montreal', 'sherbrooke'] },
+  { slug: 'sherbrooke', nom: 'Sherbrooke', voisines: ['saint-jean-sur-richelieu', 'longueuil'] },
+  { slug: 'saguenay', nom: 'Saguenay', voisines: ['quebec', 'levis'] },
+  { slug: 'trois-rivieres', nom: 'Trois-Rivières', voisines: ['quebec', 'repentigny'] },
+  { slug: 'saint-jean-sur-richelieu', nom: 'Saint-Jean-sur-Richelieu', voisines: ['longueuil', 'montreal'] },
 ];
 
 export function cheminVille(slug: string): string {

@@ -1,0 +1,107 @@
+---
+// Preuve sociale des pages villes, juste sous le héro : la note Google, le nombre d'avis et
+// trois témoignages. Ce sont les avis Google de la courtière, **sans ville attribuée** : un
+// témoignage n'est jamais présenté comme venant de la ville de la page — on ne sait pas où
+// habite celui qui l'a écrit, et le laisser croire serait un faux témoignage local.
+import { loadSiteConfig } from '../config';
+import type { GoogleReviews } from '../services/reviewsService';
+
+interface Props {
+  reviews: GoogleReviews;
+}
+
+const { reviews } = Astro.props;
+const config = loadSiteConfig();
+
+const note = reviews.rating.toFixed(1).replace('.', ',');
+// Les étoiles suivent la note réelle, arrondie : cinq étoiles pleines sous un 4,2 mentiraient.
+const pleines = Math.max(0, Math.min(5, Math.round(reviews.rating)));
+const etoiles = '★'.repeat(pleines) + '☆'.repeat(5 - pleines);
+const temoignages = reviews.reviews.slice(0, 3);
+const lienAvis = config.google_place_id
+  ? `https://search.google.com/local/reviews?placeid=${encodeURIComponent(config.google_place_id)}`
+  : `https://www.google.com/search?q=${encodeURIComponent(config.nom + ' Hypotheca avis')}`;
+---
+
+<section class="av-section" aria-label="Avis Google">
+  <div class="av-inner">
+    <div class="av-entete">
+      <span class="av-etoiles" aria-hidden="true">{etoiles}</span>
+      <span class="av-note"><strong>{note}&nbsp;/&nbsp;5</strong> sur Google</span>
+      <span class="av-sep" aria-hidden="true">·</span>
+      <a class="av-lien" href={lienAvis} target="_blank" rel="noopener noreferrer">{reviews.totalReviews} avis</a>
+    </div>
+
+    {temoignages.length > 0 && (
+      <ul class="av-liste">
+        {temoignages.map((t) => (
+          <li class="av-carte">
+            <blockquote class="av-texte">«&nbsp;{t.text}&nbsp;»</blockquote>
+            <p class="av-auteur">{t.author}</p>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</section>
+
+<style>
+  .av-section {
+    padding: 0 0 3rem;
+  }
+  .av-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  .av-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .av-etoiles {
+    color: var(--clay, #c47a52);
+    letter-spacing: 0.08em;
+  }
+  .av-sep {
+    color: var(--ink-soft, #6a6a6a);
+  }
+  .av-lien {
+    color: var(--clay, #c47a52);
+    font-weight: 600;
+  }
+  .av-liste {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+  @media (max-width: 860px) {
+    .av-liste {
+      grid-template-columns: 1fr;
+    }
+  }
+  .av-carte {
+    background: var(--white, #fff);
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+    border-radius: 12px;
+    padding: 1.25rem 1.4rem;
+  }
+  .av-texte {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--ink, #1a1a1a);
+  }
+  .av-auteur {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-soft, #4a4a4a);
+  }
+</style>

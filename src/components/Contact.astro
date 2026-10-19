@@ -8,9 +8,16 @@ const config = loadSiteConfig();
 const telephoneHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
 const courrielHref = `mailto:${config.courriel}`;
 const prenomCourtiere = config.nom.split(' ')[0];
+
+interface Props {
+  /** Ville de la page (slug) — envoyée avec la demande et dans l'événement de conversion, pour
+   *  savoir quelles pages villes convertissent. Absente ailleurs sur le site. */
+  ville?: string;
+}
+const { ville } = Astro.props;
 ---
 
-<section id="contact" data-prenom={prenomCourtiere}>
+<section id="contact" data-prenom={prenomCourtiere} data-ville={ville ?? ''}>
   <div class="section-inner">
 
     <div class="contact-grid" id="contact-form-anchor">
@@ -20,7 +27,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
         <h2 class="section-title">Parlons de <br />votre <em>projet</em></h2>
         <div class="contact-info">
           <p>
-            Gratuit. Sans engagement. À votre heure — sur Teams, par téléphone ou par texto.
+            Gratuit pour la vaste majorité des dossiers. Sans engagement. À votre heure — sur Teams, par téléphone ou par texto.
           </p>
           <div class="contact-details">
             <!-- 1. Bookings — friction minimale -->
@@ -140,7 +147,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
           />
           <div class="quiz-trust-text">
             <strong>Je réponds moi-même.</strong>
-            <span>Réponse dans les meilleurs délais.</span>
+            <span>Habituellement le jour ouvrable même.</span>
           </div>
         </div>
 
@@ -161,6 +168,8 @@ const prenomCourtiere = config.nom.split(' ')[0];
           <div style="display:none;" aria-hidden="true">
             <label>Ne pas remplir : <input name="bot-field" tabindex="-1" /></label>
           </div>
+
+          {ville && <input type="hidden" name="ville" value={ville} />}
 
           <!-- Champs cachés alimentés par le quiz -->
           <input type="hidden" name="parcours" data-quiz-field="parcours" value="" />
@@ -546,7 +555,7 @@ const prenomCourtiere = config.nom.split(' ')[0];
               En envoyant ce formulaire, vous acceptez d'être recontacté·e au sujet de votre demande. Vos données ne sont jamais partagées — voir la <a href="/confidentialite/">politique de confidentialité</a>.
             </p>
             <p class="quiz-final-note">
-              Gratuit · Sans engagement · Réponse dans les meilleurs délais
+              Gratuit pour la vaste majorité des dossiers · Sans engagement · Je vous réponds moi-même, habituellement le jour ouvrable même
             </p>
           </div>
         </form>
@@ -982,6 +991,14 @@ const prenomCourtiere = config.nom.split(' ')[0];
           body: JSON.stringify(payload),
         });
         if (!response.ok) throw new Error('Erreur serveur');
+        // Conversion : GA4 la reçoit telle quelle ; Google Ads l'importe depuis GA4. La ville de la
+        // page (absente hors des pages villes) dit quelle page a converti.
+        const villePage = document.getElementById('contact')?.dataset.ville || '';
+        const parametres = { form_name: 'contact', parcours: payload.parcours || '', ...(villePage ? { ville: villePage } : {}) };
+        // @ts-ignore
+        if (typeof window.gtag === 'function') window.gtag('event', 'generate_lead', parametres);
+        // @ts-ignore
+        if (typeof window.umami?.track === 'function') window.umami.track('generate_lead', parametres);
         clearPersist();
         form.style.display = 'none';
         if (escapeWrap) escapeWrap.style.display = 'none';
