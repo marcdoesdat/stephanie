@@ -387,10 +387,12 @@ const fraisFixes = `${FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage}\u00a0$`;
     color: var(--clay-dk);
   }
 
+  /* Toute la ligne se touche, sur 44 px de haut : la case elle-même n'en fait que 18. */
   .ce-case {
     display: flex;
     align-items: center;
     gap: .6rem;
+    min-height: 44px;
     cursor: pointer;
     font-size: .9rem;
     font-weight: 500;
