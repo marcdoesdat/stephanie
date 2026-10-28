@@ -1153,6 +1153,10 @@ npx vitest              # mode watch
 - **Jamais de taux fictifs en fallback** — afficher `null` + lien hypotheca.ca si aucun cache valide.
 - Ne pas commiter `.cache/` (cache local dev, dans `.gitignore`).
 - Validation TypeScript stricte : résoudre les erreurs `npm run check` avant de pusher.
+- **`/confidentialite` décrit ce que le code fait.** Ajouter un champ sensible à un formulaire,
+  un témoin, un stockage côté navigateur ou un sous-traitant (service tiers qui reçoit des
+  données), c'est mettre à jour la politique — et sa date — dans le même changement. Elle nomme
+  des finalités (suivi, signature, portail), jamais les outils internes qui les servent.
 
 ## Sécurité (netlify.toml)
 
