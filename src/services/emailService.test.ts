@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sendEmail } from './emailService';
+import { checkRateLimit, clientIpFromRequest, sendEmail } from './emailService';
+
+// Netlify Blobs en mémoire : le compteur de la limite de débit y vit, comme en production.
+const blobs = vi.hoisted(() => new Map<string, string>());
+vi.mock('@netlify/blobs', () => ({
+  getStore: () => ({
+    get: async (cle: string) => blobs.get(cle) ?? null,
+    set: async (cle: string, valeur: string) => void blobs.set(cle, valeur),
+  }),
+}));
 
 const COURRIEL = { from: 'steph@exemple.ca', to: 'client@exemple.ca', subject: 'Sujet', html: '<p>Bonjour</p>' };
 
@@ -32,6 +41,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('sendEmail', () => {
@@ -88,5 +98,54 @@ describe('sendEmail', () => {
     await verdict;
 
     expect(appels).toEqual([422]);
+  });
+});
+
+function requete(entetes: Record<string, string>): Request {
+  return new Request('https://stephanieweyman.ca/api/contrat-acces', { method: 'POST', headers: entetes });
+}
+
+describe('clientIpFromRequest', () => {
+  it('prend l’adresse vue par Netlify, pas celle que le client écrit dans X-Forwarded-For', () => {
+    vi.stubEnv('DEV', false);
+    const ip = clientIpFromRequest(
+      requete({ 'x-nf-client-connection-ip': '203.0.113.7', 'x-forwarded-for': '6.6.6.6, 203.0.113.7' }),
+    );
+    expect(ip).toBe('203.0.113.7');
+  });
+
+  it('en production, n’accepte jamais un en-tête de proxy à la place de celui de Netlify', () => {
+    vi.stubEnv('DEV', false);
+    expect(clientIpFromRequest(requete({ 'x-forwarded-for': '6.6.6.6', 'x-real-ip': '6.6.6.6' }))).toBe('unknown');
+  });
+
+  it('en dev local, se rabat sur les en-têtes de proxy', () => {
+    vi.stubEnv('DEV', true);
+    expect(clientIpFromRequest(requete({ 'x-forwarded-for': '10.0.0.2, 10.0.0.1' }))).toBe('10.0.0.2');
+    expect(clientIpFromRequest(requete({}))).toBe('unknown');
+  });
+});
+
+describe('checkRateLimit', () => {
+  beforeEach(() => blobs.clear());
+
+  it('bloque la sixième tentative de l’heure, même sans la variable NETLIFY', async () => {
+    vi.stubEnv('DEV', false);
+    vi.stubEnv('NETLIFY', '');
+    const verdicts: boolean[] = [];
+    for (let i = 0; i < 6; i++) verdicts.push(await checkRateLimit('203.0.113.7', 'contrat-acces'));
+    expect(verdicts).toEqual([true, true, true, true, true, false]);
+  });
+
+  it('compte chaque adresse et chaque formulaire à part', async () => {
+    vi.stubEnv('DEV', false);
+    for (let i = 0; i < 5; i++) await checkRateLimit('203.0.113.7', 'contrat-acces');
+    expect(await checkRateLimit('203.0.113.8', 'contrat-acces')).toBe(true);
+    expect(await checkRateLimit('203.0.113.7', 'rappel')).toBe(true);
+  });
+
+  it('reste ouverte en dev local', async () => {
+    vi.stubEnv('DEV', true);
+    for (let i = 0; i < 10; i++) expect(await checkRateLimit('127.0.0.1', 'contrat-acces')).toBe(true);
   });
 });

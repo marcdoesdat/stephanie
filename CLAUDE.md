@@ -1162,6 +1162,13 @@ Headers sur toutes les routes (`/*`) :
 - `X-Frame-Options: DENY`
 - `Referrer-Policy: strict-origin-when-cross-origin`
 
+**L'IP du client vient de `x-nf-client-connection-ip`, jamais de `X-Forwarded-For`.**
+`clientIpFromRequest` (`emailService.ts`) sert la limite de débit (dont celle du mot de passe de
+la courtière) et la trace de preuve des signatures. Le premier élément de `X-Forwarded-For` peut
+être écrit par le visiteur : il choisissait son IP. Les en-têtes de proxy ne sont lus qu'en dev.
+De même, `checkRateLimit` ne s'éteint qu'avec `import.meta.env.DEV` — `process.env.NETLIFY`
+n'est pas garantie au runtime des fonctions, et son absence désactivait la limite en production.
+
 Redirects configurés :
 - `/outils/penalite` → `/outils/calculateur-penalite-hypothecaire` (301)
 - Redirects de hash legacy (`#simulateur`, `#calculateur`, `#comparateur`)

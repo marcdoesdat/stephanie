@@ -151,11 +151,16 @@ interface RateEntry { count: number; windowStart: number; }
 /**
  * Limite à 5 soumissions par IP par heure. `formKey` namespace le compteur pour que
  * chaque formulaire ait son propre quota (ex. "rappel", "demande", "contact"...).
- * Ignoré en local (pas de Netlify Blobs) ; fail-open sur erreur Blob pour ne jamais
- * bloquer un utilisateur légitime sur un incident d'infrastructure.
+ * Ignoré en dev local ; fail-open sur erreur Blob pour ne jamais bloquer un utilisateur
+ * légitime sur un incident d'infrastructure.
+ *
+ * Le dev se reconnaît à `import.meta.env.DEV`, **jamais** à `process.env.NETLIFY` : cette
+ * variable n'est pas garantie au runtime des fonctions (même constat que `dossierStockage`
+ * et `ratesService`), et son absence éteignait la limite en production — y compris celle
+ * qui protège le mot de passe de la courtière contre la force brute.
  */
 export async function checkRateLimit(ip: string, formKey: string): Promise<boolean> {
-  if (!process.env.NETLIFY) return true; // skip en dev local
+  if (import.meta.env.DEV === true) return true; // skip en dev local
   let getStore: typeof import('@netlify/blobs').getStore | undefined;
   try {
     getStore = (await import('@netlify/blobs')).getStore;
@@ -182,11 +187,25 @@ export async function checkRateLimit(ip: string, formKey: string): Promise<boole
 /*  Utilitaires HTTP communs aux routes /api/*-submit                  */
 /* ------------------------------------------------------------------ */
 
-/** Extrait l'adresse IP du client depuis les en-têtes de proxy Netlify. */
+/**
+ * Adresse IP du client, telle que Netlify l'a vue.
+ *
+ * `x-nf-client-connection-ip` est posé par le réseau de Netlify lui-même : c'est la source
+ * que l'adaptateur Astro retient pour `clientAddress`. `X-Forwarded-For`, lui, peut porter
+ * une valeur écrite par le visiteur — en prendre le premier élément laissait chacun choisir
+ * son IP : contourner la limite de débit (donc deviner le mot de passe de la courtière sans
+ * frein) et inscrire une adresse inventée dans la trace de preuve d'une signature.
+ *
+ * Les en-têtes de proxy ne sont donc lus qu'en dev local, où l'en-tête Netlify n'existe pas.
+ * En production, son absence donne `unknown` plutôt qu'une valeur que le client contrôle.
+ */
 export function clientIpFromRequest(request: Request): string {
+  const netlify = request.headers.get('x-nf-client-connection-ip')?.trim();
+  if (netlify) return netlify;
+  if (import.meta.env.DEV !== true) return 'unknown';
   return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip')?.trim() ||
     'unknown'
   );
 }
