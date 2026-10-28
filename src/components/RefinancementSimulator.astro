@@ -1,8 +1,4 @@
 ---
-import { loadSiteConfig } from '../config';
-const siteConfig = loadSiteConfig();
-const telHref = `tel:+1${siteConfig.telephone.replace(/\D/g, '')}`;
-
 interface Props {
   /** Meilleur taux fixe 5 ans live (Hypotheca) — sert de valeur par défaut au nouveau taux. */
   defaultRate?: number | null;
