@@ -14,18 +14,16 @@ const categories: { id: string; label: string }[] = [
 ];
 
 const faqs = [
-  // ===== GÉNÉRAL =====
+  // L'ordre du tableau est celui de l'écran (« Général » s'ouvre par défaut, « Toutes »
+  // suit le tableau) et du JSON-LD : la valeur du service et son coût d'abord, la
+  // logistique ensuite, les termes techniques en dernier.
+
+  // ===== GÉNÉRAL — ce que je vous apporte, ce que ça coûte, puis comment ça se passe =====
   {
-    q: "Quel est votre objectif en tant que courtière ?",
-    a: "Dévouée et passionnée, je m'appuie sur un réseau de contacts clés et sur une méthode de travail structurée afin de vous offrir le meilleur service sur le marché pour votre financement hypothécaire tout en vous dénichant les meilleures conditions. Mon objectif premier est d'améliorer constamment la qualité du service que je suis en mesure d'offrir, tout en continuant de croître dans le milieu hypothécaire.",
+    q: "Quelle est la différence entre un courtier et ma banque ?",
+    a: "Votre banque ne vous propose que ses propres produits. Moi, j'ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution. Un écart de 0,30 % sur un prêt de 400 000 $, ça représente près de 4 000 $ d'intérêts sur 5 ans. C'est exactement ce type d'écart qu'on veut à aller chercher pour vous.",
     cat: 'general',
-    slug: 'objectif',
-  },
-  {
-    q: "Quelles régions desservez-vous ?",
-    a: "Mes clients sont principalement sur la Rive-Nord de Montréal et dans Lanaudière : Repentigny, Terrebonne, Mascouche, L'Assomption, Charlemagne, Le Gardeur, Lavaltrie et les environs. Comme une grande partie du processus se fait à distance (Teams, téléphone, texto, signature électronique), je peux aussi vous accompagner partout au Québec.",
-    cat: 'general',
-    slug: 'regions-desservies',
+    slug: 'courtier-vs-banque',
   },
   {
     q: "Est-ce que ça coûte quelque chose de consulter un courtier hypothécaire ?",
@@ -34,24 +32,36 @@ const faqs = [
     slug: 'cout-courtier',
   },
   {
-    q: "Quelle est la différence entre un courtier et ma banque ?",
-    a: "Votre banque ne vous propose que ses propres produits. Moi, j'ai accès à plus de 20 prêteurs — banques, caisses, assureurs — et je magasine pour vous le meilleur taux et les meilleures conditions. Je travaille pour vous, pas pour une institution. Un écart de 0,30 % sur un prêt de 400 000 $, ça représente près de 4 000 $ d'intérêts sur 5 ans. C'est exactement ce type d'écart qu'on veut à aller chercher pour vous.",
+    q: "Combien de temps prend le processus d'approbation ?",
+    a: "En général, une pré-approbation peut être obtenue en 24 à 48 heures. Pour une approbation finale, comptez de quelques jours à deux semaines selon la complexité de votre dossier. Je m'occupe de tout le suivi avec le prêteur afin de faire avancer le dossier le plus rapidement possible. Le délai dépend aussi de la rapidité avec laquelle les documents demandés (preuves de revenu, relevés, mise de fonds, etc.) me sont transmis : un dossier complet dès le départ permet d'accélérer considérablement les choses.",
     cat: 'general',
-    slug: 'courtier-vs-banque',
+    slug: 'delai-approbation',
   },
   {
-    q: "Que veut dire ABD/ATD ?",
-    a: "Quand on demande un prêt hypothécaire, le prêteur veut s'assurer que vous gardez assez d'argent chaque mois pour bien vivre après avoir payé votre maison. Pour ça, il regarde quelle portion de vos revenus servirait à payer vos dettes, avec deux mesures. L'ABD (amortissement brut de la dette), c'est la part de votre revenu qui sert juste à votre logement : le paiement hypothécaire, les taxes municipales et scolaires, le chauffage et les frais de condo s'il y en a. En général, on veut que ça reste autour de 39 % maximum. L'ATD (amortissement total de la dette), c'est la même chose, mais on ajoute toutes vos autres obligations : auto, cartes de crédit, marges, prêt étudiant, pension, etc. On veut que ça reste autour de 44 % maximum. Ces seuils varient selon que le prêt est assuré ou conventionnel, et selon le prêteur. Ce n'est pas votre salaire seul qui décide combien vous pouvez emprunter — c'est l'équilibre entre ce que vous gagnez et ce que vous devez déjà. C'est pour ça que rembourser une auto ou une carte avant l'achat peut parfois augmenter votre capacité d'emprunt plus qu'une augmentation de salaire.",
+    q: "Quelles régions desservez-vous ?",
+    a: "Mes clients sont principalement sur la Rive-Nord de Montréal et dans Lanaudière : Repentigny, Terrebonne, Mascouche, L'Assomption, Charlemagne, Le Gardeur, Lavaltrie et les environs. Comme une grande partie du processus se fait à distance (Teams, téléphone, texto, signature électronique), je peux aussi vous accompagner partout au Québec.",
     cat: 'general',
-    slug: 'abd-atd',
+    slug: 'regions-desservies',
+  },
+  {
+    q: "Quel est votre objectif en tant que courtière ?",
+    a: "Dévouée et passionnée, je m'appuie sur un réseau de contacts clés et sur une méthode de travail structurée afin de vous offrir le meilleur service sur le marché pour votre financement hypothécaire tout en vous dénichant les meilleures conditions. Mon objectif premier est d'améliorer constamment la qualité du service que je suis en mesure d'offrir, tout en continuant de croître dans le milieu hypothécaire.",
+    cat: 'general',
+    slug: 'objectif',
   },
 
-  // ===== PREMIER ACHAT =====
+  // ===== PREMIER ACHAT — combien il faut, d'où il vient, puis la démarche =====
   {
     q: "De combien de mise de fonds ai-je besoin pour acheter au Québec ?",
     a: "Au Canada, le minimum est de 5 % pour une propriété de moins de 500 000 $. Entre 500 000 $ et 1 500 000 $ (seuil rehaussé en décembre 2024), c'est 5 % sur la première tranche de 500 000 $ et 10 % sur le reste. À partir de 1 500 000 $, une mise de 20 % est requise. Une mise inférieure à 20 % nécessite l'assurance prêt hypothécaire (SCHL, Sagen ou Canada Guaranty). Ces seuils sont des règles générales; le montant exact selon votre situation se confirme à l'analyse de votre dossier.",
     cat: 'premier-achat',
     slug: 'mise-de-fonds',
+  },
+  {
+    q: "Suis-je admissible au RAP ou au CELIAPP pour ma mise de fonds ?",
+    a: "Le RAP (Régime d'accession à la propriété) permet de retirer jusqu'à 60 000 $ de vos REER par personne — donc 120 000 $ pour un couple — sans impôt immédiat, à condition de rembourser sur 15 ans. Le CELIAPP, lui, combine les avantages du REER et du CELI : les cotisations sont déductibles d'impôt et les retraits pour l'achat d'une première propriété sont non imposables. Vous pouvez cotiser jusqu'à 8 000 $ par an (maximum 40 000 $ à vie). Bonus : RAP et CELIAPP peuvent être combinés. On fait le point ensemble sur ce qui maximise votre mise sans toucher à votre coussin de sécurité.",
+    cat: 'premier-achat',
+    slug: 'rap-celiapp',
   },
   {
     q: "Qu'est-ce qu'une pré-approbation hypothécaire et pourquoi en ai-je besoin ?",
@@ -60,10 +70,10 @@ const faqs = [
     slug: 'pre-approbation',
   },
   {
-    q: "Suis-je admissible au RAP ou au CELIAPP pour ma mise de fonds ?",
-    a: "Le RAP (Régime d'accession à la propriété) permet de retirer jusqu'à 60 000 $ de vos REER par personne — donc 120 000 $ pour un couple — sans impôt immédiat, à condition de rembourser sur 15 ans. Le CELIAPP, lui, combine les avantages du REER et du CELI : les cotisations sont déductibles d'impôt et les retraits pour l'achat d'une première propriété sont non imposables. Vous pouvez cotiser jusqu'à 8 000 $ par an (maximum 40 000 $ à vie). Bonus : RAP et CELIAPP peuvent être combinés. On fait le point ensemble sur ce qui maximise votre mise sans toucher à votre coussin de sécurité.",
+    q: "Que veut dire ABD/ATD ?",
+    a: "Quand on demande un prêt hypothécaire, le prêteur veut s'assurer que vous gardez assez d'argent chaque mois pour bien vivre après avoir payé votre maison. Pour ça, il regarde quelle portion de vos revenus servirait à payer vos dettes, avec deux mesures. L'ABD (amortissement brut de la dette), c'est la part de votre revenu qui sert juste à votre logement : le paiement hypothécaire, les taxes municipales et scolaires, le chauffage et les frais de condo s'il y en a. En général, on veut que ça reste autour de 39 % maximum. L'ATD (amortissement total de la dette), c'est la même chose, mais on ajoute toutes vos autres obligations : auto, cartes de crédit, marges, prêt étudiant, pension, etc. On veut que ça reste autour de 44 % maximum. Ces seuils varient selon que le prêt est assuré ou conventionnel, et selon le prêteur. Ce n'est pas votre salaire seul qui décide combien vous pouvez emprunter — c'est l'équilibre entre ce que vous gagnez et ce que vous devez déjà. C'est pour ça que rembourser une auto ou une carte avant l'achat peut parfois augmenter votre capacité d'emprunt plus qu'une augmentation de salaire.",
     cat: 'premier-achat',
-    slug: 'rap-celiapp',
+    slug: 'abd-atd',
   },
 
   // ===== RENOUVELLEMENT =====
@@ -80,12 +90,6 @@ const faqs = [
     a: "Un taux fixe reste le même pendant toute la durée du terme — vos versements ne changent jamais, ce qui facilite le budget. Un taux variable fluctue selon le taux directeur de la Banque du Canada. Selon le produit choisi, vos versements peuvent varier, ou rester fixes avec une portion capital/intérêts qui s'ajuste. Le taux variable a pu s'avérer avantageux sur certaines périodes, mais il exige une tolérance au risque plus élevée. Le meilleur choix dépend de votre profil, de votre horizon et du contexte économique. On en discute ensemble pour prendre la décision éclairée.",
     cat: 'renouvellement',
     slug: 'fixe-vs-variable',
-  },
-  {
-    q: "Combien de temps prend le processus d'approbation ?",
-    a: "En général, une pré-approbation peut être obtenue en 24 à 48 heures. Pour une approbation finale, comptez de quelques jours à deux semaines selon la complexité de votre dossier. Je m'occupe de tout le suivi avec le prêteur afin de faire avancer le dossier le plus rapidement possible. Le délai dépend aussi de la rapidité avec laquelle les documents demandés (preuves de revenu, relevés, mise de fonds, etc.) me sont transmis : un dossier complet dès le départ permet d'accélérer considérablement les choses.",
-    cat: 'renouvellement',
-    slug: 'delai-approbation',
   },
 
   // ===== REFUS & ATYPIQUE =====
