@@ -800,6 +800,13 @@ le client consulte le sien sur `/mon-dossier`, sans mot de passe. Le socle est c
 - **Le carnet se purge**, contrairement à celui du réseau : douze mois après la clôture, un
   dossier est supprimé. Un contact professionnel est un actif ; un dossier client est nominatif
   et financier.
+- **Un prospect jamais qualifié est supprimé cinq ans après sa dernière activité** (`majLe` :
+  toute note, étape ou courriel repousse l'échéance). C'est le délai que promet la politique de
+  confidentialité (section 5) — décision d'octobre 2026, cinq ans étant la durée d'un terme
+  hypothécaire. La Loi 25 (art. 23) impose de détruire une fois la fin accomplie, sans fixer de
+  durée : le chiffre est un choix, mais « jamais » n'en est pas un. Un dossier ouvert (qualifié,
+  non clos) n'est jamais purgé. `purgerAnciens` applique les deux règles ; changer l'une des
+  durées, c'est changer la politique dans le même commit.
 - **L'historique ne se réécrit pas** : étapes, documents, notes, courriels, ouvertures du portail.
 - Les cartes de `/dossiers` sont bâties en JavaScript, donc habillées par un bloc `is:global`
   circonscrit par `#dc-app` — même raison que `#rs-app` et `#ct-suivi`.
