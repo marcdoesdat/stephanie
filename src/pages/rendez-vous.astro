@@ -32,15 +32,6 @@ const telephoneHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
           </p>
         </div>
 
-        <div class="rdv-booking-card">
-          <iframe
-            src={config.calendly_url}
-            title={`Calendrier de réservation de ${config.nom}`}
-            class="rdv-iframe"
-            loading="eager"
-          ></iframe>
-        </div>
-
         <p class="rdv-fallback">
           Le calendrier ne s'affiche pas&nbsp;?
           <a
@@ -52,6 +43,15 @@ const telephoneHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
           Vous pouvez aussi appeler ou texter directement&nbsp;:
           <a href={telephoneHref} data-umami-event="tel_click_rdv">{config.telephone}</a>
         </p>
+
+        <div class="rdv-booking-card">
+          <iframe
+            src={config.calendly_url}
+            title={`Calendrier de réservation de ${config.nom}`}
+            class="rdv-iframe"
+            loading="eager"
+          ></iframe>
+        </div>
 
       </div>
     </section>
@@ -97,7 +97,7 @@ const telephoneHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
     font-size: 0.85rem;
     color: var(--muted);
     line-height: 1.8;
-    margin-top: 1.25rem;
+    margin: 0 0 1.25rem;
   }
   .rdv-fallback a {
     color: var(--clay);

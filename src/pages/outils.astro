@@ -20,21 +20,15 @@ export const prerender = false;
 const config = loadSiteConfig();
 const prenom = config.nom.split(' ')[0] ?? 'Stéphanie';
 const hypothecaRates = await fetchHypothecaRates();
-const defaultRate = hypothecaRates?.fixe_5ans ?? 4.99;
+const defaultRate = hypothecaRates?.fixe_5ans ?? null;
 
-const taux5ans = hypothecaRates?.fixe_5ans ?? 4.89;
-const taux4ans = hypothecaRates?.fixe_4ans ?? ((hypothecaRates?.fixe_3ans ?? 4.69) + (hypothecaRates?.fixe_5ans ?? 4.89)) / 2;
-const taux3ans = hypothecaRates?.fixe_3ans ?? 4.69;
-const taux2ans = hypothecaRates?.fixe_2ans ?? ((hypothecaRates?.fixe_1ans ?? 5.49) + (hypothecaRates?.fixe_3ans ?? 4.69)) / 2;
-const taux1an  = hypothecaRates?.fixe_1ans ?? 5.49;
-
-const tauxMarcheDefaut = {
-  '6': (taux1an + 0.15).toFixed(2),
-  '12': taux1an.toFixed(2),
-  '24': taux2ans.toFixed(2),
-  '36': taux3ans.toFixed(2),
-  '48': taux4ans.toFixed(2),
-  '60': taux5ans.toFixed(2),
+const tauxMarcheDefaut: Record<string, string> = {
+  '6': '',
+  '12': hypothecaRates?.fixe_1ans?.toFixed(2) ?? '',
+  '24': hypothecaRates?.fixe_2ans?.toFixed(2) ?? '',
+  '36': hypothecaRates?.fixe_3ans?.toFixed(2) ?? '',
+  '48': hypothecaRates?.fixe_4ans?.toFixed(2) ?? '',
+  '60': hypothecaRates?.fixe_5ans?.toFixed(2) ?? '',
 };
 
 const dateMaj = hypothecaRates?.fetchedAt

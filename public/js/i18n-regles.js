@@ -77,6 +77,7 @@
 
   // --- Calculateur de pénalité ---------------------------------------------------------------
   P("Environ {m} si vous brisez votre hypothèque aujourd'hui", 'About {1} if you break your mortgage today');
+  P('Le taux du marché pour le terme de référence ({n} mois) est requis.', 'The market rate for the reference term ({1} months) is required.');
   P('Voici le lien à partager : {t}', 'Here is the link to share: {1}');
 
   // --- Simulateur de refinancement -----------------------------------------------------------
@@ -131,7 +132,13 @@
     ['de moins)', 'less)'],
     ['Pénalité = ', 'Penalty = '],
     ['Capital + intérêts', 'Principal + interest'],
+    ['(test de résistance)', '(stress test)'],
+    ['amortissement de', 'amortization of'],
+    ['ans ·', 'years ·'],
+    ['taxes et', 'estimated taxes and'],
+    ['chauffage estimés à', 'heating:'],
     [' chauffage ', ' heating '],
+    ['qualifié à', 'qualifying at'],
     ['/mois', '/month'],
     ['Dont ', 'Of which '],
     [' d\'effet taux et ', ' from the rate effect and '],
@@ -147,6 +154,8 @@
   R(/^Taux mis à jour il y a (\d+) minutes?\.$/, function (_, n) { return 'Rates updated ' + n + (n === '1' ? ' minute' : ' minutes') + ' ago.'; });
   R(/^Taux mis à jour il y a (\d+) heures?\.$/, function (_, n) { return 'Rates updated ' + n + (n === '1' ? ' hour' : ' hours') + ' ago.'; });
   R(/^Taux mis à jour il y a (\d+) jours?\.$/, function (_, n) { return 'Rates updated ' + n + (n === '1' ? ' day' : ' days') + ' ago.'; });
+  R(/^Mise à jour\s*:\s*(.+)$/, function (_, date) { return 'Updated: ' + date; });
+  R(/^Dès\s+([\d.,]+)\s*%\s*(\*)?$/, function (_, taux, astérisque) { return 'From ' + taux + '%' + (astérisque || ''); });
   P('Aller au témoignage {n}', 'Go to testimonial {1}');
 
   // --- Pages de refinancement (funnels publicitaires) --------------------------------------

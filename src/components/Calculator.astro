@@ -4,9 +4,9 @@ import { loadSiteConfig } from '../config';
 const config = loadSiteConfig();
 
 interface Props {
-  defaultRate?: number;
+  defaultRate?: number | null;
 }
-const { defaultRate = 4.99 } = Astro.props;
+const { defaultRate = null } = Astro.props;
 ---
 
 <section id="calculateur">
@@ -44,8 +44,12 @@ const { defaultRate = 4.99 } = Astro.props;
           <div class="adv-panel" id="adv-panel">
             <div class="form-group">
               <label for="taux">Taux d'intérêt (%)</label>
-              <input type="number" id="taux" placeholder="4.99" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="25" />
-              <small style="color:var(--muted);font-size:.72rem;margin-top:.3rem;display:block;">Modifiable — taux moyen actuel pré-rempli</small>
+              <input type="number" id="taux" value={defaultRate == null ? '' : defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="25" />
+              <small class="calc-rate-help">
+                {defaultRate == null
+                  ? <>Le taux du jour n'est pas disponible. Entrez le taux à tester ou consultez les <a href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener noreferrer">taux Hypotheca</a>.</>
+                  : 'Taux fixe 5 ans Hypotheca du jour — modifiable.'}
+              </small>
               <div class="taux-easter-note" id="calc-taux-note" style="display:none;"></div>
             </div>
             <div class="form-row">
@@ -91,9 +95,9 @@ const { defaultRate = 4.99 } = Astro.props;
 
         <div class="result-card main">
           <div class="result-label" id="label-freq">Versement mensuel</div>
-          <div class="result-value" id="res-paiement">0 $</div>
+          <div class="result-value" id="res-paiement">—</div>
           <div class="result-detail" id="res-detail-cap-int">Capital et intérêts — prime SCHL incluse (financée dans le prêt)</div>
-          <div class="result-detail result-detail--micro" id="res-detail-prime-schl">Dont ≈ 0 $/mois pour la prime SCHL</div>
+          <div class="result-detail result-detail--micro" id="res-detail-prime-schl" style="display:none;">Dont ≈ 0 $/mois pour la prime SCHL</div>
         </div>
 
 
@@ -107,11 +111,11 @@ const { defaultRate = 4.99 } = Astro.props;
         <div class="results-grid">
           <div class="result-card small">
             <div class="result-label">Montant du prêt</div>
-            <div class="result-value" id="res-pret">0 $</div>
+            <div class="result-value" id="res-pret">—</div>
           </div>
           <div class="result-card small result-card--schl">
             <div class="result-label">Prime SCHL ajoutée au prêt</div>
-            <div class="result-value" id="res-schl">0 $</div>
+            <div class="result-value" id="res-schl">—</div>
             <div class="result-detail" id="res-schl-detail" style="display:none;"></div>
           </div>
         </div>
@@ -293,17 +297,17 @@ const { defaultRate = 4.99 } = Astro.props;
     tauxEl.addEventListener('input', updateCalcTauxNote);
 
     function clearResults() {
-      document.getElementById('res-paiement')!.textContent = '0 $';
-      document.getElementById('res-pret')!.textContent     = '0 $';
-      document.getElementById('res-schl')!.textContent     = '0 $';
+      document.getElementById('res-paiement')!.textContent = '—';
+      document.getElementById('res-pret')!.textContent = '—';
+      document.getElementById('res-schl')!.textContent = '—';
       document.getElementById('res-detail-cap-int')!.textContent = 'Capital et intérêts — prime SCHL incluse (financée dans le prêt)';
       document.getElementById('label-freq')!.textContent   = 'Versement mensuel';
       const schlDetail = document.getElementById('res-schl-detail')!;
       schlDetail.style.display = 'none';
       const primeSchlMicroEl = document.getElementById('res-detail-prime-schl');
       if (primeSchlMicroEl) {
-        primeSchlMicroEl.textContent = 'Dont ≈ 0 $/mois pour la prime SCHL';
-        primeSchlMicroEl.style.display = '';
+        primeSchlMicroEl.textContent = '';
+        primeSchlMicroEl.style.display = 'none';
       }
       document.getElementById('card-cout-mensuel')!.style.display = 'none';
       if (lienAmortEl) lienAmortEl.style.display = 'none';
@@ -318,13 +322,23 @@ const { defaultRate = 4.99 } = Astro.props;
       } else {
         mise = parsePrixVal(miseEl.value);
       }
-      const taux  = parseFloat(tauxEl.value) || 0;
+      const tauxTexte = tauxEl.value.trim();
+      const taux = tauxTexte === '' ? NaN : parseFloat(tauxTexte);
 
       // Easter egg : taux à 0 %
       if (tauxEl.value.trim() === '0' && prix > 0 && mise > 0) {
         clearResults();
         return;
       }
+
+      if (!Number.isFinite(taux) || taux < 0 || taux > 25) {
+        clearResults();
+        showCalcWarning(tauxTexte === ''
+          ? "Entrez le taux d'intérêt pour calculer votre versement."
+          : 'Entrez un taux valide entre 0 % et 25 %.');
+        return;
+      }
+
       const amort = parseInt(amortEl.value) || 25;
       const freq  = parseInt(freqEl.value) || 12;
 
@@ -601,6 +615,7 @@ const { defaultRate = 4.99 } = Astro.props;
 
     calcRevealBtn.onclick = () => {
       doCalculation();
+      if (document.getElementById('res-paiement')!.textContent === '—') return;
       calcRevealBtn.style.display = 'none';
       emailSection.style.display = 'block';
     };

@@ -29,6 +29,9 @@ const { ville } = Astro.props;
           <p>
             Gratuit pour la vaste majorité des dossiers. Sans engagement. À votre heure — sur Teams, par téléphone ou par texto.
           </p>
+          <a class="contact-quiz-start btn-cta" href="#contact-quiz" data-umami-event="cta_contact_start_quiz">
+            Commencer le questionnaire
+          </a>
           <div class="contact-details">
             <!-- 1. Bookings — friction minimale -->
             <div class="contact-item">
@@ -132,7 +135,7 @@ const { ville } = Astro.props;
       </div>
 
       <!-- ======== COLONNE DROITE : Questionnaire interactif ======== -->
-      <div class="contact-form quiz fade-up" style="transition-delay:.15s">
+      <div class="contact-form quiz fade-up" id="contact-quiz" style="transition-delay:.15s">
 
         <!-- Bandeau humain (toujours visible — c'est l'argument de vente n°1) -->
         <div class="quiz-trust">
@@ -570,7 +573,7 @@ const { ville } = Astro.props;
         <div class="form-success" id="form-success">
           <span class="check" aria-hidden="true">✅</span>
           <strong>Merci, votre demande est envoyée !</strong><br />
-          {prenomCourtiere} vous recontacte dès que possible.<br /><br />
+          {prenomCourtiere} vous répond personnellement, habituellement le jour ouvrable même.<br /><br />
           <a href={config.messenger_url} target="_blank" rel="noopener noreferrer" style="color:var(--forest);font-weight:600;">
             💬 Ou écrire sur Messenger maintenant →
           </a>
@@ -665,28 +668,28 @@ const { ville } = Astro.props;
       const urgent = pa_timing === 'Dès que possible';
 
       if (urgent && highMise) {
-        return `Avec une mise sérieuse et un échéancier serré, on prépare votre pré-approbation rapidement pour que vous puissiez magasiner avec confiance dès cette semaine.`;
+        return `Avec votre promesse d'achat et votre échéancier, on peut prioriser l'examen du dossier et des prochaines étapes. ${prenomCourtiere} vous répond personnellement, habituellement le jour ouvrable même.`;
       }
       if (highMise && (highIncome || pa_revenus === '100 000 à 150 000 $')) {
-        return `Avec votre mise et vos revenus, on est dans une zone très intéressante. ${prenomCourtiere} structurera votre dossier pour viser le maximum réaliste — et négocier le taux qui va avec.`;
+        return `Votre mise et vos revenus permettent d'examiner plusieurs scénarios. ${prenomCourtiere} comparera les options et les conditions offertes par les prêteurs qui pourraient convenir à votre dossier.`;
       }
       if (lowMise) {
-        return `Le CELIAPP combiné au RAP peut presque doubler votre vitesse d'accumulation. ${prenomCourtiere} vous montrera le scénario chiffré sur votre situation — et un plan concret pour atteindre votre objectif.`;
+        return `Le CELIAPP et le RAP peuvent être complémentaires selon votre situation. ${prenomCourtiere} vérifiera les règles applicables et les pistes qui pourraient vous aider à planifier votre mise de fonds.`;
       }
       if (midMise) {
-        return `Votre mise actuelle ouvre déjà plusieurs scénarios. On regarde ensemble comment les leviers RAP + CELIAPP peuvent maximiser votre capacité d'achat sans toucher à votre coussin.`;
+        return `Votre mise actuelle permet d'examiner plusieurs scénarios. On vérifie ensemble les options RAP + CELIAPP qui pourraient convenir, tout en préservant votre coussin.`;
       }
       if (exploring) {
         return `Parfait — le meilleur moment pour s'informer, c'est avant d'avoir besoin d'agir. ${prenomCourtiere} vous donnera un portrait clair pour planifier sereinement.`;
       }
       if (lowIncome) {
-        return `Plusieurs programmes existent pour maximiser votre accès à la propriété. ${prenomCourtiere} vous expliquera lesquels s'appliquent à votre situation, en toute simplicité.`;
+        return `Certains programmes peuvent soutenir l'accès à la propriété selon votre situation. ${prenomCourtiere} vérifiera avec vous les critères qui pourraient s'appliquer.`;
       }
       // Q1/Q2 anciens (visiteurs venant du parcours générique)
       if (q1 === 'Mise de fonds prête' && q2 === 'RAP/CELIAPP connus') {
-        return `Avec votre mise de fonds et l'optimisation de vos leviers (RAP + CELIAPP), on structure votre dossier pour maximiser votre capacité d'achat dès la pré-approbation.`;
+        return `On examine les leviers RAP + CELIAPP et les critères des prêteurs pour estimer les scénarios envisageables avec votre mise de fonds.`;
       }
-      return `Parler à ${prenomCourtiere}, c'est obtenir une stratégie claire. Découvrez exactement quel montant vous pouvez viser et comment maximiser votre mise de fonds. Simple et sans engagement.`;
+      return `Parler à ${prenomCourtiere}, c'est clarifier les options possibles. On estime un montant réaliste et les façons de planifier votre mise de fonds, sans engagement.`;
     }
 
     if (parcours === 'Renouvellement / Refinancement') {
@@ -694,12 +697,12 @@ const { ville } = Astro.props;
         return `On a encore le temps de comparer avant que votre banque ne vous envoie son offre de renouvellement. Beaucoup de propriétaires acceptent la première offre par défaut — magasiner vous permet de prendre une décision éclairée.`;
       }
       if (q2 === 'Libérer équité') {
-        return `Une simulation comparative refinancement vs. marge hypothécaire vous sera préparée avant l'appel — vous saurez quelle option coûte le moins cher sur 5 ans.`;
+        return `Une comparaison entre le refinancement et la marge hypothécaire peut aider à estimer les coûts sur 5 ans et à éclairer votre décision.`;
       }
       if (q1 === 'Terme > 12 mois') {
         return `Parfait, on a tout le temps. ${prenomCourtiere} vous donnera la stratégie de timing pour ne pas manquer la fenêtre de taux.`;
       }
-      return `${prenomCourtiere} préparera une comparaison avec les taux du jour avant votre appel.`;
+      return `On pourra comparer les taux et les conditions du moment à l'approche de votre échéance.`;
     }
 
     if (parcours === 'Travailleur autonome / Dossier complexe') {
@@ -707,7 +710,7 @@ const { ville } = Astro.props;
         return `Un refus de banque ne veut pas dire un refus du marché. ${prenomCourtiere} a accès à 20+ prêteurs, incluant des prêteurs alternatifs spécialisés dans votre profil.`;
       }
       if (q1 === 'Travailleur autonome / incorporé' && q2 === 'Avis de cotisation à jour') {
-        return `C'est exactement le type de dossier où ${prenomCourtiere} fait la différence : elle saura quel prêteur valorise vos revenus nets vs. brut, et négocier en conséquence.`;
+        return `On comparera les prêteurs dont les critères pourraient tenir compte de la façon dont vos revenus sont déclarés.`;
       }
       if (q2 === 'À clarifier' || q2 === 'Documents en cours') {
         return `Pas de souci — on commencera par un appel pour cartographier ce qu'il vous faut. Aucune pré-condition pour parler.`;
@@ -717,7 +720,7 @@ const { ville } = Astro.props;
 
     if (parcours === 'Investissement / Autre') {
       if (q1 === 'Plex / immeuble à revenus') {
-        return `Le calcul des revenus locatifs admissibles varie énormément d'un prêteur à l'autre — ${prenomCourtiere} identifiera ceux qui maximisent votre capacité d'emprunt.`;
+        return `Les critères sur les revenus locatifs varient d'un prêteur à l'autre. On vérifiera lesquels pourraient s'appliquer à votre projet.`;
       }
       return `Décrivez votre projet en quelques mots à l'étape suivante — ${prenomCourtiere} vous reviendra avec une approche sur mesure.`;
     }

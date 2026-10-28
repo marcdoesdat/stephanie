@@ -1,5 +1,6 @@
 /**
- * Audit des outils sur téléphone, sur un serveur lancé : débordements hors de l'écran,
+ * Audit mobile des outils, du hero et du questionnaire de contact, sur un serveur lancé :
+ * débordements hors de l'écran,
  * champs sous 16 px (Safari iOS zoome au toucher et ne revient pas), cibles tactiles
  * trop petites. Chaque outil est vérifié à 320, 375 et 390 px de large.
  *
@@ -27,6 +28,8 @@ const CIBLES = [
   ['droits-mutation', '/outils', 'droits-mutation', '#panel-droits-mutation'],
   ['penalite-page', '/outils/calculateur-penalite-hypothecaire', null, '#penalite-calculator'],
   ['capacite-accueil', '/', null, '#outils-teaser'],
+  ['accueil-hero', '/', null, '#hero'],
+  ['contact', '/', null, '#contact'],
   ['amortissement', '/amortissement?prix=450000&mise=45000&taux=4.99&amort=25&freq=12', null, 'main'],
   ['refinancement-v1', '/refinancement', null, 'main'],
   ['refinancement-v2', '/refinancement-v2', null, 'main'],
@@ -41,14 +44,14 @@ function auditer(sel) {
   for (const el of racine.querySelectorAll('*')) {
     const r = el.getBoundingClientRect();
     const s = getComputedStyle(el);
+    if (el.matches('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea') && !el.matches('[name="bot-field"]')) {
+      const fs = parseFloat(s.fontSize);
+      if (fs < 16) zoom.push(`${nom(el)} ${fs}px`);
+    }
     if (!r.width || !r.height || s.visibility === 'hidden') continue;
     // Les pièges à robots sont rejetés loin à gauche exprès.
     if (r.right < 0) continue;
     if (r.right > vw + 1 || r.left < -1) deborde.push(`${nom(el)} [${Math.round(r.left)} → ${Math.round(r.right)}]`);
-    if (el.matches('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea')) {
-      const fs = parseFloat(s.fontSize);
-      if (fs < 16) zoom.push(`${nom(el)} ${fs}px`);
-    }
     if (el.matches('button,a,input[type=checkbox],input[type=radio],[role=tab]') && (r.height < 32 || r.width < 32)) {
       // Une zone de toucher agrandie par un ::before absolu compte comme suffisante.
       const avant = getComputedStyle(el, '::before');

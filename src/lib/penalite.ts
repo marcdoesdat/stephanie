@@ -214,15 +214,26 @@ export function validerInputs(input: PenaliteInput): ErreursValidation {
     erreurs.tauxAfficheOrigine = 'Le taux affiché à l\'origine doit être entre 0 % et 20 %.';
   }
 
-  // Validation des taux du marché
-  const tauxKeys = Object.keys(input.tauxMarche);
-  if (tauxKeys.length === 0) {
-    erreurs.tauxMarche = 'Les taux du marché sont requis.';
-  } else {
-    for (const [terme, taux] of Object.entries(input.tauxMarche)) {
-      if (isNaN(taux) || taux < 0 || taux > TAUX_MAX) {
-        erreurs.tauxMarche = `Le taux du marché pour le terme ${terme} mois est invalide.`;
-        break;
+  if (input.typeTaux === 'fixe') {
+    const tauxKeys = Object.keys(input.tauxMarche);
+    if (tauxKeys.length === 0) {
+      erreurs.tauxMarche = 'Les taux du marché sont requis pour estimer la pénalité IRD d’un prêt fixe.';
+    } else {
+      for (const [terme, taux] of Object.entries(input.tauxMarche)) {
+        if (isNaN(taux) || taux < 0 || taux > TAUX_MAX) {
+          erreurs.tauxMarche = `Le taux du marché pour le terme ${terme} mois est invalide.`;
+          break;
+        }
+      }
+    }
+
+    if (!erreurs.dateDebutTerme && !erreurs.dureeTermeMois && !erreurs.tauxMarche) {
+      const moisRestants = calculerMoisRestants(input.dateDebutTerme, input.dureeTermeMois);
+      if (moisRestants > 0) {
+        const termeReference = termeLePlusProche(moisRestants);
+        if (input.tauxMarche[termeReference] === undefined) {
+          erreurs.tauxMarche = `Le taux du marché pour le terme de référence (${termeReference} mois) est requis.`;
+        }
       }
     }
   }
@@ -336,7 +347,10 @@ export function calculerPenalite(
 
   // 4. Taux fixe → calculer l'IRD
   const termeComparaison = termeLePlusProche(moisRestants);
-  const tauxComparaison = input.tauxMarche[termeComparaison] ?? input.tauxMarche[60] ?? 0;
+  const tauxComparaison = input.tauxMarche[termeComparaison];
+  if (tauxComparaison === undefined) {
+    throw new RangeError(`Le taux du marché pour le terme de référence (${termeComparaison} mois) est requis.`);
+  }
 
   let tauxReference: number;
   let methodeRetenue: MethodeIRD;

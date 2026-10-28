@@ -2,9 +2,9 @@
 import { FRAIS_DEFAUT } from '../utils/capaciteEmprunt';
 
 interface Props {
-  defaultRate?: number;
+  defaultRate?: number | null;
 }
-const { defaultRate = 3.79 } = Astro.props;
+const { defaultRate = null } = Astro.props;
 ---
 
 <section id="simulateur">
@@ -37,7 +37,12 @@ const { defaultRate = 3.79 } = Astro.props;
 
         <div class="sim-group">
           <label for="sim-taux">Taux d'intérêt estimé (%)</label>
-          <input type="number" id="sim-taux" value={defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" />
+          <input type="number" id="sim-taux" value={defaultRate == null ? '' : defaultRate.toFixed(2)} step="0.01" inputmode="decimal" min="0" max="20" />
+          {defaultRate == null && (
+            <small class="sim-rate-help">
+              Le taux du jour n'est pas disponible. Entrez le taux que vous souhaitez tester ou consultez les <a href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener noreferrer">taux Hypotheca</a>.
+            </small>
+          )}
           <div class="taux-easter-note" id="sim-taux-note" style="display:none;"></div>
         </div>
 
@@ -243,11 +248,20 @@ const { defaultRate = 3.79 } = Astro.props;
       const revenu = lireMontant(revenuEl.value);
       const dettes = lireMontant(dettesEl.value);
       const mise   = lireMontant(miseEl.value);
-      const taux   = parseFloat(tauxEl.value) || 3.79;
+      const tauxTexte = tauxEl.value.trim();
+      const taux = tauxTexte === '' ? NaN : parseFloat(tauxTexte);
 
       // Easter egg : taux à 0 %
       if (tauxEl.value.trim() === '0' && revenu > 0) {
         resetDisplay();
+        return;
+      }
+
+      if (!Number.isFinite(taux) || taux < 0.5 || taux > 20) {
+        resetDisplay();
+        showWarning(tauxTexte === ''
+          ? "Entrez le taux d'intérêt visé pour calculer votre capacité."
+          : 'Le taux doit se situer entre 0,5 % et 20 %.');
         return;
       }
 

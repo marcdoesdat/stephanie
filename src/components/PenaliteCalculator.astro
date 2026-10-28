@@ -17,6 +17,7 @@ export interface Props {
 
 const { config, tauxMarcheDefaut, dateMaj, groupes, showHeader = true } = Astro.props;
 const prenom = config.nom.split(' ')[0] ?? config.nom;
+const tauxMarcheDisponible = Object.values(tauxMarcheDefaut).some((taux) => taux.trim() !== '');
 ---
 
 <section id="penalite-calculator">
@@ -41,6 +42,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
             <span id="pen-pret-tip" class="sr-only" role="tooltip">Sélectionnez l'institution qui détient votre prêt. Si vous n'êtes pas certain, choisissez « Autre / Je ne sais pas ».</span>
           </label>
           <select id="pen-preteur" class="penalite-select" required>
+            <option value="" selected disabled>Choisissez votre prêteur</option>
             {Object.entries(groupes).map(([groupe, preteurs]) => (
               groupe ? (
                 <optgroup label={groupe}>
@@ -55,6 +57,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
               )
             ))}
           </select>
+          <small class="penalite-error" id="pen-preteur-err"></small>
           <small class="penalite-hint" id="pen-preteur-hint"></small>
         </div>
         <div class="penalite-field">
@@ -89,7 +92,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
               <button type="button" class="penalite-tooltip" aria-describedby="pen-solde-tip" data-tip="Le solde actuel restant à payer, pas le prix d'achat original.">?</button>
               <span id="pen-solde-tip" class="sr-only" role="tooltip">Le solde actuel restant à payer, pas le prix d'achat original.</span>
             </label>
-            <input type="text" id="pen-solde" class="penalite-input" value="300 000" inputmode="numeric" autocomplete="off" maxlength="10" required />
+            <input type="text" id="pen-solde" class="penalite-input" value="" inputmode="numeric" autocomplete="off" maxlength="10" required />
             <small class="penalite-error" id="pen-solde-err"></small>
           </div>
           <div class="penalite-field">
@@ -99,7 +102,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
               <span id="pen-taux-tip" class="sr-only" role="tooltip">Le taux d'intérêt écrit sur votre contrat hypothécaire actuel.</span>
             </label>
             <div class="penalite-rate-wrap">
-              <input type="number" id="pen-taux" class="penalite-input penalite-input--rate" value="5.49" step="0.01" inputmode="decimal" min="0.01" max="20" required />
+              <input type="number" id="pen-taux" class="penalite-input penalite-input--rate" value="" step="0.01" inputmode="decimal" min="0.01" max="20" required />
               <span class="penalite-rate-suffix">%</span>
             </div>
             <small class="penalite-error" id="pen-taux-err"></small>
@@ -112,17 +115,18 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
               <button type="button" class="penalite-tooltip" aria-describedby="pen-date-tip" data-tip="La date du début de votre terme courant (pas la date d'achat). Ex. : 2023-06-01.">?</button>
               <span id="pen-date-tip" class="sr-only" role="tooltip">La date du début de votre terme courant (pas la date d'achat). Ex. : 2023-06-01.</span>
             </label>
-            <input type="date" id="pen-date-debut" class="penalite-input" value="2023-06-01" required />
+            <input type="date" id="pen-date-debut" class="penalite-input" value="" required />
             <small class="penalite-error" id="pen-date-debut-err"></small>
           </div>
           <div class="penalite-field">
             <label for="pen-duree" class="penalite-label">Durée du terme</label>
             <select id="pen-duree" class="penalite-select" required>
+              <option value="" selected disabled>Choisissez une durée</option>
               <option value="12">1 an</option>
               <option value="24">2 ans</option>
               <option value="36">3 ans</option>
               <option value="48">4 ans</option>
-              <option value="60" selected>5 ans</option>
+              <option value="60">5 ans</option>
               <option value="84">7 ans</option>
               <option value="120">10 ans</option>
             </select>
@@ -164,6 +168,12 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
             </div>
           ))}
         </div>
+        <small class="penalite-error" id="pen-taux-marche-err"></small>
+        {!tauxMarcheDisponible && (
+          <p class="penalite-hint">
+            Les taux du jour ne sont pas disponibles. Saisissez les taux de référence ou consultez les <a href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener noreferrer">taux Hypotheca</a>.
+          </p>
+        )}
       </fieldset>
 
     </form>
@@ -177,7 +187,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
       <div id="penalite-placeholder" class="penalite-placeholder">
         <div class="penalite-placeholder-icon">📊</div>
         <h3 class="penalite-placeholder-title">Votre estimation apparaîtra ici</h3>
-        <p class="penalite-placeholder-sub">Remplissez les champs à gauche pour obtenir une estimation instantanée.</p>
+        <p class="penalite-placeholder-sub">Remplissez les champs requis pour obtenir une estimation.</p>
       </div>
 
       <div id="penalite-results-content" style="display:none;">
@@ -391,20 +401,31 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     let typeTaux: TypeTaux = 'fixe';
     let dernierResultat: ReturnType<typeof calculerPenalite> | null = null;
     let dernierInput: PenaliteInput | null = null;
+    let saisieCommencee = false;
+    const tauxMarcheInitiaux = new Map<string, string>();
+    document.querySelectorAll<HTMLInputElement>('[id^="pen-marche-"]').forEach((el) => {
+      tauxMarcheInitiaux.set(el.id, el.value);
+    });
 
     function updatePreteurInfo() {
       const preteur = tousLesPreteurs.find((p) => p.id === preteurSelect.value);
-      if (preteur) {
-        const labels: Record<string, string> = {
-          taux_affiche: 'Taux affichés (grandes banques)',
-          taux_reel: 'Taux réels / contractuels',
-          taux_obligataire: 'Taux obligataire',
-        };
-        methodeBadgeText.textContent = labels[preteur.methode_ird] ?? preteur.methode_ird;
-        methodeBadge.className = `penalite-methode-badge penalite-methode-badge--${preteur.methode_ird}`;
-        preteurHint.textContent = preteur.notes ?? '';
-        fieldsetAffiche.style.display = preteur.methode_ird === 'taux_affiche' ? '' : 'none';
+      if (!preteur) {
+        methodeBadgeText.textContent = 'Choisissez un prêteur';
+        methodeBadge.className = 'penalite-methode-badge';
+        preteurHint.textContent = '';
+        fieldsetAffiche.style.display = 'none';
+        return;
       }
+
+      const labels: Record<string, string> = {
+        taux_affiche: 'Taux affichés (grandes banques)',
+        taux_reel: 'Taux réels / contractuels',
+        taux_obligataire: 'Taux obligataire',
+      };
+      methodeBadgeText.textContent = labels[preteur.methode_ird] ?? preteur.methode_ird;
+      methodeBadge.className = `penalite-methode-badge penalite-methode-badge--${preteur.methode_ird}`;
+      preteurHint.textContent = preteur.notes ?? '';
+      fieldsetAffiche.style.display = preteur.methode_ird === 'taux_affiche' ? '' : 'none';
     }
 
     preteurSelect.addEventListener('change', () => { updatePreteurInfo(); scheduleRecalc(); });
@@ -444,7 +465,7 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
         solde: parseSoldeVal(soldeEl.value),
         tauxContractuel: parseFloat(tauxEl.value) || 0,
         dateDebutTerme: dateDebutEl.value,
-        dureeTermeMois: parseInt(dureeEl.value, 10) || 60,
+        dureeTermeMois: parseInt(dureeEl.value, 10),
         typeTaux,
         methodeIRD: methode,
         tauxAfficheOrigine: isNaN(tauxAfficheVal) ? undefined : tauxAfficheVal,
@@ -452,11 +473,15 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
       };
     }
 
-    function scheduleRecalc() { clearTimeout(debounceTimer); debounceTimer = window.setTimeout(doCalculation, INPUT_DEBOUNCE_MS); }
+    function scheduleRecalc() {
+      saisieCommencee = true;
+      clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(doCalculation, INPUT_DEBOUNCE_MS);
+    }
 
     function clearErrors() {
       document.querySelectorAll('.penalite-error').forEach((el) => { el.textContent = ''; });
-      document.querySelectorAll('.penalite-input').forEach((el) => el.classList.remove('penalite-input--error'));
+      document.querySelectorAll('.penalite-input, .penalite-select').forEach((el) => el.classList.remove('penalite-input--error'));
     }
 
     function showFieldError(fieldId: string, message: string) {
@@ -467,9 +492,18 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     }
 
     function doCalculation() {
+      if (!saisieCommencee) return;
       clearErrors();
+      if (!preteurSelect.value) {
+        showFieldError('pen-preteur', 'Choisissez l’institution financière de votre prêt.');
+        return;
+      }
       const input = getInputs();
       const erreurs = validerInputs(input);
+      if (erreurs.tauxMarche) {
+        const el = document.getElementById('pen-taux-marche-err');
+        if (el) el.textContent = erreurs.tauxMarche;
+      }
       if (erreurs.solde) showFieldError('pen-solde', erreurs.solde);
       if (erreurs.tauxContractuel) showFieldError('pen-taux', erreurs.tauxContractuel);
       if (erreurs.dateDebutTerme) showFieldError('pen-date-debut', erreurs.dateDebutTerme);
@@ -565,12 +599,21 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     });
 
     document.getElementById('pen-reset')?.addEventListener('click', () => {
-      soldeEl.value = '300 000'; tauxEl.value = '5.49'; dateDebutEl.value = '2023-06-01'; dureeEl.value = '60'; tauxAfficheEl.value = '';
-      setTypeTaux('fixe'); preteurSelect.value = 'rbc'; updatePreteurInfo();
-      const defauts: Record<string, string> = { '6': '5.64', '12': '5.49', '24': '5.09', '36': '4.69', '48': '4.79', '60': '4.89' };
+      saisieCommencee = false;
+      soldeEl.value = '';
+      tauxEl.value = '';
+      dateDebutEl.value = '';
+      dureeEl.value = '';
+      tauxAfficheEl.value = '';
+      typeTaux = 'fixe';
+      typeFixeBtn.classList.add('active');
+      typeFixeBtn.setAttribute('aria-checked', 'true');
+      typeVariableBtn.classList.remove('active');
+      typeVariableBtn.setAttribute('aria-checked', 'false');
+      preteurSelect.value = '';
+      updatePreteurInfo();
       document.querySelectorAll<HTMLInputElement>('[id^="pen-marche-"]').forEach((el) => {
-        const mois = el.id.replace('pen-marche-', '');
-        if (defauts[mois]) el.value = defauts[mois]!;
+        el.value = tauxMarcheInitiaux.get(el.id) ?? '';
       });
       placeholder.style.display = ''; resultsContent.style.display = 'none'; captureDiv.style.display = 'none';
       ctaBtn.style.display = '';
@@ -612,7 +655,6 @@ const prenom = config.nom.split(' ')[0] ?? config.nom;
     }
 
     updatePreteurInfo(); restoreFromParams();
-    window.setTimeout(doCalculation, 100);
 
     // Mobile sticky setup
     function handleMobileSticky() {

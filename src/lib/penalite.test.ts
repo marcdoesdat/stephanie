@@ -442,4 +442,26 @@ describe('validerInputs', () => {
     const erreurs = validerInputs(input);
     expect(erreurs.tauxAfficheOrigine).toBeDefined();
   });
+
+  it('n’exige pas de taux du marché pour un prêt variable', () => {
+    const input = inputBase({ typeTaux: 'variable', tauxMarche: {} });
+    expect(validerInputs(input).tauxMarche).toBeUndefined();
+  });
+
+  it('exige des taux du marché pour un prêt fixe', () => {
+    const input = inputBase({ tauxMarche: {} });
+    expect(validerInputs(input).tauxMarche).toContain('requis');
+  });
+
+  it('exige le taux du terme de comparaison plutôt qu’un taux de secours d’un autre terme', () => {
+    const dateDebutTerme = new Date();
+    dateDebutTerme.setFullYear(dateDebutTerme.getFullYear() - 2);
+    dateDebutTerme.setDate(1);
+    const input = inputBase({
+      dateDebutTerme: dateDebutTerme.toISOString().slice(0, 10),
+      tauxMarche: { 60: 4.5 },
+    });
+    expect(validerInputs(input).tauxMarche).toContain('terme de référence');
+    expect(() => calculerPenalite(input)).toThrow(/terme de référence/);
+  });
 });

@@ -36,6 +36,12 @@ const nomDeFamille = nomArr.join(' ');
       trackId="tel_click_nav"
       aria-label="Appeler Stéphanie Weyman"
     />
+
+    <a
+      href="/rendez-vous/"
+      class="nav-cta-compact"
+      data-umami-event="cta_booking_nav"
+    >Réserver un appel de 15 min</a>
     
     <div class="lang-switch" role="group" aria-label="Langue / Language" data-no-i18n>
       <button type="button" data-lang="fr" lang="fr" aria-label="Français" aria-pressed="true">FR</button>
@@ -69,6 +75,35 @@ const nomDeFamille = nomArr.join(' ');
     width: 100%;
     padding: 0 1.5rem;
     gap: 1.25rem;
+  }
+
+  .nav-cta-compact {
+    display: none;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.8rem;
+    border: 2px solid var(--clay-dk);
+    border-radius: 50px;
+    background: var(--clay-dk);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .nav-cta-compact:hover,
+  .nav-cta-compact:focus-visible {
+    background: #8e4f30;
+    border-color: #8e4f30;
+  }
+
+  .nav-cta-compact:focus-visible {
+    outline: 3px solid var(--clay);
+    outline-offset: 3px;
   }
 
   .nav-logo {
@@ -157,6 +192,14 @@ const nomDeFamille = nomArr.join(' ');
     .hamburger { display: flex; }
   }
 
+  @media (min-width: 901px) and (max-width: 1180px) {
+    .nav-cta-compact { display: inline-flex; }
+  }
+
+  :global(body.menu-open) .nav-cta-compact {
+    display: none !important;
+  }
+
   @media (max-width: 860px) {
     .cabinet-name {
       white-space: normal;
@@ -188,10 +231,36 @@ const nomDeFamille = nomArr.join(' ');
     }
   }
 
-  @media (max-width: 380px) {
+  @media (max-width: 900px) {
+    .nav-container {
+      padding: 0;
+      gap: 0.75rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .nav-container {
+      gap: 0.5rem;
+    }
+    .nav-container :global(.phone-wrap) {
+      display: none;
+    }
     .cabinet-name {
-      font-size: 0.54rem;
-      max-width: 20ch;
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      clip-path: inset(50%);
+    }
+  }
+
+  @media (max-width: 380px) {
+    .broker-identity {
+      font-size: 0.9rem;
     }
   }
 

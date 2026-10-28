@@ -73,8 +73,8 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
           </div>
         </div>
         <div class="stat-item">
-          <div class="stat-num">24&nbsp;h</div>
-          <div class="stat-label">Premier contact</div>
+          <div class="stat-num stat-num--phrase">Le jour même</div>
+          <div class="stat-label">Habituellement, les jours ouvrables</div>
         </div>
       </div>
     </div>
@@ -155,17 +155,17 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
     font-size: 0.95rem;
     font-weight: 600;
     border-radius: 50px;
-    background: var(--ink);
+    background: var(--clay-dk);
     color: #fff;
     text-decoration: none;
-    border: 2px solid var(--ink);
-    box-shadow: 6px 6px 0 var(--clay);
+    border: 2px solid var(--clay-dk);
+    box-shadow: 6px 6px 0 var(--ink);
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
   }
   .hero-btns .btn-tools:hover {
     transform: translate(2px, 2px);
-    box-shadow: 3px 3px 0 var(--clay);
-    background: #000;
+    box-shadow: 3px 3px 0 var(--ink);
+    background: #8e4f30;
   }
   .hero-btns .btn-tools:active {
     transform: translate(4px, 4px);
@@ -369,6 +369,8 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
       width: 100%;
       min-height: 52px;
       font-size: 0.9rem;
+      white-space: normal;
+      max-width: 100%;
     }
 
     .hero-right {

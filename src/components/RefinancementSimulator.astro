@@ -5,14 +5,13 @@ const telHref = `tel:+1${siteConfig.telephone.replace(/\D/g, '')}`;
 
 interface Props {
   /** Meilleur taux fixe 5 ans live (Hypotheca) — sert de valeur par défaut au nouveau taux. */
-  defaultRate?: number;
+  defaultRate?: number | null;
 }
 const { defaultRate } = Astro.props;
-// Taux offert par défaut : taux live si disponible et plausible, sinon 4.29.
 const nouveauTauxDefaut =
   typeof defaultRate === 'number' && defaultRate >= 0.5 && defaultRate <= 20
     ? defaultRate.toFixed(2)
-    : '4.29';
+    : '';
 ---
 
 <section id="refinancement-simulator" data-nouveau-taux-defaut={nouveauTauxDefaut}>
@@ -81,15 +80,20 @@ const nouveauTauxDefaut =
           <div class="rsim-field">
             <label for="rsim-taux-nouveau" class="rsim-label">
               Nouveau taux offert (%)
-              <span class="rsim-taux-live-badge" id="rsim-taux-live-badge">Taux Hypotheca du jour</span>
+              <span class="rsim-taux-live-badge" id="rsim-taux-live-badge" style={nouveauTauxDefaut ? undefined : 'display:none'}>Taux Hypotheca du jour</span>
             </label>
             <div class="rsim-rate-wrap">
               <input type="number" id="rsim-taux-nouveau" class="rsim-input rsim-input--rate"
-                value="4.29" step="0.01" inputmode="decimal" min="0.01" max="20"
+                value={nouveauTauxDefaut} step="0.01" inputmode="decimal" min="0.01" max="20"
                 aria-describedby="rsim-taux-nouveau-err" />
               <span class="rsim-rate-suffix">%</span>
             </div>
             <small class="rsim-error" id="rsim-taux-nouveau-err"></small>
+            {!nouveauTauxDefaut && (
+              <small class="rsim-hint">
+                Le taux du jour n'est pas disponible. Entrez le taux à tester ou consultez les <a href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener noreferrer">taux Hypotheca</a>.
+              </small>
+            )}
           </div>
           <div class="rsim-field">
             <label for="rsim-amort-nouveau" class="rsim-label">
@@ -670,7 +674,7 @@ const nouveauTauxDefaut =
       lastLoadedPenalite = null;
       fraisEl.value = '1\u202F500';
       // Nouveau prêt
-      tauxNouveauEl.value = tauxLiveDefaut || '4.29';
+      tauxNouveauEl.value = tauxLiveDefaut || '';
       tauxLiveBadge.style.display = tauxLiveDefaut ? '' : 'none';
       delete amortNouveauEl.dataset.userEdited;
       amortNouveauEl.value = '22';
@@ -803,6 +807,15 @@ const nouveauTauxDefaut =
       const montantAdd = Math.max(0, parseVal(montantAddEl.value));
       const valeur = Math.max(0, parseVal(valeurEl.value));
       const dettes = lireDettes();
+
+      if (!tauxNouveauEl.value.trim()) {
+        clearErrors();
+        placeholder.style.display = '';
+        content.style.display = 'none';
+        stickyBar.classList.remove('js-visible');
+        sectionEl.classList.remove('rsim-bar-visible');
+        return;
+      }
 
       // Validation visible
       const valide = validate();
@@ -1367,6 +1380,8 @@ const nouveauTauxDefaut =
   .rsim-penalite-link {
     display: inline-block;
     margin-top: .35rem;
+    min-height: 32px;
+    padding-block: .3rem;
     font-size: .78rem;
     font-weight: 600;
     /* #8a4820 sur fond --sand (#f7f2eb) = ratio ~5.6:1, passe WCAG AA */

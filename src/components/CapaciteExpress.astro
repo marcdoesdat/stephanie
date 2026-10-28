@@ -18,7 +18,7 @@ interface Props {
 const { taux } = Astro.props;
 
 const pourcent = (t: number) => t.toFixed(2).replace('.', ',') + ' %';
-const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
+const fraisFixes = `${FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage}\u00a0$`;
 ---
 
 <div class="ce fade-up" data-taux={taux ?? ''}>
@@ -92,7 +92,7 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
       {taux != null
         ? <>Taux 5 ans fixe du jour&nbsp;: {pourcent(taux)}, qualifié à {pourcent(tauxQualification(taux))} (test de résistance)</>
         : <>Qualifié au plus élevé de votre taux + 2&nbsp;% ou 5,25&nbsp;% (test de résistance)</>}
-      · amortissement de {AMORTISSEMENT_DEFAUT}&nbsp;ans · taxes et chauffage estimés à {fraisFixes}&nbsp;$/mois
+      · amortissement de {AMORTISSEMENT_DEFAUT}&nbsp;ans · taxes et chauffage estimés à {fraisFixes}/mois
     </p>
   </form>
 
@@ -109,7 +109,7 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
          soit la réponse à une question que le visiteur se pose déjà. -->
     <div class="ce-actions">
       <p class="ce-incitation" id="ce-incitation">
-        Gratuit et sans engagement : en 15 minutes, je vous dis combien un prêteur vous accorderait vraiment.
+        Sans engagement : en 15 minutes, on examine ensemble les options qui pourraient convenir à votre dossier.
       </p>
       <a href="/rendez-vous/" class="btn-primary ce-cta" data-umami-event="cta_booking_capacite">Réserver un appel de 15 min</a>
       <a href="/outils/#simulateur" class="ce-affiner" id="ce-affiner">Affiner dans le simulateur complet →</a>
@@ -168,7 +168,7 @@ const fraisFixes = FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage;
     // Ce que l'appel apporterait, selon ce que le calcul vient de montrer
     const INCITATION = {
       attente: incitationEl.textContent?.trim() ?? '',
-      resultat: 'C’est une estimation. En 15 minutes, je vous dis ce qu’un prêteur vous accorderait vraiment, et à quel taux.',
+      resultat: 'C’est une estimation. En 15 minutes, on examine ensemble les options qui pourraient convenir à votre dossier.',
       plafonne: 'Votre mise de fonds limite votre achat. Voyons ensemble comment la bonifier : CELIAPP, RAP, don familial.',
       revenu: 'Un coemprunteur, une consolidation de dettes, un autre prêteur : voyons ensemble ce qui est possible.',
       mise: 'Pas encore de mise de fonds ? Voyons ensemble par où commencer : CELIAPP, RAP, don familial.',

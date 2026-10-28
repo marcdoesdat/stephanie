@@ -170,7 +170,8 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
       .nav-logo span,.nav-logo .cabinet-name{color:var(--clay)}
       .nav-links{display:flex;gap:clamp(1rem,1.8vw,2.5rem);list-style:none;align-items:center;flex-wrap:wrap;min-width:0}
       .nav-links a{font-size:clamp(.8rem,.18vw + .7rem,.9rem);font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap}
-      .nav-cta{display:inline-flex!important;align-items:center;justify-content:center;background:var(--clay);color:#fff!important;padding:.62rem clamp(.95rem,1.4vw,1.4rem);border-radius:50px;white-space:nowrap;line-height:1;text-decoration:none;border:2px solid var(--clay);box-shadow:3px 3px 0 var(--ink)}
+      .nav-cta{display:inline-flex!important;align-items:center;justify-content:center;background:var(--clay-dk);color:#fff!important;padding:.62rem clamp(.95rem,1.4vw,1.4rem);border-radius:50px;white-space:nowrap;line-height:1;text-decoration:none;border:2px solid var(--clay-dk);box-shadow:3px 3px 0 var(--ink)}
+      .nav-cta-compact{display:none}
       .hamburger{display:none;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;background:none;border:none;padding:12px;min-width:44px;min-height:44px}
       .hamburger span{display:block;width:22px;height:2px;background:var(--ink);border-radius:2px}
       #hero{min-height:100vh;background:var(--sand);display:flex;align-items:center;padding:8rem 4rem 4rem;position:relative;overflow:hidden}
@@ -179,7 +180,7 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
       .hero-left .hero-value-prop{font-family:"Lora",serif;font-size:3.8rem;font-weight:700;line-height:1.12;color:var(--ink);margin-bottom:1.5rem;letter-spacing:-.015em}
       .hero-left .hero-value-prop em{font-style:italic;color:var(--clay)}
       .hero-left p{font-size:1.05rem;color:var(--muted);line-height:1.8;max-width:480px;margin-bottom:2.5rem}
-      .btn-cta{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;background:var(--clay);color:#fff;padding:1.05rem 1.6rem;border-radius:14px;font-weight:600;text-decoration:none;border:2px solid var(--clay);box-shadow:4px 4px 0 var(--ink)}
+      .btn-cta{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;background:var(--clay-dk);color:#fff;padding:1.05rem 1.6rem;border-radius:14px;font-weight:600;text-decoration:none;border:2px solid var(--clay-dk);box-shadow:4px 4px 0 var(--ink)}
       .btn-secondary{background:transparent;color:var(--ink);padding:.9rem 2rem;border-radius:50px;border:2px solid var(--border);font-size:.9rem;font-weight:500;text-decoration:none;box-shadow:4px 4px 0 var(--clay)}
       .hero-right{position:relative} .photo-frame{width:100%;aspect-ratio:4/5;border-radius:30% 70% 70% 30%/30% 30% 70% 70%;overflow:hidden;border:3px solid var(--border)}
       .photo-frame img{width:100%;height:100%;object-fit:cover;object-position:center top}
@@ -190,7 +191,8 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
       .card-sm{font-size:.75rem;color:var(--muted)}.card-val{font-family:"Lora",serif;font-size:1.1rem;font-weight:600;color:var(--forest)}
       @media(max-width:1280px){.nav-links{gap:.85rem}.nav-links a{font-size:.74rem}.nav-cta{padding:.5rem 1rem}}
       @media(max-width:1180px){.nav-links{display:none}.hamburger{display:flex}}
-      @media(max-width:900px){nav#navbar{padding:0 1.5rem}#hero{padding:6rem 1.5rem 3rem}.hero-inner{grid-template-columns:1fr;gap:2rem}.hero-left .hero-value-prop{font-size:2.8rem}.hero-right{display:none}}
+      @media(min-width:901px) and (max-width:1180px){.nav-cta-compact{display:inline-flex}}
+      @media(max-width:900px){nav#navbar{padding:0 1.5rem}#hero{padding:6rem 1.5rem 3rem}.hero-inner{grid-template-columns:1fr;gap:2rem}.hero-left .hero-value-prop{font-size:clamp(2.1rem,10.5vw,2.8rem)}.hero-left p{margin-bottom:1.75rem}.hero-right{display:none}}
     </style>
   </head>
   <body>
@@ -376,8 +378,8 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
       height: 46px;
       padding: 0 1.4rem;
       border-radius: 50px;
-      background: var(--clay);
-      border: 2px solid var(--clay);
+      background: var(--clay-dk);
+      border: 2px solid var(--clay-dk);
       box-shadow: 3px 3px 0 var(--ink);
       color: #fff;
       font-family: "DM Sans", sans-serif;
@@ -415,7 +417,7 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
     /* --- État converti (après capture courriel sur /outils/) : plein gaz.
        La bande reste neutre, c'est la pilule qui monte en intensité. --- */
     .mobile-sticky-cta.sticky-converted .sticky-btn {
-      background: linear-gradient(135deg, var(--clay), #b56f4c);
+      background: linear-gradient(135deg, var(--clay-dk), #8e4f30);
       box-shadow: 0 6px 20px rgba(196, 122, 82, 0.45);
       font-weight: 700;
     }
