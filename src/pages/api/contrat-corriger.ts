@@ -14,7 +14,7 @@
 import type { APIRoute } from 'astro';
 import { loadSiteConfig } from '../../config';
 import { requeteAutorisee } from '../../services/accesCourtiere';
-import { checkRateLimit, clientIpFromRequest, jsonResponse, loadResendEnv } from '../../services/emailService';
+import { jsonResponse, loadResendEnv } from '../../services/emailService';
 import { envoyerAvisCorrection, envoyerAvisEnAttente, envoyerInvitation } from '../../services/contratCourriels';
 import { corrigerContrat, lireDonneesACorriger } from '../../services/contratDossierService';
 import { nomComplet, parserDonneesContrat } from '../../utils/contratCourtage';
@@ -53,11 +53,6 @@ export const POST: APIRoute = async ({ request }) => {
     payload = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonResponse({ error: 'Requête invalide' }, 400);
-  }
-
-  const clientIp = clientIpFromRequest(request);
-  if (!(await checkRateLimit(clientIp, 'contrat-corriger'))) {
-    return jsonResponse({ error: 'Trop de demandes. Réessayez dans une heure.' }, 429);
   }
 
   const donnees = parserDonneesContrat(payload.donnees);

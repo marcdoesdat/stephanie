@@ -144,6 +144,14 @@ describe('checkRateLimit', () => {
     expect(await checkRateLimit('203.0.113.7', 'rappel')).toBe(true);
   });
 
+  it('accepte un plafond propre à la route', async () => {
+    vi.stubEnv('DEV', false);
+    const verdicts: boolean[] = [];
+    for (let i = 0; i < 31; i++) verdicts.push(await checkRateLimit('203.0.113.7', 'contrat-apercu', 30));
+    expect(verdicts.filter(Boolean)).toHaveLength(30);
+    expect(verdicts.at(-1)).toBe(false);
+  });
+
   it('reste ouverte en dev local', async () => {
     vi.stubEnv('DEV', true);
     for (let i = 0; i < 10; i++) expect(await checkRateLimit('127.0.0.1', 'contrat-acces')).toBe(true);

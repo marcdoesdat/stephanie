@@ -149,8 +149,10 @@ const RATE_BLOB_STORE = 'rate-limit';
 interface RateEntry { count: number; windowStart: number; }
 
 /**
- * Limite à 5 soumissions par IP par heure. `formKey` namespace le compteur pour que
- * chaque formulaire ait son propre quota (ex. "rappel", "demande", "contact"...).
+ * Limite à `max` soumissions par IP par heure (5 par défaut). `formKey` namespace le compteur
+ * pour que chaque formulaire ait son propre quota (ex. "rappel", "demande", "contact"...).
+ * Un plafond plus haut ne se justifie que sur une route déjà gardée par un jeton aléatoire,
+ * où l'IP ne protège plus un secret mais seulement contre l'abus de volume.
  * Ignoré en dev local ; fail-open sur erreur Blob pour ne jamais bloquer un utilisateur
  * légitime sur un incident d'infrastructure.
  *
@@ -159,7 +161,11 @@ interface RateEntry { count: number; windowStart: number; }
  * et `ratesService`), et son absence éteignait la limite en production — y compris celle
  * qui protège le mot de passe de la courtière contre la force brute.
  */
-export async function checkRateLimit(ip: string, formKey: string): Promise<boolean> {
+export async function checkRateLimit(
+  ip: string,
+  formKey: string,
+  max: number = RATE_LIMIT_MAX,
+): Promise<boolean> {
   if (import.meta.env.DEV === true) return true; // skip en dev local
   let getStore: typeof import('@netlify/blobs').getStore | undefined;
   try {
@@ -177,7 +183,7 @@ export async function checkRateLimit(ip: string, formKey: string): Promise<boole
     }
     entry.count += 1;
     await store.set(key, JSON.stringify(entry));
-    return entry.count <= RATE_LIMIT_MAX;
+    return entry.count <= max;
   } catch {
     return true; // fail open — jamais bloquer le trafic légitime sur une erreur Blob
   }

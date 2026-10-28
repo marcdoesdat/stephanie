@@ -1169,6 +1169,17 @@ la courtière) et la trace de preuve des signatures. Le premier élément de `X-
 De même, `checkRateLimit` ne s'éteint qu'avec `import.meta.env.DEV` — `process.env.NETLIFY`
 n'est pas garantie au runtime des fonctions, et son absence désactivait la limite en production.
 
+**Où la limite par IP s'applique** (5 par heure par défaut, `checkRateLimit(ip, cle, max?)`) :
+- **Jamais sur une route gardée par la session de la courtière** (`requeteAutorisee`) : le mot de
+  passe la protège déjà, et 5 par heure la bloquait dès son sixième contrat créé, relancé ou
+  corrigé. Seule `/api/contrat-acces`, qui reçoit le mot de passe, garde le plafond de 5. Un test
+  (`limiteDebitRoutes.test.ts`) verrouille les deux.
+- **Plafond relevé sur les routes gardées par un jeton de signature** : `contrat-apercu` (30 —
+  chaque correction recharge l'aperçu), `contrat-signer` et `profil-cosigner` (20 — en
+  présentiel, tous signent depuis le même appareil). Le jeton garde l'accès ; l'IP ne sert plus
+  qu'à freiner le volume.
+- Les formulaires publics gardent 5.
+
 Redirects configurés :
 - `/outils/penalite` → `/outils/calculateur-penalite-hypothecaire` (301)
 - Redirects de hash legacy (`#simulateur`, `#calculateur`, `#comparateur`)

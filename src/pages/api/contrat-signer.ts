@@ -71,7 +71,9 @@ export const POST: APIRoute = async ({ request }) => {
   const clientIp = clientIpFromRequest(request);
   const agent = request.headers.get('user-agent') ?? 'inconnu';
 
-  if (!(await checkRateLimit(clientIp, 'contrat-signer'))) {
+  // 20 et non 5 : en présentiel, tous les emprunteurs signent depuis l'appareil de la
+  // courtière, et une identité refusée se resoumet. Le jeton à usage unique garde l'accès.
+  if (!(await checkRateLimit(clientIp, 'contrat-signer', 20))) {
     return jsonResponse({ error: 'Trop de demandes. Veuillez réessayer dans une heure.' }, 429);
   }
 
