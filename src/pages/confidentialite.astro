@@ -5,7 +5,9 @@ import Footer from '../components/Footer.astro';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
-const lastUpdated = new Date('2026-05-01').toLocaleDateString('fr-CA', {
+// Date construite par ses composantes, jamais new Date('2026-10-28') : lue comme minuit UTC,
+// elle tomberait la veille au Québec — et, un 1er du mois, dans le mois précédent.
+const lastUpdated = new Date(2026, 9, 28).toLocaleDateString('fr-CA', {
   year: 'numeric',
   month: 'long',
 });
@@ -51,24 +53,31 @@ const lastUpdated = new Date('2026-05-01').toLocaleDateString('fr-CA', {
 
         <h2>2. Renseignements collectés</h2>
         <p>
-          Nous collectons uniquement les informations nécessaires pour répondre à vos besoins hypothécaires, soit :
+          Je recueille uniquement les renseignements nécessaires pour répondre à votre demande. Selon
+          le service que vous utilisez, il peut s'agir de&nbsp;:
         </p>
         <ul>
-          <li><strong>Identité :</strong> Nom et prénom.</li>
-          <li><strong>Coordonnées :</strong> Adresse courriel et numéro de téléphone.</li>
-          <li><strong>Données financières :</strong> Informations saisies dans nos simulateurs (revenus, mise de fonds, prix d'achat) afin de vous fournir une estimation personnalisée.</li>
+          <li><strong>Identité et coordonnées&nbsp;:</strong> nom, prénom, adresse courriel, numéro de téléphone et, pour une demande de financement, adresse postale.</li>
+          <li><strong>Demande de financement&nbsp;:</strong> date de naissance, état civil, personnes à charge, statut de résidence, emploi et revenus, dettes et paiements, antécédents de crédit déclarés, renseignements sur la propriété et sur la mise de fonds, ainsi que ceux d'un co-emprunteur, le cas échéant. Aucune enquête de crédit n'est faite sans votre consentement écrit.</li>
+          <li><strong>Simulateurs et calculateurs&nbsp;:</strong> les calculs se font dans votre navigateur et rien n'est transmis, sauf si vous demandez à recevoir votre rapport&nbsp;; les résultats de la simulation accompagnent alors votre demande.</li>
+          <li><strong>Signature électronique de documents</strong> (contrat de courtage, profil des emprunteurs)&nbsp;: votre signature, vos réponses au document et, comme preuve de la signature, la date et l'heure, l'adresse IP et le type de navigateur utilisés.</li>
         </ul>
 
         <h2>3. Utilisation et partage des données</h2>
         <p>
-          Vos renseignements sont utilisés exclusivement pour :
+          Vos renseignements sont utilisés exclusivement pour&nbsp;:
         </p>
         <ul>
-          <li>Vous contacter suite à une demande de votre part.</li>
+          <li>Vous contacter à la suite d'une demande de votre part et en assurer le suivi.</li>
           <li>Analyser votre capacité d'emprunt et préparer votre dossier hypothécaire.</li>
+          <li>Vous faire signer électroniquement les documents de votre dossier et conserver la preuve de ces signatures.</li>
+          <li>Vous permettre, si vous le souhaitez, de consulter l'étape de votre dossier et la liste des documents à fournir, au moyen d'un lien de connexion envoyé à votre adresse courriel.</li>
         </ul>
         <p>
-          <strong>Aucune vente de données :</strong> Vos renseignements personnels ne sont jamais vendus, loués ou partagés à des fins marketing à des tiers. Ils ne sont transmis aux prêteurs hypothécaires (institutions financières) qu'avec votre consentement explicite lors du dépôt d'une demande officielle.
+          <strong>Aucune vente de données&nbsp;:</strong> vos renseignements personnels ne sont jamais vendus, loués ou partagés à des fins marketing avec des tiers. Ils sont communiqués au cabinet Hypotheca, auquel je suis rattachée, pour la tenue de votre dossier, et ne sont transmis aux prêteurs hypothécaires (institutions financières) qu'avec votre consentement explicite lors du dépôt d'une demande officielle.
+        </p>
+        <p>
+          <strong>Professionnels partenaires&nbsp;:</strong> si vous êtes courtier immobilier, notaire, comptable ou planificateur financier, vos coordonnées professionnelles peuvent servir à vous proposer une collaboration. Chaque courriel comporte un lien pour ne plus en recevoir.
         </p>
 
         <h2>4. Témoins (cookies) et technologies de suivi</h2>
@@ -105,6 +114,17 @@ const lastUpdated = new Date('2026-05-01').toLocaleDateString('fr-CA', {
             classique reste disponible sans consentement.
           </li>
           <li>
+            <strong>Fonctionnement du site</strong> (exempté de consentement)&nbsp;: votre navigateur
+            garde votre choix de consentement, votre langue et, le temps de la visite, les réponses
+            d'un formulaire en cours. Si vous ouvrez votre espace «&nbsp;Mon dossier&nbsp;», un témoin
+            de session est déposé pour 7&nbsp;jours au plus.
+          </li>
+          <li>
+            <strong>Polices de caractères — Google Fonts</strong>&nbsp;: pour afficher les polices du
+            site, votre navigateur les télécharge depuis les serveurs de Google, qui reçoivent alors
+            votre adresse IP. Aucun témoin n'est déposé. Google&nbsp;LLC (États-Unis).
+          </li>
+          <li>
             <strong>Sécurité :</strong> toutes les communications entre votre navigateur et ce site
             sont chiffrées (HTTPS).
           </li>
@@ -119,16 +139,19 @@ const lastUpdated = new Date('2026-05-01').toLocaleDateString('fr-CA', {
           Vos renseignements sont conservés pour la durée strictement nécessaire aux finalités décrites&nbsp;:
         </p>
         <ul>
-          <li><strong>Demandes de simulation et de contact ne donnant pas lieu à un dossier&nbsp;:</strong> conservation maximale de 24 mois après le dernier échange, puis destruction sécurisée.</li>
+          <li><strong>Demandes de simulation et de contact ne donnant pas lieu à un dossier&nbsp;:</strong> conservation pendant 5&nbsp;ans après le dernier échange, puis destruction sécurisée.</li>
           <li><strong>Dossiers hypothécaires actifs ou conclus&nbsp;:</strong> conservation pendant 7 ans suivant la fin de la relation d'affaires, conformément aux exigences de l'Autorité des marchés financiers.</li>
+          <li><strong>Signature électronique&nbsp;:</strong> les données d'une signature en cours sont effacées des serveurs du site dès le document signé produit&nbsp;; une signature non complétée expire après 14&nbsp;jours au plus, et ses données sont ensuite effacées. Le document signé et sa preuve sont conservés avec votre dossier.</li>
           <li><strong>Données analytiques anonymisées (Umami)&nbsp;:</strong> conservées de manière agrégée, sans permettre votre identification.</li>
         </ul>
 
         <h2>6. Hébergement et transferts hors Québec</h2>
         <p>
           Le site est hébergé par <strong>Netlify, Inc.</strong> (États-Unis). Les renseignements
-          transmis via les formulaires peuvent donc transiter et être stockés temporairement sur des
-          serveurs situés à l'extérieur du Québec. Une évaluation des facteurs relatifs à la vie privée
+          transmis par les formulaires peuvent donc transiter et être stockés sur des serveurs
+          situés à l'extérieur du Québec. Les courriels envoyés par le site (accusés de réception,
+          liens de signature, liens de connexion) sont acheminés par <strong>Resend, Inc.</strong>
+          (États-Unis). Une évaluation des facteurs relatifs à la vie privée
           a été réalisée afin de s'assurer que ces transferts offrent un niveau de protection adéquat.
           Vous pouvez en obtenir copie auprès du responsable identifié à la section&nbsp;1.
         </p>

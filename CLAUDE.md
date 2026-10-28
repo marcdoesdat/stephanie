@@ -800,6 +800,13 @@ le client consulte le sien sur `/mon-dossier`, sans mot de passe. Le socle est c
 - **Le carnet se purge**, contrairement à celui du réseau : douze mois après la clôture, un
   dossier est supprimé. Un contact professionnel est un actif ; un dossier client est nominatif
   et financier.
+- **Un prospect jamais qualifié est supprimé cinq ans après sa dernière activité** (`majLe` :
+  toute note, étape ou courriel repousse l'échéance). C'est le délai que promet la politique de
+  confidentialité (section 5) — décision d'octobre 2026, cinq ans étant la durée d'un terme
+  hypothécaire. La Loi 25 (art. 23) impose de détruire une fois la fin accomplie, sans fixer de
+  durée : le chiffre est un choix, mais « jamais » n'en est pas un. Un dossier ouvert (qualifié,
+  non clos) n'est jamais purgé. `purgerAnciens` applique les deux règles ; changer l'une des
+  durées, c'est changer la politique dans le même commit.
 - **L'historique ne se réécrit pas** : étapes, documents, notes, courriels, ouvertures du portail.
 - Les cartes de `/dossiers` sont bâties en JavaScript, donc habillées par un bloc `is:global`
   circonscrit par `#dc-app` — même raison que `#rs-app` et `#ct-suivi`.
@@ -1153,6 +1160,10 @@ npx vitest              # mode watch
 - **Jamais de taux fictifs en fallback** — afficher `null` + lien hypotheca.ca si aucun cache valide.
 - Ne pas commiter `.cache/` (cache local dev, dans `.gitignore`).
 - Validation TypeScript stricte : résoudre les erreurs `npm run check` avant de pusher.
+- **`/confidentialite` décrit ce que le code fait.** Ajouter un champ sensible à un formulaire,
+  un témoin, un stockage côté navigateur ou un sous-traitant (service tiers qui reçoit des
+  données), c'est mettre à jour la politique — et sa date — dans le même changement. Elle nomme
+  des finalités (suivi, signature, portail), jamais les outils internes qui les servent.
 
 ## Sécurité (netlify.toml)
 
@@ -1161,6 +1172,24 @@ Headers sur toutes les routes (`/*`) :
 - `Strict-Transport-Security` — HSTS 1 an, includeSubDomains
 - `X-Frame-Options: DENY`
 - `Referrer-Policy: strict-origin-when-cross-origin`
+
+**L'IP du client vient de `x-nf-client-connection-ip`, jamais de `X-Forwarded-For`.**
+`clientIpFromRequest` (`emailService.ts`) sert la limite de débit (dont celle du mot de passe de
+la courtière) et la trace de preuve des signatures. Le premier élément de `X-Forwarded-For` peut
+être écrit par le visiteur : il choisissait son IP. Les en-têtes de proxy ne sont lus qu'en dev.
+De même, `checkRateLimit` ne s'éteint qu'avec `import.meta.env.DEV` — `process.env.NETLIFY`
+n'est pas garantie au runtime des fonctions, et son absence désactivait la limite en production.
+
+**Où la limite par IP s'applique** (5 par heure par défaut, `checkRateLimit(ip, cle, max?)`) :
+- **Jamais sur une route gardée par la session de la courtière** (`requeteAutorisee`) : le mot de
+  passe la protège déjà, et 5 par heure la bloquait dès son sixième contrat créé, relancé ou
+  corrigé. Seule `/api/contrat-acces`, qui reçoit le mot de passe, garde le plafond de 5. Un test
+  (`limiteDebitRoutes.test.ts`) verrouille les deux.
+- **Plafond relevé sur les routes gardées par un jeton de signature** : `contrat-apercu` (30 —
+  chaque correction recharge l'aperçu), `contrat-signer` et `profil-cosigner` (20 — en
+  présentiel, tous signent depuis le même appareil). Le jeton garde l'accès ; l'IP ne sert plus
+  qu'à freiner le volume.
+- Les formulaires publics gardent 5.
 
 Redirects configurés :
 - `/outils/penalite` → `/outils/calculateur-penalite-hypothecaire` (301)

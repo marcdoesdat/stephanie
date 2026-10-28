@@ -14,7 +14,7 @@
 import type { APIRoute } from 'astro';
 import { loadSiteConfig } from '../../config';
 import { requeteAutorisee } from '../../services/accesCourtiere';
-import { checkRateLimit, clientIpFromRequest, jsonResponse, loadResendEnv } from '../../services/emailService';
+import { clientIpFromRequest, jsonResponse, loadResendEnv } from '../../services/emailService';
 import { envoyerDossierComplet, type PreuveSignature } from '../../services/contratCourriels';
 import {
   ouvrirPourFinalisation,
@@ -129,9 +129,6 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const clientIp = clientIpFromRequest(request);
-  if (!(await checkRateLimit(clientIp, 'contrat-finaliser'))) {
-    return jsonResponse({ error: 'Trop de demandes. Veuillez réessayer dans une heure.' }, 429);
-  }
 
   const dossier = await ouvrirPourFinalisation(payload.d);
   if (!dossier) {

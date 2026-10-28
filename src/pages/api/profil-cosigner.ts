@@ -77,7 +77,9 @@ export const POST: APIRoute = async ({ request }) => {
   const clientIp = clientIpFromRequest(request);
   const agent = request.headers.get('user-agent') ?? 'inconnu';
 
-  if (!(await checkRateLimit(clientIp, 'profil-cosigner'))) {
+  // 20 et non 5 : des co-emprunteurs sous un même toit partagent une IP, et une saisie
+  // refusée se resoumet. Le jeton à usage unique garde l'accès.
+  if (!(await checkRateLimit(clientIp, 'profil-cosigner', 20))) {
     return jsonResponse({ error: 'Trop de demandes. Veuillez réessayer dans une heure.' }, 429);
   }
 

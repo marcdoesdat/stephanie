@@ -68,7 +68,9 @@ export const POST: APIRoute = async ({ request }) => {
 
 async function servir(request: Request, id: unknown, jeton: unknown, coordonnees: unknown): Promise<Response> {
   const clientIp = clientIpFromRequest(request);
-  if (!(await checkRateLimit(clientIp, 'contrat-apercu'))) {
+  // 30 et non 5 : chaque « Enregistrer » d'une correction recharge l'aperçu, et en présentiel
+  // tous les emprunteurs le lisent depuis le même appareil. Le jeton garde déjà l'accès.
+  if (!(await checkRateLimit(clientIp, 'contrat-apercu', 30))) {
     return refus('Trop de demandes. Réessayez dans une heure.', 429);
   }
 

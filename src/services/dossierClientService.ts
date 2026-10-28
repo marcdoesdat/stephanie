@@ -15,7 +15,10 @@
  *   un actif. Un dossier client, lui, est nominatif et financier : douze mois après sa
  *   clôture, il est supprimé. Le registre officiel est celui d'Hypotheca ; ceci est un outil
  *   de suivi, et un outil de suivi n'a aucune raison de garder trace d'un client d'il y a
- *   cinq ans.
+ *   cinq ans. Un **prospect** jamais qualifié l'est cinq ans après sa dernière activité —
+ *   le délai annoncé par la politique de confidentialité (Loi 25, art. 23 : une fois la fin
+ *   accomplie, le renseignement est détruit). Cinq ans : un terme hypothécaire, le temps
+ *   qu'un prospect revienne au renouvellement.
  * - **L'état des documents n'appartient qu'à elle.** Aucune fonction de ce module n'est
  *   appelée depuis une route publique : le client lit sa liste, il ne la coche pas. Un client
  *   qui se déclare à jour ne l'est pas.
@@ -65,6 +68,14 @@ export const DUREE_LIEN_MS = 30 * 60 * 1000;
 
 /** Douze mois après la clôture, le dossier est supprimé. Voir l'entête du module. */
 export const DUREE_CONSERVATION_CLOS_MS = 365 * 24 * 60 * 60 * 1000;
+
+/**
+ * Cinq ans sans activité, et un prospect jamais qualifié est supprimé. **La politique de
+ * confidentialité (section 5) promet ce délai** : changer l'un sans l'autre la rendrait fausse.
+ * Toute écriture sur la fiche (note, courriel, étape) remet `majLe` à jour, donc repousse
+ * l'échéance — c'est le « dernier échange » de la politique.
+ */
+export const DUREE_CONSERVATION_PROSPECT_MS = 5 * 365 * 24 * 60 * 60 * 1000;
 
 /* ------------------------------------------------------------------ */
 /*  Forme d'un dossier                                                 */
@@ -274,17 +285,24 @@ function nommer(cle: CleDocument, pourQui: CleDestinataire): string {
 }
 
 /**
- * Supprime les dossiers clos depuis plus de douze mois. Appelée au passage lors d'une
- * création — le volume est trop faible pour justifier une tâche planifiée, et le socle fait
- * de même pour les dossiers de signature.
+ * Supprime les dossiers clos depuis plus de douze mois, et les prospects sans activité depuis
+ * plus de cinq ans. Appelée au passage lors d'une création — le volume est trop faible pour
+ * justifier une tâche planifiée, et le socle fait de même pour les dossiers de signature.
+ *
+ * Un dossier ouvert (qualifié, non clos) n'est jamais supprimé, si ancien soit-il : c'est un
+ * client en cours, et sa fin se décide à l'écran, pas par une horloge.
  */
-export async function purgerClosAnciens(maintenant = Date.now()): Promise<void> {
+export async function purgerAnciens(maintenant = Date.now()): Promise<void> {
   try {
     for (const { id, contenu } of await stockage.lister()) {
       const dossier = relire(contenu);
-      if (!dossier?.clotLe) continue;
-      const clot = Date.parse(dossier.clotLe);
-      if (!Number.isNaN(clot) && maintenant - clot > DUREE_CONSERVATION_CLOS_MS) {
+      if (!dossier) continue;
+      const [depuis, duree] = dossier.clotLe
+        ? [Date.parse(dossier.clotLe), DUREE_CONSERVATION_CLOS_MS]
+        : dossier.etape === 'prospect'
+          ? [Date.parse(dossier.majLe), DUREE_CONSERVATION_PROSPECT_MS]
+          : [Number.NaN, 0];
+      if (!Number.isNaN(depuis) && maintenant - depuis > duree) {
         await stockage.supprimer(id);
       }
     }
@@ -329,7 +347,7 @@ export async function creerDossier(
   const existant = await trouverExistant(donnees.courriel, donnees.telephone);
   if (existant) return { doublon: existant };
 
-  await purgerClosAnciens();
+  await purgerAnciens();
 
   const maintenant = new Date().toISOString();
   const etape = ETAPE_INITIALE[contexte.origine];

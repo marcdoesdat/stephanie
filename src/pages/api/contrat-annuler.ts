@@ -8,7 +8,7 @@
 
 import type { APIRoute } from 'astro';
 import { requeteAutorisee } from '../../services/accesCourtiere';
-import { checkRateLimit, clientIpFromRequest, jsonResponse, loadResendEnv } from '../../services/emailService';
+import { jsonResponse, loadResendEnv } from '../../services/emailService';
 import { envoyerAnnulation } from '../../services/contratCourriels';
 import { annulerDossier, destinatairesAnnulation } from '../../services/contratDossierService';
 
@@ -24,11 +24,6 @@ export const POST: APIRoute = async ({ request }) => {
     payload = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonResponse({ error: 'Requête invalide' }, 400);
-  }
-
-  const clientIp = clientIpFromRequest(request);
-  if (!(await checkRateLimit(clientIp, 'contrat-annuler'))) {
-    return jsonResponse({ error: 'Trop de demandes. Réessayez dans une heure.' }, 429);
   }
 
   const dossier = await annulerDossier(payload.d);

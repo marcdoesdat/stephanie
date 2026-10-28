@@ -11,7 +11,7 @@
 import type { APIRoute } from 'astro';
 import { loadSiteConfig } from '../../config';
 import { requeteAutorisee } from '../../services/accesCourtiere';
-import { checkRateLimit, clientIpFromRequest, jsonResponse, loadResendEnv } from '../../services/emailService';
+import { jsonResponse, loadResendEnv } from '../../services/emailService';
 import { envoyerInvitation } from '../../services/contratCourriels';
 import { corrigerCourrielCourant, listerDossiers, reemettreLienCourant } from '../../services/contratDossierService';
 
@@ -27,11 +27,6 @@ export const POST: APIRoute = async ({ request }) => {
     payload = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonResponse({ error: 'Requête invalide' }, 400);
-  }
-
-  const clientIp = clientIpFromRequest(request);
-  if (!(await checkRateLimit(clientIp, 'contrat-relancer'))) {
-    return jsonResponse({ error: 'Trop de demandes. Réessayez dans une heure.' }, 429);
   }
 
   // « Corriger le courriel » : la courtière fournit une nouvelle adresse, le lien part

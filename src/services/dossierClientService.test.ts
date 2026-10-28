@@ -256,7 +256,7 @@ describe('lien magique', () => {
   });
 });
 
-describe('purge des dossiers clos', () => {
+describe('purge des dossiers anciens', () => {
   it('supprime un dossier clos depuis plus de douze mois, garde les autres', async () => {
     const service = await chargerService();
     const vieux = await service.creerDossier(donnees());
@@ -267,7 +267,7 @@ describe('purge des dossiers clos', () => {
     await service.changerEtape(recent.id, 'finance');
     retoucherBlob(vieux.id, (d) => void (d.clotLe = '2024-01-01T00:00:00.000Z'));
 
-    await service.purgerClosAnciens(MAINTENANT);
+    await service.purgerAnciens(MAINTENANT);
     expect(await service.lireDossier(vieux.id)).toBeNull();
     expect(await service.lireDossier(recent.id)).not.toBeNull();
   });
@@ -277,9 +277,42 @@ describe('purge des dossiers clos', () => {
     const dossier = await service.creerDossier(donnees());
     if ('doublon' in dossier) throw new Error('doublon inattendu');
 
-    retoucherBlob(dossier.id, (d) => void (d.creeLe = '2019-01-01T00:00:00.000Z'));
-    await service.purgerClosAnciens(MAINTENANT);
+    retoucherBlob(dossier.id, (d) => {
+      d.creeLe = '2019-01-01T00:00:00.000Z';
+      d.majLe = '2019-01-01T00:00:00.000Z';
+    });
+    await service.purgerAnciens(MAINTENANT);
     expect(await service.lireDossier(dossier.id)).not.toBeNull();
+  });
+
+  it('supprime un prospect sans activité depuis plus de cinq ans, garde le prospect récent', async () => {
+    const service = await chargerService();
+    const vieux = await service.creerDossier(donnees(), { origine: 'calculateur' });
+    const recent = await service.creerDossier(donnees({ courriel: 'luc@exemple.ca', nom: 'Luc Roy' }), {
+      origine: 'rappel',
+    });
+    if ('doublon' in vieux || 'doublon' in recent) throw new Error('doublon inattendu');
+
+    // Plus de cinq ans avant la date de référence (2026-05-14) ; l'autre, quatre ans et demi.
+    retoucherBlob(vieux.id, (d) => void (d.majLe = '2021-05-01T00:00:00.000Z'));
+    retoucherBlob(recent.id, (d) => void (d.majLe = '2021-11-14T00:00:00.000Z'));
+
+    await service.purgerAnciens(MAINTENANT);
+    expect(await service.lireDossier(vieux.id)).toBeNull();
+    expect(await service.lireDossier(recent.id)).not.toBeNull();
+  });
+
+  it('compte les cinq ans depuis la dernière activité, pas depuis la création', async () => {
+    const service = await chargerService();
+    const prospect = await service.creerDossier(donnees(), { origine: 'contact' });
+    if ('doublon' in prospect) throw new Error('doublon inattendu');
+
+    retoucherBlob(prospect.id, (d) => {
+      d.creeLe = '2019-01-01T00:00:00.000Z';
+      d.majLe = '2025-01-01T00:00:00.000Z';
+    });
+    await service.purgerAnciens(MAINTENANT);
+    expect(await service.lireDossier(prospect.id)).not.toBeNull();
   });
 });
 
