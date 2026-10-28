@@ -90,8 +90,9 @@ nav#navbar.scrolled{box-shadow:var(--shadow-sm)}
 .fee-info-btn{position:relative}
 .fee-info-btn::before{content:'';position:absolute;inset:-10px}
 .fee-info-btn:hover,.fee-info-btn[aria-expanded="true"]{background:var(--clay);color:white}
-.fee-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:240px;background:var(--ink);color:white;font-size:.72rem;font-weight:400;line-height:1.55;padding:.65rem .8rem;border-radius:10px;z-index:50;text-align:left;pointer-events:none}
-.fee-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink)}
+/* --decalage : posé au clic (MainLayout) quand l'infobulle, centrée sur l'icône, sortirait de l'écran */
+.fee-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(calc(-50% + var(--decalage,0px)));width:min(240px,calc(100vw - 2rem));background:var(--ink);color:white;font-size:.72rem;font-weight:400;line-height:1.55;padding:.65rem .8rem;border-radius:10px;z-index:50;text-align:left;pointer-events:none}
+.fee-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(calc(-50% - var(--decalage,0px)));border:6px solid transparent;border-top-color:var(--ink)}
 .fee-tooltip-wrap.is-open .fee-tooltip{display:block}
 @media (min-width: 900px) {
   .fee-tooltip-wrap:hover .fee-tooltip { display:block; }
@@ -137,7 +138,6 @@ nav#navbar.scrolled{box-shadow:var(--shadow-sm)}
 }
 .hero-stats{display:flex;gap:2.5rem;margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid var(--border);justify-content:center;text-align:center}
 .stat-num{font-family:"Lora",serif;font-size:2.75rem;font-weight:600;color:var(--clay);line-height:1}
-.stat-num--phrase{font-size:1.2rem;line-height:1.15}
 .stat-label{font-size:.85rem;color:var(--muted);margin-top:.35rem}
 .hero-right{position:relative}
 .photo-frame{width:100%;aspect-ratio:4/5;border-radius:30% 70% 70% 30%/30% 30% 70% 70%;overflow:hidden;border:3px solid var(--border);transition:border-radius .6s ease}
@@ -1475,7 +1475,6 @@ footer strong{color:rgba(255,255,255,.85)}
   .hero-stats{width:100%;gap:.5rem;margin-top:2rem;padding-top:1.5rem;justify-content:space-between}
   .hero-stats .stat-item{flex:1;min-width:0}
   .hero-stats .stat-num{font-size:2rem}
-  .hero-stats .stat-num--phrase{font-size:1rem;line-height:1.1}
   .hero-stats .stat-label{font-size:.72rem}
   .hero-left .hero-value-prop{font-size:clamp(2.1rem,10.5vw,2.8rem)}
   .hero-left p{margin-bottom:1.75rem}

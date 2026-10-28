@@ -275,7 +275,22 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
     <!-- Tooltips frais de courtage (global) -->
     <script is:inline>
       (function() {
+        // Centrée sur l'icône, l'infobulle d'une colonne au bord de l'écran en sortirait sur
+        // téléphone : on la ramène à 16 px du bord, la flèche restant sur l'icône.
+        function recadrer(wrap) {
+          var tip = wrap.querySelector('.fee-tooltip');
+          if (!tip) return;
+          tip.style.setProperty('--decalage', '0px');
+          var r = tip.getBoundingClientRect();
+          var marge = 16, d = 0;
+          if (r.left < marge) d = marge - r.left;
+          else if (r.right > window.innerWidth - marge) d = window.innerWidth - marge - r.right;
+          tip.style.setProperty('--decalage', d + 'px');
+        }
         function initFeeTooltips() {
+          document.querySelectorAll('.fee-tooltip-wrap').forEach(function(wrap) {
+            wrap.addEventListener('mouseenter', function() { recadrer(wrap); });
+          });
           document.querySelectorAll('.fee-info-btn').forEach(function(btn) {
             var wrap = btn.closest('.fee-tooltip-wrap');
             if (!wrap) return;
@@ -283,6 +298,7 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
               e.stopPropagation();
               var open = wrap.classList.toggle('is-open');
               btn.setAttribute('aria-expanded', String(open));
+              if (open) recadrer(wrap);
             });
           });
           document.addEventListener('click', function() {
