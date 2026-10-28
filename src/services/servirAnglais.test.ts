@@ -6,7 +6,7 @@ import { cheminAnglais, cheminCanonique, cheminFrancais, estTraduite, estAnglais
 const SITE = 'https://stephanieweyman.ca';
 
 const PAGE = `<!doctype html><html lang="fr-CA"><head>
-<title>Courtière hypothécaire Repentigny &amp; Rive-Nord | Stéphanie Weyman</title>
+<title>Courtière hypothécaire à Repentigny | Stéphanie Weyman</title>
 <link rel="canonical" href="https://stephanieweyman.ca/outils">
 <meta property="og:url" content="https://stephanieweyman.ca/outils">
 <meta property="og:locale" content="fr_CA">
@@ -58,7 +58,7 @@ describe('traduirePage', () => {
 
   it('traduit le texte, le titre et la langue', () => {
     expect(html).toContain('lang="en-CA"');
-    expect(html).toContain('Mortgage Broker Repentigny');
+    expect(html).toContain('Mortgage Broker in Repentigny');
     expect(html).toContain('<h2>Frequently asked <em>questions</em></h2>');
     expect(html).toContain('<a href="/en/rendez-vous/">Book an appointment</a>');
   });
