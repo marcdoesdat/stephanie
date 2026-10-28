@@ -1,0 +1,54 @@
+---
+/**
+ * Les polices du site, servies par le site lui-même.
+ *
+ * Elles venaient de Google Fonts : deux connexions de plus avant le premier texte, l'adresse IP
+ * de chaque visiteur transmise à Google, et une feuille chargée en différé (media="print") qui
+ * faisait arriver les polices après le premier affichage — le texte changeait alors de largeur
+ * sous les yeux du visiteur, et la page sautait (CLS).
+ *
+ * Les fichiers sont ceux que Google servait (polices variables : un fichier par style couvre
+ * toutes les graisses), sous-ensembles latin et latin étendu seulement. Le navigateur ne
+ * télécharge un fichier que si la page contient un caractère de sa plage (unicode-range) : le
+ * latin étendu ne part que pour un nom propre accentué hors du français.
+ *
+ * Importés en `?url`, ils sont émis dans /_astro/ sous un nom haché, donc mis en cache un an
+ * (en-tête de l'adaptateur Netlify). Les @font-face sont posés dans le <head> pour que la
+ * découverte n'attende pas global.css. Licence : SIL Open Font License (OFL-*.txt, à côté).
+ */
+import loraLatin from '../assets/fonts/lora-latin.woff2?url';
+import loraLatinExt from '../assets/fonts/lora-latin-ext.woff2?url';
+import loraItaliqueLatin from '../assets/fonts/lora-italic-latin.woff2?url';
+import loraItaliqueLatinExt from '../assets/fonts/lora-italic-latin-ext.woff2?url';
+import dmSansLatin from '../assets/fonts/dm-sans-latin.woff2?url';
+import dmSansLatinExt from '../assets/fonts/dm-sans-latin-ext.woff2?url';
+
+const LATIN = 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD';
+const LATIN_EXT = 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF';
+
+// Graisses réellement employées par le site — celles que demandait l'adresse Google Fonts.
+const faces = [
+  { famille: 'Lora', style: 'normal', graisses: '400 700', latin: loraLatin, latinExt: loraLatinExt },
+  { famille: 'Lora', style: 'italic', graisses: '400 600', latin: loraItaliqueLatin, latinExt: loraItaliqueLatinExt },
+  { famille: 'DM Sans', style: 'normal', graisses: '400 600', latin: dmSansLatin, latinExt: dmSansLatinExt },
+];
+
+const css = faces
+  .flatMap((f) => [
+    [f.latinExt, LATIN_EXT],
+    [f.latin, LATIN],
+  ].map(([src, plage]) =>
+    `@font-face{font-family:"${f.famille}";font-style:${f.style};font-weight:${f.graisses};font-display:swap;src:url(${src}) format("woff2");unicode-range:${plage}}`,
+  ))
+  .join('');
+---
+
+<!-- Préchargés : le texte courant (DM Sans) et les titres (Lora), dont le H1 qui sert souvent de
+     LCP. Sans préchargement, les polices n'étaient demandées qu'une fois la page mise en forme ;
+     elles arrivaient après le premier affichage et la page sautait (CLS 0,2 mesuré sur /outils/
+     et les pages services, 0 avec). L'italique n'est pas préchargé : quelques mots du titre
+     suffisent à l'appeler assez tôt, et le précharger retardait le premier affichage sans
+     rien gagner au CLS. -->
+<link rel="preload" href={dmSansLatin} as="font" type="font/woff2" crossorigin />
+<link rel="preload" href={loraLatin} as="font" type="font/woff2" crossorigin />
+<style is:inline set:html={css}></style>
