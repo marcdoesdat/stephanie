@@ -287,35 +287,36 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
           else if (r.right > window.innerWidth - marge) d = window.innerWidth - marge - r.right;
           tip.style.setProperty('--decalage', d + 'px');
         }
+        // Une seule infobulle à la fois : le clic sur une icône ne remonte pas jusqu'au document
+        // (sinon elle se refermerait aussitôt), il doit donc fermer lui-même les autres — sans
+        // quoi deux icônes voisines (« Frais de courtage », « Délai de réponse ») empilaient
+        // leurs bulles. Même chose au survol, sur ordinateur, d'une icône voisine d'une bulle ouverte.
+        function fermer(sauf) {
+          document.querySelectorAll('.fee-tooltip-wrap.is-open').forEach(function(wrap) {
+            if (wrap === sauf) return;
+            wrap.classList.remove('is-open');
+            var b = wrap.querySelector('.fee-info-btn');
+            if (b) b.setAttribute('aria-expanded', 'false');
+          });
+        }
         function initFeeTooltips() {
           document.querySelectorAll('.fee-tooltip-wrap').forEach(function(wrap) {
-            wrap.addEventListener('mouseenter', function() { recadrer(wrap); });
+            wrap.addEventListener('mouseenter', function() { fermer(wrap); recadrer(wrap); });
           });
           document.querySelectorAll('.fee-info-btn').forEach(function(btn) {
             var wrap = btn.closest('.fee-tooltip-wrap');
             if (!wrap) return;
             btn.addEventListener('click', function(e) {
               e.stopPropagation();
+              fermer(wrap);
               var open = wrap.classList.toggle('is-open');
               btn.setAttribute('aria-expanded', String(open));
               if (open) recadrer(wrap);
             });
           });
-          document.addEventListener('click', function() {
-            document.querySelectorAll('.fee-tooltip-wrap.is-open').forEach(function(wrap) {
-              wrap.classList.remove('is-open');
-              var b = wrap.querySelector('.fee-info-btn');
-              if (b) b.setAttribute('aria-expanded', 'false');
-            });
-          });
+          document.addEventListener('click', function() { fermer(null); });
           document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-              document.querySelectorAll('.fee-tooltip-wrap.is-open').forEach(function(wrap) {
-                wrap.classList.remove('is-open');
-                var b = wrap.querySelector('.fee-info-btn');
-                if (b) b.setAttribute('aria-expanded', 'false');
-              });
-            }
+            if (e.key === 'Escape') fermer(null);
           });
         }
         if (document.readyState === 'loading') {
