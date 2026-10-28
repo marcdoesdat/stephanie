@@ -998,7 +998,10 @@ Les règles qui suivent corrigent des fautes réellement trouvées à l'audit d'
   deuxième entreprise. Elles déclarent désormais un `Service` local.
 - **Aucun nom de fichier haché écrit à la main** (`/_astro/stephanie.Cm30Blgc.jpg`) : il meurt au
   build suivant. Importer l'image et prendre son `.src`.
-- **Titres ≤ ~60 caractères, descriptions ≤ ~155** — au-delà, Google coupe. `title` reçoit déjà
+- **Titres ≤ ~60 caractères, descriptions ≤ ~155** — au-delà, Google coupe. Pour un titre, c'est la
+  largeur qui compte (≈ 600 px en Arial 20 px) : 63 caractères étroits passent, 60 larges non. Seul
+  « Courtier hypothécaire Saint-Jean-sur-Richelieu » déborde, de propos délibéré (la règle des pages
+  villes) : Google n'en coupe que le nom en fin de titre. `title` reçoit déjà
   « | Stéphanie Weyman » : ne pas en ajouter un second séparateur, ni le nom une deuxième fois.
   Changer un titre ou une description, c'est **changer sa clé** dans `i18n-en.json` (la clé d'un
   titre inclut le suffixe).
