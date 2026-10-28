@@ -73,8 +73,21 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
           </div>
         </div>
         <div class="stat-item">
-          <div class="stat-num stat-num--phrase">Le jour même</div>
-          <div class="stat-label">Habituellement, les jours ouvrables</div>
+          <div class="stat-num">24&nbsp;h</div>
+          <div class="stat-label">
+            Délai de réponse
+            <span class="fee-tooltip-wrap">
+              <button
+                class="fee-info-btn"
+                aria-label="En savoir plus sur le délai de réponse"
+                aria-expanded="false"
+                type="button"
+              >i</button>
+              <span class="fee-tooltip" role="tooltip">
+                Calculé en jours ouvrables. Je vous réponds moi-même, habituellement le jour ouvrable même ; une demande faite la fin de semaine reçoit sa réponse le jour ouvrable suivant. La réponse du prêteur suit selon ses propres délais.
+              </span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
