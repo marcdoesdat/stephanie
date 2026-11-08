@@ -30,6 +30,14 @@ export const GUIDES: readonly Guide[] = [
     minutes: 10,
     revise: '2026-11-08',
   },
+  {
+    slug: 'renouvellement',
+    titre: 'Renouvellement hypothécaire, étape par étape',
+    resume:
+      "Quand commencer, lire l'offre de votre banque, rester ou changer de prêteur, revoir la structure, la pénalité en cours de terme : tout le calendrier, de six mois avant l'échéance à la signature.",
+    minutes: 11,
+    revise: '2026-11-08',
+  },
 ];
 
 export function cheminGuide(slug: string): string {
