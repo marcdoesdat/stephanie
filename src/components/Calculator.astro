@@ -57,7 +57,7 @@ const { defaultRate = null } = Astro.props;
                 <label for="amort">Amortissement</label>
                 <select id="amort">
                   <option value="25">25 ans</option>
-                  <option value="30">30 ans (mise ≥ 20 %)</option>
+                  <option value="30">30 ans</option>
                   <option value="20">20 ans</option>
                   <option value="15">15 ans</option>
                 </select>
@@ -70,6 +70,14 @@ const { defaultRate = null } = Astro.props;
                   <option value="52">Hebdomadaire</option>
                 </select>
               </div>
+            </div>
+            <!-- Même question que le simulateur, posée seulement à qui choisit 30 ans -->
+            <div class="outil-case-bloc" id="calc-premier-bloc" hidden>
+              <label class="outil-case">
+                <input type="checkbox" id="calc-premier-achat" aria-describedby="calc-premier-aide" />
+                <span>Premier achat ou construction neuve</span>
+              </label>
+              <small class="outil-case-aide" id="calc-premier-aide">Au moins un emprunteur n’a pas habité, depuis 4 ans, une propriété lui appartenant (ou à son conjoint), ou la propriété n’a jamais été habitée. C’est ce qui permet 30 ans d’amortissement avec moins de 20 % de mise de fonds.</small>
             </div>
             <div class="form-group">
               <label for="calc-taxes">Taxes municipales et scolaires ($/mois)</label>
@@ -206,6 +214,8 @@ const { defaultRate = null } = Astro.props;
     const tauxEl      = document.getElementById('taux') as HTMLInputElement;
     const calcTauxNoteEl = document.getElementById('calc-taux-note')!;
     const amortEl     = document.getElementById('amort') as HTMLSelectElement;
+    const premierEl   = document.getElementById('calc-premier-achat') as HTMLInputElement;
+    const premierBloc = document.getElementById('calc-premier-bloc')!;
     const freqEl      = document.getElementById('freq') as HTMLSelectElement;
     const misePctEl   = document.getElementById('mise-pct');
     const btnDollar   = document.getElementById('mise-btn-dollar') as HTMLButtonElement;
@@ -339,8 +349,9 @@ const { defaultRate = null } = Astro.props;
         return;
       }
 
-      const amort = parseInt(amortEl.value) || 25;
+      const amortChoisi = parseInt(amortEl.value) || 25;
       const freq  = parseInt(freqEl.value) || 12;
+      premierBloc.hidden = amortChoisi <= 25;
 
       // Advanced options
       const taxes    = parseFloat(taxesEl.value) || 0;
@@ -381,15 +392,16 @@ const { defaultRate = null } = Astro.props;
         return;
       }
 
-      showCalcWarning(null);
+      // 30 ans avec moins de 20 % de mise : réservé au premier achat et à la construction neuve.
+      // Sinon le versement est calculé sur 25 ans, et l'écran le dit — le choix reste affiché
+      // pour qu'un clic sur la case suffise à le rétablir.
+      const amortRefuse = amortChoisi > 25 && (mise / prix) < 0.2 && !premierEl.checked;
+      const amort = amortRefuse ? 25 : amortChoisi;
+      showCalcWarning(amortRefuse
+        ? 'Avec moins de 20 % de mise de fonds, l’amortissement de 30 ans est réservé au premier achat et à la construction neuve : versement calculé sur 25 ans. Cochez la case si c’est votre cas.'
+        : null);
 
-      // 30-year amortization requires ≥ 20% down
-      if (amort === 30 && (mise / prix) < 0.2) {
-        amortEl.value = '25';
-        return doCalculation();
-      }
-
-      const schl     = calculateSCHL(prix, mise);
+      const schl     = calculateSCHL(prix, mise, amort);
       const pretTotal = (prix - mise) + schl;
       const schlRate  = schl > 0 ? ((schl / (prix - mise)) * 100).toFixed(2) : null;
 
@@ -481,7 +493,8 @@ const { defaultRate = null } = Astro.props;
         `Calculateur de versement — Prix : ${formatMoney(prix)}, ` +
         `Mise de fonds : ${formatMoney(mise)} (${(mise / prix * 100).toFixed(1)} %), ` +
         `Taux : ${taux.toFixed(2).replace('.', ',')} %, ` +
-        `Amortissement : ${amort} ans, ` +
+        `Amortissement : ${amort} ans` +
+        (amort > 25 && schl > 0 ? ' (premier achat ou construction neuve)' : '') + ', ' +
         `${labelTexte} : ${formatMoney(paiementFinal)}, ` +
         `Prêt total : ${formatMoney(pretTotal)}` +
         (schl > 0 ? `, Prime SCHL : ${formatMoney(schl)}` : '') +

@@ -50,9 +50,20 @@ const { defaultRate = null } = Astro.props;
           <label for="sim-amort">Amortissement</label>
           <select id="sim-amort">
             <option value="25">25 ans</option>
-            <option value="30">30 ans (mise de fonds ≥ 20 % requise)</option>
+            <option value="30">30 ans</option>
             <option value="20">20 ans</option>
           </select>
+        </div>
+
+        <!-- Avec moins de 20 % de mise, seul un premier achat ou une construction neuve ouvre les
+             30 ans : la question ne se pose qu'à qui choisit 30 ans. Non cochée par défaut —
+             l'admissibilité se déclare, elle ne se suppose pas. -->
+        <div class="outil-case-bloc" id="sim-premier-bloc" hidden>
+          <label class="outil-case">
+            <input type="checkbox" id="sim-premier-achat" aria-describedby="sim-premier-aide" />
+            <span>Premier achat ou construction neuve</span>
+          </label>
+          <small class="outil-case-aide" id="sim-premier-aide">Au moins un emprunteur n’a pas habité, depuis 4 ans, une propriété lui appartenant (ou à son conjoint), ou la propriété n’a jamais été habitée. C’est ce qui permet 30 ans d’amortissement avec moins de 20 % de mise de fonds.</small>
         </div>
 
         <!-- Frais de propriété (inclus dans les ratios ABD/ATD) -->
@@ -126,7 +137,7 @@ const { defaultRate = null } = Astro.props;
             <div class="sim-note">
               <strong>Stress test :</strong> Capacité calculée au taux de qualification canadien (taux + 2 % ou 5,25 %, le plus élevé).<br/>
               * Inclut taxes, chauffage et 50 % des frais de condo dans les ratios d'endettement.<br/>
-              * Prime SCHL ajoutée au prêt si la mise de fonds est inférieure à 20 %.
+              * Prime SCHL ajoutée au prêt si la mise de fonds est inférieure à 20 % (majorée de 0,20 % sur 30 ans).
             </div>
           </div>
 
@@ -172,6 +183,9 @@ const { defaultRate = null } = Astro.props;
     const dettesEl = document.getElementById('sim-dettes') as HTMLInputElement;
     const miseEl   = document.getElementById('sim-mise') as HTMLInputElement;
     const condoEl  = document.getElementById('sim-condo') as HTMLInputElement;
+    const amortEl  = document.getElementById('sim-amort') as HTMLSelectElement;
+    const premierEl    = document.getElementById('sim-premier-achat') as HTMLInputElement;
+    const premierBloc  = document.getElementById('sim-premier-bloc')!;
 
     // --- Formatage français pour les champs montant ---
     [revenuEl, dettesEl, miseEl].forEach(el => {
@@ -270,11 +284,13 @@ const { defaultRate = null } = Astro.props;
         dettes,
         mise,
         taux,
-        amortAns:  parseInt((document.getElementById('sim-amort') as HTMLSelectElement).value) || 25,
+        amortAns:  parseInt(amortEl.value) || 25,
         taxes:     parseFloat((document.getElementById('sim-taxes') as HTMLInputElement).value) || 0,
         chauffage: parseFloat((document.getElementById('sim-chauffage') as HTMLInputElement).value) || 0,
         condo:     parseFloat(condoEl.value) || 0,
+        premierAchatOuNeuf: premierEl.checked,
       };
+      premierBloc.hidden = entrees.amortAns <= 25;
       const r = calculerCapacite(entrees);
 
       if (!r.ok) {
@@ -320,10 +336,9 @@ const { defaultRate = null } = Astro.props;
         absCard.style.display = '';
         document.getElementById('sim-abs-prix')!.textContent = fmt(r.maxAbsolu.prix);
         document.getElementById('sim-abs-mise')!.textContent = fmt(r.maxAbsolu.miseMin);
-        document.getElementById('sim-abs-sub')!.textContent =
-          r.maxAbsolu.prix >= 1_000_000
-            ? 'Prêt conventionnel · Mise de fonds minimale de'
-            : 'Prêt assuré (SCHL) · Mise de fonds minimale de';
+        document.getElementById('sim-abs-sub')!.textContent = r.maxAbsolu.assure
+          ? 'Prêt assuré (SCHL) · Mise de fonds minimale de'
+          : 'Prêt conventionnel · Mise de fonds minimale de';
       } else {
         absCard.style.display = 'none';
       }
@@ -334,6 +349,8 @@ const { defaultRate = null } = Astro.props;
         `Revenu annuel : ${fmt(revenu)}, ` +
         `Mise de fonds : ${fmt(mise)} (${partMise} %), ` +
         `Taux : ${taux.toFixed(2).replace('.', ',')} %, ` +
+        `Amortissement : ${entrees.amortAns} ans` +
+        (entrees.amortAns > 25 && r.assure ? ' (premier achat ou construction neuve)' : '') + ', ' +
         `Versement : ${fmt(r.versement)}/mois, ` +
         `Prêt ${typeLabel} : ${fmt(r.pretTotal)}, ` +
         `Ratio ABD : ${r.abd.toFixed(1)} %, Ratio ATD : ${r.atd.toFixed(1)} %`
@@ -354,7 +371,8 @@ const { defaultRate = null } = Astro.props;
       el.addEventListener('input', scheduleSimulation);
       el.addEventListener('change', scheduleSimulation);
     });
-    document.getElementById('sim-amort')!.addEventListener('change', simuler);
+    amortEl.addEventListener('change', simuler);
+    premierEl.addEventListener('change', simuler);
 
     // Arrivée depuis le calculateur express de l'accueil : reprendre ses chiffres, une seule
     // fois. Le transfert est effacé dès la lecture — un retour sur la page plus tard repart

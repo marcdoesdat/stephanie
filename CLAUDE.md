@@ -217,16 +217,23 @@ Calcul complet des pénalités de remboursement anticipé hypothécaire.
 
 **Tests :** `src/lib/penalite.test.ts` (446 lignes, 35+ cas de test)
 
-### `src/utils/mortgageCalc.ts` (184 lignes)
-Calculs mathématiques hypothécaires partagés entre composants.
+### `src/utils/mortgageCalc.ts`
+Calculs mathématiques hypothécaires partagés entre composants. Règles fédérales du
+15 décembre 2024 : **prêt assuré jusqu'à 1,5 M$ pour tous les acheteurs** (`PLAFOND_ASSURABLE`),
+et **30 ans d'amortissement assuré réservés au premier achat et à la construction neuve**,
+avec une surprime de 0,20 % sur la prime (`SURPRIME_AMORTISSEMENT_PROLONGE`). Le plafond n'est
+pas réservé au premier achat : seul l'amortissement l'est.
 
 - `tauxPeriodique(tauxAnnuel, freq)` — Taux périodique (capitalisation semi-annuelle canadienne)
 - `calcPaiement(pretTotal, tauxAnnuel, amortAns, freq)` — Paiement périodique
-- `calculateSCHL(prix, mise)` — Assurance SCHL (mise < 20%)
-- `miseMinimale(prix)` — Mise minimale par tranche (5% ≤500k, 10% 500k–1M, 20% ≥1M)
-- `prixMaxParMise(mise)` — Prix max à partir d'une mise donnée
+- `calculateSCHL(prix, mise, amortAns?)` — Assurance SCHL (mise < 20 %), surprime au-delà de 25 ans
+- `tauxPrimeAssurance(ltv, amortAns)` — Taux de prime, surprime comprise
+- `miseMinimale(prix)` — Mise minimale par tranche (5 % ≤ 500 k, 10 % de 500 k à 1,5 M, 20 % ≥ 1,5 M)
+- `prixMaxParMise(mise)` / `prixAssurableParMise(mise)` — Prix max à partir d'une mise donnée
+  (tous prêts / prêt assuré seulement, donc sous 1,5 M$)
 - `droitsMutation(prix)` — Taxe de bienvenue Québec (5 tranches, max 2%)
-- `calcAbsoluteMax(pretMax)` — Prix max finançable (boucle de convergence assuré/conventionnel)
+- `calcAbsoluteMax(pretMax, amortAns?)` — Prix max finançable (boucle de convergence assuré/conventionnel)
+- Tests : `src/utils/mortgageCalc.test.ts`
 
 ### `src/utils/capaciteEmprunt.ts`
 Le calcul de capacité d'emprunt, **à un seul exemplaire** : le simulateur complet
@@ -243,8 +250,18 @@ Le calcul de capacité d'emprunt, **à un seul exemplaire** : le simulateur comp
   et condo partent même à zéro — sinon le simulateur reprendrait ses propres défauts.
 - **Sans taux du jour, aucun taux inventé** : le calculateur express affiche un champ
   « Taux d'intérêt visé » vide et un lien vers hypotheca.ca.
+- **L'admissibilité aux 30 ans se déclare, elle ne se suppose pas.** `premierAchatOuNeuf`
+  vaut « non » quand il est absent. Le simulateur et le calculateur de versement posent la
+  question (case « Premier achat ou construction neuve », non cochée) **seulement à qui
+  choisit 30 ans**. Sans la case et avec moins de 20 % de mise, le simulateur nomme la règle
+  (`amortissement_30_ans`) et le calculateur calcule sur 25 ans en le disant — le choix de
+  30 ans reste affiché pour qu'un clic sur la case suffise à le rétablir.
+- **Jamais de prêt conventionnel avec moins de 20 % de mise.** Quand le revenu dépasserait
+  1,5 M$ mais que la mise est sous 20 %, le calcul retient le plus haut du prêt assuré (sous
+  le plafond) et du conventionnel (prix = mise ÷ 20 %).
 - Tests : `src/utils/capaciteEmprunt.test.ts` — valeurs relevées sur le calcul tel qu'il vivait
-  dans `Simulator.astro` avant d'en être sorti.
+  dans `Simulator.astro` avant d'en être sorti (sauf le scénario de mise minimale des défauts,
+  corrigé de 31 $ en novembre 2026 : une mise d'exactement 5 % perdait sa prime à l'arrondi).
 
 ### `src/data/preteurs.ts`
 Base de données des prêteurs pour le calculateur de pénalité.
@@ -1190,7 +1207,10 @@ npx vitest              # mode watch
 - `src/lib/penalite.test.ts` — 35+ cas sur la logique de pénalité (3 mois, IRD, cas limites)
 - `src/utils/capaciteEmprunt.test.ts` — résultats du simulateur conservés au dollar près,
   50 % des frais de condo, plancher de qualification, échecs nommés, transfert vers le
-  simulateur décodé champ par champ
+  simulateur décodé champ par champ ; 30 ans assurés pour un premier achat (surprime
+  comprise), prêt assuré entre 1 M$ et 1,5 M$, jamais de conventionnel sous 20 % de mise
+- `src/utils/mortgageCalc.test.ts` — tranches de mise de fonds et plafond de 1,5 M$, surprime
+  de 0,20 % au-delà de 25 ans, prime de 4 % conservée à exactement 5 % de mise
 - `src/services/emailService.test.ts` — un 429 est réessayé (`Retry-After` respecté et
   plafonné), un 422 ne l'est pas, et l'abandon nomme le statut
 - `src/utils/profilPreparation.test.ts` — aller-retour du lien préparé (accents compris), champs

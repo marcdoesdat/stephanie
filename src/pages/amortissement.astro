@@ -88,7 +88,8 @@ const config = loadSiteConfig();
       return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 2 }).format(amount);
     }
 
-    const schl = calculateSCHL(prix, mise);
+    // Au-delà de 25 ans (premier achat ou construction neuve), la prime porte la surprime de 0,20 %
+    const schl = calculateSCHL(prix, mise, amort);
     const pretTotal = (prix - mise) + schl;
 
     const tauxPeriode = tauxPeriodique(taux, freq);

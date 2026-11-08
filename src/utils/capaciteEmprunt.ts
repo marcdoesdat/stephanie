@@ -5,15 +5,20 @@
 //
 // Règles canadiennes : test de résistance (taux + 2 % ou 5,25 %, le plus élevé), ratios
 // ABD/ATD 39/44 % (assuré) et 35/42 % (conventionnel), prime SCHL, mise de fonds minimale.
+// Depuis le 15 décembre 2024 : prêt assuré jusqu'à 1,5 M$ pour tous, et sur 30 ans pour un
+// premier achat ou une construction neuve (surprime de 0,20 % sur la prime).
 
 import {
+  AMORTISSEMENT_ASSURE_STANDARD,
+  PLAFOND_ASSURABLE,
   calcPaiement,
   calcAbsoluteMax,
   miseMinimale,
+  prixAssurableParMise,
   prixMaxParMise,
   pvFromPmt,
   tauxMensuel,
-  tauxPrimeSCHL,
+  tauxPrimeAssurance,
 } from './mortgageCalc';
 
 export const TAUX_QUALIFICATION_PLANCHER = 5.25;
@@ -59,6 +64,12 @@ export interface EntreesCapacite {
   taxes: number;
   chauffage: number;
   condo: number;
+  /**
+   * Premier achat ou construction neuve : ce qui ouvre l'amortissement de 30 ans à un prêt
+   * assuré (mise de fonds sous 20 %). Absent, la réponse est « non » — c'est la règle la plus
+   * restrictive, jamais une admissibilité supposée.
+   */
+  premierAchatOuNeuf?: boolean;
 }
 
 export type MotifEchec =
@@ -85,7 +96,7 @@ export interface CapaciteCalculee {
   /** Le revenu permettait davantage : c'est la mise de fonds qui fixe le prix. */
   plafonneParMise: boolean;
   /** Scénario « mise de fonds minimale » — capacité tirée du seul revenu */
-  maxAbsolu: { prix: number; miseMin: number } | null;
+  maxAbsolu: { prix: number; miseMin: number; assure: boolean } | null;
 }
 
 export type ResultatCapacite = CapaciteCalculee | { ok: false; motif: MotifEchec };
@@ -118,32 +129,56 @@ export function calculerCapacite(e: EntreesCapacite): ResultatCapacite {
   const pretMaxAssure = maxPret(RATIOS.assure.abd, RATIOS.assure.atd);
   const pretMaxConv = maxPret(RATIOS.conventionnel.abd, RATIOS.conventionnel.atd);
 
+  // Un prêt assuré s'amortit sur 25 ans au plus, sauf premier achat ou construction neuve (30 ans)
+  const assurable = amortAns <= AMORTISSEMENT_ASSURE_STANDARD || e.premierAchatOuNeuf === true;
+  const tauxPrime = (ltv: number) => tauxPrimeAssurance(ltv, amortAns);
+
   // Scénario assuré : la prime SCHL dépend du ratio prêt/valeur, qui dépend du prix — on itère
   let prixAssure = 0, baseAssure = 0, primeAssure = 0;
-  if (pretMaxAssure > 0) {
+  if (assurable && pretMaxAssure > 0) {
     let prix = pretMaxAssure + mise;
     for (let i = 0; i < 10; i++) {
-      const base = pretMaxAssure / (1 + tauxPrimeSCHL((prix - mise) / prix));
+      const base = pretMaxAssure / (1 + tauxPrime((prix - mise) / prix));
       prix = base + mise;
     }
     prixAssure = prix;
     baseAssure = prixAssure - mise;
-    primeAssure = baseAssure * tauxPrimeSCHL(baseAssure / prixAssure);
+    primeAssure = baseAssure * tauxPrime(baseAssure / prixAssure);
   }
   const prixConv = pretMaxConv + mise;
 
   let assure: boolean, prixMax: number, pretBase: number, primeSCHL: number;
-  if (amortAns > 25) {
+  let plafonneParMise = false;
+  if (!assurable) {
+    // 30 ans sans premier achat ni construction neuve : conventionnel seulement, donc 20 % de mise
     assure = false;
     prixMax = prixConv;
     pretBase = pretMaxConv;
     primeSCHL = 0;
-    if (pretBase <= 0 || mise / prixMax < 0.20) return { ok: false, motif: 'amortissement_30_ans' };
-  } else if (prixAssure > 0 && prixAssure < 1_000_000 && mise / prixAssure < 0.20) {
+    if (pretBase > 0 && mise / prixMax < 0.20) return { ok: false, motif: 'amortissement_30_ans' };
+  } else if (prixAssure > 0 && prixAssure < PLAFOND_ASSURABLE && mise / prixAssure < 0.20) {
     assure = true;
     prixMax = prixAssure;
     pretBase = baseAssure;
     primeSCHL = primeAssure;
+  } else if (prixAssure >= PLAFOND_ASSURABLE && mise / prixConv < 0.20) {
+    // Le revenu irait au-delà de 1,5 M$, mais la mise est sous 20 % : le prêt assuré s'arrête
+    // sous le plafond, le conventionnel exige 20 % de mise. On retient le plus haut des deux —
+    // jamais un prêt conventionnel avec moins de 20 % de mise.
+    const prixI = prixAssurableParMise(mise);
+    const prixC = Math.min(prixConv, mise / 0.20);
+    plafonneParMise = true;
+    if (prixI > 0 && mise / prixI < 0.20 && prixI >= prixC) {
+      assure = true;
+      prixMax = prixI;
+      pretBase = prixI - mise;
+      primeSCHL = pretBase * tauxPrime(pretBase / prixI);
+    } else {
+      assure = false;
+      prixMax = prixC;
+      pretBase = prixC - mise;
+      primeSCHL = 0;
+    }
   } else {
     assure = false;
     prixMax = prixConv;
@@ -154,13 +189,12 @@ export function calculerCapacite(e: EntreesCapacite): ResultatCapacite {
   if (pretBase <= 0) return { ok: false, motif: 'revenu_insuffisant' };
 
   // Mise de fonds minimale : si elle ne suffit pas au prix que le revenu permet, elle le plafonne
-  let plafonneParMise = false;
   if (mise < miseMinimale(prixMax)) {
     const cap = prixMaxParMise(mise);
     if (cap < prixMax) {
       prixMax = cap;
       pretBase = prixMax - mise;
-      primeSCHL = assure ? pretBase * tauxPrimeSCHL(pretBase / prixMax) : 0;
+      primeSCHL = assure ? pretBase * tauxPrime(pretBase / prixMax) : 0;
       plafonneParMise = true;
     }
   }
@@ -169,8 +203,16 @@ export function calculerCapacite(e: EntreesCapacite): ResultatCapacite {
 
   const pretTotal = pretBase + primeSCHL;
   const pmtStress = calcPaiement(pretTotal, tauxStress, amortAns, 12);
-  // Plafonds assurés : les plus permissifs, la mise de fonds actuelle mise de côté
-  const absolu = pretMaxAssure > 0 ? calcAbsoluteMax(pretMaxAssure) : null;
+  // Mise de fonds minimale, la mise actuelle mise de côté : plafonds assurés quand le prêt peut
+  // l'être, sinon 20 % sur la capacité conventionnelle.
+  let maxAbsolu: CapaciteCalculee['maxAbsolu'] = null;
+  if (assurable) {
+    const a = pretMaxAssure > 0 ? calcAbsoluteMax(pretMaxAssure, amortAns) : null;
+    if (a && a.prix > 0) maxAbsolu = { ...a, assure: a.prix < PLAFOND_ASSURABLE && a.miseMin < a.prix * 0.2 };
+  } else if (pretMaxConv > 0) {
+    const prix = pretMaxConv / 0.8;
+    maxAbsolu = { prix: Math.round(prix), miseMin: Math.round(prix * 0.2), assure: false };
+  }
 
   return {
     ok: true,
@@ -186,7 +228,7 @@ export function calculerCapacite(e: EntreesCapacite): ResultatCapacite {
     atdLimite: (assure ? RATIOS.assure.atd : RATIOS.conventionnel.atd) * 100,
     tauxQualification: tauxStress,
     plafonneParMise,
-    maxAbsolu: absolu && absolu.prix > 0 ? absolu : null,
+    maxAbsolu,
   };
 }
 
@@ -222,7 +264,7 @@ export function messageEchec(motif: MotifEchec, e: Pick<EntreesCapacite, 'dettes
     case 'revenu_absent':
       return null;
     case 'amortissement_30_ans':
-      return 'L’amortissement de 30 ans requiert une mise de fonds d’au moins 20 % du prix d’achat.';
+      return 'Avec moins de 20 % de mise de fonds, l’amortissement de 30 ans est réservé au premier achat et à la construction neuve. Cochez la case si c’est votre cas, ou choisissez 25 ans.';
     case 'mise_absente':
       return 'Une mise de fonds d’au moins 5 % du prix d’achat est requise.';
     case 'revenu_insuffisant': {
