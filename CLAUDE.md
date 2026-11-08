@@ -48,6 +48,7 @@ src/
 | `/outils/calculateur-penalite-hypothecaire` | SSR | Calculateur de pénalité dédié |
 | `/amortissement` | Statique | Tableau d'amortissement (noindex : vide sans les paramètres du calculateur) |
 | `/rappel` | Statique | Formulaire de prise de rappel |
+| `/demande` | Statique | Demande de financement en étapes, envoi possible avant la fin — voir `demandeFinancement.ts` (noindex) |
 | `/profil-emprunteur` | Statique | Formulaire AMF « Profil des emprunteurs » en tuiles + signature dessinée (noindex, sans Nav/Footer) |
 | `/preparer-profil` | SSR | Préparation du lien « Profil des emprunteurs » avec les noms et courriels — réservé à la courtière, protégé par mot de passe (noindex) |
 | `/signer` | SSR | Co-signature à distance par lien nominatif (noindex, sans Nav/Footer) |
@@ -295,6 +296,32 @@ Source de vérité du funnel `/refinancement-v2`, partagée entre la page et `/a
 - `classerRatio(ratio)` — `faible` sous 20 %, `bonne` à partir de 20 % inclusivement
 - Tests : `src/utils/refinancementV2.test.ts`
 - **L'équité est toujours recalculée côté serveur** — rien n'est accepté du client sur ce point.
+
+### `src/utils/demandeFinancement.ts`
+Les étapes de `/demande`, à un seul exemplaire : la page les parcourt, `/api/demande-submit`
+s'en sert pour dire ce qui manque. Onze étapes dans chaque parcours (le prêt actuel au
+refinancement, la mise de fonds à l'achat).
+- **Une étape par écran**, avec progression, « Précédent » et « Continuer ». « Précédent » passe
+  par `history` : le bouton retour du téléphone ramène à l'étape d'avant au lieu de quitter la
+  page avec tout ce qui est rempli. Un seul bouton `submit` — « Entrée » dans un champ fait
+  « Continuer », jamais un envoi.
+- **Le client peut tout envoyer avant la fin** (« Envoyer maintenant, même incomplet »), et ce
+  n'est pas une panne : un formulaire d'une dizaine d'étapes perd des gens en route, et celui
+  qui s'arrête à la cinquième a déjà donné de quoi le rappeler. Le minimum est de pouvoir le
+  joindre — l'étape « Votre projet » (type, nom, téléphone, courriel) vient donc **en premier**,
+  et la sortie ne s'offre qu'à partir de la 2ᵉ étape. Elle a **son propre consentement** : celui
+  de la dernière étape n'a pas encore été vu.
+- **Ce qui manque est recalculé côté serveur** (`bilanDemande`), jamais pris du client. Le
+  courriel interne l'annonce en tête, étape par étape (« rien de rempli » / « manque : … »),
+  et son objet porte « (incomplète) » ; l'étape d'arrêt (`etape_atteinte`) n'est lue que si
+  c'est une clé du catalogue. L'accusé confirme l'envoi sans le reprocher et nomme les étapes
+  à compléter — des **titres**, jamais une réponse ; la note du dossier aussi.
+- « Envoyer ma demande », à la dernière étape, veut dire complète : une étape sautée par le
+  bouton « suivant » du navigateur est rouverte plutôt que de partir à moitié vide.
+- La promesse d'achat n'est demandée qu'à l'achat : qui refinance sa maison devait répondre
+  « Non — je magasine » pour pouvoir continuer.
+- Ajouter un champ requis à la page, c'est l'ajouter ici — sinon le bilan dira complète une
+  demande qui ne l'est pas. Tests : `src/utils/demandeFinancement.test.ts`.
 
 ## Formulaire « Profil des emprunteurs »
 
@@ -1158,11 +1185,16 @@ npx vitest              # mode watch
   de front ; un envoi manqué est nommé au client et à la courtière sans coûter la soumission ;
   l'erreur ne remonte que si plus rien n'est parti
 - `src/services/demandeSubmitRoute.test.ts` — une demande ouvre un dossier ; une panne de
-  stockage ne coûte pas la soumission
+  stockage ne coûte pas la soumission ; une demande envoyée avant la fin est acceptée dès que
+  le client est joignable, nomme à Stéphanie ce qui manque, et ne répète aucune réponse au
+  client ni au dossier
+- `src/utils/demandeFinancement.test.ts` — catalogue des étapes (contact d'abord, parcours
+  achat et refinancement de même longueur), formats, bilan de ce qui manque
 - `src/utils/entreesProspect.test.ts` — verrou anti-fuite porte par porte, mappage des champs
   divergents, fiche sans courriel
 - `src/services/entreesRoutes.test.ts` — les dix portes ouvrent la bonne fiche ; aucune panne de
-  stockage ne coûte une soumission ; `/partenaires` alimente les deux carnets
+  stockage ne coûte une soumission ; `/partenaires` alimente les deux carnets ; chaque accusé
+  invite à réserver un appel, l'avis interne non
 - `src/services/ficheUnifiee.test.ts` — recoupement par courriel, référent nommé même sans
   adresse, ni jeton ni note interne transmis
 - `src/utils/statistiquesDossiers.test.ts` — durées ignorées faute de clés, fiche encore à
@@ -1178,6 +1210,12 @@ npx vitest              # mode watch
 - **Jamais de taux fictifs en fallback** — afficher `null` + lien hypotheca.ca si aucun cache valide.
 - Ne pas commiter `.cache/` (cache local dev, dans `.gitignore`).
 - Validation TypeScript stricte : résoudre les erreurs `npm run check` avant de pusher.
+- **Chaque accusé de réception d'un formulaire public invite à réserver un appel**
+  (`renderInvitationRendezVous`, `emailService.ts`) : c'est quand il arrive que l'intérêt est
+  au plus haut. Le lien mène à `/rendez-vous/`, marqué `utm_source=courriel`,
+  `utm_medium=accuse` et `utm_campaign=<formulaire>` pour compter ce que chaque accusé
+  produit. Un nouveau formulaire l'ajoute à son accusé ; `entreesRoutes.test.ts` le vérifie
+  porte par porte. L'avis interne n'en porte pas.
 - **`/confidentialite` décrit ce que le code fait.** Ajouter un champ sensible à un formulaire,
   un témoin, un stockage côté navigateur ou un sous-traitant (service tiers qui reçoit des
   données), c'est mettre à jour la politique — et sa date — dans le même changement. Elle nomme
