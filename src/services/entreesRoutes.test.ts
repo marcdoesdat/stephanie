@@ -219,6 +219,22 @@ describe.each(PORTES)('$nom', (porte) => {
     expect(erreurs).toHaveBeenCalled();
     erreurs.mockRestore();
   });
+
+  // L'accusé arrive quand l'intérêt est au plus haut : il offre de choisir soi-même son
+  // moment, plutôt que d'attendre un rappel. Le lien est marqué de sa porte d'entrée, pour
+  // compter les rendez-vous que chaque accusé produit.
+  it('invite à réserver un appel dans l’accusé de réception', async () => {
+    const envois = installerFauxResend();
+    await soumettre(porte);
+
+    const accuses = envois.filter((e) => e.to !== 'interne@exemple.ca');
+    expect(accuses, 'aucun accusé de réception envoyé').toHaveLength(1);
+    const html = String(accuses[0]!.html);
+    expect(html).toContain('/rendez-vous/?utm_source=courriel&amp;utm_medium=accuse&amp;utm_campaign=');
+    expect(html).toContain('Réserver un appel de 15&nbsp;min');
+    // L'avis interne, lui, n'a pas à inviter Stéphanie à réserver dans son propre agenda.
+    expect(String(envois.find((e) => e.to === 'interne@exemple.ca')?.html)).not.toContain('/rendez-vous/');
+  });
 });
 
 describe('/refinancement — la porte la plus indiscrète du site', () => {

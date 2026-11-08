@@ -12,6 +12,7 @@ import {
   wrapEmailHtml,
   renderDataRows,
   renderSignatureBlock,
+  renderInvitationRendezVous,
   checkRateLimit,
   clientIpFromRequest,
   jsonResponse,
@@ -190,6 +191,7 @@ export const POST: APIRoute = async ({ request }) => {
         <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
           J'examine votre situation et je vous recontacte personnellement, selon la préférence que vous avez indiquée${prefcontact ? ` (<strong>${ePref}</strong>)` : ''}.
         </p>
+        ${renderInvitationRendezVous({ campagne: 'contact' })}
         ${renderSignatureBlock()}
       </div>
     `, '32px 24px');

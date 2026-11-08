@@ -20,6 +20,7 @@ import {
   wrapEmailHtml,
   renderDataRows,
   renderSignatureBlock,
+  renderInvitationRendezVous,
   checkRateLimit,
   clientIpFromRequest,
   jsonResponse,
@@ -211,8 +212,6 @@ export const POST: APIRoute = async ({ request }) => {
 
   /* ---------- Confirmation client — aucune donnée financière répétée ---------- */
 
-  const eCalendly = escapeHtml(config.calendly_url);
-
   const clientHtml = wrapEmailHtml(`
       <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
         <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${ePrenom} 🌿</h1>
@@ -224,10 +223,7 @@ export const POST: APIRoute = async ({ request }) => {
           Je calcule ton économie potentielle et je te reviens en moins de 24 h ouvrables, avec les
           scénarios possibles parmi plus de 20 institutions prêteuses. C'est gratuit et sans engagement.
         </p>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
-          Tu veux aller plus vite&nbsp;? Réserve directement un 15 minutes dans mon agenda&nbsp;:<br />
-          <a href="${eCalendly}" style="color:#a85f38;font-weight:600;">Prendre rendez-vous</a>
-        </p>
+        ${renderInvitationRendezVous({ campagne: 'refinancement-v2', tutoiement: true })}
         <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
           Tes renseignements sont strictement confidentiels. Aucune enquête de crédit ne sera lancée
           sans ton consentement écrit.
