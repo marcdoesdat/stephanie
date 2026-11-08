@@ -36,7 +36,7 @@ src/
 ├── styles/           # global.css
 ├── types/            # Déclarations de types supplémentaires
 ├── utils/            # Fonctions utilitaires pures
-└── middleware.ts     # Vérification d'origine (CSRF) — voir « Réseau de partenaires » — et 301 vers la barre finale (« Référencement »)
+└── middleware.ts     # Vérification d'origine (CSRF) — voir « Réseau de partenaires » —, 301 vers la barre finale (« Référencement ») et en-têtes de sécurité des réponses du serveur (« Sécurité »)
 ```
 
 ## Pages et routes
@@ -1248,6 +1248,9 @@ npx vitest              # mode watch
   envoyer ; sans Resend, tout est simulé et journalisé comme tel
 - `src/utils/origineRequete.test.ts` — la vérification d'origine réécrite est identique à
   celle d'Astro, et la dispense ne couvre que `/api/reseau-retrait`
+- `src/utils/enTetesSecurite.test.ts` — les en-têtes du middleware sont ceux de `netlify.toml`
+  au caractère près ; posés sur toute réponse du serveur, sans écraser ceux qu'une route a
+  choisis, même sur une réponse aux en-têtes figés
 - `src/services/servirAnglais.test.ts` — chemins FR ↔ EN ; une seule adresse par page (301 vers
   la barre finale, jamais pour une API, un envoi ou un écran privé) ; en anglais, seul le JSON-LD
   de l'entreprise survit, avec la description traduite
@@ -1306,10 +1309,20 @@ npx vitest              # mode watch
 ## Sécurité (netlify.toml)
 
 Headers sur toutes les routes (`/*`) :
-- `Content-Security-Policy` — stricte, `unsafe-inline` limité à ce qui est nécessaire
-- `Strict-Transport-Security` — HSTS 1 an, includeSubDomains
+- `Content-Security-Policy` — stricte, `unsafe-inline` limité à ce qui est nécessaire ; `blob:`
+  admis dans `frame-src` (aperçu du contrat) et `img-src` (signature importée en photo)
+- `Strict-Transport-Security` — HSTS 2 ans, includeSubDomains, preload
 - `X-Frame-Options: DENY`
-- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`
+
+**`netlify.toml` ne couvre que les fichiers statiques.** Netlify n'applique pas ses `[[headers]]`
+aux réponses de la fonction serveur : à l'audit de novembre 2026, 45 pages sur 58 partaient sans
+CSP ni X-Frame-Options — l'accueil, `/outils/`, les villes, toute la version anglaise, et les
+écrans de signature et de la courtière. `src/middleware.ts` pose donc les mêmes valeurs sur
+chaque réponse du serveur, tirées de `src/utils/enTetesSecurite.ts` ; une route qui a choisi
+sa propre valeur la garde (l'aperçu du contrat : `SAMEORIGIN`, `frame-ancestors 'self'`).
+`enTetesSecurite.test.ts` compare les deux copies au caractère près : changer la CSP, c'est
+la changer aux deux endroits.
 
 **L'IP du client vient de `x-nf-client-connection-ip`, jamais de `X-Forwarded-For`.**
 `clientIpFromRequest` (`emailService.ts`) sert la limite de débit (dont celle du mot de passe de
