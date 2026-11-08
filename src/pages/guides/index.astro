@@ -1,0 +1,136 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { BookOpen } from '@lucide/astro';
+import { loadSiteConfig } from '../../config';
+import { GUIDES, cheminGuide, moisRevision } from '../../data/guides';
+
+const config = loadSiteConfig();
+const site = config.site_url.replace(/\/$/, '');
+
+const fil = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Accueil', item: `${site}/` },
+    { '@type': 'ListItem', position: 2, name: 'Guides', item: `${site}/guides/` },
+  ],
+};
+---
+
+<MainLayout
+  title="Guides hypothécaires"
+  description="Des guides clairs pour comprendre votre hypothèque au Québec, rédigés par une courtière hypothécaire : premier achat, mise de fonds, frais à prévoir."
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(fil)} />
+  </Fragment>
+
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+    <section class="sp-hero gi-hero">
+      <div class="sp-inner">
+        <h1 class="sp-h1">
+          <span class="sp-h1-sujet">Guides hypothécaires</span>
+          Comprendre avant de <em>signer</em>.
+        </h1>
+        <p class="sp-h2">
+          Le vocabulaire hypothécaire intimide, et c'est normal. Ces guides expliquent, dans l'ordre et sans
+          jargon, ce que vous devez savoir pour décider en confiance.
+        </p>
+      </div>
+    </section>
+
+    <section class="gi-liste" aria-label="Les guides">
+      <div class="sp-inner">
+        <ul>
+          {GUIDES.map((g) => (
+            <li>
+              <a class="gi-carte" href={cheminGuide(g.slug)}>
+                <span class="gi-icone" aria-hidden="true"><BookOpen size={24} stroke-width={1.8} /></span>
+                <span class="gi-titre">{g.titre}</span>
+                <span class="gi-resume">{g.resume}</span>
+                <span class="gi-meta">Lecture : {g.minutes} min · Mis à jour en {moisRevision(g.revise)}</span>
+                <span class="gi-lire">Lire le guide →</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <div class="gi-aide">
+          <p>
+            <strong>Votre situation ne ressemble à aucun guide ?</strong> C'est souvent le cas. En 15 minutes,
+            on fait le point ensemble.
+          </p>
+          <a href="/rendez-vous/" class="btn-cta" data-umami-event="cta_booking_guides">Réserver un appel de 15 min</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<style>
+  .gi-hero { padding-bottom: 3rem; }
+  .gi-liste { padding: 1rem 0 5rem; }
+  .gi-liste ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 1.25rem;
+  }
+  .gi-carte {
+    display: grid;
+    gap: .6rem;
+    height: 100%;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.6rem 1.7rem;
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: 0 10px 30px rgba(31, 30, 28, .05);
+    transition: transform .15s, box-shadow .15s, border-color .15s;
+  }
+  .gi-carte:hover { transform: translateY(-2px); border-color: var(--clay); box-shadow: 0 14px 34px rgba(31, 30, 28, .09); }
+  .gi-carte:focus-visible { outline: 3px solid var(--clay); outline-offset: 3px; }
+  .gi-icone {
+    display: grid;
+    place-items: center;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 12px;
+    background: var(--warm);
+    color: var(--clay-dk);
+  }
+  .gi-titre { font-family: "Lora", serif; font-size: 1.35rem; font-weight: 600; line-height: 1.3; }
+  .gi-resume { font-size: .95rem; line-height: 1.6; color: var(--muted); }
+  .gi-meta { font-size: .8rem; color: var(--muted); }
+  .gi-lire { font-weight: 700; color: var(--clay-dk); margin-top: .25rem; }
+
+  .gi-aide {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-top: 3rem;
+    padding: 1.5rem 1.75rem;
+    background: var(--sand);
+    border-radius: var(--radius-lg);
+  }
+  .gi-aide p { flex: 1 1 320px; margin: 0; font-size: 1rem; line-height: 1.6; color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) {
+    .gi-carte { transition: none; }
+    .gi-carte:hover { transform: none; }
+  }
+</style>

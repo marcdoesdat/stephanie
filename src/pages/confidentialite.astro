@@ -7,7 +7,7 @@ import { loadSiteConfig } from '../config';
 const config = loadSiteConfig();
 // Date construite par ses composantes, jamais new Date('2026-10-28') : lue comme minuit UTC,
 // elle tomberait la veille au Québec — et, un 1er du mois, dans le mois précédent.
-const lastUpdated = new Date(2026, 9, 28).toLocaleDateString('fr-CA', {
+const lastUpdated = new Date(2026, 10, 8).toLocaleDateString('fr-CA', {
   year: 'numeric',
   month: 'long',
 });
@@ -116,8 +116,10 @@ const lastUpdated = new Date(2026, 9, 28).toLocaleDateString('fr-CA', {
           <li>
             <strong>Fonctionnement du site</strong> (exempté de consentement)&nbsp;: votre navigateur
             garde votre choix de consentement, votre langue et, le temps de la visite, les réponses
-            d'un formulaire en cours. Si vous ouvrez votre espace «&nbsp;Mon dossier&nbsp;», un témoin
-            de session est déposé pour 7&nbsp;jours au plus.
+            d'un formulaire en cours — y compris celles d'une demande de financement, pour qu'un
+            rechargement de la page ne les fasse pas perdre. Ces réponses ne quittent votre appareil
+            qu'à l'envoi du formulaire, et disparaissent à la fermeture de l'onglet. Si vous ouvrez
+            votre espace «&nbsp;Mon dossier&nbsp;», un témoin de session est déposé pour 7&nbsp;jours au plus.
           </li>
           <li>
             <strong>Sécurité :</strong> toutes les communications entre votre navigateur et ce site

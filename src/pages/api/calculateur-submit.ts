@@ -15,6 +15,7 @@ import {
   wrapEmailHtml,
   renderDataRows,
   renderSignatureBlock,
+  renderInvitationRendezVous,
   checkRateLimit,
   clientIpFromRequest,
   jsonResponse,
@@ -160,6 +161,7 @@ export const POST: APIRoute = async ({ request }) => {
         <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
           Je vous envoie votre résumé personnellement sous peu.
         </p>
+        ${renderInvitationRendezVous({ campagne: 'calculateur', texte: 'Vous aimeriez qu\'on regarde ces chiffres ensemble&nbsp;? Choisissez vous-même le moment qui vous convient dans mon agenda&nbsp;: un appel de 15&nbsp;minutes, gratuit et sans engagement.' })}
         ${renderSignatureBlock()}
       </div>
     `, '32px 24px');

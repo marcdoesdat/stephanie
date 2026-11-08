@@ -138,6 +138,49 @@ export function renderSignatureBlock(): string {
     </div>`;
 }
 
+export interface OptionsRendezVous {
+  /**
+   * Le formulaire d'où part l'accusé (`demande`, `rappel`…) : il devient `utm_campaign`, ce
+   * qui permet de compter les rendez-vous pris depuis chaque accusé.
+   */
+  readonly campagne: string;
+  /** La phrase au-dessus du bouton, déjà échappée. Un texte par défaut convient à un client. */
+  readonly texte?: string;
+  /** Les pages publicitaires tutoient ; le reste du site vouvoie. */
+  readonly tutoiement?: boolean;
+}
+
+/** L'adresse de `/rendez-vous/` marquée de sa provenance, pour les accusés de réception. */
+export function lienRendezVous(campagne: string): string {
+  const config = loadSiteConfig();
+  const params = new URLSearchParams({ utm_source: 'courriel', utm_medium: 'accuse', utm_campaign: campagne });
+  return `${config.site_url.replace(/\/$/, '')}/rendez-vous/?${params.toString()}`;
+}
+
+/**
+ * L'invitation à réserver un appel de 15 minutes, au bas de chaque accusé de réception.
+ *
+ * C'est quand l'accusé arrive que l'intérêt du prospect est le plus fort : il vient de
+ * remplir un formulaire. Lui offrir de choisir lui-même son moment évite d'attendre un
+ * rappel qui, s'il tombe mal, devient un message vocal de plus.
+ *
+ * Le lien mène à la page `/rendez-vous/` du site, pas directement à l'agenda : c'est le
+ * chemin de tous les autres boutons de réservation, il garde le numéro de téléphone en
+ * repli, et l'`utm_campaign` dit lequel des accusés a produit le rendez-vous.
+ */
+export function renderInvitationRendezVous(options: OptionsRendezVous): string {
+  const eLien = escapeHtml(lienRendezVous(options.campagne));
+  const texte =
+    options.texte ??
+    (options.tutoiement
+      ? 'Tu veux aller plus vite&nbsp;? Choisis toi-même le moment qui te convient dans mon agenda&nbsp;: un appel de 15&nbsp;minutes, gratuit et sans engagement.'
+      : 'Vous préférez qu\'on en parle de vive voix&nbsp;? Choisissez vous-même le moment qui vous convient dans mon agenda&nbsp;: un appel de 15&nbsp;minutes, gratuit et sans engagement.');
+  return `<div style="background:#f7f2eb;border-radius:12px;padding:20px;margin:0 0 24px;">
+      <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#1f1e1c;">${texte}</p>
+      <a href="${eLien}" style="display:inline-block;background:#a85f38;color:#ffffff;font-size:15px;font-weight:700;line-height:1.2;text-decoration:none;padding:13px 22px;border-radius:999px;">Réserver un appel de 15&nbsp;min</a>
+    </div>`;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Limitation de débit (IP-based, Netlify Blobs)                      */
 /* ------------------------------------------------------------------ */

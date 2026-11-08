@@ -1,0 +1,849 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.webp';
+import { BadgeCheck, House, KeyRound, PenLine, PiggyBank, SearchCheck, Wallet } from '@lucide/astro';
+import { loadSiteConfig } from '../../config';
+import { cheminGuide, guideParSlug, moisRevision } from '../../data/guides';
+import { schemaCourtiere } from '../../utils/schemaVille';
+
+const config = loadSiteConfig();
+const guide = guideParSlug('premier-achat');
+const site = config.site_url.replace(/\/$/, '');
+const pageUrl = `${site}${cheminGuide(guide.slug)}`;
+const revision = moisRevision(guide.revise);
+
+const titre = 'Guide du premier achat au Québec';
+const description =
+  "Premier achat au Québec, étape par étape : budget, mise de fonds, RAP et CELIAPP, pré-approbation, frais à prévoir et signature chez le notaire.";
+
+// L'autrice est le même nœud `#stephanie` que sur les pages villes ; l'entreprise, le
+// `#business` déclaré par SEO.astro. En anglais, traductionPage.ts ne garde que ce dernier.
+const schemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: titre,
+    description,
+    inLanguage: 'fr-CA',
+    datePublished: guide.revise,
+    dateModified: guide.revise,
+    mainEntityOfPage: pageUrl,
+    author: { '@id': `${site}#stephanie` },
+    publisher: { '@id': `${site}#business` },
+  },
+  schemaCourtiere(config, `${site}${stephaniePhoto.src}`),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: `${site}/` },
+      { '@type': 'ListItem', position: 2, name: 'Guides', item: `${site}/guides/` },
+      { '@type': 'ListItem', position: 3, name: titre, item: pageUrl },
+    ],
+  },
+];
+
+// L'infographie : les sept étapes, en trois temps. Chaque étape mène à sa section.
+const PHASES = {
+  preparer: 'Se préparer',
+  acheter: 'Acheter',
+  apres: "Après l'achat",
+} as const;
+
+const JALONS = [
+  { ancre: 'finances', phase: 'preparer', quand: 'Avant de magasiner', titre: 'Faire le point sur vos finances', texte: 'Revenus, dettes et dossier de crédit : ce que les prêteurs regarderont.', Icone: Wallet },
+  { ancre: 'mise-de-fonds', phase: 'preparer', quand: 'Avant de magasiner', titre: 'Bâtir votre mise de fonds', texte: "Épargne, RAP, CELIAPP ou don : d'où viendra chaque dollar.", Icone: PiggyBank },
+  { ancre: 'pre-approbation', phase: 'preparer', quand: 'Avant les visites', titre: 'Obtenir votre pré-approbation', texte: 'Un montant à viser et un taux réservé pendant vos recherches.', Icone: BadgeCheck },
+  { ancre: 'promesse', phase: 'acheter', quand: 'Pendant les visites', titre: "Faire une promesse d'achat", texte: 'Avec des conditions qui vous protègent : financement et inspection.', Icone: House },
+  { ancre: 'approbation', phase: 'acheter', quand: "Après l'acceptation", titre: 'Inspection et approbation finale', texte: 'Le prêteur analyse la propriété et confirme le financement.', Icone: SearchCheck },
+  { ancre: 'notaire', phase: 'acheter', quand: 'Le jour de la signature', titre: 'Signer chez le notaire', texte: 'La vente et le prêt sont signés, les sommes versées : la maison est à vous.', Icone: PenLine },
+  { ancre: 'apres', phase: 'apres', quand: 'Les mois suivants', titre: "Après l'achat", texte: "Taxe de bienvenue, crédits d'impôt, et un premier renouvellement à prévoir.", Icone: KeyRound },
+] as const;
+---
+
+<MainLayout title={titre} description={description}>
+  <Fragment slot="head">
+    {schemas.map((schema) => (
+      <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+    ))}
+  </Fragment>
+
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ EN-TÊTE ============ -->
+    <section class="sp-hero gd-hero">
+      <div class="sp-inner">
+        <div class="sp-hero-grid">
+          <div class="sp-hero-text">
+            <nav aria-label="Fil d'Ariane" class="gd-fil">
+              <a href="/">Accueil</a> <span aria-hidden="true">›</span> <a href="/guides/">Guides</a>
+            </nav>
+
+            <h1 class="sp-h1">
+              <span class="sp-h1-sujet">Guide du premier achat au Québec</span>
+              Votre première maison, <em>étape par étape</em>.
+            </h1>
+
+            <p class="sp-h2">
+              Combien emprunter, d'où viendra la mise de fonds, quels frais prévoir, ce qui se passe chez
+              le notaire : tout le parcours d'un premier achat, dans l'ordre où il se présente — sans jargon.
+            </p>
+
+            <p class="gd-signature">
+              Par <a href="/#apropos">{config.nom}</a>, courtière hypothécaire chez {config.organisation}
+              · Mis à jour en {revision} · Lecture : {guide.minutes} min
+            </p>
+          </div>
+
+          <aside class="gd-bref" aria-labelledby="gd-bref-titre">
+            <h2 id="gd-bref-titre" class="gd-bref-titre">L'essentiel en 30 secondes</h2>
+            <ul>
+              <li>Commencez par la <strong>pré-approbation</strong>, pas par les visites : vous saurez quoi viser, et votre taux sera réservé.</li>
+              <li>La mise de fonds minimale est de <strong>5&nbsp;%</strong> jusqu'à 500&nbsp;000&nbsp;$ ; sous 20&nbsp;%, une assurance prêt hypothécaire s'ajoute.</li>
+              <li>Le <strong>RAP</strong> et le <strong>CELIAPP</strong> se combinent pour bâtir la mise de fonds.</li>
+              <li>Prévoyez au moins <strong>1,5&nbsp;% du prix</strong> pour les frais, en plus de la mise de fonds.</li>
+              <li>Entre la pré-approbation et la signature, <strong>aucun nouveau crédit</strong>.</li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <div class="sp-inner gd-layout">
+      <!-- ============ SOMMAIRE ============ -->
+      <aside class="gd-cote">
+        <nav class="gd-sommaire" aria-labelledby="gd-sommaire-titre">
+          <p id="gd-sommaire-titre" class="gd-sommaire-titre">Dans ce guide</p>
+          <ol>
+            <li><a href="#parcours">Le parcours en un coup d'œil</a></li>
+            <li><a href="#chiffres">Les chiffres à connaître</a></li>
+            {JALONS.map((j, i) => (
+              <li><a href={`#${j.ancre}`}>{i + 1}. {j.titre}</a></li>
+            ))}
+            <li><a href="#frais">Les frais à prévoir</a></li>
+            <li><a href="#erreurs">Cinq erreurs fréquentes</a></li>
+          </ol>
+        </nav>
+      </aside>
+
+      <article class="gd-article">
+
+        <!-- ============ L'INFOGRAPHIE ============ -->
+        <section class="gd-section" aria-labelledby="parcours">
+          <h2 id="parcours" class="sp-section-title">Le parcours <em>en un coup d'œil</em></h2>
+          <p class="gd-intro">Sept étapes, de la première question à la remise des clés.</p>
+
+          <ul class="gd-legende" aria-label="Les trois temps du parcours">
+            {Object.entries(PHASES).map(([cle, nom]) => (
+              <li data-phase={cle}><span class="gd-pastille" aria-hidden="true"></span>{nom}</li>
+            ))}
+          </ul>
+
+          <ol class="gd-parcours">
+            {JALONS.map((j, i) => (
+              <li class="gd-jalon" data-phase={j.phase}>
+                <span class="gd-jalon-num" aria-hidden="true">{i + 1}</span>
+                <div class="gd-jalon-carte">
+                  <span class="gd-jalon-icone" aria-hidden="true"><j.Icone size={22} stroke-width={1.8} /></span>
+                  <span class="gd-jalon-quand">{j.quand}</span>
+                  <a class="gd-jalon-titre" href={`#${j.ancre}`}>{j.titre}</a>
+                  <p>{j.texte}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <!-- ============ CHIFFRES CLÉS ============ -->
+        <section class="gd-section" aria-labelledby="chiffres">
+          <h2 id="chiffres" class="sp-section-title">Les chiffres <em>à connaître</em></h2>
+          <dl class="gd-chiffres">
+            <div><dt>de mise de fonds minimale, jusqu'à 500&nbsp;000&nbsp;$</dt><dd>5&nbsp;%</dd></div>
+            <div><dt>de mise de fonds pour éviter l'assurance prêt hypothécaire</dt><dd>20&nbsp;%</dd></div>
+            <div><dt>de retrait maximal du RAP, par personne</dt><dd>60&nbsp;000&nbsp;$</dd></div>
+            <div><dt>de cotisation par année au CELIAPP (40&nbsp;000&nbsp;$ à vie)</dt><dd>8&nbsp;000&nbsp;$</dd></div>
+            <div><dt>du prix d'achat, au minimum, pour les frais de clôture</dt><dd>1,5&nbsp;%</dd></div>
+            <div><dt>de taux plancher au test de résistance</dt><dd>5,25&nbsp;%</dd></div>
+          </dl>
+          <p class="gd-note">Règles générales en vigueur en {revision}.</p>
+        </section>
+
+        <!-- ============ 1. FINANCES ============ -->
+        <section class="gd-section" aria-labelledby="finances">
+          <h2 id="finances" class="gd-h2"><span class="gd-num" data-phase="preparer">1</span> Faire le point sur vos finances</h2>
+          <p>
+            Avant de regarder des maisons, regardez ce que les prêteurs regarderont : vos revenus, vos dettes
+            et la façon dont vous les remboursez.
+          </p>
+
+          <h3>Les deux ratios qui décident de votre capacité d'emprunt</h3>
+          <p>
+            Un prêteur calcule quelle part de vos revenus bruts irait à vos obligations. L'<strong>ABD</strong>
+            (amortissement brut de la dette) ne compte que le logement : paiement hypothécaire, taxes municipales
+            et scolaires, chauffage et la moitié des frais de copropriété, s'il y a lieu. L'<strong>ATD</strong>
+            (amortissement total de la dette) y ajoute vos autres paiements : auto, cartes de crédit, marges,
+            prêt étudiant. Pour un prêt assuré, on vise généralement un maximum de 39&nbsp;% et de 44&nbsp;%.
+          </p>
+
+          <h3>Le test de résistance</h3>
+          <p>
+            Ces ratios ne sont pas calculés à votre taux, mais au plus élevé de deux taux : votre taux plus
+            2&nbsp;points de pourcentage, ou 5,25&nbsp;%. C'est le test de résistance fédéral : il vérifie que vous
+            pourriez encore payer si les taux montaient.
+          </p>
+
+          <h3>Votre dossier de crédit</h3>
+          <p>
+            Le prêteur consulte aussi votre dossier de crédit : il veut voir des paiements faits à temps et des
+            limites de crédit qui ne sont pas toutes utilisées. Vous pouvez consulter votre propre dossier
+            gratuitement auprès d'Equifax et de TransUnion.
+          </p>
+
+          <p class="gd-astuce">
+            <strong>Bon à savoir :</strong> rembourser une auto ou une carte avant l'achat peut augmenter votre
+            capacité d'emprunt plus qu'une augmentation de salaire.
+          </p>
+
+          <p class="gd-outil">
+            <a href="/#outils-teaser">Estimez votre capacité d'emprunt →</a>
+            <span>Le calculateur applique le test de résistance et les mêmes ratios.</span>
+          </p>
+        </section>
+
+        <!-- ============ 2. MISE DE FONDS ============ -->
+        <section class="gd-section" aria-labelledby="mise-de-fonds">
+          <h2 id="mise-de-fonds" class="gd-h2"><span class="gd-num" data-phase="preparer">2</span> Bâtir votre mise de fonds</h2>
+
+          <h3>Le minimum exigé</h3>
+          <div class="gd-table-wrap">
+            <table class="gd-table">
+              <thead>
+                <tr><th scope="col">Prix de la propriété</th><th scope="col">Mise de fonds minimale</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Jusqu'à 500&nbsp;000&nbsp;$</td><td>5&nbsp;% du prix</td></tr>
+                <tr><td>De 500&nbsp;000&nbsp;$ à 1&nbsp;500&nbsp;000&nbsp;$</td><td>5&nbsp;% des premiers 500&nbsp;000&nbsp;$, puis 10&nbsp;% du reste</td></tr>
+                <tr><td>1&nbsp;500&nbsp;000&nbsp;$ et plus</td><td>20&nbsp;% du prix</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Par exemple, pour une propriété de 600&nbsp;000&nbsp;$ : 5&nbsp;% de 500&nbsp;000&nbsp;$ (25&nbsp;000&nbsp;$), plus 10&nbsp;% des
+            100&nbsp;000&nbsp;$ suivants (10&nbsp;000&nbsp;$), soit <strong>35&nbsp;000&nbsp;$</strong>.
+          </p>
+
+          <h3>Sous 20&nbsp;% : l'assurance prêt hypothécaire</h3>
+          <p>
+            Avec moins de 20&nbsp;% de mise de fonds, le prêt doit être assuré (SCHL, Sagen ou Canada Guaranty).
+            La prime s'ajoute au montant emprunté ; elle dépend de votre mise de fonds.
+          </p>
+          <div class="gd-table-wrap">
+            <table class="gd-table">
+              <thead>
+                <tr><th scope="col">Mise de fonds</th><th scope="col">Prime, en % du prêt</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>5&nbsp;% à 9,99&nbsp;%</td><td>4,00&nbsp;%</td></tr>
+                <tr><td>10&nbsp;% à 14,99&nbsp;%</td><td>3,10&nbsp;%</td></tr>
+                <tr><td>15&nbsp;% à 19,99&nbsp;%</td><td>2,80&nbsp;%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Au Québec, la taxe de 9&nbsp;% sur cette prime ne peut pas être ajoutée au prêt : elle se paie comptant,
+            chez le notaire. Depuis décembre 2024, un premier acheteur peut aussi amortir un prêt assuré sur
+            30&nbsp;ans plutôt que 25 : le versement baisse, mais le total des intérêts augmente, et la prime
+            d'assurance est un peu plus élevée.
+          </p>
+
+          <h3>D'où peut venir l'argent</h3>
+          <ul class="gd-liste">
+            <li>
+              <strong>Votre épargne.</strong> Les prêteurs veulent voir les relevés des 90 derniers jours : un gros
+              dépôt récent devra être expliqué, preuve à l'appui.
+            </li>
+            <li>
+              <strong>Le RAP</strong> (Régime d'accession à la propriété). Vous pouvez retirer jusqu'à 60&nbsp;000&nbsp;$
+              de vos REER — 120&nbsp;000&nbsp;$ pour un couple — sans impôt immédiat. La somme se rembourse dans votre
+              REER sur 15&nbsp;ans.
+            </li>
+            <li>
+              <strong>Le CELIAPP.</strong> Les cotisations sont déductibles d'impôt, comme au REER, et le retrait
+              pour l'achat d'une première habitation n'est pas imposé, comme au CELI : jusqu'à 8&nbsp;000&nbsp;$ par année,
+              40&nbsp;000&nbsp;$ à vie. Ouvrez-le tôt : vos droits de cotisation ne s'accumulent qu'à partir de son ouverture.
+            </li>
+            <li>
+              <strong>Un don d'un membre de votre famille immédiate</strong>, accompagné d'une lettre de don signée
+              qui confirme que la somme n'a pas à être remboursée.
+            </li>
+          </ul>
+          <p>
+            Le RAP et le CELIAPP se combinent. Pour y avoir droit, il faut en règle générale être « premier
+            acheteur » : ne pas avoir habité, cette année ni au cours des quatre années précédentes, une
+            propriété dont vous ou votre conjoint·e étiez propriétaire. Les conditions exactes se vérifient
+            auprès de votre institution financière ou de votre fiscaliste.
+          </p>
+        </section>
+
+        <!-- ============ 3. PRÉ-APPROBATION ============ -->
+        <section class="gd-section" aria-labelledby="pre-approbation">
+          <h2 id="pre-approbation" class="gd-h2"><span class="gd-num" data-phase="preparer">3</span> Obtenir votre pré-approbation</h2>
+          <p>
+            La pré-approbation, c'est l'analyse de votre dossier par un prêteur : elle vous donne un montant à
+            viser et réserve un taux, généralement de 90 à 120 jours. Si les taux montent pendant vos
+            recherches, le taux réservé vous protège.
+          </p>
+          <p>
+            Ce n'est pas encore une approbation : le prêteur confirmera le financement une fois la propriété
+            trouvée et ses vérifications faites (étape 5). Mais vous visitez en connaissant votre budget, et
+            vous faites une offre avec un dossier déjà monté.
+          </p>
+
+          <h3>Les documents à réunir</h3>
+          <ul class="gd-liste gd-liste--coches">
+            <li>Une pièce d'identité avec photo</li>
+            <li>Une lettre d'emploi récente et vos deux derniers talons de paie</li>
+            <li>Vos avis de cotisation fédéral et provincial des deux dernières années — essentiels pour un travailleur autonome</li>
+            <li>Les relevés bancaires des 90 derniers jours, pour la provenance de la mise de fonds</li>
+            <li>Les relevés de vos REER, CELIAPP ou CELI, s'ils financent la mise de fonds</li>
+            <li>La lettre de don signée, s'il y a lieu</li>
+          </ul>
+          <p>
+            Avec une courtière, votre dossier est présenté aux prêteurs qui conviennent à votre situation — plus
+            de 20 prêteurs, plutôt qu'une seule institution.
+          </p>
+          <p class="gd-outil">
+            <a href="/demande/">Commencer ma demande en ligne →</a>
+            <span>À votre rythme : vous pouvez l'envoyer à tout moment, même incomplète.</span>
+          </p>
+        </section>
+
+        <!-- ============ FRAIS ============ -->
+        <section class="gd-section gd-encadre" aria-labelledby="frais">
+          <h2 id="frais" class="gd-h2">Les frais à prévoir en plus de la mise de fonds</h2>
+          <p>
+            C'est l'oubli le plus fréquent d'un premier budget. Les prêteurs demandent de démontrer au moins
+            1,5&nbsp;% du prix d'achat pour couvrir les frais de clôture :
+          </p>
+          <ul class="gd-liste">
+            <li>
+              <strong>La taxe de bienvenue</strong> (droits de mutation), souvent le plus gros montant. Elle varie
+              selon la ville et sa facture arrive quelques mois après l'achat.
+              <a href="/outils/#droits-mutation">Calculez-la d'avance</a>.
+            </li>
+            <li><strong>Le notaire</strong> : acte de vente, acte d'hypothèque et vérifications.</li>
+            <li><strong>L'inspection</strong> préachat.</li>
+            <li><strong>La taxe de 9&nbsp;%</strong> sur la prime d'assurance prêt hypothécaire, s'il y a lieu.</li>
+            <li>
+              <strong>Les ajustements de taxes</strong> municipales et scolaires : vous remboursez au vendeur la
+              part déjà payée pour la période où vous serez propriétaire.
+            </li>
+            <li><strong>L'assurance habitation</strong>, exigée par le prêteur dès la signature.</li>
+            <li><strong>Le déménagement</strong> et les premiers achats pour la maison.</li>
+          </ul>
+        </section>
+
+        <!-- ============ 4. PROMESSE D'ACHAT ============ -->
+        <section class="gd-section" aria-labelledby="promesse">
+          <h2 id="promesse" class="gd-h2"><span class="gd-num" data-phase="acheter">4</span> Faire une promesse d'achat</h2>
+          <p>
+            Visitez dans les limites de votre pré-approbation — idéalement un peu en deçà : le montant maximal
+            n'est pas un objectif.
+          </p>
+
+          <h3>Des conditions qui vous protègent</h3>
+          <p>Une promesse d'achat prévoit habituellement des conditions, chacune avec son délai :</p>
+          <ul class="gd-liste">
+            <li>
+              <strong>Le financement</strong> : si votre prêt n'est pas confirmé dans le délai prévu, vous pouvez
+              vous retirer selon les termes de la promesse.
+            </li>
+            <li>
+              <strong>L'inspection</strong> : un inspecteur examine la propriété ; selon son rapport, vous pouvez
+              renégocier ou vous retirer, dans le délai prévu.
+            </li>
+          </ul>
+          <p>
+            Dès que la promesse est acceptée, transmettez-la à votre courtière hypothécaire : le délai de
+            financement commence à courir.
+          </p>
+
+          <p class="gd-attention">
+            <strong>Entre la pré-approbation et la signature, ne changez rien</strong> : pas de nouvel emprunt
+            (auto, meubles financés), pas de changement d'emploi, pas de gros mouvement d'argent inexpliqué. Le
+            prêteur peut revérifier votre dossier avant de verser les fonds.
+          </p>
+        </section>
+
+        <!-- ============ 5. APPROBATION FINALE ============ -->
+        <section class="gd-section" aria-labelledby="approbation">
+          <h2 id="approbation" class="gd-h2"><span class="gd-num" data-phase="acheter">5</span> Inspection et approbation finale</h2>
+          <p>
+            Une fois la promesse acceptée, deux choses se font en parallèle. L'inspecteur examine la propriété
+            pour vous. Le prêteur, lui, analyse la propriété et votre dossier à jour ; il peut demander une
+            évaluation pour confirmer la valeur.
+          </p>
+          <p>
+            Documents habituellement demandés pour la propriété : la promesse d'achat acceptée, la fiche
+            descriptive, la déclaration du vendeur, les comptes de taxes municipales et scolaires — et, pour un
+            condo, les documents de la copropriété.
+          </p>
+          <p>
+            Quand le prêteur confirme, vous recevez la <strong>lettre d'engagement</strong> : les conditions du
+            prêt, à relire avec votre courtière avant de la signer. Il reste à aviser le vendeur par écrit que
+            la condition de financement est remplie, dans le délai prévu.
+          </p>
+          <p class="gd-astuce">
+            <strong>Si l'évaluation est plus basse que le prix :</strong> le prêteur finance sur la valeur la plus
+            basse. La différence doit venir de votre poche, ou se renégocier — une raison de plus de ne pas viser
+            le maximum.
+          </p>
+        </section>
+
+        <!-- ============ 6. NOTAIRE ============ -->
+        <section class="gd-section" aria-labelledby="notaire">
+          <h2 id="notaire" class="gd-h2"><span class="gd-num" data-phase="acheter">6</span> Signer chez le notaire</h2>
+          <p>
+            Au Québec, c'est le notaire qui officialise l'achat. Il vous fait signer deux actes :
+            l'<strong>acte de vente</strong>, qui vous rend propriétaire, et l'<strong>acte d'hypothèque</strong>,
+            qui garantit le prêt. Il vérifie aussi que la propriété est libre des dettes du vendeur, puis publie
+            les actes au registre foncier.
+          </p>
+          <p>
+            Quelques jours avant, il vous indique la somme à lui verser — mise de fonds, frais et ajustements — et
+            la façon de la verser. Prévoyez votre preuve d'assurance habitation. Le prêteur verse le prêt au
+            notaire, qui paie le vendeur : il ne vous reste qu'à recevoir les clés, à la date d'occupation prévue.
+          </p>
+        </section>
+
+        <!-- ============ 7. APRÈS L'ACHAT ============ -->
+        <section class="gd-section" aria-labelledby="apres">
+          <h2 id="apres" class="gd-h2"><span class="gd-num" data-phase="apres">7</span> Après l'achat</h2>
+          <ul class="gd-liste">
+            <li>
+              <strong>La taxe de bienvenue</strong> : la facture de la municipalité arrive habituellement quelques
+              mois après l'achat. Mettez la somme de côté dès la signature.
+            </li>
+            <li>
+              <strong>Deux crédits d'impôt</strong> pour l'achat d'une première habitation, un fédéral et un
+              québécois, se réclament dans vos déclarations de revenus de l'année de l'achat.
+            </li>
+            <li>
+              <strong>Le remboursement du RAP</strong> : un minimum chaque année, sur 15&nbsp;ans ; un montant non
+              remboursé s'ajoute à votre revenu imposable de l'année.
+            </li>
+            <li>
+              <strong>Le renouvellement</strong> : votre terme, souvent de 5&nbsp;ans, prendra fin bien avant votre
+              amortissement. Le meilleur moment pour magasiner se situe 4 à 6 mois avant l'échéance.
+              <a href="/rappel/">Être rappelé·e au bon moment</a>.
+            </li>
+          </ul>
+        </section>
+
+        <!-- ============ ERREURS ============ -->
+        <section class="gd-section" aria-labelledby="erreurs">
+          <h2 id="erreurs" class="gd-h2">Cinq erreurs fréquentes</h2>
+          <ol class="gd-erreurs">
+            <li><strong>Visiter avant d'être pré-approuvé·e.</strong> On tombe en amour avec une maison hors de portée.</li>
+            <li><strong>Viser le montant maximal.</strong> Un budget au plafond ne laisse aucune marge pour l'imprévu.</li>
+            <li><strong>Oublier les frais de clôture.</strong> Au moins 1,5&nbsp;% du prix, en plus de la mise de fonds.</li>
+            <li><strong>S'endetter avant la signature.</strong> Une auto financée peut compromettre le financement.</li>
+            <li><strong>Ne comparer qu'une seule offre.</strong> Votre banque ne vous propose que ses propres produits.</li>
+          </ol>
+        </section>
+
+        <!-- ============ AUTRICE + APPEL ============ -->
+        <section class="gd-fin" aria-labelledby="gd-fin-titre">
+          <div class="gd-autrice">
+            <Image src={stephaniePhoto} alt="" width={96} height={96} class="gd-autrice-photo" loading="lazy" />
+            <p>
+              <strong>{config.nom}</strong>, courtière hypothécaire chez {config.organisation}, permis de l'AMF
+              n° {config.amf}. Basée à Repentigny, elle accompagne des acheteurs partout au Québec, par Teams,
+              téléphone ou texto.
+            </p>
+          </div>
+
+          <h2 id="gd-fin-titre" class="sp-section-title">Une question sur <em>votre situation</em> ?</h2>
+          <p class="gd-fin-texte">
+            Chaque dossier est différent. En 15 minutes, on fait le point sur où vous en êtes et sur la suite.
+          </p>
+          <div class="gd-fin-ctas">
+            <a href="/rendez-vous/" class="btn-cta" data-umami-event="cta_booking_guide_premier_achat">Réserver un appel de 15&nbsp;min</a>
+            <a href="/demande/" class="btn-secondary">Commencer ma demande</a>
+          </div>
+
+          <p class="gd-avertissement">
+            Ce guide présente des règles générales en vigueur en {revision}. Elles peuvent changer, et votre
+            situation peut appeler d'autres solutions : il ne remplace pas un conseil adapté à votre dossier. Les
+            taux et l'approbation du financement relèvent du prêteur.
+          </p>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<style>
+  /* Couleur de chaque temps du parcours : préparation en vert, achat en argile, après en encre. */
+  .gd-hero { padding-bottom: 3.5rem; }
+  [data-phase="preparer"] { --phase: var(--forest); }
+  [data-phase="acheter"] { --phase: var(--clay-dk); }
+  [data-phase="apres"] { --phase: var(--ink); }
+
+  .gd-fil { font-size: .8rem; color: var(--muted); margin-bottom: 1.25rem; }
+  .gd-fil a { color: var(--muted); text-decoration: none; }
+  .gd-fil a:hover { color: var(--clay-dk); text-decoration: underline; }
+
+  .gd-signature { font-size: .85rem; color: var(--muted); line-height: 1.6; margin: 0; }
+  .gd-signature a { color: var(--clay-dk); }
+
+  /* --- L'ESSENTIEL --- */
+  .gd-bref {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.6rem 1.75rem;
+    box-shadow: 0 10px 30px rgba(31, 30, 28, .06);
+  }
+  .gd-bref-titre {
+    font-family: "Lora", serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 .9rem;
+  }
+  .gd-bref ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
+  .gd-bref li {
+    position: relative;
+    padding-left: 1.4rem;
+    font-size: .92rem;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .gd-bref li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .5em;
+    width: .55rem;
+    height: .55rem;
+    border-radius: 50%;
+    background: var(--clay);
+  }
+
+  /* --- MISE EN PAGE : SOMMAIRE + ARTICLE --- */
+  .gd-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    padding-top: 1rem;
+    padding-bottom: 4rem;
+  }
+  @media (min-width: 1080px) {
+    .gd-layout { grid-template-columns: 230px minmax(0, 1fr); gap: 3.5rem; }
+    .gd-sommaire { position: sticky; top: 6.5rem; }
+  }
+  .gd-sommaire {
+    background: var(--sand);
+    border-radius: var(--radius-sm);
+    padding: 1.1rem 1.25rem;
+  }
+  .gd-sommaire-titre {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--clay-dk);
+    margin: 0 0 .6rem;
+  }
+  .gd-sommaire ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; }
+  .gd-sommaire a {
+    display: block;
+    padding: .35rem 0;
+    font-size: .86rem;
+    line-height: 1.4;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .gd-sommaire a:hover { color: var(--clay-dk); text-decoration: underline; text-underline-offset: 3px; }
+  @media (max-width: 1079px) {
+    .gd-sommaire ol { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); column-gap: 1.5rem; }
+  }
+
+  /* --- ARTICLE --- */
+  .gd-article { max-width: 760px; min-width: 0; }
+  .gd-section { margin-bottom: 3.25rem; }
+  .gd-section [id],
+  .gd-section h2[id] { scroll-margin-top: 6.5rem; }
+  .gd-article p,
+  .gd-article li { font-size: 1.02rem; line-height: 1.75; color: var(--ink); }
+  .gd-article p { margin: 0 0 1rem; }
+  .gd-article h3 {
+    font-family: "Lora", serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 1.75rem 0 .6rem;
+  }
+  .gd-article a:not(.btn-cta):not(.btn-secondary):not(.gd-jalon-titre) { color: var(--clay-dk); text-underline-offset: 3px; }
+  .gd-intro { color: var(--muted) !important; margin-top: -.5rem !important; }
+
+  .gd-h2 {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    font-family: "Lora", serif;
+    font-size: clamp(1.5rem, 2.6vw, 1.95rem);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0 0 1rem;
+  }
+  .gd-num {
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    border-radius: 50%;
+    background: var(--phase);
+    color: #fff;
+    font-family: "DM Sans", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .gd-liste { margin: 0 0 1rem; padding-left: 1.2rem; display: grid; gap: .55rem; }
+  .gd-liste--coches { list-style: none; padding-left: 0; }
+  .gd-liste--coches li { position: relative; padding-left: 1.75rem; }
+  .gd-liste--coches li::before {
+    content: "";
+    position: absolute;
+    left: .1rem;
+    top: .45em;
+    width: .9rem;
+    height: .5rem;
+    border-left: 2.5px solid var(--forest);
+    border-bottom: 2.5px solid var(--forest);
+    transform: rotate(-45deg);
+  }
+
+  .gd-astuce,
+  .gd-attention {
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.2rem;
+    margin: 1.25rem 0 !important;
+    font-size: .97rem !important;
+  }
+  .gd-astuce { background: #eef3ef; border-left: 4px solid var(--forest); }
+  .gd-attention { background: #fbeee6; border-left: 4px solid var(--clay-dk); }
+
+  .gd-outil {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .2rem 1rem;
+    padding: .9rem 1.1rem;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .gd-outil a { font-weight: 700; }
+  .gd-outil span { font-size: .88rem; color: var(--muted); }
+
+  .gd-encadre {
+    background: var(--sand);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+  }
+
+  .gd-table-wrap { overflow-x: auto; margin: 0 0 1rem; }
+  .gd-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  .gd-table th,
+  .gd-table td { text-align: left; padding: .7rem .9rem; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  .gd-table th { font-size: .8rem; letter-spacing: .03em; color: var(--muted); font-weight: 700; background: var(--sand); }
+  .gd-table td:first-child { font-weight: 600; white-space: nowrap; }
+  @media (max-width: 520px) {
+    .gd-table td:first-child { white-space: normal; }
+  }
+
+  .gd-erreurs { margin: 0; padding-left: 1.4rem; display: grid; gap: .7rem; }
+  .gd-erreurs li::marker { color: var(--clay-dk); font-weight: 700; }
+
+  /* --- L'INFOGRAPHIE : LE PARCOURS --- */
+  .gd-legende {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.25rem;
+    margin: 0 0 1.5rem;
+    padding: 0;
+  }
+  .gd-legende li { display: inline-flex; align-items: center; gap: .45rem; font-size: .85rem !important; font-weight: 600; color: var(--muted) !important; }
+  .gd-pastille { width: .75rem; height: .75rem; border-radius: 50%; background: var(--phase); }
+
+  .gd-parcours {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    display: grid;
+    gap: 1rem;
+  }
+  /* Le fil qui relie les étapes. */
+  .gd-parcours::before {
+    content: "";
+    position: absolute;
+    top: 1.4rem;
+    bottom: 1.4rem;
+    left: 1.4rem;
+    width: 3px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, var(--forest) 0%, var(--forest) 40%, var(--clay-dk) 46%, var(--clay-dk) 82%, var(--ink) 88%);
+    opacity: .35;
+  }
+  .gd-jalon {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.8rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+  .gd-jalon-num {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    background: var(--phase);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: 0 0 0 5px var(--white);
+  }
+  .gd-jalon-carte {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: .75rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--phase);
+    border-radius: var(--radius-sm);
+    padding: .95rem 1.1rem 1rem;
+    box-shadow: 0 6px 18px rgba(31, 30, 28, .05);
+  }
+  .gd-jalon-icone {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--phase) 12%, transparent);
+    color: var(--phase);
+  }
+  .gd-jalon-quand {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--phase);
+    align-self: end;
+  }
+  .gd-jalon-titre {
+    font-family: "Lora", serif;
+    font-size: 1.12rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .gd-jalon-titre::after { content: "\00a0→"; color: var(--phase); }
+  .gd-jalon-titre:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .gd-jalon-carte p {
+    grid-column: 1 / -1;
+    margin: .55rem 0 0 !important;
+    font-size: .92rem !important;
+    line-height: 1.55 !important;
+    color: var(--muted) !important;
+  }
+
+  /* Sur grand écran, les étapes se répondent de part et d'autre du fil. */
+  @media (min-width: 760px) {
+    .gd-parcours { gap: 0; }
+    .gd-parcours::before { left: calc(50% - 1.5px); }
+    .gd-jalon { grid-template-columns: minmax(0, 1fr) 2.8rem minmax(0, 1fr); gap: 1.4rem; }
+    .gd-jalon-num { grid-column: 2; grid-row: 1; margin-top: .7rem; }
+    .gd-jalon-carte { grid-row: 1; }
+    .gd-jalon:nth-child(odd) .gd-jalon-carte { grid-column: 1; }
+    .gd-jalon:nth-child(even) .gd-jalon-carte { grid-column: 3; }
+    .gd-jalon:not(:first-child) { margin-top: -1.6rem; }
+  }
+
+  /* --- CHIFFRES CLÉS --- */
+  .gd-chiffres {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+    gap: .75rem;
+    margin: 0 0 .75rem;
+  }
+  .gd-chiffres div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: .2rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .9rem .95rem;
+  }
+  .gd-chiffres dd {
+    margin: 0;
+    font-family: "Lora", serif;
+    font-size: clamp(1.35rem, 5vw, 1.9rem);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--clay-dk);
+    white-space: nowrap;
+  }
+  .gd-chiffres dt { font-size: .85rem; line-height: 1.45; color: var(--muted); }
+  @media (min-width: 600px) { .gd-chiffres { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .gd-note { font-size: .82rem !important; color: var(--muted) !important; }
+
+  /* --- FIN --- */
+  .gd-fin {
+    border-top: 1px solid var(--border);
+    padding-top: 2.5rem;
+  }
+  .gd-autrice {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--sand);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.2rem;
+    margin-bottom: 2.5rem;
+  }
+  .gd-autrice p { margin: 0 !important; font-size: .92rem !important; line-height: 1.6 !important; }
+  .gd-autrice-photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
+  .gd-fin-texte { color: var(--muted) !important; }
+  .gd-fin-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; margin: 1.5rem 0 2rem; }
+  .gd-avertissement { font-size: .8rem !important; line-height: 1.6 !important; color: var(--muted) !important; }
+
+  @media (max-width: 520px) {
+    .gd-autrice { align-items: flex-start; }
+    .gd-autrice-photo { width: 56px; height: 56px; }
+  }
+</style>

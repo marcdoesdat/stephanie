@@ -42,7 +42,9 @@ nav#navbar{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(253,2
 nav#navbar.scrolled{box-shadow:var(--shadow-sm)}
 .nav-logo{font-family:"Lora",serif;font-size:1.15rem;font-weight:600;color:var(--ink);text-decoration:none}
 .nav-logo span{color:var(--clay)}
-.nav-links{display:flex;gap:clamp(1rem,1.8vw,2.5rem);list-style:none;align-items:center;flex-wrap:wrap;min-width:0}
+/* Écart plafonné à 2rem : le conteneur cesse de grandir avant l'écart, et au-delà de ~1800 px le
+   bouton « Consultation gratuite » passait sous les liens. */
+.nav-links{display:flex;gap:clamp(1rem,1.8vw,2rem);list-style:none;align-items:center;flex-wrap:wrap;min-width:0}
 .nav-links li{flex:0 1 auto;min-width:0}
 .nav-links a{display:block;font-size:clamp(.8rem,.18vw + .7rem,.9rem);font-weight:500;color:var(--muted);text-decoration:none;letter-spacing:.02em;transition:color .2s,transform .2s;white-space:nowrap}
 .nav-links a:hover,
@@ -1251,6 +1253,10 @@ td:last-child{text-align:center}
 #main-content .hero-badge{margin-bottom:1.5rem}
 #main-content .sp-h1-sujet,
 #main-content .rep-eyebrow{margin-bottom:1rem}
+/* Dans le H1, la pastille doit rester un surtitre : en inline-flex, elle se plaçait sur la même
+   ligne que le premier mot du titre (« [PREMIER ACHAT…] Votre »). flex + fit-content : sa propre
+   ligne, sa largeur de pastille. */
+#main-content .sp-h1-sujet{display:flex}
 .sp-h2{
   font-family:"DM Sans",sans-serif;font-weight:400;
   font-size:clamp(1.05rem,1.5vw,1.2rem);
@@ -1328,6 +1334,9 @@ td:last-child{text-align:center}
   font-size:.92rem;color:var(--muted);line-height:1.75;margin:0;
 }
 .sp-step-text em{font-style:italic;color:var(--ink)}
+/* Renvoi vers le guide complet, sous les étapes d'une page services. */
+.sp-guide-lien{margin:2rem 0 0;font-size:1rem;line-height:1.6;color:var(--muted)}
+.sp-guide-lien a{font-weight:700;color:var(--clay-dk);text-underline-offset:3px}
 .sp-step-note{
   font-size:.82rem;color:var(--muted);line-height:1.65;margin:0;
   padding-top:.35rem;border-top:1px solid var(--border);

@@ -680,8 +680,11 @@ export function parserDonneesDossier(brut: unknown): Resultat<DonneesDossier> {
  * Le formulaire envoie `prenom` et `nom` séparément ; le dossier n'en garde qu'un nom
  * complet — deux champs pour désigner une personne dans un carnet de suivi, c'est un champ
  * de trop et deux façons de l'écrire.
+ *
+ * `notes` vient de la route, jamais du formulaire : c'est elle qui dit, quand le client a
+ * envoyé avant la fin, quelles étapes restent à compléter — des titres, pas des réponses.
  */
-export function depuisDemande(payload: unknown): Resultat<DonneesDossier> {
+export function depuisDemande(payload: unknown, notes = ''): Resultat<DonneesDossier> {
   if (typeof payload !== 'object' || payload === null) return { ok: false, erreur: 'Requête invalide.' };
   const source = payload as Record<string, unknown>;
 
@@ -694,7 +697,7 @@ export function depuisDemande(payload: unknown): Resultat<DonneesDossier> {
     nom: nomComplet,
     courriel: source.courriel,
     telephone: source.telephone,
-    notes: '',
+    notes,
     profil: source,
   });
 }

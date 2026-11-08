@@ -13,6 +13,7 @@ import {
   wrapEmailHtml,
   renderDataRows,
   renderSignatureBlock,
+  renderInvitationRendezVous,
   checkRateLimit,
   clientIpFromRequest,
   jsonResponse,
@@ -202,6 +203,7 @@ export const POST: APIRoute = async ({ request }) => {
         <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
           Je communique avec ${eClientNom} rapidement et je vous tiens informé·e de l'avancement du dossier.
         </p>
+        ${renderInvitationRendezVous({ campagne: 'partenaires', texte: 'Envie qu\'on se parle de ce dossier, ou d\'une collaboration&nbsp;? Réservez 15&nbsp;minutes dans mon agenda, au moment qui vous convient.' })}
         ${renderSignatureBlock()}
       </div>
     `, '32px 24px');
