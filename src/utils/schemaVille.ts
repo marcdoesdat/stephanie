@@ -32,22 +32,14 @@ interface EntreesSchemaVille {
   image: string;
 }
 
-export function schemasVille({ config, ville, pageUrl, secteurs, image }: EntreesSchemaVille) {
+/**
+ * La courtière, avec son permis de l'AMF comme titre professionnel vérifiable. Un seul nœud
+ * `#stephanie` pour tout le site : les pages villes la déclarent, les guides la nomment comme
+ * autrice — deux descriptions différentes d'une même personne se contrediraient.
+ */
+export function schemaCourtiere(config: SiteConfig, image: string) {
   const site = config.site_url.replace(/\/$/, '');
-  const financialService = {
-    '@context': 'https://schema.org',
-    '@type': 'FinancialService',
-    '@id': `${site}#business`,
-    name: `${config.nom} — ${config.titre}`,
-    url: site,
-    address: ADRESSE_ENTREPRISE,
-    areaServed: [
-      { '@type': 'City', name: ville },
-      ...secteurs.map((name) => ({ '@type': 'Place', name })),
-    ],
-  };
-
-  const person = {
+  return {
     '@context': 'https://schema.org',
     '@type': 'Person',
     '@id': `${site}#stephanie`,
@@ -68,6 +60,24 @@ export function schemasVille({ config, ville, pageUrl, secteurs, image }: Entree
       },
     },
   };
+}
+
+export function schemasVille({ config, ville, pageUrl, secteurs, image }: EntreesSchemaVille) {
+  const site = config.site_url.replace(/\/$/, '');
+  const financialService = {
+    '@context': 'https://schema.org',
+    '@type': 'FinancialService',
+    '@id': `${site}#business`,
+    name: `${config.nom} — ${config.titre}`,
+    url: site,
+    address: ADRESSE_ENTREPRISE,
+    areaServed: [
+      { '@type': 'City', name: ville },
+      ...secteurs.map((name) => ({ '@type': 'Place', name })),
+    ],
+  };
+
+  const person = schemaCourtiere(config, image);
 
   const fil = {
     '@context': 'https://schema.org',

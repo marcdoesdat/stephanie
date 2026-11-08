@@ -4,6 +4,12 @@
 //   1. Notification interne à Stéphanie — détail complet, section par section.
 //   2. Confirmation client — générique et chaleureuse, ne répète AUCUNE donnée sensible.
 //
+// **Une demande peut arriver incomplète, et c'est voulu.** Le formulaire se remplit par
+// étapes et le client peut tout envoyer en cours de route (`envoi_partiel`) : le minimum est
+// de pouvoir le joindre. Ce qui manque n'est jamais cru du client — `bilanDemande` le
+// recalcule ici sur le catalogue partagé (src/utils/demandeFinancement.ts) et le courriel
+// interne le nomme en tête, étape par étape, pour que Stéphanie revienne au client avec ça.
+//
 // Variables d'environnement requises : voir src/services/emailService.ts (RESEND_API_KEY,
 // RESEND_FROM_EMAIL, RESEND_NOTIFY_EMAIL) — partagées par toutes les routes /api/*-submit.
 
@@ -11,12 +17,14 @@ import type { APIRoute } from 'astro';
 import { loadSiteConfig } from '../../config';
 import { creerDossier } from '../../services/dossierClientService';
 import { depuisDemande } from '../../utils/dossiersClients';
+import { bilanDemande, etapeParCle, lectureCharge } from '../../utils/demandeFinancement';
 import {
   sendEmail,
   escapeHtml,
   wrapEmailHtml,
   renderDataRows,
   renderSignatureBlock,
+  renderInvitationRendezVous,
   checkRateLimit,
   clientIpFromRequest,
   jsonResponse,
@@ -160,6 +168,17 @@ export const POST: APIRoute = async ({ request }) => {
     return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
   }
 
+  // Ce qui reste à compléter, recalculé sur le catalogue — jamais pris du client. Seule
+  // l'étape où il s'est arrêté vient de lui, et elle n'est lue que si c'est une clé connue.
+  const envoiPartiel = payload.envoi_partiel === true;
+  const bilan = bilanDemande(lectureCharge(payload));
+  const incomplete = envoiPartiel || !bilan.complete;
+  const etapeArret = envoiPartiel ? etapeParCle(asTrimmedString(payload.etape_atteinte)) : null;
+  const titresACompleter = bilan.aCompleter.map((e) => e.titre);
+  // Au client, on tait « Dernières questions » (préférence de contact, provenance) : ce n'est
+  // pas un sujet qu'on « complète ensemble », et la liste qu'il lit doit rester une démarche.
+  const titresPourClient = bilan.aCompleter.filter((e) => e.cle !== 'dernieres').map((e) => e.titre);
+
   // Ouvrir le dossier de suivi.
   //
   // **Avant** l'envoi, et non après : si Resend échoue, la soumission part aujourd'hui en
@@ -171,7 +190,14 @@ export const POST: APIRoute = async ({ request }) => {
   // un confort. Une panne de Netlify Blobs ne doit pas coûter un client, d'où ce try/catch
   // qui journalise et poursuit.
   try {
-    const donnees = depuisDemande(payload);
+    // Seuls les titres des étapes entrent au carnet — jamais une réponse.
+    const debutNote = envoiPartiel
+      ? `Demande envoyée avant la fin${etapeArret ? ` (depuis l'étape « ${etapeArret.titre} »)` : ''}.`
+      : 'Demande incomplète.';
+    const note = incomplete && titresACompleter.length > 0
+      ? `${debutNote} À compléter avec le client : ${titresACompleter.join(', ')}.`
+      : '';
+    const donnees = depuisDemande(payload, note);
     if (donnees.ok) await creerDossier(donnees.valeur, { origine: 'demande' });
     else console.warn('[demande-submit] Dossier non ouvert :', donnees.erreur);
   } catch (err) {
@@ -314,9 +340,32 @@ export const POST: APIRoute = async ({ request }) => {
       </table>`;
   }
 
+  // En tête du courriel interne : ce qui reste à voir avec le client, étape par étape. C'est
+  // la liste avec laquelle Stéphanie le rappelle ; les sections plus bas portent des « — »
+  // là où rien n'a été répondu.
+  const bandeauIncomplet = incomplete
+    ? `<div style="background:#fef3e4;border:1px solid #c47a52;border-radius:8px;padding:14px 16px;margin:14px 0 6px;">
+        <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#a85f38;">Demande incomplète${envoiPartiel ? ' — envoyée avant la fin' : ''}</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#1f1e1c;">
+          ${envoiPartiel
+            ? `${eNom} a choisi d'envoyer ses réponses en cours de route${etapeArret ? `, depuis l'étape «&nbsp;${escapeHtml(etapeArret.titre)}&nbsp;»` : ''}. On lui a dit que vous lui reviendriez avec ce qui manque.`
+            : 'Des réponses requises manquent à cette demande.'}
+        </p>
+        ${bilan.aCompleter.length > 0
+          ? `<p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#1f1e1c;">À compléter avec ${eNom}&nbsp;:</p>
+        <ul style="margin:0;padding-left:20px;font-size:14px;line-height:1.6;color:#1f1e1c;">
+          ${bilan.aCompleter
+            .map((e) => `<li><strong>${escapeHtml(e.titre)}</strong> — ${e.vide ? 'rien de rempli' : `manque&nbsp;: ${escapeHtml(e.manquants.join(', '))}`}</li>`)
+            .join('\n          ')}
+        </ul>`
+          : ''}
+      </div>`
+    : '';
+
   const internalHtml = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouvelle demande de financement</h1>
+      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouvelle demande de financement${incomplete ? ' (incomplète)' : ''}</h1>
       <p style="margin:0 0 4px;color:#6a5f50;font-size:14px;">${l('type_demande')} — <strong>${eNom}</strong></p>
+      ${bandeauIncomplet}
       ${tableBlock('1. Type de demande', sectionType)}
       ${tableBlock('2. Identité et situation personnelle', sectionIdentite)}
       ${tableBlock('3. Co-emprunteur', sectionCo)}
@@ -333,16 +382,36 @@ export const POST: APIRoute = async ({ request }) => {
 
   /* ---------- Confirmation client — générique, aucune donnée sensible répétée ---------- */
 
-  const clientHtml = wrapEmailHtml(`
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${eNom} 🌿</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+  // Un envoi incomplet est un choix offert par le formulaire : l'accusé le confirme sans le
+  // reprocher, et nomme les étapes à compléter (des titres, aucune réponse) pour que le
+  // client sache à quoi s'attendre quand Stéphanie le rappellera.
+  const ePara = 'margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;';
+  const debutClient = incomplete
+    ? `<p style="${ePara}">
+          J'ai bien reçu votre demande de financement, telle que vous l'avez remplie — et c'est très bien ainsi. Merci de la confiance que vous m'accordez.
+        </p>
+        <h2 style="font-size:16px;margin:24px 0 8px;color:#a85f38;">Ce qui suit</h2>
+        <p style="${ePara}">
+          Je regarde vos réponses et je vous reviens moi-même, habituellement le jour ouvrable même, pour compléter avec vous ce qui manque${titresPourClient.length > 0 ? `&nbsp;: <strong>${escapeHtml(titresPourClient.join(', '))}</strong>` : ''}. Vous n'avez rien à remplir d'ici là.
+        </p>`
+    : `<p style="${ePara}">
           J'ai bien reçu votre demande de financement. Merci de la confiance que vous m'accordez — je sais que remplir un formulaire aussi complet demande du temps.
         </p>
         <h2 style="font-size:16px;margin:24px 0 8px;color:#a85f38;">Ce qui suit</h2>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
-          J'analyse votre dossier et je vous contacte personnellement dans les meilleurs délais pour discuter des prochaines étapes et des documents à réunir (talons de paie, avis de cotisation, relevés bancaires, etc.).
-        </p>
+        <p style="${ePara}">
+          J'analyse votre dossier et je vous reviens moi-même, habituellement le jour ouvrable même, pour discuter des prochaines étapes et des documents à réunir (talons de paie, avis de cotisation, relevés bancaires, etc.).
+        </p>`;
+  const invitation = incomplete
+    ? renderInvitationRendezVous({
+        campagne: 'demande-partielle',
+        texte: 'Le plus simple pour compléter&nbsp;? Choisissez vous-même le moment qui vous convient dans mon agenda&nbsp;: en 15&nbsp;minutes au téléphone, on fait le reste ensemble.',
+      })
+    : renderInvitationRendezVous({ campagne: 'demande' });
+
+  const clientHtml = wrapEmailHtml(`
+      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${eNom} 🌿</h1>
+        ${debutClient}
         <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
           Vous pourrez suivre l'avancement de votre dossier et voir la liste des documents attendus sur
           <a href="${escapeHtml(config.site_url.replace(/\/$/, ''))}/mon-dossier" style="color:#a85f38;">${escapeHtml(config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''))}/mon-dossier</a>&nbsp;:
@@ -351,6 +420,7 @@ export const POST: APIRoute = async ({ request }) => {
         <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
           Vos renseignements sont strictement confidentiels. Aucune enquête de crédit ne sera lancée sans votre consentement écrit.
         </p>
+        ${invitation}
         ${renderSignatureBlock()}
       </div>
   `, '32px 24px');
@@ -360,7 +430,7 @@ export const POST: APIRoute = async ({ request }) => {
       sendEmail(apiKey, {
         from: fromEmail,
         to: notifyEmail,
-        subject: `Nouvelle demande — ${label('type_demande', typeDemande)} — ${nom}`,
+        subject: `Nouvelle demande${incomplete ? ' (incomplète)' : ''} — ${label('type_demande', typeDemande)} — ${nom}`,
         html: internalHtml,
         reply_to: courriel,
       }),

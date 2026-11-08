@@ -6,9 +6,14 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import MessengerBtn from '../components/MessengerBtn.astro';
 import { loadSiteConfig } from '../config';
+import { etapesApplicables } from '../utils/demandeFinancement';
 
 const config = loadSiteConfig();
 const prenom = config.nom.split(' ')[0];
+
+// Le compte affiché au chargement : celui du parcours d'achat. Le script le recalcule dès
+// que le type de demande est connu (achat et refinancement comptent autant d'étapes).
+const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'achat' : '')).length;
 ---
 
 <MainLayout
@@ -30,9 +35,31 @@ const prenom = config.nom.split(' ')[0];
             Chaque champ est une pièce du casse-tête. Plus vous m'en donnez, plus je peux vous revenir avec une réponse précise — et vite.
             Tout est <strong>strictement confidentiel</strong>. Aucune enquête de crédit n'est lancée sans votre consentement écrit.
           </p>
+          <p class="demande-intro-sortie">
+            Une étape à la fois, et vous pouvez m'envoyer vos réponses à tout moment : on complétera le reste ensemble.
+          </p>
         </div>
 
-        <div class="demande-card fade-up">
+        <!--
+          Le formulaire se parcourt par étapes (src/utils/demandeFinancement.ts les décrit, la
+          page et l'API les lisent toutes deux). Chaque <fieldset data-etape> en est une ; seule
+          la première est visible au chargement, le script montre les autres. Sans JavaScript,
+          le formulaire ne s'envoyait déjà pas : rien n'est perdu à ne pas tout afficher.
+        -->
+        <div class="demande-card fade-up" id="demande-card">
+          <!-- Montré seulement quand des réponses ont été reprises après un rechargement : sans
+               lui, un formulaire déjà rempli surprend — et sur un appareil partagé, il faut
+               pouvoir tout effacer d'un geste. -->
+          <div class="demande-reprise" id="demande-reprise" role="status" hidden>
+            <p>Vos réponses ont été reprises là où vous étiez. Elles restent dans ce navigateur jusqu'à l'envoi ou à la fermeture de l'onglet.</p>
+            <button type="button" class="demande-lien" id="demande-reprise-effacer">Tout effacer et recommencer</button>
+          </div>
+
+          <div class="demande-progress" id="demande-progress">
+            <p class="demande-progress-label">Étape <span data-etape-num>1</span> sur <span data-etape-total>{totalEtapes}</span></p>
+            <div class="demande-progress-bar" aria-hidden="true"><div class="demande-progress-fill" data-etape-fill style={`width:${100 / totalEtapes}%`}></div></div>
+          </div>
+
           <form id="demande-form" name="demande" novalidate>
             <!-- Honeypot anti-spam -->
             <div class="demande-hp" aria-hidden="true">
@@ -40,10 +67,10 @@ const prenom = config.nom.split(' ')[0];
             </div>
 
             <!-- ================================================================ -->
-            <!-- SECTION 1 : Type de demande                                      -->
+            <!-- Votre projet — de quoi joindre le client, avant tout le reste     -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">1</span> Type de demande</legend>
+            <fieldset class="demande-fieldset" data-etape="projet">
+              <legend class="demande-legend" tabindex="-1">Votre projet</legend>
               <p class="demande-legend-sub">Nouvel achat ou refinancement ? Le formulaire s'adaptera selon votre réponse.</p>
 
               <div class="demande-field">
@@ -54,51 +81,74 @@ const prenom = config.nom.split(' ')[0];
                 </div>
               </div>
 
-              <div id="demande-refi-block" style="display:none;">
-                <div class="demande-row">
-                  <div class="demande-field">
-                    <label for="demande-refi-solde">Solde hypothécaire actuel ($) <span class="demande-req">*</span></label>
-                    <input type="text" id="demande-refi-solde" name="refi_solde" inputmode="numeric" placeholder="250 000" />
-                  </div>
-                  <div class="demande-field">
-                    <label for="demande-refi-valeur">Valeur estimée de la propriété ($) <span class="demande-req">*</span></label>
-                    <input type="text" id="demande-refi-valeur" name="refi_valeur" inputmode="numeric" placeholder="450 000" />
-                  </div>
-                </div>
-                <div class="demande-row">
-                  <div class="demande-field">
-                    <label for="demande-refi-preteur">Prêteur actuel</label>
-                    <input type="text" id="demande-refi-preteur" name="refi_preteur" placeholder="Ex. Desjardins, BMO, RBC…" />
-                  </div>
-                  <div class="demande-field">
-                    <label for="demande-refi-echeance">Date d'échéance du terme</label>
-                    <input type="month" id="demande-refi-echeance" name="refi_echeance" />
-                  </div>
-                </div>
-                <div class="demande-field">
-                  <label>But du refinancement</label>
-                  <div class="demande-checklist">
-                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="consolidation" /> Consolidation de dettes</label>
-                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="renos" /> Rénovations</label>
-                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="equite" /> Libération d'équité (projet, investissement)</label>
-                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="meilleur_taux" /> Meilleur taux ou conditions</label>
-                    <label class="demande-check-label"><input type="checkbox" name="refi_but" value="autre" /> Autre</label>
-                  </div>
-                </div>
-              </div>
-            </fieldset>
-
-            <!-- ================================================================ -->
-            <!-- SECTION 2 : Identité et situation personnelle                    -->
-            <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">2</span> Identité et situation personnelle</legend>
-              <p class="demande-legend-sub">Stéphanie doit d'abord savoir à qui elle a affaire — pour des raisons légales et pour préparer l'enquête de crédit.</p>
+              <p class="demande-coordonnees-note">
+                Vos coordonnées d'abord : ainsi, {prenom} peut vous joindre même si vous ne terminez pas le formulaire.
+              </p>
 
               <div class="demande-field">
                 <label for="demande-nom">Nom complet <span class="demande-req">*</span></label>
                 <input type="text" id="demande-nom" name="nom" required autocomplete="name" placeholder="Marie Tremblay" />
               </div>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-tel">Téléphone <span class="demande-req">*</span></label>
+                  <input type="tel" id="demande-tel" name="telephone" required autocomplete="tel" placeholder="514 000-0000" aria-describedby="demande-tel-erreur" />
+                  <small class="demande-field-erreur" id="demande-tel-erreur" data-erreur-pour="telephone" hidden>Entrez un numéro à 10 chiffres, indicatif régional compris.</small>
+                </div>
+                <div class="demande-field">
+                  <label for="demande-courriel">Courriel <span class="demande-req">*</span></label>
+                  <input type="email" id="demande-courriel" name="courriel" required autocomplete="email" placeholder="marie@exemple.com" aria-describedby="demande-courriel-erreur" />
+                  <small class="demande-field-erreur" id="demande-courriel-erreur" data-erreur-pour="courriel" hidden>Entrez une adresse complète, par exemple marie@exemple.com.</small>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- Votre prêt actuel — refinancement seulement                      -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset" data-etape="pret_actuel" hidden>
+              <legend class="demande-legend" tabindex="-1">Votre prêt actuel</legend>
+              <p class="demande-legend-sub">Pour un refinancement, {prenom} part de votre prêt d'aujourd'hui.</p>
+
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-refi-solde">Solde hypothécaire actuel ($) <span class="demande-req">*</span></label>
+                  <input type="text" id="demande-refi-solde" name="refi_solde" inputmode="numeric" placeholder="250 000" />
+                </div>
+                <div class="demande-field">
+                  <label for="demande-refi-valeur">Valeur estimée de la propriété ($) <span class="demande-req">*</span></label>
+                  <input type="text" id="demande-refi-valeur" name="refi_valeur" inputmode="numeric" placeholder="450 000" />
+                </div>
+              </div>
+              <div class="demande-row">
+                <div class="demande-field">
+                  <label for="demande-refi-preteur">Prêteur actuel</label>
+                  <input type="text" id="demande-refi-preteur" name="refi_preteur" placeholder="Ex. Desjardins, BMO, RBC…" />
+                </div>
+                <div class="demande-field">
+                  <label for="demande-refi-echeance">Date d'échéance du terme</label>
+                  <input type="month" id="demande-refi-echeance" name="refi_echeance" />
+                </div>
+              </div>
+              <div class="demande-field">
+                <label>But du refinancement</label>
+                <div class="demande-checklist">
+                  <label class="demande-check-label"><input type="checkbox" name="refi_but" value="consolidation" /> Consolidation de dettes</label>
+                  <label class="demande-check-label"><input type="checkbox" name="refi_but" value="renos" /> Rénovations</label>
+                  <label class="demande-check-label"><input type="checkbox" name="refi_but" value="equite" /> Libération d'équité (projet, investissement)</label>
+                  <label class="demande-check-label"><input type="checkbox" name="refi_but" value="meilleur_taux" /> Meilleur taux ou conditions</label>
+                  <label class="demande-check-label"><input type="checkbox" name="refi_but" value="autre" /> Autre</label>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- ================================================================ -->
+            <!-- Identité et situation personnelle                               -->
+            <!-- ================================================================ -->
+            <fieldset class="demande-fieldset" data-etape="identite" hidden>
+              <legend class="demande-legend" tabindex="-1">Identité et situation personnelle</legend>
+              <p class="demande-legend-sub">{prenom} doit savoir à qui elle a affaire — pour des raisons légales et pour préparer l'enquête de crédit.</p>
 
               <div class="demande-field">
                 <label for="demande-naissance">Date de naissance <span class="demande-req">*</span></label>
@@ -166,24 +216,13 @@ const prenom = config.nom.split(' ')[0];
               <div class="demande-field demande-field--nas-note">
                 <p class="demande-nas-info">🔒 <strong>Numéro d'assurance sociale (NAS)</strong> — sera demandé de façon sécurisée lors de l'appel. Aucune donnée sensible ne transite par ce formulaire.</p>
               </div>
-
-              <div class="demande-row">
-                <div class="demande-field">
-                  <label for="demande-tel">Téléphone <span class="demande-req">*</span></label>
-                  <input type="tel" id="demande-tel" name="telephone" required autocomplete="tel" placeholder="514 000-0000" />
-                </div>
-                <div class="demande-field">
-                  <label for="demande-courriel">Courriel <span class="demande-req">*</span></label>
-                  <input type="email" id="demande-courriel" name="courriel" required autocomplete="email" placeholder="marie@exemple.com" />
-                </div>
-              </div>
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 3 : Co-emprunteur                                        -->
+            <!-- Co-emprunteur                                                    -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">3</span> Co-emprunteur</legend>
+            <fieldset class="demande-fieldset" data-etape="co_emprunteur" hidden>
+              <legend class="demande-legend" tabindex="-1">Co-emprunteur</legend>
               <p class="demande-legend-sub">La majorité des achats se font à deux. Si vous achetez ou refinancez avec quelqu'un, remplissez cette section.</p>
 
               <div class="demande-field">
@@ -230,10 +269,10 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 4 : Situation actuelle                                   -->
+            <!-- Situation actuelle                                               -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">4</span> Situation actuelle</legend>
+            <fieldset class="demande-fieldset" data-etape="situation" hidden>
+              <legend class="demande-legend" tabindex="-1">Situation actuelle</legend>
 
               <div class="demande-row">
                 <div class="demande-field">
@@ -271,10 +310,10 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 5 : Emploi et revenus                                    -->
+            <!-- Emploi et revenus                                                -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">5</span> Emploi et revenus</legend>
+            <fieldset class="demande-fieldset" data-etape="emploi" hidden>
+              <legend class="demande-legend" tabindex="-1">Emploi et revenus</legend>
               <p class="demande-legend-sub">Les prêteurs veulent s'assurer de la stabilité de vos revenus. Ces informations déterminent votre capacité d'emprunt.</p>
 
               <div class="demande-row">
@@ -346,10 +385,10 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 6 : Crédit                                               -->
+            <!-- Crédit                                                           -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">6</span> Votre crédit</legend>
+            <fieldset class="demande-fieldset" data-etape="credit" hidden>
+              <legend class="demande-legend" tabindex="-1">Votre crédit</legend>
               <p class="demande-legend-sub">Cette information détermine vers quel type de prêteur orienter votre dossier (A ou B). Aucune enquête formelle n'est lancée maintenant.</p>
 
               <div class="demande-row">
@@ -374,10 +413,10 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 7 : Mise de fonds                                        -->
+            <!-- Mise de fonds — achat seulement                                  -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset" id="demande-mise-fonds-section">
-              <legend class="demande-legend"><span class="demande-step-num">7</span> Mise de fonds</legend>
+            <fieldset class="demande-fieldset" data-etape="mise_de_fonds" id="demande-mise-fonds-section" hidden>
+              <legend class="demande-legend" tabindex="-1">Mise de fonds</legend>
               <p class="demande-legend-sub">Au Canada, Stéphanie doit prouver la provenance de chaque dollar investi.</p>
 
               <div class="demande-row">
@@ -423,10 +462,10 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 8 : Dettes et obligations                                -->
+            <!-- Dettes et obligations                                            -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">8</span> Dettes et obligations</legend>
+            <fieldset class="demande-fieldset" data-etape="dettes" hidden>
+              <legend class="demande-legend" tabindex="-1">Dettes et obligations</legend>
               <p class="demande-legend-sub">Pour calculer votre capacité d'emprunt, Stéphanie doit connaître vos obligations mensuelles.</p>
 
               <div class="demande-field">
@@ -468,10 +507,10 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 9 : Préférences de financement                           -->
+            <!-- Préférences de financement                                       -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">9</span> Préférences de financement</legend>
+            <fieldset class="demande-fieldset" data-etape="preferences" hidden>
+              <legend class="demande-legend" tabindex="-1">Préférences de financement</legend>
               <p class="demande-legend-sub">Pour vous recommander le bon produit, Stéphanie doit comprendre votre tolérance au risque et vos projets.</p>
 
               <div class="demande-field">
@@ -513,33 +552,36 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- SECTION 10 : Propriété visée                                     -->
+            <!-- Propriété visée                                                  -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num">10</span> La propriété visée</legend>
+            <fieldset class="demande-fieldset" data-etape="propriete" hidden>
+              <legend class="demande-legend" tabindex="-1">La propriété visée</legend>
 
-              <div class="demande-field">
-                <label>Promesse d'achat acceptée ? <span class="demande-req">*</span></label>
-                <div class="demande-radio-group">
-                  <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="oui" required /> Oui</label>
-                  <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="non" /> Non — je magasine</label>
-                </div>
-              </div>
-
-              <div id="demande-promesse-oui" style="display:none;">
-                <div class="demande-callout">
-                  <strong>⚠️ Urgent — documents requis</strong>
-                  <p>Stéphanie aura besoin de : fiche descriptive (Centris/SIA), déclaration du vendeur, taxes municipales/scolaires, et promesse d'achat signée.</p>
-                </div>
-
+              <!-- À l'achat seulement : qui refinance sa maison n'a pas de promesse d'achat. -->
+              <div id="demande-promesse-question">
                 <div class="demande-field">
-                  <label for="demande-adresse-propriete">Adresse de la propriété visée</label>
-                  <input type="text" id="demande-adresse-propriete" name="adresse_propriete" autocomplete="street-address" placeholder="123 rue Principale, Repentigny" />
+                  <label>Promesse d'achat acceptée ? <span class="demande-req">*</span></label>
+                  <div class="demande-radio-group">
+                    <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="oui" /> Oui</label>
+                    <label class="demande-radio-label"><input type="radio" name="promesse_achat" value="non" /> Non — je magasine</label>
+                  </div>
                 </div>
 
-                <div class="demande-field">
-                  <label for="demande-date-possession">Date de possession prévue</label>
-                  <input type="date" id="demande-date-possession" name="date_possession" />
+                <div id="demande-promesse-oui" style="display:none;">
+                  <div class="demande-callout">
+                    <strong>⚠️ Urgent — documents requis</strong>
+                    <p>Stéphanie aura besoin de : fiche descriptive (Centris/SIA), déclaration du vendeur, taxes municipales/scolaires, et promesse d'achat signée.</p>
+                  </div>
+
+                  <div class="demande-field">
+                    <label for="demande-adresse-propriete">Adresse de la propriété visée</label>
+                    <input type="text" id="demande-adresse-propriete" name="adresse_propriete" autocomplete="street-address" placeholder="123 rue Principale, Repentigny" />
+                  </div>
+
+                  <div class="demande-field">
+                    <label for="demande-date-possession">Date de possession prévue</label>
+                    <input type="date" id="demande-date-possession" name="date_possession" />
+                  </div>
                 </div>
               </div>
 
@@ -585,10 +627,10 @@ const prenom = config.nom.split(' ')[0];
             </fieldset>
 
             <!-- ================================================================ -->
-            <!-- Préférences de contact + Source                                  -->
+            <!-- Dernières questions + consentement final                         -->
             <!-- ================================================================ -->
-            <fieldset class="demande-fieldset">
-              <legend class="demande-legend"><span class="demande-step-num" style="background:var(--forest);">✓</span> Dernières questions</legend>
+            <fieldset class="demande-fieldset" data-etape="dernieres" hidden>
+              <legend class="demande-legend" tabindex="-1">Dernières questions</legend>
 
               <div class="demande-row">
                 <div class="demande-field">
@@ -625,32 +667,71 @@ const prenom = config.nom.split(' ')[0];
                   <option value="autre_source">Autre</option>
                 </select>
               </div>
+
+              <div class="demande-field">
+                <label for="demande-message">Précisions ou questions pour Stéphanie <span class="demande-opt">(facultatif)</span></label>
+                <textarea id="demande-message" name="message" rows="4" placeholder="Toute information supplémentaire qui pourrait aider Stéphanie à préparer votre dossier…"></textarea>
+              </div>
+
+              <label class="demande-consent" for="demande-consent-final">
+                <input type="checkbox" id="demande-consent-final" name="consentement" value="oui" required />
+                <span>
+                  J'accepte que {prenom} utilise les renseignements ci-dessus pour analyser mon dossier et me recontacter.
+                  Ces informations sont <strong>strictement confidentielles</strong> et utilisées uniquement dans le cadre de ma demande de financement — voir la
+                  <a href="/confidentialite/">politique de confidentialité</a>. Aucune enquête de crédit ne sera lancée sans mon consentement écrit. <span class="demande-req">*</span>
+                </span>
+              </label>
+
+              <p class="demande-note demande-note--next">Pour la suite, {prenom} vous contactera personnellement pour obtenir les documents nécessaires (talons de paie, avis de cotisation, relevés bancaires, etc.).</p>
             </fieldset>
 
-            <!-- ================================================================ -->
-            <!-- Message libre + Consentement final                               -->
-            <!-- ================================================================ -->
-            <div class="demande-field">
-              <label for="demande-message">Précisions ou questions pour Stéphanie <span class="demande-opt">(facultatif)</span></label>
-              <textarea id="demande-message" name="message" rows="4" placeholder="Toute information supplémentaire qui pourrait aider Stéphanie à préparer votre dossier…"></textarea>
+            <p id="demande-erreur" class="demande-status" data-state="error" role="alert" hidden>Il manque une réponse ou deux pour continuer — elles sont indiquées en rouge.</p>
+
+            <div class="demande-nav">
+              <button type="button" class="demande-precedent" id="demande-precedent" hidden>← Précédent</button>
+              <!-- Un seul bouton d'envoi : « Entrée » dans un champ fait « Continuer », jamais un envoi. -->
+              <button type="submit" class="btn-cta" id="demande-submit">
+                <span data-libelle="suivant">Continuer</span>
+                <span data-libelle="envoyer" hidden>Envoyer ma demande</span>
+                <span data-libelle="envoi" hidden>Envoi en cours…</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
             </div>
 
-            <label class="demande-consent" for="demande-consent-final">
-              <input type="checkbox" id="demande-consent-final" name="consentement" value="oui" required />
-              <span>
-                J'accepte que {prenom} utilise les renseignements ci-dessus pour analyser mon dossier et me recontacter.
-                Ces informations sont <strong>strictement confidentielles</strong> et utilisées uniquement dans le cadre de ma demande de financement — voir la
-                <a href="/confidentialite/">politique de confidentialité</a>. Aucune enquête de crédit ne sera lancée sans mon consentement écrit. <span class="demande-req">*</span>
-              </span>
-            </label>
+            <!--
+              La sortie : envoyer à Stéphanie ce qui est rempli, quand le client en a assez. Offerte
+              dès la 2e étape (la 1re donne de quoi le joindre), jamais à la dernière, où le bouton
+              principal envoie déjà. Elle demande son propre consentement : celui de la dernière
+              étape n'a pas encore été vu.
+            -->
+            <div class="demande-sortie" id="demande-sortie" hidden>
+              <p>Assez de questions pour aujourd'hui ? {prenom} peut compléter le reste avec vous.</p>
+              <button type="button" class="demande-sortie-btn" id="demande-sortie-ouvrir" aria-expanded="false" aria-controls="demande-partiel">Envoyer maintenant, même incomplet</button>
+            </div>
 
-            <button type="submit" class="btn-cta btn-cta--block" id="demande-submit">
-              <span class="demande-submit-label">Envoyer ma demande</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </button>
+            <div class="demande-partiel" id="demande-partiel" hidden>
+              <p class="demande-partiel-titre" id="demande-partiel-titre" tabindex="-1">Envoyer à {prenom} ce que vous avez rempli ?</p>
+              <p class="demande-partiel-texte">
+                Vos réponses partent telles quelles. {prenom} vous revient elle-même pour compléter le reste avec vous — c'est souvent plus simple au téléphone.
+              </p>
+              <label class="demande-consent" for="demande-consent-partiel">
+                <input type="checkbox" id="demande-consent-partiel" />
+                <span>
+                  J'accepte que {prenom} utilise les renseignements fournis jusqu'ici pour analyser ma demande et me recontacter.
+                  Ils sont <strong>strictement confidentiels</strong> — voir la <a href="/confidentialite/">politique de confidentialité</a>.
+                  Aucune enquête de crédit ne sera lancée sans mon consentement écrit. <span class="demande-req">*</span>
+                </span>
+              </label>
+              <div class="demande-partiel-actions">
+                <button type="button" class="btn-cta" id="demande-partiel-envoyer">
+                  <span data-libelle="partiel">Envoyer maintenant</span>
+                  <span data-libelle="envoi" hidden>Envoi en cours…</span>
+                </button>
+                <button type="button" class="demande-lien" id="demande-partiel-annuler">Continuer à remplir</button>
+              </div>
+            </div>
 
-            <p class="demande-note">Gratuit · Confidentiel · Réponse dans les meilleurs délais</p>
-            <p class="demande-note demande-note--next">Pour la suite, {prenom} vous contactera personnellement pour obtenir les documents nécessaires (talons de paie, avis de cotisation, relevés bancaires, etc.).</p>
+            <p class="demande-note">Confidentiel · Sans engagement · Réponse habituellement le jour ouvrable même</p>
           </form>
 
           <!-- Message d'état -->
@@ -659,12 +740,14 @@ const prenom = config.nom.split(' ')[0];
           <!-- Message de succès -->
           <div id="demande-success" class="demande-success" hidden>
             <span class="demande-success-check" aria-hidden="true">✅</span>
-            <strong>Votre demande est envoyée&nbsp;!</strong>
-            <p>{prenom} analysera votre dossier et vous contactera personnellement dans les meilleurs délais.</p>
-            <a href="/" class="btn-secondary" style="margin-top:1.5rem;display:inline-flex;align-items:center;gap:.5rem;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-              Retour à l'accueil
-            </a>
+            <strong id="demande-success-titre" tabindex="-1">Votre demande est envoyée&nbsp;!</strong>
+            <p data-succes="complet">{prenom} analyse votre dossier et vous répond elle-même, habituellement le jour ouvrable même.</p>
+            <p data-succes="partiel" hidden>{prenom} a bien reçu ce que vous avez rempli. Elle vous revient elle-même, habituellement le jour ouvrable même, pour compléter le reste avec vous.</p>
+            <p class="demande-success-rdv">Pour aller plus vite, choisissez vous-même le moment de votre appel :</p>
+            <div class="demande-success-actions">
+              <a href="/rendez-vous/" class="btn-cta" data-umami-event="cta_booking_demande">Réserver un appel de 15 min</a>
+              <a href="/" class="btn-secondary">Retour à l'accueil</a>
+            </div>
           </div>
         </div>
 
@@ -682,6 +765,14 @@ const prenom = config.nom.split(' ')[0];
   .demande-intro { text-align: center; margin-bottom: 2.5rem; }
   .demande-intro .section-tag { margin-bottom: 1rem; }
   .demande-intro .section-sub { margin: 1rem auto 0; }
+  .demande-intro-sortie {
+    margin: .85rem auto 0;
+    max-width: 560px;
+    font-size: .9rem;
+    line-height: 1.6;
+    color: var(--clay-dk);
+    font-weight: 500;
+  }
 
   .demande-card {
     background: var(--white);
@@ -689,6 +780,52 @@ const prenom = config.nom.split(' ')[0];
     border-radius: var(--radius-lg);
     padding: clamp(1.5rem, 4vw, 2.75rem);
     box-shadow: var(--shadow-md);
+    scroll-margin-top: 6rem;
+  }
+
+  /* --- REPRISE APRÈS RECHARGEMENT --- */
+  .demande-reprise {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .25rem 1rem;
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: .75rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .demande-reprise p {
+    flex: 1 1 260px;
+    font-size: .85rem;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .demande-reprise .demande-lien { padding: .5rem 0; font-size: .88rem; color: var(--clay-dk); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* --- PROGRESSION --- */
+  .demande-progress { margin-bottom: 1.75rem; }
+  .demande-progress-label {
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+    color: var(--muted);
+    margin-bottom: .5rem;
+  }
+  .demande-progress-bar {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--warm);
+    overflow: hidden;
+  }
+  .demande-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--clay);
+    transition: width .3s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .demande-progress-fill { transition: none; }
   }
 
   /* Honeypot */
@@ -704,9 +841,9 @@ const prenom = config.nom.split(' ')[0];
   .demande-fieldset {
     border: none;
     padding: 0;
-    margin: 0 0 2.5rem 0;
+    margin: 0 0 1.5rem 0;
+    min-width: 0;
   }
-  .demande-fieldset:last-of-type { margin-bottom: 2rem; }
 
   .demande-legend {
     display: flex;
@@ -721,25 +858,22 @@ const prenom = config.nom.split(' ')[0];
     float: none;
     width: 100%;
   }
-  .demande-step-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: var(--clay);
-    color: white;
-    font-family: "DM Sans", sans-serif;
-    font-size: .95rem;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
+  .demande-legend:focus { outline: none; }
+  .demande-legend:focus-visible { outline: 2px solid var(--clay); outline-offset: 4px; border-radius: 4px; }
   .demande-legend-sub {
     font-size: .85rem;
     color: var(--muted);
     line-height: 1.6;
     margin-bottom: 1.35rem;
+  }
+  .demande-coordonnees-note {
+    font-size: .85rem;
+    line-height: 1.6;
+    color: var(--ink);
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: .7rem 1rem;
+    margin: 1.5rem 0 1.25rem;
   }
 
   /* --- FIELDS --- */
@@ -769,6 +903,13 @@ const prenom = config.nom.split(' ')[0];
     margin-top: .35rem;
     line-height: 1.5;
   }
+  .demande-field-erreur {
+    display: block;
+    font-size: .78rem;
+    color: var(--clay-dk);
+    margin-top: .35rem;
+    line-height: 1.5;
+  }
 
   .demande-field input[type="text"],
   .demande-field input[type="email"],
@@ -784,7 +925,7 @@ const prenom = config.nom.split(' ')[0];
     border-radius: var(--radius-sm);
     color: var(--ink);
     font-family: "DM Sans", sans-serif;
-    font-size: .95rem;
+    font-size: 1rem;
     transition: border-color .2s;
     -webkit-appearance: none;
     appearance: none;
@@ -797,7 +938,15 @@ const prenom = config.nom.split(' ')[0];
   .demande-field textarea::placeholder { color: #b8a99a; }
   .demande-field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a5f50' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; }
   .demande-field input[aria-invalid="true"],
-  .demande-field select[aria-invalid="true"] { border-color: var(--clay-dk); }
+  .demande-field select[aria-invalid="true"],
+  .demande-field textarea[aria-invalid="true"] { border-color: var(--clay-dk); box-shadow: 0 0 0 3px rgba(168,95,56,.14); }
+  /* Un groupe de boutons radio n'a pas de bordure à rougir : on encadre le groupe. */
+  .demande-field[data-invalide] > label { color: var(--clay-dk); }
+  .demande-field[data-invalide] .demande-radio-group {
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 2px var(--clay-dk);
+    padding: .25rem;
+  }
   .demande-readonly {
     background: var(--warm) !important;
     color: var(--muted);
@@ -910,6 +1059,11 @@ const prenom = config.nom.split(' ')[0];
     font-size: .82rem;
     line-height: 1.55;
     color: var(--ink);
+    border-radius: var(--radius-sm);
+  }
+  .demande-consent[data-invalide] {
+    box-shadow: 0 0 0 2px var(--clay-dk);
+    padding: .6rem .75rem;
   }
   .demande-consent input[type="checkbox"] {
     margin-top: .15rem;
@@ -920,14 +1074,97 @@ const prenom = config.nom.split(' ')[0];
   }
   .demande-consent a { color: var(--clay); text-decoration: underline; }
 
-  #demande-submit[disabled] { opacity: .65; cursor: not-allowed; }
+  /* --- NAVIGATION ENTRE LES ÉTAPES --- */
+  .demande-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: .5rem;
+  }
+  .demande-nav .btn-cta { margin-left: auto; }
+  .demande-precedent,
+  .demande-lien {
+    background: none;
+    border: none;
+    padding: .75rem .25rem;
+    font-family: "DM Sans", sans-serif;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .demande-precedent:hover,
+  .demande-lien:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .demande-precedent:focus-visible,
+  .demande-lien:focus-visible,
+  .demande-sortie-btn:focus-visible { outline: 2px solid var(--clay); outline-offset: 3px; border-radius: 4px; }
+
+  #demande-submit[disabled],
+  #demande-partiel-envoyer[disabled] { opacity: .65; cursor: not-allowed; }
+
+  /* --- LA SORTIE : ENVOYER AVANT LA FIN --- */
+  .demande-sortie {
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--border);
+    text-align: center;
+  }
+  .demande-sortie p {
+    font-size: .85rem;
+    line-height: 1.55;
+    color: var(--muted);
+    margin-bottom: .35rem;
+  }
+  .demande-sortie-btn {
+    background: none;
+    border: none;
+    padding: .6rem .5rem;
+    font-family: "DM Sans", sans-serif;
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--clay-dk);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .demande-sortie-btn:hover { color: #8e4f30; }
+
+  .demande-partiel {
+    margin-top: 1.25rem;
+    padding: 1.25rem 1.35rem;
+    background: var(--sand);
+    border: 1.5px solid var(--clay);
+    border-radius: var(--radius-sm);
+  }
+  .demande-partiel-titre {
+    font-family: "Lora", serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: .4rem;
+  }
+  .demande-partiel-titre:focus { outline: none; }
+  .demande-partiel-texte {
+    font-size: .88rem;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  .demande-partiel .demande-consent { margin: 1rem 0 1.1rem; }
+  .demande-partiel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem 1.25rem;
+  }
 
   .demande-note {
     text-align: center;
     font-size: .76rem;
     color: var(--muted);
-    margin-top: 1rem;
+    margin-top: 1.25rem;
   }
+  .demande-note--next { margin-top: 0; }
 
   /* --- STATUS & SUCCESS --- */
   .demande-status {
@@ -937,6 +1174,7 @@ const prenom = config.nom.split(' ')[0];
     font-size: .88rem;
     line-height: 1.5;
   }
+  #demande-erreur { margin: 0 0 1rem; }
   .demande-status[data-state="error"] {
     background: #fbeae3;
     border: 1px solid var(--clay-dk);
@@ -960,7 +1198,17 @@ const prenom = config.nom.split(' ')[0];
     display: block;
     margin-bottom: .5rem;
   }
+  .demande-success strong:focus { outline: none; }
   .demande-success p { color: var(--muted); line-height: 1.7; font-size: .95rem; }
+  .demande-success .demande-success-rdv { margin-top: 1.25rem; color: var(--ink); font-weight: 500; }
+  .demande-success-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem 1.25rem;
+    margin-top: 1rem;
+  }
 
   @media (max-width: 700px) {
     .demande-row,
@@ -969,192 +1217,465 @@ const prenom = config.nom.split(' ')[0];
     .demande-row--3col .demande-field { margin-bottom: 1.25rem; }
     .demande-legend { font-size: 1.15rem; }
   }
+  @media (max-width: 420px) {
+    .demande-nav .btn-cta { padding-left: 1.2rem; padding-right: 1.2rem; }
+  }
 </style>
 
-<script is:inline>
-  (function () {
-    var form = document.getElementById('demande-form');
-    if (!form) return;
+<script>
+  import {
+    CLE_REPRISE,
+    ETAPES,
+    decoderReprise,
+    encoderReprise,
+    etapeParCle,
+    etapeReprise,
+    etapesApplicables,
+    indexDansParcours,
+    requisManquants,
+    type CleEtape,
+    type EtapeDemande,
+    type Lecture,
+  } from '../utils/demandeFinancement';
 
-    var btn = document.getElementById('demande-submit');
-    var label = form.querySelector('.demande-submit-label');
-    var statusEl = document.getElementById('demande-status');
-    var successEl = document.getElementById('demande-success');
-    var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    var TEL_RE = /\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d[\s.\-()]*\d/;
+  type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
-    // --- Conditional blocks ---
-    function toggleBlock(radioName, blockId, showValue) {
-      var radios = form.querySelectorAll('input[name="' + radioName + '"]');
-      var block = document.getElementById(blockId);
-      if (!block) return;
-      function update() {
-        var checked = form.querySelector('input[name="' + radioName + '"]:checked');
-        block.style.display = (checked && checked.value === showValue) ? '' : 'none';
-      }
-      radios.forEach(function (r) { r.addEventListener('change', update); });
-      update();
+  function suivre(nom: string, donnees?: Record<string, string | boolean>): void {
+    const umami = (window as unknown as { umami?: { track?: (n: string, d?: unknown) => void } }).umami;
+    if (typeof umami?.track === 'function') umami.track(nom, donnees);
+  }
+
+  /**
+   * La conversion, comme au formulaire de contact : GA4 reçoit `generate_lead`, Google Ads
+   * l'importe depuis GA4. Sans consentement, `gtag` n'est que la file d'attente posée par
+   * MainLayout — Google n'est jamais chargé et l'événement ne part pas.
+   */
+  function convertir(parametres: Record<string, string>): void {
+    const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+    if (typeof gtag === 'function') gtag('event', 'generate_lead', parametres);
+    suivre('generate_lead', parametres);
+  }
+
+  const form = document.getElementById('demande-form') as HTMLFormElement | null;
+  if (form) initialiser(form);
+
+  function initialiser(form: HTMLFormElement): void {
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+    const carte = $('demande-card');
+    const progression = $('demande-progress');
+    const num = progression?.querySelector<HTMLElement>('[data-etape-num]') ?? null;
+    const total = progression?.querySelector<HTMLElement>('[data-etape-total]') ?? null;
+    const jauge = progression?.querySelector<HTMLElement>('[data-etape-fill]') ?? null;
+    const boutonPrecedent = $<HTMLButtonElement>('demande-precedent');
+    const boutonPrincipal = $<HTMLButtonElement>('demande-submit');
+    const erreurEtape = $('demande-erreur');
+    const sortie = $('demande-sortie');
+    const boutonSortie = $<HTMLButtonElement>('demande-sortie-ouvrir');
+    const panneauPartiel = $('demande-partiel');
+    const titrePartiel = $('demande-partiel-titre');
+    const consentPartiel = $<HTMLInputElement>('demande-consent-partiel');
+    const consentFinal = $<HTMLInputElement>('demande-consent-final');
+    const boutonPartiel = $<HTMLButtonElement>('demande-partiel-envoyer');
+    const boutonAnnuler = $<HTMLButtonElement>('demande-partiel-annuler');
+    const statut = $('demande-status');
+    const succes = $('demande-success');
+    const avisReprise = $('demande-reprise');
+    const boutonEffacer = $<HTMLButtonElement>('demande-reprise-effacer');
+
+    const fieldsets = new Map<CleEtape, HTMLFieldSetElement>();
+    for (const etape of ETAPES) {
+      const fs = form.querySelector<HTMLFieldSetElement>(`fieldset[data-etape="${etape.cle}"]`);
+      if (fs) fieldsets.set(etape.cle, fs);
     }
 
-    // Type de demande → refi block
-    toggleBlock('type_demande', 'demande-refi-block', 'refinancement');
+    let courante: CleEtape = ETAPES[0]!.cle;
+    let envoiEnCours = false;
+    let envoye = false;
 
-    // Co-emprunteur
-    toggleBlock('co_emprunteur', 'demande-co-block', 'deux');
+    /* ---------- Lecture du formulaire ---------- */
 
-    // Situation logement → proprio block
-    toggleBlock('situation_logement', 'demande-proprio-block', 'proprietaire');
+    const elements = (champ: string) => form.querySelectorAll<Champ>(`[name="${champ}"]`);
 
-    // Promesse d'achat
-    toggleBlock('promesse_achat', 'demande-promesse-oui', 'oui');
-
-    // Adresse < 3 ans → adresse précédente
-    toggleBlock('adresse_3ans', 'demande-adresse-prev-group', 'non');
-
-    // Type de propriété → condo / plex blocks
-    var typePropriete = document.getElementById('demande-type-propriete');
-    var condoBlock = document.getElementById('demande-condo-block');
-    var plexBlock = document.getElementById('demande-plex-block');
-    if (typePropriete) {
-      typePropriete.addEventListener('change', function () {
-        if (condoBlock) condoBlock.style.display = typePropriete.value === 'condo' ? '' : 'none';
-        if (plexBlock) plexBlock.style.display = typePropriete.value === 'plex' ? '' : 'none';
+    const lire: Lecture = (champ) => {
+      const valeurs: string[] = [];
+      elements(champ).forEach((el) => {
+        if (el instanceof HTMLInputElement && (el.type === 'radio' || el.type === 'checkbox')) {
+          if (el.checked) valeurs.push(el.value);
+        } else if (el.value.trim()) {
+          valeurs.push(el.value.trim());
+        }
       });
+      return valeurs.join(', ');
+    };
+
+    const parcours = (): EtapeDemande[] => etapesApplicables(lire);
+
+    /* ---------- Blocs conditionnels ---------- */
+
+    function basculer(id: string, visible: boolean): void {
+      const bloc = document.getElementById(id);
+      if (bloc) bloc.style.display = visible ? '' : 'none';
     }
 
-    // --- Statut ---
-    function setStatus(state, msg) {
-      if (!statusEl) return;
-      if (!state) { statusEl.hidden = true; statusEl.removeAttribute('data-state'); statusEl.textContent = ''; return; }
-      statusEl.hidden = false;
-      statusEl.setAttribute('data-state', state);
-      statusEl.textContent = msg;
+    function majBlocs(): void {
+      const refi = lire('type_demande') === 'refinancement';
+      basculer('demande-co-block', lire('co_emprunteur') === 'deux');
+      basculer('demande-proprio-block', lire('situation_logement') === 'proprietaire');
+      basculer('demande-adresse-prev-group', lire('adresse_3ans') === 'non');
+      basculer('demande-promesse-question', !refi);
+      basculer('demande-promesse-oui', !refi && lire('promesse_achat') === 'oui');
+      basculer('demande-condo-block', lire('type_propriete') === 'condo');
+      basculer('demande-plex-block', lire('type_propriete') === 'plex');
     }
 
-    function fieldInvalid(el, invalid) {
-      if (!el) return;
-      if (invalid) el.setAttribute('aria-invalid', 'true');
-      else el.removeAttribute('aria-invalid');
+    /* ---------- Erreurs ---------- */
+
+    function marquer(champ: string, invalide: boolean): void {
+      const premier = elements(champ)[0];
+      if (!premier) return;
+      const groupe = premier instanceof HTMLInputElement && (premier.type === 'radio' || premier.type === 'checkbox');
+      if (groupe) premier.closest('.demande-field')?.toggleAttribute('data-invalide', invalide);
+      else if (invalide) premier.setAttribute('aria-invalid', 'true');
+      else premier.removeAttribute('aria-invalid');
+      // Un format refusé (courriel, téléphone) dit pourquoi ; un champ vide se voit assez.
+      const aide = form.querySelector<HTMLElement>(`[data-erreur-pour="${champ}"]`);
+      if (aide) aide.hidden = !(invalide && lire(champ) !== '');
     }
 
-    // --- Validation ---
-    function getField(name) { return form.querySelector('[name="' + name + '"]'); }
-    function val(name) { var el = getField(name); return el ? el.value.trim() : ''; }
-    function radioVal(name) { var checked = form.querySelector('input[name="' + name + '"]:checked'); return checked ? checked.value : ''; }
+    function effacerErreurs(): void {
+      form.querySelectorAll('[aria-invalid]').forEach((el) => el.removeAttribute('aria-invalid'));
+      form.querySelectorAll('[data-invalide]').forEach((el) => el.removeAttribute('data-invalide'));
+      form.querySelectorAll<HTMLElement>('[data-erreur-pour]').forEach((el) => { el.hidden = true; });
+      if (erreurEtape) erreurEtape.hidden = true;
+    }
 
-    form.addEventListener('submit', function (e) {
+    function premierInvalide(): HTMLElement | null {
+      const fs = fieldsets.get(courante);
+      const cible = fs?.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalide] input, .demande-consent[data-invalide] input');
+      return cible ?? null;
+    }
+
+    /** Marque ce qui manque à l'étape ; `true` si elle est complète. */
+    function valider(etape: EtapeDemande): boolean {
+      const manquants = requisManquants(etape, lire);
+      for (const r of etape.requis) marquer(r.champ, manquants.includes(r));
+      if (manquants.length === 0) return true;
+      if (erreurEtape) erreurEtape.hidden = false;
+      premierInvalide()?.focus();
+      return false;
+    }
+
+    // Une réponse corrigée efface sa propre marque, pas celles des autres.
+    form.addEventListener('input', (e) => {
+      effacerMarque(e.target);
+      planifierSauvegarde();
+    });
+    form.addEventListener('change', (e) => {
+      effacerMarque(e.target);
+      majBlocs();
+      majCompte();
+      planifierSauvegarde();
+    });
+
+    /* ---------- Reprise après un rechargement (sessionStorage) ---------- */
+
+    let minuterie: number | undefined;
+
+    function sauvegarder(): void {
+      if (envoye) return;
+      const champs: Record<string, string[]> = {};
+      new FormData(form).forEach((valeur, nom) => {
+        if (typeof valeur !== 'string') return;
+        (champs[nom] ??= []).push(valeur);
+      });
+      const maintenant = Date.now();
+      const brut = encoderReprise(courante, champs, maintenant);
+      try {
+        // Rien qui vaille d'être repris (formulaire vierge, ou tout effacé) : rien n'est gardé.
+        if (decoderReprise(brut, maintenant)) sessionStorage.setItem(CLE_REPRISE, brut);
+        else sessionStorage.removeItem(CLE_REPRISE);
+      } catch {
+        // Navigation privée, stockage plein ou bloqué : le formulaire marche sans.
+      }
+    }
+
+    function planifierSauvegarde(): void {
+      window.clearTimeout(minuterie);
+      minuterie = window.setTimeout(sauvegarder, 300);
+    }
+
+    function effacerReprise(): void {
+      window.clearTimeout(minuterie);
+      try { sessionStorage.removeItem(CLE_REPRISE); } catch { /* rien à effacer */ }
+    }
+
+    /** Remet dans le formulaire ce que l'onglet avait gardé. Rend l'étape où l'on en était. */
+    function restaurer(): CleEtape | null {
+      let brut: string | null = null;
+      try { brut = sessionStorage.getItem(CLE_REPRISE); } catch { return null; }
+      const reprise = decoderReprise(brut, Date.now());
+      if (!reprise) {
+        effacerReprise();
+        return null;
+      }
+      for (const [nom, valeurs] of Object.entries(reprise.champs)) {
+        elements(nom).forEach((el) => {
+          if (el instanceof HTMLInputElement && (el.type === 'radio' || el.type === 'checkbox')) {
+            el.checked = valeurs.includes(el.value);
+          } else if (!(el instanceof HTMLInputElement && el.readOnly)) {
+            el.value = valeurs[0] ?? '';
+          }
+        });
+      }
+      return reprise.etape;
+    }
+
+    boutonEffacer?.addEventListener('click', () => {
+      effacerReprise();
+      form.reset();
+      if (avisReprise) avisReprise.hidden = true;
+      history.replaceState({ ...(history.state ?? {}), demandeEtape: ETAPES[0]!.cle }, '');
+      afficher(ETAPES[0]!.cle, true);
+    });
+
+    function effacerMarque(cible: EventTarget | null): void {
+      if (!(cible instanceof HTMLInputElement || cible instanceof HTMLSelectElement || cible instanceof HTMLTextAreaElement)) return;
+      if (cible === consentPartiel || cible === consentFinal) {
+        cible.closest('.demande-consent')?.removeAttribute('data-invalide');
+        return;
+      }
+      if (!cible.name) return;
+      const etape = ETAPES.find((e) => e.cle === courante);
+      const requis = etape?.requis.find((r) => r.champ === cible.name);
+      const encoreManquant = !!etape && !!requis && requisManquants(etape, lire).includes(requis);
+      if (!encoreManquant) marquer(cible.name, false);
+    }
+
+    /* ---------- Affichage d'une étape ---------- */
+
+    function majCompte(): void {
+      const liste = parcours();
+      const index = indexDansParcours(courante, liste);
+      if (num) num.textContent = String(index + 1);
+      if (total) total.textContent = String(liste.length);
+      if (jauge) jauge.style.width = `${((index + 1) / liste.length) * 100}%`;
+    }
+
+    function libelle(bouton: HTMLButtonElement | null, nom: string): void {
+      bouton?.querySelectorAll<HTMLElement>('[data-libelle]').forEach((s) => { s.hidden = s.dataset.libelle !== nom; });
+    }
+
+    function afficher(cle: CleEtape, deplacer: boolean): void {
+      const liste = parcours();
+      const index = indexDansParcours(cle, liste);
+      const etape = liste[index]!;
+      courante = etape.cle;
+      fieldsets.forEach((fs, k) => { fs.hidden = k !== etape.cle; });
+
+      const derniere = index === liste.length - 1;
+      if (boutonPrecedent) boutonPrecedent.hidden = index === 0;
+      libelle(boutonPrincipal, derniere ? 'envoyer' : 'suivant');
+      if (sortie) sortie.hidden = index === 0 || derniere;
+      fermerPartiel();
+      effacerErreurs();
+      majBlocs();
+      majCompte();
+
+      if (deplacer) {
+        if (avisReprise) avisReprise.hidden = true;
+        sauvegarder();
+        const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        carte?.scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'start' });
+        fieldsets.get(etape.cle)?.querySelector<HTMLElement>('.demande-legend')?.focus({ preventScroll: true });
+      }
+    }
+
+    /** Montre une autre étape en laissant une trace dans l'historique (pour « Précédent »). */
+    function aller(cle: CleEtape): void {
+      history.pushState({ ...(history.state ?? {}), demandeEtape: cle }, '');
+      afficher(cle, true);
+    }
+
+    function suivant(): void {
+      const liste = parcours();
+      const index = indexDansParcours(courante, liste);
+      const etape = liste[index]!;
+      if (!valider(etape)) return;
+      const prochaine = liste[index + 1];
+      if (!prochaine) {
+        void envoyer(false);
+        return;
+      }
+      aller(prochaine.cle);
+      suivre('demande_etape', { etape: prochaine.cle });
+    }
+
+    // Reprise : les réponses gardées par l'onglet, puis l'étape. Celle de l'historique passe
+    // en premier (un rechargement la conserve, et c'est la plus récente) ; elle est ramenée au
+    // premier trou s'il manque une réponse avant elle.
+    const etapeGardee = restaurer();
+    if (etapeGardee && avisReprise) avisReprise.hidden = false;
+    const etapeHistoire = etapeParCle(String((history.state as { demandeEtape?: unknown } | null)?.demandeEtape ?? ''))?.cle;
+    majBlocs();
+    courante = etapeReprise(lire, etapeHistoire ?? etapeGardee ?? ETAPES[0]!.cle);
+
+    // « Précédent » passe par l'historique, et le bouton retour du téléphone aussi : revenir
+    // en arrière ramène à l'étape d'avant au lieu de quitter la page avec tout ce qui est rempli.
+    history.replaceState({ ...(history.state ?? {}), demandeEtape: courante }, '');
+    window.addEventListener('popstate', (e) => {
+      if (envoye) return;
+      // Une entrée sans étape (un lien d'ancre, comme « Passer au contenu ») ne change rien.
+      const cle = (e.state as { demandeEtape?: string } | null)?.demandeEtape;
+      const connue = ETAPES.find((et) => et.cle === cle);
+      if (connue) afficher(connue.cle, true);
+    });
+    boutonPrecedent?.addEventListener('click', () => history.back());
+
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
+      if (envoiEnCours || envoye) return;
+      suivant();
+    });
 
-      // Clear previous errors
-      form.querySelectorAll('[aria-invalid]').forEach(function (el) { el.removeAttribute('aria-invalid'); });
+    /* ---------- La sortie : envoyer avant la fin ---------- */
 
-      var errors = [];
-      function req(name, label) { if (!val(name)) { var el = getField(name); fieldInvalid(el, true); errors.push(label); } }
+    function ouvrirPartiel(): void {
+      if (!panneauPartiel) return;
+      panneauPartiel.hidden = false;
+      boutonSortie?.setAttribute('aria-expanded', 'true');
+      titrePartiel?.focus({ preventScroll: true });
+      panneauPartiel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 
-      // Section 1 — Type de demande
-      if (!radioVal('type_demande')) { errors.push('Type de demande'); }
-      if (radioVal('type_demande') === 'refinancement') {
-        req('refi_solde', 'Solde hypothécaire');
-        req('refi_valeur', 'Valeur estimée');
+    function fermerPartiel(): void {
+      if (!panneauPartiel || panneauPartiel.hidden) return;
+      panneauPartiel.hidden = true;
+      boutonSortie?.setAttribute('aria-expanded', 'false');
+      consentPartiel?.closest('.demande-consent')?.removeAttribute('data-invalide');
+    }
+
+    boutonSortie?.addEventListener('click', () => {
+      if (panneauPartiel?.hidden) ouvrirPartiel();
+      else fermerPartiel();
+    });
+    boutonAnnuler?.addEventListener('click', () => {
+      fermerPartiel();
+      boutonSortie?.focus();
+    });
+    boutonPartiel?.addEventListener('click', () => void envoyer(true));
+
+    /* ---------- Envoi ---------- */
+
+    function afficherStatut(etat: 'sending' | 'error' | null, message = ''): void {
+      if (!statut) return;
+      if (!etat) {
+        statut.hidden = true;
+        statut.removeAttribute('data-state');
+        statut.textContent = '';
+        return;
       }
+      statut.hidden = false;
+      statut.setAttribute('data-state', etat);
+      statut.textContent = message;
+    }
 
-      // Section 2 — Identité
-      req('nom', 'Nom complet');
-      req('naissance', 'Date de naissance');
-      req('adresse', 'Adresse');
-      req('ville', 'Ville');
-      req('code_postal', 'Code postal');
-      if (!radioVal('adresse_3ans')) { errors.push('Adresse — 3 ans'); }
-      if (!val('statut_residence')) { var sr = getField('statut_residence'); fieldInvalid(sr, true); errors.push('Statut de résidence'); }
-      if (!val('etat_civil')) { var ec = getField('etat_civil'); fieldInvalid(ec, true); errors.push('État civil'); }
-      if (!TEL_RE.test(val('telephone'))) { var tel = getField('telephone'); fieldInvalid(tel, true); errors.push('Téléphone valide'); }
-      if (!EMAIL_RE.test(val('courriel'))) { var em = getField('courriel'); fieldInvalid(em, true); errors.push('Courriel valide'); }
+    function enCours(actif: boolean, partiel: boolean): void {
+      envoiEnCours = actif;
+      if (boutonPrincipal) boutonPrincipal.disabled = actif;
+      if (boutonPartiel) boutonPartiel.disabled = actif;
+      if (partiel) libelle(boutonPartiel, actif ? 'envoi' : 'partiel');
+      else libelle(boutonPrincipal, actif ? 'envoi' : 'envoyer');
+    }
 
-      // Section 3 — Co-emprunteur
-      if (!radioVal('co_emprunteur')) { errors.push('Co-emprunteur'); }
-      if (radioVal('co_emprunteur') === 'deux') {
-        req('co_nom', 'Nom co-emprunteur');
-        req('co_naissance', 'Date naissance co-emprunteur');
-      }
+    async function envoyer(partiel: boolean): Promise<void> {
+      if (envoiEnCours || envoye) return;
 
-      // Section 4 — Situation actuelle
-      if (!radioVal('situation_logement')) { errors.push('Situation logement'); }
-
-      // Section 5 — Emploi
-      req('employeur', 'Employeur');
-      req('titre_poste', 'Titre du poste');
-      if (!val('statut_emploi')) { var se = getField('statut_emploi'); fieldInvalid(se, true); errors.push('Statut d\'emploi'); }
-      if (!val('anciennete')) { var anc = getField('anciennete'); fieldInvalid(anc, true); errors.push('Ancienneté'); }
-      req('revenu_base', 'Revenu annuel brut');
-
-      // Section 6 — Crédit
-      if (!radioVal('auto_evaluation_credit')) { errors.push('Auto-évaluation crédit'); }
-
-      // Section 7 — Mise de fonds (sauf si refinancement)
-      if (radioVal('type_demande') !== 'refinancement') {
-        req('mise_montant', 'Mise de fonds');
-        if (!val('source_fonds')) { var sf = getField('source_fonds'); fieldInvalid(sf, true); errors.push('Source des fonds'); }
-        if (!radioVal('fonds_90jours')) { errors.push('Fonds — 90 jours'); }
-      }
-
-      // Section 9 — Préférences
-      if (!radioVal('pref_taux')) { errors.push('Préférence taux'); }
-
-      // Section 10 — Propriété
-      if (!radioVal('promesse_achat')) { errors.push('Promesse d\'achat'); }
-
-      // Final consent
-      var consentFinal = document.getElementById('demande-consent-final');
-      if (consentFinal && !consentFinal.checked) { errors.push('Consentement final'); }
-
-      if (errors.length > 0) {
-        setStatus('error', 'Veuillez remplir les champs requis : ' + errors.slice(0, 5).join(', ') + (errors.length > 5 ? '…' : ''));
-        var firstError = form.querySelector('[aria-invalid]');
-        if (firstError && firstError.focus) firstError.focus();
-        if (firstError && firstError.scrollIntoView) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Le minimum, dans tous les cas : de quoi joindre le client.
+      const projet = ETAPES[0]!;
+      if (requisManquants(projet, lire).length > 0) {
+        if (courante !== projet.cle) aller(projet.cle);
+        valider(projet);
         return;
       }
 
-      if (!btn) return;
-      btn.disabled = true;
-      if (label) label.textContent = 'Envoi en cours…';
-      setStatus('sending', 'Envoi de votre demande…');
-
-      var formData = new FormData(form);
-      var payload = {};
-      formData.forEach(function (value, key) {
-        var v = typeof value === 'string' ? value : '';
-        if (Object.prototype.hasOwnProperty.call(payload, key)) {
-          if (Array.isArray(payload[key])) payload[key].push(v);
-          else payload[key] = [payload[key], v];
-        } else {
-          payload[key] = v;
+      if (partiel) {
+        if (!consentPartiel?.checked) {
+          consentPartiel?.closest('.demande-consent')?.setAttribute('data-invalide', '');
+          consentPartiel?.focus();
+          return;
         }
-      });
-      payload.consentement = !!(consentFinal && consentFinal.checked);
+      } else {
+        // « Envoyer ma demande » veut dire complète : une étape sautée (par le bouton
+        // « suivant » du navigateur) est rouverte plutôt que de partir à moitié vide.
+        const lacune = parcours().find((e) => requisManquants(e, lire).length > 0);
+        if (lacune) {
+          if (lacune.cle !== courante) aller(lacune.cle);
+          valider(lacune);
+          return;
+        }
+        if (!consentFinal?.checked) {
+          consentFinal?.closest('.demande-consent')?.setAttribute('data-invalide', '');
+          if (erreurEtape) erreurEtape.hidden = false;
+          consentFinal?.focus();
+          return;
+        }
+      }
 
-      fetch('/api/demande-submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-        .then(function (res) {
-          if (!res.ok) throw new Error('Erreur ' + res.status);
-          form.reset();
-          form.hidden = true;
-          setStatus(null);
-          if (successEl) {
-            successEl.hidden = false;
-            var firstFocusable = successEl.querySelector('a, button, [tabindex]');
-            if (firstFocusable && firstFocusable.focus) firstFocusable.focus();
-            successEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        })
-        .catch(function () {
-          if (btn) btn.disabled = false;
-          if (label) label.textContent = 'Envoyer ma demande';
-          setStatus('error', "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
+      const charge: Record<string, unknown> = {};
+      new FormData(form).forEach((valeur, cle) => {
+        const v = typeof valeur === 'string' ? valeur : '';
+        const deja = charge[cle];
+        if (deja === undefined) charge[cle] = v;
+        else if (Array.isArray(deja)) deja.push(v);
+        else charge[cle] = [deja, v];
+      });
+      charge.consentement = true;
+      charge.envoi_partiel = partiel;
+      charge.etape_atteinte = courante;
+
+      enCours(true, partiel);
+      afficherStatut('sending', 'Envoi de votre demande…');
+
+      try {
+        const reponse = await fetch('/api/demande-submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(charge),
         });
-    });
-  })();
+        if (!reponse.ok) throw new Error(`Erreur ${reponse.status}`);
+      } catch {
+        enCours(false, partiel);
+        afficherStatut('error', "Une erreur est survenue lors de l'envoi. Veuillez vérifier votre connexion et réessayer.");
+        return;
+      }
+
+      envoye = true;
+      effacerReprise();
+      // `envoi` distingue dans GA4 et Google Ads une demande complète d'une demande partielle ;
+      // ni nom ni réponse n'y figurent — seulement des clés du catalogue.
+      convertir({
+        form_name: 'demande',
+        envoi: partiel ? 'partiel' : 'complet',
+        type_demande: lire('type_demande'),
+        etape: courante,
+      });
+      form.reset();
+      form.hidden = true;
+      if (progression) progression.hidden = true;
+      afficherStatut(null);
+      if (succes) {
+        succes.querySelectorAll<HTMLElement>('[data-succes]').forEach((p) => {
+          p.hidden = p.dataset.succes !== (partiel ? 'partiel' : 'complet');
+        });
+        succes.hidden = false;
+        // Saut immédiat (« instant » l'emporte sur le scroll-behavior: smooth de global.css) :
+        // le formulaire vient de disparaître, la page a raccourci d'autant et un défilement
+        // animé partirait du pied de page.
+        carte?.scrollIntoView({ behavior: 'instant', block: 'start' });
+        document.getElementById('demande-success-titre')?.focus({ preventScroll: true });
+      }
+    }
+
+    afficher(courante, false);
+  }
 </script>

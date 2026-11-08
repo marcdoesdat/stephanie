@@ -167,3 +167,144 @@ describe('courriel de confirmation', () => {
     expect(html).not.toMatch(/mon-dossier\?[dj]=/);
   });
 });
+
+/* ------------------------------------------------------------------ */
+/*  Envoi avant la fin                                                 */
+/* ------------------------------------------------------------------ */
+
+/** Une demande d'achat remplie jusqu'au bout : rien ne manque au catalogue. */
+const COMPLETE = {
+  ...DEMANDE,
+  nom: 'Luc Roy',
+  prenom: '',
+  naissance: '1990-07-01',
+  adresse: '12 rue des Érables',
+  ville: 'Repentigny',
+  code_postal: 'J5Y 1A1',
+  adresse_3ans: 'oui',
+  statut_residence: 'citoyen',
+  etat_civil: 'conjoint_fait',
+  co_nom: 'Ana Roy',
+  co_naissance: '1991-02-03',
+  situation_logement: 'locataire',
+  employeur: 'Desjardins',
+  titre_poste: 'Analyste',
+  anciennete: '2a_5ans',
+  mise_montant: '45000',
+  source_fonds: 'epargne',
+  fonds_90jours: 'oui',
+  pref_taux: 'fixe',
+};
+
+/** Ce qu'envoie la page quand le client s'arrête à l'étape « Situation actuelle ». */
+const PARTIELLE = {
+  type_demande: 'achat',
+  nom: 'Marie Tremblay',
+  telephone: '514 555-1234',
+  courriel: 'marie@exemple.ca',
+  naissance: '1988-04-12',
+  adresse: '45 rue Notre-Dame',
+  ville: 'Repentigny',
+  code_postal: 'J6A 2B2',
+  adresse_3ans: 'oui',
+  statut_residence: 'citoyen',
+  etat_civil: 'celibataire',
+  co_emprunteur: 'seul',
+  // Une réponse sur deux à l'étape où il s'est arrêté : le logement manque.
+  premier_acheteur: 'oui',
+  consentement: true,
+  envoi_partiel: true,
+  etape_atteinte: 'situation',
+};
+
+async function soumettreTel(corps: Record<string, unknown>): Promise<Response> {
+  const { POST } = await import('../pages/api/demande-submit');
+  const requete = new Request('https://exemple.ca/api/demande-submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(corps),
+  });
+  return (await POST({ request: requete } as Parameters<typeof POST>[0])) as Response;
+}
+
+const interne = (envois: Array<Record<string, unknown>>) => envois.find((e) => e.to === 'interne@exemple.ca');
+
+describe('une demande envoyée avant la fin', () => {
+  it('est acceptée dès que le client peut être joint', async () => {
+    installerFauxResend();
+    const reponse = await soumettreTel(PARTIELLE);
+    expect(reponse.status).toBe(200);
+    expect(await dossiers()).toHaveLength(1);
+  });
+
+  it('reste refusée sans de quoi joindre le client', async () => {
+    installerFauxResend();
+    const reponse = await soumettreTel({ ...PARTIELLE, telephone: '' });
+    expect(reponse.status).toBe(400);
+  });
+
+  it('dit à Stéphanie, en tête du courriel, ce qui reste à compléter', async () => {
+    const envois = installerFauxResend();
+    await soumettreTel(PARTIELLE);
+
+    const message = interne(envois)!;
+    expect(String(message.subject)).toContain('(incomplète)');
+    const html = String(message.html);
+    expect(html).toContain('envoyée avant la fin');
+    expect(html).toContain('Situation actuelle');
+    expect(html).toContain('manque&nbsp;: Situation de logement');
+    expect(html).toMatch(/Emploi et revenus<\/strong> — rien de rempli/);
+    expect(html).toMatch(/Mise de fonds<\/strong> — rien de rempli/);
+    // Ce qui a été rempli n'est pas réclamé.
+    expect(html).not.toMatch(/Identité et situation personnelle<\/strong>/);
+  });
+
+  it('ne croit pas l’étape annoncée par le client si ce n’en est pas une', async () => {
+    const envois = installerFauxResend();
+    await soumettreTel({ ...PARTIELLE, etape_atteinte: '<script>alert(1)</script>' });
+    const html = String(interne(envois)!.html);
+    expect(html).not.toContain('<script>');
+    expect(html).not.toContain('depuis l\'étape');
+  });
+
+  it('confirme au client l’envoi sans le lui reprocher, et l’invite à réserver pour compléter', async () => {
+    const envois = installerFauxResend();
+    await soumettreTel(PARTIELLE);
+
+    const html = String(envois.find((e) => e.to === PARTIELLE.courriel)!.html);
+    expect(html).toContain('telle que vous l\'avez remplie');
+    expect(html).toContain('Emploi et revenus');
+    expect(html).toContain('/rendez-vous/?utm_source=courriel&amp;utm_medium=accuse&amp;utm_campaign=demande-partielle');
+    // Aucune réponse n'est répétée au client : seulement des titres d'étapes.
+    expect(html).not.toContain('1988-04-12');
+    expect(html).not.toContain('45 rue Notre-Dame');
+  });
+
+  it('note au dossier les étapes à compléter, sans aucune réponse', async () => {
+    installerFauxResend();
+    await soumettreTel(PARTIELLE);
+
+    const [dossier] = await dossiers();
+    expect(dossier?.notes).toContain('Demande envoyée avant la fin (depuis l\'étape « Situation actuelle »)');
+    expect(dossier?.notes).toContain('Emploi et revenus');
+    expect(JSON.stringify(dossier)).not.toMatch(/1988-04-12|45 rue Notre-Dame|J6A/);
+  });
+});
+
+describe('une demande remplie jusqu’au bout', () => {
+  it('n’est pas signalée incomplète et invite à réserver un appel', async () => {
+    const envois = installerFauxResend();
+    await soumettreTel(COMPLETE);
+
+    const message = interne(envois)!;
+    expect(String(message.subject)).not.toContain('incomplète');
+    expect(String(message.html)).not.toContain('Demande incomplète');
+
+    const auClient = String(envois.find((e) => e.to === COMPLETE.courriel)!.html);
+    expect(auClient).toContain('utm_campaign=demande"');
+    expect(auClient).not.toContain('telle que vous l\'avez remplie');
+
+    const [dossier] = await dossiers();
+    expect(dossier?.notes).toBe('');
+  });
+});
