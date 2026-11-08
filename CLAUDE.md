@@ -68,6 +68,8 @@ src/
 | `/services/travailleur-autonome` | Statique | Page travailleur autonome |
 | `/services/dossier-refuse` | Statique | Page dossier refusé |
 | `/services/nouveaux-arrivants` | Statique | Page nouveaux arrivants |
+| `/guides` | Statique | Index des guides — la liste vit dans `src/data/guides.ts` (voir « Guides ») |
+| `/guides/premier-achat` | Statique | Guide du premier achat, avec l'infographie du parcours en 7 étapes |
 | `/villes/courtier-hypothecaire-<ville>` | SSR | Landing pages géolocalisées (13) : repentigny, terrebonne, mascouche, montreal, laval, longueuil, quebec, levis, gatineau, sherbrooke, saguenay, trois-rivieres, saint-jean-sur-richelieu. Même gabarit (classes `rep-*`) ; hors de la grande région de Montréal, le texte dit que l'accompagnement se fait **à distance** — jamais de bureau local inventé |
 | `/conditions` | Statique | Conditions d'utilisation |
 | `/confidentialite` | Statique | Politique de confidentialité |
@@ -1050,6 +1052,50 @@ Les règles qui suivent corrigent des fautes réellement trouvées à l'audit d'
 - **`<meta charset>` vient en premier dans `<head>`** : l'encodage doit être déclaré dans les
   1 024 premiers octets, avant les scripts de consentement et de langue.
 
+## Guides (`/guides/`)
+
+Le contenu éducatif du site : des guides longs, dans l'ordre où les questions se posent. Le
+premier est `/guides/premier-achat/`.
+
+| Fichier | Rôle |
+|---------|------|
+| `src/data/guides.ts` | **La liste** des guides (titre, résumé, temps de lecture, date de révision) — `/guides/` la lit |
+| `src/pages/guides/index.astro` | L'index : une carte par guide |
+| `src/pages/guides/<slug>.astro` | Un guide |
+| `src/data/guides.test.ts` | Verrous : page, version anglaise et date de révision valide pour chaque guide |
+
+**Règles :**
+- **Ajouter un guide** : l'inscrire dans `guides.ts`, créer sa page, l'inscrire dans
+  `pagesTraduites.json` (sinon `/en/` le sert en 404 et le sitemap l'ignore), puis traduire ses
+  textes. Le test vérifie les trois premiers.
+- **Un guide dit ce que disent déjà le site et ses outils** : seuils de mise de fonds
+  (`miseMinimale`), primes SCHL (`calculateSCHL`), test de résistance et ratios
+  (`capaciteEmprunt`), RAP, CELIAPP et pré-approbation (FAQ). Quand une règle change, on met à
+  jour **le guide, la FAQ et l'outil ensemble**, et la date `revise` du guide : un guide qui
+  annonce un autre chiffre que le calculateur une page plus loin ruine les deux.
+- **Un fait dont on n'est pas sûr est retiré, pas nuancé** — même règle que les pages villes. Pas
+  de montant de frais de notaire ou d'inspection, pas d'exemption de taxe de bienvenue, pas de
+  délai de promesse d'achat : ils varient, et un chiffre faux se voit d'abord par celui qui achète.
+- **Aucune promesse** (AMF) : la pré-approbation « n'est pas encore une approbation », et chaque
+  guide se termine par un avertissement daté (règles générales, l'approbation relève du prêteur).
+- **La date de révision est affichée** (« Mis à jour en novembre 2026 ») et sert à
+  l'avertissement, à `dateModified` et à l'index. `moisRevision` la calcule sur les chiffres.
+  Elle entre dans les clés de traduction : la changer, c'est ajouter les traductions de la
+  nouvelle date.
+- **L'infographie est en HTML et CSS, pas une image.** Elle se lit sur téléphone (fil vertical)
+  comme sur ordinateur (étapes de part et d'autre du fil), se traduit comme le reste de la page,
+  et chaque étape mène à sa section. Une image figerait le français, serait illisible à 320 px
+  et muette pour un lecteur d'écran. Les trois temps ont chacun leur couleur (`data-phase` :
+  préparer en vert, acheter en argile, après en encre).
+- **Espaces insécables dans les nombres** (`500&nbsp;000&nbsp;$`, `5&nbsp;%`) : sur téléphone,
+  « 500 » et « 000 $ » se séparaient d'une ligne à l'autre.
+- **Données structurées** : `Article` dont l'autrice est le nœud `#stephanie` de
+  `schemaCourtiere` (`schemaVille.ts`) — une seule description de la courtière pour tout le site
+  — et l'éditeur `#business`, plus un `BreadcrumbList`. En anglais, `traductionPage.ts` ne garde que
+  `#business`, comme ailleurs.
+- **Le menu porte « Guides »** (huit liens). L'écart entre les liens est plafonné à `2rem` : au-delà
+  de ~1800 px, le bouton « Consultation gratuite » passait sous les liens.
+
 ## Pages villes (`/villes/courtier-hypothecaire-<ville>/`)
 
 Treize pages sur un même gabarit (classes `rep-*`). Ce qui les distingue : le paragraphe
@@ -1213,6 +1259,8 @@ npx vitest              # mode watch
   adresse, ni jeton ni note interne transmis
 - `src/utils/statistiquesDossiers.test.ts` — durées ignorées faute de clés, fiche encore à
   l'étape exclue de la médiane, rendement par origine
+- `src/data/guides.test.ts` — chaque guide a sa page et sa version anglaise, une date de
+  révision valide ; `moisRevision` sans décalage de fuseau
 - Date de référence fixe dans les tests : 2026-05-14
 
 ## Conventions
