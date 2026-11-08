@@ -16,6 +16,7 @@ import {
   type CapaciteCalculee,
   type EntreesCapacite,
 } from './capaciteEmprunt';
+import { tauxPrimeSCHL } from './mortgageCalc';
 
 const BASE: EntreesCapacite = {
   revenu: 80_000,
@@ -41,7 +42,8 @@ describe('calculerCapacite — résultats du simulateur conservés', () => {
   const cas: Array<[string, Partial<EntreesCapacite>, Partial<CapaciteCalculee>]> = [
     ['défauts du simulateur', {}, {
       assure: true, prixMax: 372_085.55, pretTotal: 332_070.20, versement: 1_709.16, abd: 36.5, atd: 44,
-      maxAbsolu: { prix: 336_135, miseMin: 16_807 },
+      // 336 135 $ avant novembre 2026 : une mise d'exactement 5 % perdait parfois sa prime à l'arrondi
+      maxAbsolu: { prix: 336_104, miseMin: 16_805, assure: true },
     }],
     ['assuré, mise faible', { revenu: 95_000, dettes: 400, mise: 25_000, taux: 4.19 }, {
       assure: true, prixMax: 428_629.06, pretTotal: 419_774.22, versement: 2_251.55, atd: 44,
@@ -86,8 +88,9 @@ describe('calculerCapacite — échecs', () => {
     expect(calculerCapacite({ ...BASE, revenu: 20_000, dettes: 900 })).toEqual({ ok: false, motif: 'revenu_insuffisant' });
   });
 
-  it('30 ans sans 20 % de mise', () => {
+  it('30 ans sans 20 % de mise, hors premier achat et construction neuve', () => {
     expect(calculerCapacite({ ...BASE, amortAns: 30 })).toEqual({ ok: false, motif: 'amortissement_30_ans' });
+    expect(calculerCapacite({ ...BASE, amortAns: 30, premierAchatOuNeuf: false })).toEqual({ ok: false, motif: 'amortissement_30_ans' });
   });
 
   it('sans mise de fonds : un motif, jamais « 0 $ » ni « NaN % »', () => {
@@ -122,7 +125,84 @@ describe('règles de calcul', () => {
   });
 });
 
+// Règles fédérales du 15 décembre 2024 : 30 ans assuré pour un premier achat ou une construction
+// neuve (surprime de 0,20 %), et prêt assuré jusqu'à 1,5 M$ pour tous les acheteurs.
+describe('calculerCapacite — premier achat et plafond de 1,5 M$', () => {
+  it('ouvre les 30 ans à un prêt assuré pour un premier achat, surprime comprise', () => {
+    const r = reussi({ ...BASE, amortAns: 30, premierAchatOuNeuf: true });
+    expect(r.assure).toBe(true);
+    expect(r.prixMax).toBeGreaterThan(reussi(BASE).prixMax);
+    const ltv = r.pretBase / r.prixMax;
+    expect(r.primeSCHL / r.pretBase).toBeCloseTo(tauxPrimeSCHL(ltv) + 0.002, 10);
+    expect(r.abd).toBeLessThanOrEqual(r.abdLimite + 1e-9);
+    expect(r.atd).toBeLessThanOrEqual(r.atdLimite + 1e-9);
+    expect(r.maxAbsolu?.assure).toBe(true);
+  });
+
+  it('ne change rien sur 25 ans, ni quand le prêt ne peut pas être assuré', () => {
+    expect(reussi({ ...BASE, premierAchatOuNeuf: true })).toEqual(reussi(BASE));
+    // Avec 20 % et plus, le prêt reste conventionnel ; seul le scénario de mise minimale change
+    const grosseMise = { ...BASE, revenu: 120_000, dettes: 0, mise: 300_000, taux: 4.19, amortAns: 30 };
+    const { maxAbsolu: _a, ...avec } = reussi({ ...grosseMise, premierAchatOuNeuf: true });
+    const { maxAbsolu: _b, ...sans } = reussi(grosseMise);
+    expect(avec).toEqual(sans);
+    expect(avec.assure).toBe(false);
+  });
+
+  it('30 ans hors premier achat : scénario de mise minimale conventionnel, jamais assuré', () => {
+    const r = reussi({ ...BASE, revenu: 120_000, dettes: 0, mise: 150_000, taux: 4.19, amortAns: 30 });
+    expect(r.assure).toBe(false);
+    expect(r.maxAbsolu?.assure).toBe(false);
+    expect(r.maxAbsolu!.miseMin / r.maxAbsolu!.prix).toBeCloseTo(0.2, 3);
+  });
+
+  it('assure un prêt entre 1 M$ et 1,5 M$ avec moins de 20 % de mise', () => {
+    const r = reussi({ ...BASE, revenu: 230_000, dettes: 0, mise: 120_000, taux: 4.19 });
+    expect(r.prixMax).toBeGreaterThan(1_000_000);
+    expect(r.prixMax).toBeLessThan(1_500_000);
+    expect(r.assure).toBe(true);
+    expect(r.primeSCHL).toBeGreaterThan(0);
+    expect(r.plafonneParMise).toBe(false);
+  });
+
+  it('revenu au-delà du plafond, mise sous 20 % : prêt assuré sous 1,5 M$, jamais conventionnel', () => {
+    for (const revenu of [300_000, 400_000]) {
+      const r = reussi({ ...BASE, revenu, dettes: 0, mise: 120_000, taux: 4.19 });
+      // 120 000 $ = 5 % de 500 000 $ + 10 % de 950 000 $ : 1,45 M$ au plus
+      expect(r.prixMax).toBeCloseTo(1_450_000, 0);
+      expect(r.plafonneParMise).toBe(true);
+      expect(r.assure).toBe(true);
+      expect(r.primeSCHL).toBeGreaterThan(0);
+      expect(r.abdLimite).toBe(39);
+      expect(r.atd).toBeLessThanOrEqual(r.atdLimite + 1e-9);
+    }
+  });
+
+  it('mise entre 125 000 $ et 20 % : le plus haut du prêt assuré et du conventionnel', () => {
+    // 290 000 $ : assuré jusqu'à 1 499 999 $, conventionnel jusqu'à 1 450 000 $ (20 %)
+    const r = reussi({ ...BASE, revenu: 400_000, dettes: 0, mise: 290_000, taux: 4.19 });
+    expect(r.assure).toBe(true);
+    expect(r.prixMax).toBe(1_499_999);
+    // 400 000 $ : 20 % d'au moins 1,5 M$, le conventionnel l'emporte
+    const c = reussi({ ...BASE, revenu: 400_000, dettes: 0, mise: 400_000, taux: 4.19 });
+    expect(c.assure).toBe(false);
+    expect(400_000 / c.prixMax).toBeGreaterThanOrEqual(0.2 - 1e-9);
+  });
+
+  it('exige 20 % à 1,5 M$ et plus', () => {
+    const r = reussi({ ...BASE, revenu: 500_000, dettes: 0, mise: 400_000, taux: 4.19 });
+    expect(r.prixMax).toBeGreaterThanOrEqual(1_500_000);
+    expect(r.assure).toBe(false);
+    expect(r.primeSCHL).toBe(0);
+    expect(400_000 / r.prixMax).toBeGreaterThanOrEqual(0.2);
+  });
+});
+
 describe('messageEchec', () => {
+  it('dit que les 30 ans restent possibles pour un premier achat', () => {
+    expect(messageEchec('amortissement_30_ans', BASE)).toMatch(/premier achat et à la construction neuve/);
+  });
+
   it('se tait quand il n’y a rien à dire', () => {
     expect(messageEchec('revenu_absent', BASE)).toBeNull();
   });

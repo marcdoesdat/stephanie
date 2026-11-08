@@ -1778,3 +1778,11 @@ footer strong{color:rgba(255,255,255,.85)}
   font-weight:600;
   text-underline-offset:2px;
 }
+/* Case « Premier achat ou construction neuve » du simulateur et du calculateur, montrée à qui
+   choisit 30 ans. Hors de .sim-group / .form-group, dont les règles d'input feraient de la case
+   un champ pleine largeur. Toute la ligne se touche, sur 44 px de haut. */
+.outil-case-bloc{margin:-.6rem 0 1.4rem}
+.outil-case-bloc[hidden]{display:none}
+.outil-case{display:flex;align-items:center;gap:.6rem;min-height:44px;cursor:pointer;font-size:.9rem;font-weight:500;color:var(--ink)}
+.outil-case input{width:1.15rem;height:1.15rem;margin:0;accent-color:var(--clay);flex-shrink:0;cursor:pointer}
+.outil-case-aide{display:block;padding-left:1.75rem;color:var(--muted);font-size:.8rem;line-height:1.45}
