@@ -244,6 +244,108 @@ export function bilanDemande(lire: Lecture): BilanDemande {
   return { complete, aCompleter };
 }
 
+/**
+ * La place d'une étape dans le parcours. Une étape sortie du parcours (le type de demande a
+ * changé entre-temps) cède la place à la plus proche avant elle.
+ */
+export function indexDansParcours(cle: CleEtape, parcours: readonly EtapeDemande[]): number {
+  const exact = parcours.findIndex((e) => e.cle === cle);
+  if (exact >= 0) return exact;
+  const rang = ETAPES.findIndex((e) => e.cle === cle);
+  let meilleur = 0;
+  parcours.forEach((e, i) => {
+    if (ETAPES.indexOf(e) <= rang) meilleur = i;
+  });
+  return meilleur;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Reprise après un rechargement                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Les réponses en cours vivent en `sessionStorage` — jamais en `localStorage` : elles meurent
+ * avec l'onglet, et un appareil partagé ne les garde pas au-delà de la visite. Elles sont
+ * effacées dès l'envoi, et ne sont pas reprises au-delà de `DUREE_REPRISE_MS` (un onglet
+ * oublié ouvert plusieurs jours ne doit pas rouvrir une demande sur la date de naissance de
+ * quelqu'un d'autre).
+ */
+export const CLE_REPRISE = 'sw_demande_v1';
+export const DUREE_REPRISE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Jamais gardés. Le consentement se donne au moment d'envoyer : repris d'un rechargement, il
+ * serait coché sans avoir été relu. Le piège à robots et la province fixe n'ont rien à reprendre.
+ */
+export const CHAMPS_NON_REPRIS: readonly string[] = ['consentement', 'company', 'province'];
+
+const NOM_CHAMP_RE = /^[a-z][a-z0-9_]{0,40}$/;
+const VALEURS_MAX = 20;
+const LONGUEUR_MAX = 2000;
+
+export interface Reprise {
+  readonly etape: CleEtape;
+  readonly champs: Readonly<Record<string, readonly string[]>>;
+}
+
+/** Ce que la page écrit en `sessionStorage`. Les valeurs vides et les champs exclus sont écartés. */
+export function encoderReprise(etape: CleEtape, champs: Record<string, string[]>, maintenant: number): string {
+  const gardes: Record<string, string[]> = {};
+  for (const [nom, valeurs] of Object.entries(champs)) {
+    if (CHAMPS_NON_REPRIS.includes(nom)) continue;
+    const pleines = valeurs.filter((v) => v.trim() !== '');
+    if (pleines.length > 0) gardes[nom] = pleines;
+  }
+  return JSON.stringify({ v: 1, ts: maintenant, etape, champs: gardes });
+}
+
+/**
+ * Relit ce que la page avait écrit — défensivement, champ par champ : une valeur d'une autre
+ * forme est écartée plutôt que posée dans le formulaire. `null` si rien n'est à reprendre.
+ */
+export function decoderReprise(brut: string | null, maintenant: number): Reprise | null {
+  if (!brut) return null;
+  let donnees: unknown;
+  try {
+    donnees = JSON.parse(brut);
+  } catch {
+    return null;
+  }
+  if (typeof donnees !== 'object' || donnees === null) return null;
+  const { v, ts, etape, champs } = donnees as Record<string, unknown>;
+  if (v !== 1 || typeof ts !== 'number' || !Number.isFinite(ts)) return null;
+  // Trop vieux, ou daté du futur (horloge changée) : on ne reprend pas.
+  if (maintenant - ts > DUREE_REPRISE_MS || ts - maintenant > 60_000) return null;
+  if (typeof champs !== 'object' || champs === null || Array.isArray(champs)) return null;
+
+  const gardes: Record<string, string[]> = {};
+  for (const [nom, valeurs] of Object.entries(champs as Record<string, unknown>)) {
+    if (!NOM_CHAMP_RE.test(nom) || CHAMPS_NON_REPRIS.includes(nom) || !Array.isArray(valeurs)) continue;
+    const propres = valeurs
+      .filter((x): x is string => typeof x === 'string' && x.trim() !== '' && x.length <= LONGUEUR_MAX)
+      .slice(0, VALEURS_MAX);
+    if (propres.length > 0) gardes[nom] = propres;
+  }
+  if (Object.keys(gardes).length === 0) return null;
+
+  const cle = typeof etape === 'string' ? etapeParCle(etape)?.cle : undefined;
+  return { etape: cle ?? ETAPES[0]!.cle, champs: gardes };
+}
+
+/**
+ * L'étape où reprendre : celle demandée, sauf si une étape avant elle n'est plus complète —
+ * le client reprend alors là où il manque une réponse, plutôt qu'au-delà d'un trou.
+ */
+export function etapeReprise(lire: Lecture, cible: CleEtape): CleEtape {
+  const parcours = etapesApplicables(lire);
+  const index = indexDansParcours(cible, parcours);
+  for (let i = 0; i < index; i++) {
+    const etape = parcours[i]!;
+    if (requisManquants(etape, lire).length > 0) return etape.cle;
+  }
+  return parcours[index]!.cle;
+}
+
 /** Une `Lecture` sur la charge utile JSON reçue par l'API. */
 export function lectureCharge(charge: Record<string, unknown>): Lecture {
   return (champ) => {

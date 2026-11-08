@@ -47,6 +47,14 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
           le formulaire ne s'envoyait déjà pas : rien n'est perdu à ne pas tout afficher.
         -->
         <div class="demande-card fade-up" id="demande-card">
+          <!-- Montré seulement quand des réponses ont été reprises après un rechargement : sans
+               lui, un formulaire déjà rempli surprend — et sur un appareil partagé, il faut
+               pouvoir tout effacer d'un geste. -->
+          <div class="demande-reprise" id="demande-reprise" role="status" hidden>
+            <p>Vos réponses ont été reprises là où vous étiez. Elles restent dans ce navigateur jusqu'à l'envoi ou à la fermeture de l'onglet.</p>
+            <button type="button" class="demande-lien" id="demande-reprise-effacer">Tout effacer et recommencer</button>
+          </div>
+
           <div class="demande-progress" id="demande-progress">
             <p class="demande-progress-label">Étape <span data-etape-num>1</span> sur <span data-etape-total>{totalEtapes}</span></p>
             <div class="demande-progress-bar" aria-hidden="true"><div class="demande-progress-fill" data-etape-fill style={`width:${100 / totalEtapes}%`}></div></div>
@@ -775,6 +783,26 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
     scroll-margin-top: 6rem;
   }
 
+  /* --- REPRISE APRÈS RECHARGEMENT --- */
+  .demande-reprise {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .25rem 1rem;
+    background: var(--warm);
+    border-radius: var(--radius-sm);
+    padding: .75rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .demande-reprise p {
+    flex: 1 1 260px;
+    font-size: .85rem;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .demande-reprise .demande-lien { padding: .5rem 0; font-size: .88rem; color: var(--clay-dk); text-decoration: underline; text-underline-offset: 3px; }
+
   /* --- PROGRESSION --- */
   .demande-progress { margin-bottom: 1.75rem; }
   .demande-progress-label {
@@ -1196,8 +1224,14 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
 
 <script>
   import {
+    CLE_REPRISE,
     ETAPES,
+    decoderReprise,
+    encoderReprise,
+    etapeParCle,
+    etapeReprise,
     etapesApplicables,
+    indexDansParcours,
     requisManquants,
     type CleEtape,
     type EtapeDemande,
@@ -1209,6 +1243,17 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
   function suivre(nom: string, donnees?: Record<string, string | boolean>): void {
     const umami = (window as unknown as { umami?: { track?: (n: string, d?: unknown) => void } }).umami;
     if (typeof umami?.track === 'function') umami.track(nom, donnees);
+  }
+
+  /**
+   * La conversion, comme au formulaire de contact : GA4 reçoit `generate_lead`, Google Ads
+   * l'importe depuis GA4. Sans consentement, `gtag` n'est que la file d'attente posée par
+   * MainLayout — Google n'est jamais chargé et l'événement ne part pas.
+   */
+  function convertir(parametres: Record<string, string>): void {
+    const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+    if (typeof gtag === 'function') gtag('event', 'generate_lead', parametres);
+    suivre('generate_lead', parametres);
   }
 
   const form = document.getElementById('demande-form') as HTMLFormElement | null;
@@ -1234,6 +1279,8 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
     const boutonAnnuler = $<HTMLButtonElement>('demande-partiel-annuler');
     const statut = $('demande-status');
     const succes = $('demande-success');
+    const avisReprise = $('demande-reprise');
+    const boutonEffacer = $<HTMLButtonElement>('demande-reprise-effacer');
 
     const fieldsets = new Map<CleEtape, HTMLFieldSetElement>();
     for (const etape of ETAPES) {
@@ -1319,11 +1366,76 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
     }
 
     // Une réponse corrigée efface sa propre marque, pas celles des autres.
-    form.addEventListener('input', (e) => effacerMarque(e.target));
+    form.addEventListener('input', (e) => {
+      effacerMarque(e.target);
+      planifierSauvegarde();
+    });
     form.addEventListener('change', (e) => {
       effacerMarque(e.target);
       majBlocs();
       majCompte();
+      planifierSauvegarde();
+    });
+
+    /* ---------- Reprise après un rechargement (sessionStorage) ---------- */
+
+    let minuterie: number | undefined;
+
+    function sauvegarder(): void {
+      if (envoye) return;
+      const champs: Record<string, string[]> = {};
+      new FormData(form).forEach((valeur, nom) => {
+        if (typeof valeur !== 'string') return;
+        (champs[nom] ??= []).push(valeur);
+      });
+      const maintenant = Date.now();
+      const brut = encoderReprise(courante, champs, maintenant);
+      try {
+        // Rien qui vaille d'être repris (formulaire vierge, ou tout effacé) : rien n'est gardé.
+        if (decoderReprise(brut, maintenant)) sessionStorage.setItem(CLE_REPRISE, brut);
+        else sessionStorage.removeItem(CLE_REPRISE);
+      } catch {
+        // Navigation privée, stockage plein ou bloqué : le formulaire marche sans.
+      }
+    }
+
+    function planifierSauvegarde(): void {
+      window.clearTimeout(minuterie);
+      minuterie = window.setTimeout(sauvegarder, 300);
+    }
+
+    function effacerReprise(): void {
+      window.clearTimeout(minuterie);
+      try { sessionStorage.removeItem(CLE_REPRISE); } catch { /* rien à effacer */ }
+    }
+
+    /** Remet dans le formulaire ce que l'onglet avait gardé. Rend l'étape où l'on en était. */
+    function restaurer(): CleEtape | null {
+      let brut: string | null = null;
+      try { brut = sessionStorage.getItem(CLE_REPRISE); } catch { return null; }
+      const reprise = decoderReprise(brut, Date.now());
+      if (!reprise) {
+        effacerReprise();
+        return null;
+      }
+      for (const [nom, valeurs] of Object.entries(reprise.champs)) {
+        elements(nom).forEach((el) => {
+          if (el instanceof HTMLInputElement && (el.type === 'radio' || el.type === 'checkbox')) {
+            el.checked = valeurs.includes(el.value);
+          } else if (!(el instanceof HTMLInputElement && el.readOnly)) {
+            el.value = valeurs[0] ?? '';
+          }
+        });
+      }
+      return reprise.etape;
+    }
+
+    boutonEffacer?.addEventListener('click', () => {
+      effacerReprise();
+      form.reset();
+      if (avisReprise) avisReprise.hidden = true;
+      history.replaceState({ ...(history.state ?? {}), demandeEtape: ETAPES[0]!.cle }, '');
+      afficher(ETAPES[0]!.cle, true);
     });
 
     function effacerMarque(cible: EventTarget | null): void {
@@ -1341,19 +1453,9 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
 
     /* ---------- Affichage d'une étape ---------- */
 
-    function indexDe(cle: CleEtape, liste: EtapeDemande[]): number {
-      const exact = liste.findIndex((e) => e.cle === cle);
-      if (exact >= 0) return exact;
-      // Une étape sortie du parcours (le type de demande a changé) : la plus proche avant elle.
-      const rang = ETAPES.findIndex((e) => e.cle === cle);
-      let meilleur = 0;
-      liste.forEach((e, i) => { if (ETAPES.indexOf(e) <= rang) meilleur = i; });
-      return meilleur;
-    }
-
     function majCompte(): void {
       const liste = parcours();
-      const index = indexDe(courante, liste);
+      const index = indexDansParcours(courante, liste);
       if (num) num.textContent = String(index + 1);
       if (total) total.textContent = String(liste.length);
       if (jauge) jauge.style.width = `${((index + 1) / liste.length) * 100}%`;
@@ -1365,7 +1467,7 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
 
     function afficher(cle: CleEtape, deplacer: boolean): void {
       const liste = parcours();
-      const index = indexDe(cle, liste);
+      const index = indexDansParcours(cle, liste);
       const etape = liste[index]!;
       courante = etape.cle;
       fieldsets.forEach((fs, k) => { fs.hidden = k !== etape.cle; });
@@ -1380,6 +1482,8 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
       majCompte();
 
       if (deplacer) {
+        if (avisReprise) avisReprise.hidden = true;
+        sauvegarder();
         const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         carte?.scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'start' });
         fieldsets.get(etape.cle)?.querySelector<HTMLElement>('.demande-legend')?.focus({ preventScroll: true });
@@ -1394,7 +1498,7 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
 
     function suivant(): void {
       const liste = parcours();
-      const index = indexDe(courante, liste);
+      const index = indexDansParcours(courante, liste);
       const etape = liste[index]!;
       if (!valider(etape)) return;
       const prochaine = liste[index + 1];
@@ -1405,6 +1509,15 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
       aller(prochaine.cle);
       suivre('demande_etape', { etape: prochaine.cle });
     }
+
+    // Reprise : les réponses gardées par l'onglet, puis l'étape. Celle de l'historique passe
+    // en premier (un rechargement la conserve, et c'est la plus récente) ; elle est ramenée au
+    // premier trou s'il manque une réponse avant elle.
+    const etapeGardee = restaurer();
+    if (etapeGardee && avisReprise) avisReprise.hidden = false;
+    const etapeHistoire = etapeParCle(String((history.state as { demandeEtape?: unknown } | null)?.demandeEtape ?? ''))?.cle;
+    majBlocs();
+    courante = etapeReprise(lire, etapeHistoire ?? etapeGardee ?? ETAPES[0]!.cle);
 
     // « Précédent » passe par l'historique, et le bouton retour du téléphone aussi : revenir
     // en arrière ramène à l'étape d'avant au lieu de quitter la page avec tout ce qui est rempli.
@@ -1537,7 +1650,15 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
       }
 
       envoye = true;
-      suivre(partiel ? 'demande_envoi_partiel' : 'demande_envoi_complet', { etape: courante });
+      effacerReprise();
+      // `envoi` distingue dans GA4 et Google Ads une demande complète d'une demande partielle ;
+      // ni nom ni réponse n'y figurent — seulement des clés du catalogue.
+      convertir({
+        form_name: 'demande',
+        envoi: partiel ? 'partiel' : 'complet',
+        type_demande: lire('type_demande'),
+        etape: courante,
+      });
       form.reset();
       form.hidden = true;
       if (progression) progression.hidden = true;

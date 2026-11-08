@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DUREE_REPRISE_MS,
   ETAPES,
   bilanDemande,
+  decoderReprise,
+  encoderReprise,
   etapeParCle,
+  etapeReprise,
   etapesApplicables,
+  indexDansParcours,
   lectureCharge,
   requisManquants,
 } from './demandeFinancement';
@@ -163,5 +168,82 @@ describe('la lecture de la charge utile', () => {
     expect(l('e')).toBe('');
     expect(l('f')).toBe('');
     expect(l('absent')).toBe('');
+  });
+});
+
+describe('la reprise après un rechargement', () => {
+  const MAINTENANT = Date.UTC(2026, 4, 14, 15);
+  const CHAMPS = {
+    type_demande: ['achat'],
+    nom: ['Marie Tremblay'],
+    telephone: ['514 555-1234'],
+    courriel: ['marie@exemple.ca'],
+    types_dettes: ['pret_auto', 'cartes_credit'],
+    message: [''],
+  };
+
+  it('fait l’aller-retour, accents et cases multiples compris', () => {
+    const reprise = decoderReprise(encoderReprise('identite', { ...CHAMPS, ville: ['Saint-Jérôme'] }, MAINTENANT), MAINTENANT);
+    expect(reprise?.etape).toBe('identite');
+    expect(reprise?.champs.ville).toEqual(['Saint-Jérôme']);
+    expect(reprise?.champs.types_dettes).toEqual(['pret_auto', 'cartes_credit']);
+    // Une valeur vide n'est pas gardée.
+    expect(reprise?.champs.message).toBeUndefined();
+  });
+
+  it('ne garde jamais le consentement : il se donne au moment d’envoyer', () => {
+    const brut = encoderReprise('dernieres', { ...CHAMPS, consentement: ['oui'], company: ['robot'] }, MAINTENANT);
+    expect(brut).not.toContain('consentement');
+    expect(brut).not.toContain('robot');
+    // Ni écrit, ni relu : une valeur glissée à la main n'est pas reprise non plus.
+    const trafique = JSON.stringify({ v: 1, ts: MAINTENANT, etape: 'dernieres', champs: { nom: ['A B'], consentement: ['oui'] } });
+    expect(decoderReprise(trafique, MAINTENANT)?.champs.consentement).toBeUndefined();
+  });
+
+  it('ne reprend pas des réponses de plus de 24 heures, ni datées du futur', () => {
+    const brut = encoderReprise('emploi', CHAMPS, MAINTENANT);
+    expect(decoderReprise(brut, MAINTENANT + DUREE_REPRISE_MS - 1)).not.toBeNull();
+    expect(decoderReprise(brut, MAINTENANT + DUREE_REPRISE_MS + 1)).toBeNull();
+    expect(decoderReprise(brut, MAINTENANT - 10 * 60_000)).toBeNull();
+  });
+
+  it('écarte champ par champ ce qui n’a pas la bonne forme, plutôt que de tout croire', () => {
+    const brut = JSON.stringify({
+      v: 1,
+      ts: MAINTENANT,
+      etape: 'etape_inventee',
+      champs: {
+        nom: ['Marie Tremblay', 42, null],
+        'name"]': ['x'],
+        courriel: 'pas-un-tableau',
+        message: ['x'.repeat(5000)],
+      },
+    });
+    const reprise = decoderReprise(brut, MAINTENANT);
+    expect(reprise).toEqual({ etape: 'projet', champs: { nom: ['Marie Tremblay'] } });
+  });
+
+  it('rend null pour un contenu illisible ou vide', () => {
+    expect(decoderReprise(null, MAINTENANT)).toBeNull();
+    expect(decoderReprise('{pas du json', MAINTENANT)).toBeNull();
+    expect(decoderReprise(JSON.stringify({ v: 2, ts: MAINTENANT, champs: { nom: ['A'] } }), MAINTENANT)).toBeNull();
+    expect(decoderReprise(encoderReprise('emploi', { message: [''] }, MAINTENANT), MAINTENANT)).toBeNull();
+  });
+
+  it('reprend à l’étape demandée quand tout ce qui la précède est rempli', () => {
+    expect(etapeReprise(lire(ACHAT_COMPLET), 'emploi')).toBe('emploi');
+  });
+
+  it('reprend au premier trou plutôt qu’au-delà', () => {
+    const { adresse: _sansAdresse, ...charge } = ACHAT_COMPLET;
+    expect(etapeReprise(lire(charge), 'emploi')).toBe('identite');
+  });
+
+  it('ramène dans le parcours une étape qui n’y est plus', () => {
+    // Le client était à la mise de fonds, puis a choisi « refinancement » : l'étape disparaît.
+    const charge = { ...ACHAT_COMPLET, type_demande: 'refinancement', refi_solde: '250000', refi_valeur: '450000' };
+    expect(etapeReprise(lire(charge), 'mise_de_fonds')).toBe('credit');
+    const parcours = etapesApplicables(lire(charge));
+    expect(parcours[indexDansParcours('mise_de_fonds', parcours)]?.cle).toBe('credit');
   });
 });

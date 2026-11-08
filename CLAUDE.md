@@ -320,6 +320,18 @@ refinancement, la mise de fonds à l'achat).
   bouton « suivant » du navigateur est rouverte plutôt que de partir à moitié vide.
 - La promesse d'achat n'est demandée qu'à l'achat : qui refinance sa maison devait répondre
   « Non — je magasine » pour pouvoir continuer.
+- **Les réponses survivent à un rechargement** (`CLE_REPRISE`, en `sessionStorage` — jamais
+  `localStorage` : elles meurent avec l'onglet, et un appareil partagé ne les garde pas au-delà
+  de la visite). Écrites à la saisie et à chaque étape, effacées dès l'envoi, non reprises après
+  24 h (`DUREE_REPRISE_MS`). **Le consentement n'est jamais gardé** (`CHAMPS_NON_REPRIS`) : il se
+  donne au moment d'envoyer. La relecture est défensive, champ par champ (`decoderReprise`), et
+  l'étape reprise est ramenée au premier trou (`etapeReprise`). Un avis dit que les réponses ont
+  été reprises et offre « Tout effacer et recommencer ». La politique de confidentialité le
+  décrit (section 4, « Fonctionnement du site ») — y toucher, c'est la relire.
+- **La conversion est `generate_lead`, comme au formulaire de contact** : GA4 la reçoit, Google
+  Ads l'importe depuis GA4, et sans consentement elle reste dans la file de `gtag` sans jamais
+  partir. `form_name: 'demande'` et `envoi: 'complet' | 'partiel'` permettent de compter à part
+  les demandes envoyées avant la fin ; aucun nom ni réponse n'y figure, seulement des clés.
 - Ajouter un champ requis à la page, c'est l'ajouter ici — sinon le bilan dira complète une
   demande qui ne l'est pas. Tests : `src/utils/demandeFinancement.test.ts`.
 
@@ -1189,7 +1201,9 @@ npx vitest              # mode watch
   le client est joignable, nomme à Stéphanie ce qui manque, et ne répète aucune réponse au
   client ni au dossier
 - `src/utils/demandeFinancement.test.ts` — catalogue des étapes (contact d'abord, parcours
-  achat et refinancement de même longueur), formats, bilan de ce qui manque
+  achat et refinancement de même longueur), formats, bilan de ce qui manque ; reprise après
+  rechargement : consentement jamais gardé, 24 h au plus, relecture champ par champ, reprise
+  au premier trou
 - `src/utils/entreesProspect.test.ts` — verrou anti-fuite porte par porte, mappage des champs
   divergents, fiche sans courriel
 - `src/services/entreesRoutes.test.ts` — les dix portes ouvrent la bonne fiche ; aucune panne de
