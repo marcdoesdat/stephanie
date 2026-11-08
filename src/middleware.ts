@@ -27,17 +27,28 @@
  * finale (`/outils` → `/outils/`) : une page, une adresse — celle de la canonique et du
  * sitemap. Les pages statiques n'y passent pas, Netlify les sert déjà sous cette forme.
  *
+ * Il pose enfin les en-têtes de sécurité (CSP, X-Frame-Options…) sur chaque réponse du
+ * serveur : Netlify n'applique les `[[headers]]` de `netlify.toml` qu'aux fichiers statiques,
+ * et les pages rendues à la demande — accueil, outils, villes, version anglaise, écrans de
+ * signature — partaient sans aucun. Voir `src/utils/enTetesSecurite.ts`.
+ *
  * @module middleware
  */
 
 import { defineMiddleware } from 'astro:middleware';
+import type { APIContext, MiddlewareNext } from 'astro';
+import { avecEnTetesSecurite } from './utils/enTetesSecurite';
 import { origineNonVerifiee, origineRefusee } from './utils/origineRequete';
 import { redirectionCanonique } from './utils/pagesAnglaises';
 
-export const onRequest = defineMiddleware((context, next) => {
-  const { request, url, isPrerendered } = context;
+export const onRequest = defineMiddleware(async (context, next) => {
+  // Une page prérendue n'a pas d'en-têtes à elle : le CDN lui applique ceux de netlify.toml.
+  if (context.isPrerendered) return next();
+  return avecEnTetesSecurite(await traiter(context, next));
+});
 
-  if (isPrerendered) return next();
+async function traiter(context: APIContext, next: MiddlewareNext): Promise<Response> {
+  const { request, url } = context;
 
   const canonique = redirectionCanonique(request.method, url.pathname);
   if (canonique) {
@@ -59,4 +70,4 @@ export const onRequest = defineMiddleware((context, next) => {
   }
 
   return next();
-});
+}
