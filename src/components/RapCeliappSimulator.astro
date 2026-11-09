@@ -1,0 +1,741 @@
+---
+// RAP ou CELIAPP — le visiteur entre son revenu et son épargne ; l'outil compare le RAP seul,
+// le CELIAPP seul et les deux combinés (src/utils/rapCeliapp.ts). Tout se calcule dans le
+// navigateur : rien n'est envoyé ni conservé — ni stockage local, ni stockage de session.
+//
+// Traduction : chaque chiffre vit dans un élément à lui, à côté de son libellé fixe. Le
+// libellé se traduit par le dictionnaire, le chiffre se met au format anglais tout seul :
+// aucune phrase n'est construite avec un chiffre au milieu.
+import { ANNEES, CELIAPP, RAP, REER, ABATTEMENT_QUEBEC, ANNEE_PARAMETRES } from '../utils/rapCeliapp';
+
+const montant = (n: number) => `${n.toLocaleString('fr-CA').replace(/\s/g, ' ')} $`;
+const pourcent = (t: number) => `${String(Math.round(t * 1000) / 10).replace('.', ',')} %`;
+
+const scenarios = [
+  { cle: 'rap', nom: 'RAP seul' },
+  { cle: 'celiapp', nom: 'CELIAPP seul' },
+  { cle: 'combine', nom: 'RAP + CELIAPP' },
+] as const;
+---
+
+<section id="rap-celiapp">
+  <div class="section-inner">
+    <div class="fade-up">
+      <h2 class="section-title">RAP ou CELIAPP&nbsp;: <em>comparez</em> avant de choisir</h2>
+      <p class="section-sub">
+        Entrez votre revenu et votre épargne. L'outil compare trois façons de bâtir votre mise de
+        fonds — le RAP seul, le CELIAPP seul ou les deux combinés — et montre ce que chacune donne
+        à l'achat, les remboursements d'impôt obtenus en route, et ce qu'il faudra remettre ensuite
+        dans votre REER.
+      </p>
+    </div>
+
+    <div class="rc-app" id="rc-app" data-etat="attente">
+      <div class="rc-grille">
+        <form class="rc-form fade-up" id="rc-form" novalidate>
+          <div class="rc-champ">
+            <label for="rc-revenu">Revenu annuel brut</label>
+            <div class="rc-saisie">
+              <input type="text" id="rc-revenu" inputmode="numeric" autocomplete="off" value="70 000" aria-describedby="rc-revenu-aide" />
+              <span class="rc-unite" aria-hidden="true">$</span>
+            </div>
+            <p class="rc-aide" id="rc-revenu-aide">Le vôtre seulement, avant impôts : à deux, chacun a ses propres plafonds.</p>
+          </div>
+
+          <div class="rc-champ">
+            <label for="rc-reer">Épargne déjà dans vos REER</label>
+            <div class="rc-saisie">
+              <input type="text" id="rc-reer" inputmode="numeric" autocomplete="off" value="10 000" aria-describedby="rc-reer-aide" />
+              <span class="rc-unite" aria-hidden="true">$</span>
+            </div>
+            <p class="rc-aide" id="rc-reer-aide">0 si vous n'en avez pas.</p>
+          </div>
+
+          <div class="rc-champ">
+            <label for="rc-epargne">Montant mis de côté chaque année</label>
+            <div class="rc-saisie">
+              <input type="text" id="rc-epargne" inputmode="numeric" autocomplete="off" value="10 000" aria-describedby="rc-epargne-aide" />
+              <span class="rc-unite" aria-hidden="true">$/an</span>
+            </div>
+            <p class="rc-aide" id="rc-epargne-aide">Ce que vous pouvez épargner pour la mise de fonds.</p>
+          </div>
+
+          <div class="rc-champ">
+            <label for="rc-annees">Années avant l'achat</label>
+            <div class="rc-saisie">
+              <input type="text" id="rc-annees" inputmode="numeric" autocomplete="off" value="3" aria-describedby="rc-annees-aide" />
+              <span class="rc-unite" aria-hidden="true">ans</span>
+            </div>
+            <p class="rc-aide" id="rc-annees-aide">De {ANNEES.min} à {ANNEES.max} ans : le temps d'épargner, une cotisation par année.</p>
+          </div>
+
+          <p class="rc-erreur" id="rc-erreur" aria-live="polite" hidden></p>
+
+          <p class="rc-hypotheses">
+            Calcul par personne, aux paramètres fiscaux de {ANNEE_PARAMETRES} (fédéral et Québec). Aucun
+            rendement de placement n'est supposé.
+          </p>
+        </form>
+
+        <div class="rc-resultats fade-up" id="rc-resultats">
+          <div class="rc-groupe" data-mesure="miseDeFonds">
+            <h3 class="rc-groupe-titre">Mise de fonds disponible à l'achat</h3>
+            <p class="rc-groupe-note">Retraits du RAP et du CELIAPP, plus l'épargne restée hors régime.</p>
+            <ul class="rc-barres">
+              {scenarios.map((s) => (
+                <li class="rc-barre" data-scenario={s.cle}>
+                  <span class="rc-barre-nom">{s.nom}</span>
+                  <span class="rc-barre-val" data-valeur>—</span>
+                  <span class="rc-barre-piste" aria-hidden="true"><span class="rc-barre-rempli"></span></span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="rc-groupe" data-mesure="remboursementsImpot">
+            <h3 class="rc-groupe-titre">Remboursements d'impôt obtenus en route</h3>
+            <p class="rc-groupe-note">Fédéral et Québec, toutes vos années d'épargne additionnées.</p>
+            <ul class="rc-barres">
+              {scenarios.map((s) => (
+                <li class="rc-barre" data-scenario={s.cle}>
+                  <span class="rc-barre-nom">{s.nom}</span>
+                  <span class="rc-barre-val" data-valeur>—</span>
+                  <span class="rc-barre-piste" aria-hidden="true"><span class="rc-barre-rempli"></span></span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="rc-groupe" data-mesure="aRembourserReer">
+            <h3 class="rc-groupe-titre">À remettre ensuite dans votre REER</h3>
+            <p class="rc-groupe-note">Le retrait RAP se rembourse sur {RAP.dureeRemboursement}&nbsp;ans au plus. Le CELIAPP, lui, ne se rembourse jamais.</p>
+            <ul class="rc-barres">
+              {scenarios.map((s) => (
+                <li class="rc-barre" data-scenario={s.cle}>
+                  <span class="rc-barre-nom">{s.nom}</span>
+                  <span class="rc-barre-val" data-valeur>—</span>
+                  <span class="rc-barre-piste" aria-hidden="true"><span class="rc-barre-rempli"></span></span>
+                  <span class="rc-barre-min" data-min-ligne hidden><span>au moins</span> <span data-min>—</span> <span>par année</span></span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      <details class="rc-detail">
+        <summary>Le détail de chaque scénario</summary>
+        <div class="rc-cartes">
+          {scenarios.map((s) => (
+            <article class="rc-carte" data-carte={s.cle}>
+              <h4 class="rc-carte-titre">{s.nom}</h4>
+              <dl class="rc-dl">
+                <div><dt>Retrait du RAP</dt><dd data-champ="retraitRap">—</dd></div>
+                <div><dt>Retrait du CELIAPP</dt><dd data-champ="retraitCeliapp">—</dd></div>
+                <div><dt>Épargne hors régime</dt><dd data-champ="epargneHorsRegime">—</dd></div>
+                <div class="rc-dl-total"><dt>Mise de fonds à l'achat</dt><dd data-champ="miseDeFonds">—</dd></div>
+                <div><dt>Remboursements d'impôt fédéral</dt><dd data-champ="remboursementsFederal">—</dd></div>
+                <div><dt>Remboursements d'impôt du Québec</dt><dd data-champ="remboursementsQuebec">—</dd></div>
+                <div><dt>À remettre dans le REER</dt><dd data-champ="aRembourserReer">—</dd></div>
+                <div><dt>Minimum par année</dt><dd data-champ="remboursementAnnuelMin">—</dd></div>
+                <div><dt>Premier remboursement dû pour l'année</dt><dd data-champ="premiereAnneeRemboursement">—</dd></div>
+                <div><dt>Reste dans vos REER après l'achat</dt><dd data-champ="resteReer">—</dd></div>
+              </dl>
+            </article>
+          ))}
+        </div>
+      </details>
+    </div>
+
+    <noscript>
+      <p class="rc-sans-js">Le comparateur fait ses calculs dans votre navigateur : il demande JavaScript.</p>
+    </noscript>
+
+    <div class="rc-savoir fade-up">
+      <h3 class="rc-savoir-titre">Ce que les chiffres ne disent pas</h3>
+      <ul class="rc-savoir-liste">
+        <li>
+          <strong>Le RAP reporte l'impôt, le CELIAPP l'exonère.</strong> L'argent retiré par le RAP
+          doit retourner dans votre REER, avec de l'argent sur lequel vous avez déjà payé de l'impôt,
+          et il sera imposé quand vous le retirerez, à la retraite. Le retrait admissible du CELIAPP
+          n'est ni imposé, ni remboursé.
+        </li>
+        <li>
+          <strong>Le remboursement du RAP</strong> se fait au moins par quinzièmes, à partir de la
+          2<sup>e</sup>&nbsp;année qui suit le retrait — de la 5<sup>e</sup> pour un premier retrait fait
+          de 2022 à 2028. Un montant non remboursé s'ajoute à votre revenu imposable de l'année.
+        </li>
+        <li>
+          <strong>Le CELIAPP</strong> permet {montant(CELIAPP.droitsAnnuels)} de cotisations par année et
+          {montant(CELIAPP.plafondVie)} à vie. Des droits inutilisés se reportent à l'année suivante,
+          jusqu'à {montant(CELIAPP.reportMax)}, mais seulement une fois le compte ouvert.
+        </li>
+        <li>
+          <strong>Une cotisation REER versée dans les 89&nbsp;jours qui précèdent un retrait RAP</strong>
+          pourrait ne pas être déductible : mieux vaut cotiser d'avance.
+        </li>
+        <li>
+          <strong>À deux</strong>, chacun a ses propres plafonds — {montant(RAP.plafondRetrait)} de RAP et
+          {montant(CELIAPP.plafondVie)} de CELIAPP par personne. Faites le calcul pour chacun.
+        </li>
+        <li>
+          <strong>Pour y avoir droit</strong>, il faut en règle générale être « premier acheteur » : ne
+          pas avoir habité, cette année ni au cours des quatre années précédentes, une propriété dont
+          vous ou votre conjoint·e étiez propriétaire.
+        </li>
+      </ul>
+
+      <details class="rc-methode">
+        <summary>Ce que le calcul prend en compte, et ce qu'il laisse de côté</summary>
+        <p>
+          <strong>Pris en compte :</strong> les paliers d'imposition de {ANNEE_PARAMETRES}, fédéral et
+          Québec, les montants personnels de base, l'abattement du Québec ({pourcent(ABATTEMENT_QUEBEC)}),
+          et les plafonds du CELIAPP (report compris), du RAP et des droits REER
+          ({pourcent(REER.tauxDroits)} du revenu, au plus {montant(REER.plafond)}). Le remboursement
+          d'impôt est la différence entre l'impôt sur votre revenu et l'impôt sur votre revenu moins
+          vos cotisations, calculée année par année.
+        </p>
+        <p>
+          <strong>Hypothèses :</strong> votre revenu reste le même et les paramètres de
+          {ANNEE_PARAMETRES} servent pour chaque année ; le CELIAPP est ouvert dès la première année.
+          Quand le RAP fait partie du scénario, votre épargne va au REER tant que le RAP pourra la
+          retirer ({montant(RAP.plafondRetrait)}, vos REER actuels compris) ; le reste demeure en
+          épargne ordinaire, disponible pour l'achat. Dans le scénario combiné, le CELIAPP passe en
+          premier.
+        </p>
+        <p>
+          <strong>Laissé de côté :</strong> tout rendement de placement ; vos droits REER inutilisés
+          des années passées et le facteur d'équivalence d'un régime de retraite ; les autres
+          déductions et crédits (cotisations au RRQ, à l'AE et au RQAP, déduction pour travailleurs…) ;
+          les crédits d'impôt pour l'achat d'une première habitation ; l'impôt payé au retrait du
+          REER, à la retraite. Les remboursements d'impôt ne sont pas ajoutés à la mise de fonds : à
+          vous de décider si vous les y versez.
+        </p>
+      </details>
+    </div>
+
+    <div class="rc-suite fade-up">
+      <p class="rc-incitation">
+        Vous voulez savoir quelle mise de fonds viser, et quel prix d'achat elle permet ? On regarde
+        votre situation ensemble, sans engagement.
+      </p>
+      <div class="rc-actions">
+        <a href="/rendez-vous/" class="btn-primary rc-cta" data-umami-event="cta_booking_rap_celiapp">Réserver un appel de 15 min</a>
+        <a href="/guides/premier-achat/#mise-de-fonds" class="rc-guide">Lire le guide du premier achat →</a>
+      </div>
+    </div>
+
+    <p class="calc-disclaimer">
+      * Estimation simplifiée, par personne, aux paramètres fiscaux de {ANNEE_PARAMETRES} vérifiés en
+      novembre 2026. Elle ne remplace pas l'avis d'un fiscaliste ou d'un planificateur financier, et
+      ce n'est pas une offre de financement. Vos droits de cotisation exacts figurent sur votre avis
+      de cotisation.
+    </p>
+  </div>
+</section>
+
+<script>
+  import { formatMoney } from '../utils/mortgageCalc';
+  import { formaterSaisie } from '../utils/capaciteEmprunt';
+  import {
+    SCENARIOS,
+    comparerRapCeliapp,
+    lireNombre,
+    messageMotif,
+    type MotifRapCeliapp,
+    type Scenario,
+  } from '../utils/rapCeliapp';
+
+  function track(name: string) {
+    // @ts-ignore
+    if (typeof window.umami?.track === 'function') window.umami.track(name);
+    // @ts-ignore
+    if (typeof window.gtag === 'function') window.gtag('event', name);
+  }
+
+  const app = document.getElementById('rc-app');
+  if (app) {
+    // Les fonctions ci-dessous perdent le rétrécissement de type : on fige la référence.
+    const racine: HTMLElement = app;
+    const champ = (id: string) => document.getElementById(id) as HTMLInputElement;
+    const revenuEl = champ('rc-revenu');
+    const reerEl = champ('rc-reer');
+    const epargneEl = champ('rc-epargne');
+    const anneesEl = champ('rc-annees');
+    const erreurEl = document.getElementById('rc-erreur') as HTMLElement;
+
+    const fmt = (n: number) => formatMoney(Math.round(n));
+
+    // Le champ fautif, pour que l'erreur soit annoncée là où elle se corrige
+    const CHAMP_DU_MOTIF: Record<MotifRapCeliapp, HTMLInputElement | null> = {
+      revenu_invalide: revenuEl,
+      reer_invalide: reerEl,
+      epargne_invalide: epargneEl,
+      annees_invalides: anneesEl,
+      rien_a_comparer: null,
+    };
+
+    type Mesure = 'miseDeFonds' | 'remboursementsImpot' | 'aRembourserReer';
+
+    function lireEntrees() {
+      // Un revenu ou un nombre d'années vide n'est pas une réponse ; une épargne vide vaut 0.
+      return {
+        revenu: lireNombre(revenuEl.value) ?? NaN,
+        reerActuel: lireNombre(reerEl.value) ?? 0,
+        epargneAnnuelle: lireNombre(epargneEl.value) ?? 0,
+        annees: lireNombre(anneesEl.value) ?? NaN,
+        anneeDepart: new Date().getFullYear(),
+      };
+    }
+
+    function viderResultats() {
+      racine.querySelectorAll<HTMLElement>('[data-valeur], [data-champ], [data-min]').forEach((el) => { el.textContent = '—'; });
+      racine.querySelectorAll<HTMLElement>('.rc-barre-rempli').forEach((el) => { el.style.width = '0'; });
+      racine.querySelectorAll<HTMLElement>('[data-min-ligne]').forEach((el) => { el.hidden = true; });
+    }
+
+    function afficherBarres(mesure: Mesure, parScenario: Record<string, Scenario>) {
+      const groupe = racine.querySelector<HTMLElement>(`[data-mesure="${mesure}"]`);
+      if (!groupe) return;
+      const max = Math.max(...SCENARIOS.map((c) => parScenario[c]![mesure]));
+      for (const cle of SCENARIOS) {
+        const s = parScenario[cle]!;
+        const ligne = groupe.querySelector<HTMLElement>(`[data-scenario="${cle}"]`);
+        if (!ligne) continue;
+        const v = s[mesure];
+        ligne.querySelector<HTMLElement>('[data-valeur]')!.textContent = fmt(v);
+        // Une barre non nulle reste visible, même toute petite à côté des autres
+        const largeur = max > 0 && v > 0 ? Math.max(2, (v / max) * 100) : 0;
+        ligne.querySelector<HTMLElement>('.rc-barre-rempli')!.style.width = `${largeur}%`;
+        const minLigne = ligne.querySelector<HTMLElement>('[data-min-ligne]');
+        if (minLigne) {
+          minLigne.hidden = !(s.remboursementAnnuelMin > 0);
+          minLigne.querySelector<HTMLElement>('[data-min]')!.textContent = fmt(s.remboursementAnnuelMin);
+        }
+      }
+    }
+
+    function afficherCartes(parScenario: Record<string, Scenario>) {
+      for (const cle of SCENARIOS) {
+        const s = parScenario[cle]!;
+        racine.querySelectorAll<HTMLElement>(`[data-carte="${cle}"] [data-champ]`).forEach((dd) => {
+          const champ = dd.dataset.champ as keyof Scenario;
+          const v = s[champ];
+          if (champ === 'premiereAnneeRemboursement') dd.textContent = v === null ? '—' : String(v);
+          else dd.textContent = typeof v === 'number' ? fmt(v) : '—';
+        });
+      }
+    }
+
+    let resultatSignale = false;
+
+    function calculer() {
+      const r = comparerRapCeliapp(lireEntrees());
+      [revenuEl, reerEl, epargneEl, anneesEl].forEach((el) => el.removeAttribute('aria-invalid'));
+
+      if (!r.ok) {
+        erreurEl.textContent = messageMotif(r.motif);
+        erreurEl.hidden = false;
+        CHAMP_DU_MOTIF[r.motif]?.setAttribute('aria-invalid', 'true');
+        racine.dataset.etat = 'attente';
+        viderResultats();
+        return;
+      }
+
+      erreurEl.hidden = true;
+      erreurEl.textContent = '';
+      racine.dataset.etat = 'pret';
+      afficherBarres('miseDeFonds', r.scenarios);
+      afficherBarres('remboursementsImpot', r.scenarios);
+      afficherBarres('aRembourserReer', r.scenarios);
+      afficherCartes(r.scenarios);
+
+      if (!resultatSignale) {
+        resultatSignale = true;
+        track('rap_celiapp_resultat');
+      }
+    }
+
+    let minuterie: number | undefined;
+    function planifier() {
+      window.clearTimeout(minuterie);
+      minuterie = window.setTimeout(calculer, 250);
+    }
+
+    // Montants : « 70 000 » au repos, chiffres nus pendant la saisie
+    [revenuEl, reerEl, epargneEl].forEach((el) => {
+      el.addEventListener('input', planifier);
+      el.addEventListener('blur', () => {
+        const v = lireNombre(el.value);
+        if (v !== null && Number.isFinite(v) && v > 0) el.value = formaterSaisie(v);
+      });
+      el.addEventListener('focus', () => {
+        const v = lireNombre(el.value);
+        if (v !== null && Number.isFinite(v) && v > 0) el.value = String(Math.round(v));
+      });
+    });
+    anneesEl.addEventListener('input', planifier);
+
+    document.getElementById('rc-form')!.addEventListener('submit', (e) => {
+      e.preventDefault();
+      calculer();
+    });
+
+    calculer();
+  }
+</script>
+
+<style>
+  .rc-grille {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 2rem;
+    align-items: start;
+    margin-top: 2rem;
+  }
+
+  /* --- Formulaire --- */
+  .rc-form {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    box-shadow: var(--shadow-xs);
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+  }
+  .rc-champ > label {
+    display: block;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: .4rem;
+  }
+  .rc-saisie {
+    position: relative;
+  }
+  /* Sous 16 px, Safari iOS zoome la page au toucher d'un champ et ne revient pas. */
+  .rc-saisie input {
+    width: 100%;
+    padding: .8rem 3.6rem .8rem 1rem;
+    background: var(--sand);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: "DM Sans", sans-serif;
+    font-size: max(16px, 1.05rem);
+    font-variant-numeric: tabular-nums;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .rc-saisie input:focus {
+    outline: none;
+    border-color: var(--clay);
+    box-shadow: 0 0 0 3px rgba(196, 122, 82, .18);
+  }
+  .rc-saisie input[aria-invalid="true"] {
+    border-color: var(--clay-dk);
+    background: #fbeae3;
+  }
+  .rc-unite {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .85rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .rc-aide {
+    margin-top: .35rem;
+    font-size: .8rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .rc-erreur {
+    margin: 0;
+    padding: .75rem 1rem;
+    border-radius: var(--radius-sm);
+    background: #fbeae3;
+    border: 1px solid var(--clay-dk);
+    color: var(--clay-dk);
+    font-size: .88rem;
+    line-height: 1.5;
+  }
+  .rc-erreur[hidden] { display: none; }
+  .rc-hypotheses {
+    margin-top: auto;
+    padding-top: .9rem;
+    border-top: 1px solid var(--border);
+    font-size: .75rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  /* --- Résultats : une barre par scénario, le chiffre toujours écrit --- */
+  .rc-resultats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: opacity .2s;
+  }
+  .rc-app[data-etat="attente"] .rc-groupe,
+  .rc-app[data-etat="attente"] .rc-detail {
+    opacity: .55;
+  }
+  .rc-groupe {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1.15rem 1.25rem 1.25rem;
+  }
+  .rc-groupe-titre {
+    font-family: "DM Sans", sans-serif;
+    font-size: .98rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0;
+  }
+  .rc-groupe-note {
+    margin: .2rem 0 .85rem;
+    font-size: .78rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .rc-barres {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+  }
+  .rc-barre {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: .3rem .75rem;
+  }
+  .rc-barre-nom {
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .rc-barre-val {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .rc-barre-piste {
+    grid-column: 1 / -1;
+    display: block;
+    height: 10px;
+    background: var(--sand);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .rc-barre-rempli {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background: var(--clay);
+    transition: width .35s ease;
+  }
+  [data-scenario="celiapp"] .rc-barre-rempli { background: var(--forest); }
+  [data-scenario="combine"] .rc-barre-rempli { background: linear-gradient(90deg, var(--clay) 0%, var(--forest) 100%); }
+  .rc-barre-min {
+    grid-column: 1 / -1;
+    font-size: .78rem;
+    color: var(--muted);
+  }
+  .rc-barre-min[hidden] { display: none; }
+  .rc-barre-min [data-min] {
+    font-weight: 600;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rc-barre-rempli { transition: none; }
+  }
+
+  /* --- Détail par scénario --- */
+  .rc-detail {
+    margin-top: 1rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .rc-detail > summary,
+  .rc-methode > summary {
+    cursor: pointer;
+    padding: .9rem 1.25rem;
+    min-height: 44px;
+    font-weight: 600;
+    font-size: .9rem;
+    color: var(--clay-dk);
+  }
+  .rc-detail > summary:focus-visible,
+  .rc-methode > summary:focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: -3px;
+    border-radius: var(--radius-sm);
+  }
+  .rc-cartes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    gap: .75rem;
+    padding: 0 1rem 1rem;
+  }
+  .rc-carte {
+    background: var(--sand);
+    border-radius: 10px;
+    padding: .85rem .9rem;
+  }
+  .rc-carte-titre {
+    font-family: "DM Sans", sans-serif;
+    font-size: .88rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 .5rem;
+  }
+  .rc-dl {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    font-size: .78rem;
+  }
+  .rc-dl > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .5rem;
+  }
+  .rc-dl dt {
+    color: var(--muted);
+  }
+  .rc-dl dd {
+    margin: 0;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .rc-dl-total {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: .3rem 0;
+  }
+  .rc-dl-total dt,
+  .rc-dl-total dd {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* --- Ce que les chiffres ne disent pas --- */
+  .rc-savoir {
+    margin-top: 2.25rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.6rem 1.75rem;
+  }
+  .rc-savoir-titre {
+    font-family: "Lora", serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 .9rem;
+  }
+  .rc-savoir-liste {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+    font-size: .9rem;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+  .rc-savoir-liste strong {
+    color: var(--ink);
+  }
+  .rc-methode {
+    margin-top: 1.2rem;
+    border-top: 1px solid var(--border);
+  }
+  .rc-methode > summary {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .rc-methode p {
+    margin: 0 0 .75rem;
+    font-size: .85rem;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+  .rc-methode strong {
+    color: var(--ink);
+  }
+
+  /* --- La suite --- */
+  .rc-suite {
+    margin-top: 1.75rem;
+    text-align: center;
+  }
+  .rc-incitation {
+    max-width: 560px;
+    margin: 0 auto 1rem;
+    font-size: .95rem;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  .rc-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem 1.5rem;
+  }
+  .rc-guide {
+    color: var(--clay-dk);
+    font-weight: 600;
+    font-size: .9rem;
+    text-underline-offset: 2px;
+    padding: .6rem 0;
+  }
+  .rc-sans-js {
+    margin-top: 1rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 900px) {
+    .rc-grille {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.5rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .rc-form {
+      padding: 1.4rem 1.15rem;
+    }
+    .rc-groupe {
+      padding: 1rem;
+    }
+    .rc-savoir {
+      padding: 1.3rem 1.15rem;
+    }
+    .rc-cta {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>

@@ -26,6 +26,7 @@ const CIBLES = [
   ['penalite', '/outils', 'penalite', '#panel-penalite'],
   ['refinancement', '/outils', 'refinancement', '#panel-refinancement'],
   ['droits-mutation', '/outils', 'droits-mutation', '#panel-droits-mutation'],
+  ['rap-celiapp', '/outils', 'rap-celiapp', '#panel-rap-celiapp'],
   ['penalite-page', '/outils/calculateur-penalite-hypothecaire', null, '#penalite-calculator'],
   ['capacite-accueil', '/', null, '#outils-teaser'],
   ['accueil-hero', '/', null, '#hero'],

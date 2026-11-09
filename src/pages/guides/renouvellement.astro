@@ -1,0 +1,850 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.webp';
+import { ArrowLeftRight, ClipboardList, LockKeyhole, MailOpen, PenLine, Scale, SlidersHorizontal } from '@lucide/astro';
+import { loadSiteConfig } from '../../config';
+import { cheminGuide, guideParSlug, moisRevision } from '../../data/guides';
+import { schemaCourtiere } from '../../utils/schemaVille';
+
+const config = loadSiteConfig();
+const guide = guideParSlug('renouvellement');
+const site = config.site_url.replace(/\/$/, '');
+const pageUrl = `${site}${cheminGuide(guide.slug)}`;
+const revision = moisRevision(guide.revise);
+
+const titre = 'Guide du renouvellement hypothécaire';
+const description =
+  "Renouvellement hypothécaire, étape par étape : quand commencer, lire l'offre de votre banque, changer de prêteur, revoir la structure, la pénalité.";
+
+// Même construction que le guide du premier achat : l'autrice est le nœud `#stephanie`,
+// l'éditeur le `#business` de SEO.astro. En anglais, traductionPage.ts ne garde que ce dernier.
+const schemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: titre,
+    description,
+    inLanguage: 'fr-CA',
+    datePublished: guide.revise,
+    dateModified: guide.revise,
+    mainEntityOfPage: pageUrl,
+    author: { '@id': `${site}#stephanie` },
+    publisher: { '@id': `${site}#business` },
+  },
+  schemaCourtiere(config, `${site}${stephaniePhoto.src}`),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: `${site}/` },
+      { '@type': 'ListItem', position: 2, name: 'Guides', item: `${site}/guides/` },
+      { '@type': 'ListItem', position: 3, name: titre, item: pageUrl },
+    ],
+  },
+];
+
+// L'infographie : le calendrier, de six mois avant l'échéance à la signature, en trois temps
+// (3 + 3 + 1 étapes, comme le parcours du premier achat : le dégradé du fil est le même).
+// Chaque étape mène à sa section.
+const PHASES = {
+  preparer: 'Se préparer',
+  comparer: 'Comparer et décider',
+  echeance: "À l'échéance",
+} as const;
+
+const JALONS = [
+  { ancre: 'faire-le-point', phase: 'preparer', quand: '6 mois avant', titre: 'Faire le point', texte: "Date d'échéance, solde, projets : ce que les prochaines années vous réservent.", Icone: ClipboardList },
+  { ancre: 'magasiner', phase: 'preparer', quand: '4 à 6 mois avant', titre: 'Faire comparer les prêteurs', texte: "Votre dossier présenté à plusieurs prêteurs, avant que la lettre n'arrive.", Icone: Scale },
+  { ancre: 'garantie', phase: 'preparer', quand: "Jusqu'à 120 jours avant", titre: 'Réserver un taux', texte: "La plupart des prêteurs garantissent un taux jusqu'à environ 120 jours avant l'échéance.", Icone: LockKeyhole },
+  { ancre: 'offre', phase: 'comparer', quand: 'Quand la lettre arrive', titre: "Lire l'offre de votre banque", texte: "Une offre, pas une obligation : ce qu'elle dit, et ce qu'elle ne dit pas.", Icone: MailOpen },
+  { ancre: 'changer', phase: 'comparer', quand: 'Avant de choisir', titre: 'Rester ou changer de prêteur', texte: "À l'échéance, aucune pénalité : la décision se prend sur les conditions.", Icone: ArrowLeftRight },
+  { ancre: 'structure', phase: 'comparer', quand: 'Avant de signer', titre: 'Revoir la structure', texte: "Terme, type de taux, amortissement : le moment d'ajuster, sans pénalité.", Icone: SlidersHorizontal },
+  { ancre: 'signer', phase: 'echeance', quand: "À l'échéance", titre: 'Signer votre renouvellement', texte: 'Chez votre prêteur, ou chez le notaire si vous changez : le nouveau terme commence.', Icone: PenLine },
+] as const;
+---
+
+<MainLayout title={titre} description={description}>
+  <Fragment slot="head">
+    {schemas.map((schema) => (
+      <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+    ))}
+  </Fragment>
+
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ EN-TÊTE ============ -->
+    <section class="sp-hero gd-hero">
+      <div class="sp-inner">
+        <div class="sp-hero-grid">
+          <div class="sp-hero-text">
+            <nav aria-label="Fil d'Ariane" class="gd-fil">
+              <a href="/">Accueil</a> <span aria-hidden="true">›</span> <a href="/guides/">Guides</a>
+            </nav>
+
+            <h1 class="sp-h1">
+              <span class="sp-h1-sujet">Guide du renouvellement hypothécaire</span>
+              Votre renouvellement, <em>sans signer les yeux fermés</em>.
+            </h1>
+
+            <p class="sp-h2">
+              Quand commencer, comment lire l'offre de votre banque, rester ou changer de prêteur, quoi revoir
+              en plus du taux : tout le renouvellement, dans l'ordre où il se présente — sans jargon.
+            </p>
+
+            <p class="gd-signature">
+              Par <a href="/#apropos">{config.nom}</a>, courtière hypothécaire chez {config.organisation}
+              · Mis à jour en {revision} · Lecture : {guide.minutes} min
+            </p>
+          </div>
+
+          <aside class="gd-bref" aria-labelledby="gd-bref-titre">
+            <h2 id="gd-bref-titre" class="gd-bref-titre">L'essentiel en 30 secondes</h2>
+            <ul>
+              <li>Commencez <strong>4 à 6 mois</strong> avant l'échéance : la plupart des prêteurs garantissent un taux jusqu'à environ 120&nbsp;jours.</li>
+              <li>La lettre de votre banque est <strong>une offre, pas une obligation</strong>.</li>
+              <li>À l'échéance, changer de prêteur se fait <strong>sans pénalité</strong> ; les frais de transfert sont souvent assumés par le nouveau prêteur.</li>
+              <li>Sans augmenter le prêt ni l'amortissement, changer de prêteur n'oblige plus, dans bien des cas, à repasser le <strong>test de résistance</strong>.</li>
+              <li>Comparez <strong>la structure</strong>, pas seulement le taux : terme, type de taux, amortissement, conditions de sortie.</li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <div class="sp-inner gd-layout">
+      <!-- ============ SOMMAIRE ============ -->
+      <aside class="gd-cote">
+        <nav class="gd-sommaire" aria-labelledby="gd-sommaire-titre">
+          <p id="gd-sommaire-titre" class="gd-sommaire-titre">Dans ce guide</p>
+          <ol>
+            <li><a href="#calendrier">Le calendrier en un coup d'œil</a></li>
+            <li><a href="#chiffres">Les chiffres à connaître</a></li>
+            {JALONS.map((j, i) => (
+              <li><a href={`#${j.ancre}`}>{i + 1}. {j.titre}</a></li>
+            ))}
+            <li><a href="#penalite">Sortir avant l'échéance</a></li>
+            <li><a href="#erreurs">Cinq erreurs fréquentes</a></li>
+          </ol>
+        </nav>
+      </aside>
+
+      <article class="gd-article">
+
+        <!-- ============ L'INFOGRAPHIE ============ -->
+        <section class="gd-section" aria-labelledby="calendrier">
+          <h2 id="calendrier" class="sp-section-title">Le calendrier <em>du renouvellement</em></h2>
+          <p class="gd-intro">Sept étapes, de six mois avant l'échéance jusqu'à la signature.</p>
+
+          <ul class="gd-legende" aria-label="Les trois temps du renouvellement">
+            {Object.entries(PHASES).map(([cle, nom]) => (
+              <li data-phase={cle}><span class="gd-pastille" aria-hidden="true"></span>{nom}</li>
+            ))}
+          </ul>
+
+          <ol class="gd-parcours">
+            {JALONS.map((j, i) => (
+              <li class="gd-jalon" data-phase={j.phase}>
+                <span class="gd-jalon-num" aria-hidden="true">{i + 1}</span>
+                <div class="gd-jalon-carte">
+                  <span class="gd-jalon-icone" aria-hidden="true"><j.Icone size={22} stroke-width={1.8} /></span>
+                  <span class="gd-jalon-quand">{j.quand}</span>
+                  <a class="gd-jalon-titre" href={`#${j.ancre}`}>{j.titre}</a>
+                  <p>{j.texte}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <!-- ============ CHIFFRES CLÉS ============ -->
+        <section class="gd-section" aria-labelledby="chiffres">
+          <h2 id="chiffres" class="sp-section-title">Les chiffres <em>à connaître</em></h2>
+          <dl class="gd-chiffres">
+            <div><dt>avant l'échéance : le moment de commencer à comparer</dt><dd>4&nbsp;à&nbsp;6&nbsp;mois</dd></div>
+            <div><dt>de garantie de taux, environ, chez la plupart des prêteurs</dt><dd>120&nbsp;jours</dd></div>
+            <div><dt>avant la fin du terme, au plus tard, pour recevoir l'offre d'une banque</dt><dd>21&nbsp;jours</dd></div>
+            <div><dt>de pénalité pour changer de prêteur à l'échéance</dt><dd>0&nbsp;$</dd></div>
+            <div><dt>d'intérêt : la pénalité habituelle pour sortir d'un taux variable</dt><dd>3&nbsp;mois</dd></div>
+            <div><dt>prêteurs comparés pour votre dossier</dt><dd>20+</dd></div>
+          </dl>
+          <p class="gd-note">Règles générales en vigueur en {revision}.</p>
+        </section>
+
+        <!-- ============ 1. FAIRE LE POINT ============ -->
+        <section class="gd-section" aria-labelledby="faire-le-point">
+          <h2 id="faire-le-point" class="gd-h2"><span class="gd-num" data-phase="preparer">1</span> Faire le point</h2>
+          <p>
+            Tout commence par une date : celle de la fin de votre terme. Vous la trouverez sur votre relevé
+            hypothécaire annuel ou dans l'espace client de votre prêteur. Notez-la, puis rassemblez quelques
+            chiffres :
+          </p>
+          <ul class="gd-liste gd-liste--coches">
+            <li>le solde restant de votre prêt et votre taux actuel ;</li>
+            <li>l'amortissement restant : le nombre d'années qu'il faudrait, au rythme actuel, pour tout rembourser ;</li>
+            <li>le type de prêt : assuré (SCHL, Sagen ou Canada Guaranty) ou non — c'est généralement le cas si votre mise de fonds était de moins de 20&nbsp;% ;</li>
+            <li>vos autres dettes : cartes de crédit, marges, prêt auto.</li>
+          </ul>
+
+          <h3>Pensez aux prochaines années</h3>
+          <p>
+            Le bon terme dépend autant de votre vie que des taux. Une vente possible, des rénovations, un
+            changement d'emploi, une famille qui s'agrandit, la retraite : tout ce qui pourrait vous faire
+            sortir du prêt avant la fin du prochain terme compte, parce que sortir en cours de terme coûte une
+            pénalité (voir <a href="#penalite">plus bas</a>).
+          </p>
+
+          <h3>Estimez votre nouveau versement</h3>
+          <p>
+            Si vous avez signé en 2021 ou en 2022, quand les taux étaient historiquement bas, votre versement
+            pourrait changer de façon importante au renouvellement. Mieux vaut le savoir six mois d'avance que
+            le découvrir dans la lettre de votre banque.
+          </p>
+          <p class="gd-outil">
+            <a href="/outils/#comparateur">Estimez votre nouveau versement →</a>
+            <span>Le comparateur calcule le versement de votre solde à deux taux, côte à côte.</span>
+          </p>
+        </section>
+
+        <!-- ============ 2. MAGASINER ============ -->
+        <section class="gd-section" aria-labelledby="magasiner">
+          <h2 id="magasiner" class="gd-h2"><span class="gd-num" data-phase="preparer">2</span> Faire comparer les prêteurs</h2>
+          <p>
+            Le meilleur moment pour magasiner se situe 4 à 6 mois avant l'échéance. Assez tôt pour comparer
+            sans pression et, si vous changez de prêteur, pour laisser le temps au transfert. Assez près pour
+            que les prêteurs acceptent de garantir un taux (étape 3).
+          </p>
+          <p>
+            Votre banque ne peut vous offrir que ses propres produits. Avec une courtière, votre dossier est
+            présenté aux prêteurs qui conviennent à votre situation — plus de 20 prêteurs : banques, caisses et
+            prêteurs spécialisés. Pour la vaste majorité des dossiers, ce service est sans frais pour vous : ce
+            sont les prêteurs qui rémunèrent la courtière. Certains financements alternatifs ou privés peuvent
+            comporter des frais ; vous en êtes informé·e avant toute démarche.
+          </p>
+
+          <h3>Les documents à réunir</h3>
+          <ul class="gd-liste gd-liste--coches">
+            <li>Votre dernier relevé hypothécaire, ou l'offre de renouvellement si vous l'avez déjà reçue</li>
+            <li>Une preuve de revenus récente : lettre d'emploi et talons de paie, ou avis de cotisation pour un travailleur autonome</li>
+            <li>Le compte de taxes municipales de la propriété</li>
+            <li>Une pièce d'identité avec photo</li>
+          </ul>
+          <p>Le prêteur pourra en demander d'autres, selon votre dossier.</p>
+
+          <p class="gd-outil">
+            <a href="/rappel/">Je vous rappelle 4 à 6 mois avant l'échéance →</a>
+            <span>Votre échéance est encore loin ? Laissez vos coordonnées une seule fois.</span>
+          </p>
+        </section>
+
+        <!-- ============ 3. GARANTIE DE TAUX ============ -->
+        <section class="gd-section" aria-labelledby="garantie">
+          <h2 id="garantie" class="gd-h2"><span class="gd-num" data-phase="preparer">3</span> Réserver un taux</h2>
+          <p>
+            La plupart des prêteurs permettent de garantir un taux jusqu'à environ 120 jours avant l'échéance.
+            Si les taux montent d'ici là, le taux réservé vous protège. S'ils baissent, plusieurs prêteurs vous
+            accordent le taux plus bas — les conditions varient selon le prêteur.
+          </p>
+          <p>
+            Réserver tôt, c'est garder un taux en main pendant que vous comparez et décidez, plutôt que de
+            dépendre du taux affiché la semaine de l'échéance.
+          </p>
+          <p class="gd-astuce">
+            <strong>Bon à savoir :</strong> pour garantir un taux, un nouveau prêteur doit d'abord recevoir votre
+            dossier. Plus tôt il est complet, plus tôt le taux peut être réservé.
+          </p>
+        </section>
+
+        <!-- ============ 4. L'OFFRE DE LA BANQUE ============ -->
+        <section class="gd-section" aria-labelledby="offre">
+          <h2 id="offre" class="gd-h2"><span class="gd-num" data-phase="comparer">4</span> Lire l'offre de votre banque</h2>
+          <p>
+            Votre prêteur vous enverra une offre de renouvellement. Un prêteur sous réglementation fédérale,
+            comme une banque, doit vous la remettre au moins 21 jours avant la fin du terme. Elle indique
+            notamment le solde restant, le taux, la fréquence des paiements, le terme et les frais qui
+            s'appliquent.
+          </p>
+          <p>
+            Ce qu'elle ne dit pas : ce que d'autres prêteurs offriraient pour le même dossier, ni si cette
+            structure convient encore à vos projets. Lisez aussi les conditions qui compteront si vous deviez
+            sortir du prêt en cours de terme : pénalité, privilèges de remboursement anticipé, portabilité.
+          </p>
+
+          <h3>Une offre, pas une obligation</h3>
+          <p>
+            Rien ne vous oblige à renouveler chez votre prêteur actuel. Attention, toutefois : sans réponse de
+            votre part, le renouvellement peut se faire automatiquement — la lettre le précise si c'est le cas.
+            Un renouvellement automatique, c'est un nouveau terme accepté sans avoir comparé.
+          </p>
+          <p>
+            Pour mesurer ce qu'un écart de taux représente sur votre solde, le
+            <a href="/outils/#comparateur">comparateur</a> met deux taux côte à côte.
+          </p>
+          <p class="gd-attention">
+            <strong>21 jours, c'est court.</strong> Si vous attendez la lettre pour commencer, il reste peu de
+            temps pour comparer, et encore moins pour un transfert. C'est pourquoi on commence 4 à 6 mois avant.
+          </p>
+        </section>
+
+        <!-- ============ 5. RESTER OU CHANGER ============ -->
+        <section class="gd-section" aria-labelledby="changer">
+          <h2 id="changer" class="gd-h2"><span class="gd-num" data-phase="comparer">5</span> Rester ou changer de prêteur</h2>
+          <p>
+            À l'échéance, votre terme est terminé : changer de prêteur n'entraîne aucune pénalité de
+            remboursement anticipé. C'est le moment où vous avez le plus de liberté.
+          </p>
+
+          <h3>Les frais d'un changement</h3>
+          <p>
+            Un transfert peut comporter des frais : évaluation de la propriété, frais de transfert ou de
+            quittance chez l'ancien prêteur, notaire. Ils sont souvent assumés, en tout ou en partie, par le
+            nouveau prêteur. On le vérifie avant de choisir, offre par offre.
+          </p>
+
+          <h3>Le test de résistance, en cas de transfert simple</h3>
+          <p>
+            Changer de prêteur sans augmenter le montant du prêt ni l'amortissement restant, c'est ce qu'on
+            appelle un « transfert simple ». Dans ce cas, vous n'avez généralement plus à repasser le test de
+            résistance :
+          </p>
+          <ul class="gd-liste">
+            <li>
+              <strong>Prêt assuré</strong> (SCHL, Sagen ou Canada Guaranty) : les règles fédérales n'exigent pas
+              de vous requalifier au taux minimal pour changer de prêteur au renouvellement.
+            </li>
+            <li>
+              <strong>Prêt non assuré</strong> : depuis le 21 novembre 2024, le Bureau du surintendant des
+              institutions financières (BSIF) n'impose plus le taux minimal pour un transfert simple d'une
+              institution sous réglementation fédérale à une autre. Les prêteurs qui ne relèvent pas du BSIF,
+              comme les caisses, peuvent appliquer leurs propres règles.
+            </li>
+          </ul>
+          <p>
+            Ce n'est pas un passe-droit : le nouveau prêteur analyse quand même vos revenus, vos dettes et votre
+            crédit, et il peut refuser le dossier. Et dès que vous augmentez le prêt ou allongez l'amortissement,
+            ce n'est plus un transfert simple : le test de résistance s'applique de nouveau, en règle générale.
+          </p>
+
+          <h3>Rester peut aussi être le bon choix</h3>
+          <p>
+            Si l'offre de votre prêteur actuel est la meilleure pour votre dossier — ça arrive —, rester est tout
+            à fait valable : moins de démarches, pas de frais de transfert. L'important, c'est de le décider en
+            ayant comparé. Une offre concurrente en main, vous pouvez aussi en discuter avec votre prêteur actuel.
+          </p>
+        </section>
+
+        <!-- ============ 6. LA STRUCTURE ============ -->
+        <section class="gd-section" aria-labelledby="structure">
+          <h2 id="structure" class="gd-h2"><span class="gd-num" data-phase="comparer">6</span> Revoir la structure</h2>
+          <p>
+            Une lettre de renouvellement vous propose un taux et un terme. La structure, elle, se discute — et à
+            l'échéance, la revoir ne coûte aucune pénalité. Ces choix pèsent souvent autant que le taux :
+          </p>
+          <ul class="gd-liste">
+            <li>
+              <strong>Le terme.</strong> Plus court, il vous laisse de la souplesse si un projet se dessine ; plus
+              long, il fixe vos conditions plus longtemps. Choisissez-le selon vos projets, pas seulement selon
+              le taux.
+            </li>
+            <li>
+              <strong>Fixe ou variable.</strong> Le taux fixe garde votre versement stable pendant tout le terme.
+              Le taux variable est lié au taux directeur de la Banque du Canada : il peut baisser ou monter. Il
+              coûte aussi généralement beaucoup moins cher à briser : 3 mois d'intérêt, en règle générale.
+            </li>
+            <li>
+              <strong>L'amortissement restant.</strong> Le raccourcir augmente le versement, mais réduit le total
+              des intérêts. L'allonger, quand c'est possible, fait l'inverse — et, chez un nouveau prêteur, fait
+              sortir du transfert simple.
+            </li>
+            <li>
+              <strong>La fréquence des paiements.</strong> Des versements hebdomadaires ou aux deux semaines
+              « accélérés » remboursent un peu plus de capital chaque année, et réduisent le total des intérêts.
+            </li>
+            <li>
+              <strong>Vos autres dettes ou vos projets.</strong> Cartes, marges, rénovations : intégrer des sommes
+              à votre hypothèque, c'est un refinancement, avec ses propres règles — il est limité à 80&nbsp;% de la
+              valeur de la propriété. <a href="/services/refinancement/">Le refinancement, expliqué</a>.
+            </li>
+          </ul>
+        </section>
+
+        <!-- ============ 7. SIGNER ============ -->
+        <section class="gd-section" aria-labelledby="signer">
+          <h2 id="signer" class="gd-h2"><span class="gd-num" data-phase="echeance">7</span> Signer votre renouvellement</h2>
+          <p>
+            <strong>Si vous restez</strong>, vous signez le renouvellement avant la date d'échéance, et le nouveau
+            terme commence à cette date. Vérifiez que le document reprend bien le taux, le terme et la fréquence
+            convenus.
+          </p>
+          <p>
+            <strong>Si vous changez de prêteur</strong>, le nouveau prêteur rembourse l'ancien à l'échéance. Le
+            changement passe habituellement par un notaire, qui vous fait signer les documents de la nouvelle
+            hypothèque. Avec une courtière, les démarches entre les deux prêteurs et le notaire sont coordonnées
+            pour vous.
+          </p>
+          <p>
+            Dans les deux cas, notez déjà la date de votre prochaine échéance.
+            <a href="/rappel/">Être rappelé·e 4 à 6 mois avant</a>.
+          </p>
+        </section>
+
+        <!-- ============ PÉNALITÉ ============ -->
+        <section class="gd-section gd-encadre" aria-labelledby="penalite">
+          <h2 id="penalite" class="gd-h2">Sortir avant l'échéance : la pénalité</h2>
+          <p>
+            Vendre, refinancer ou changer de prêteur en cours de terme, c'est rembourser votre prêt avant la date
+            prévue : le prêteur réclame alors une pénalité de remboursement anticipé. Son calcul dépend de votre
+            contrat et de votre prêteur.
+          </p>
+          <ul class="gd-liste">
+            <li><strong>Taux variable :</strong> généralement 3 mois d'intérêt — un calcul simple.</li>
+            <li>
+              <strong>Taux fixe :</strong> le plus élevé entre 3 mois d'intérêt et l'<strong>IRD</strong>
+              (différentiel de taux d'intérêt). L'IRD compense le prêteur pour l'écart entre votre taux et le taux
+              auquel il prête aujourd'hui, sur les mois qui restent au terme.
+            </li>
+          </ul>
+
+          <h3>Pourquoi deux prêteurs n'arrivent pas au même chiffre</h3>
+          <p>
+            Chaque prêteur a sa méthode pour calculer l'IRD. Les grandes banques partent généralement de leurs
+            taux affichés, plus élevés que les taux réellement consentis : l'écart retenu est souvent plus grand,
+            et la pénalité aussi. Les prêteurs spécialisés en hypothèque, souvent appelés « monolines », partent
+            plutôt de votre taux réel.
+          </p>
+          <p>Exemple illustratif : un solde de 300&nbsp;000&nbsp;$ à taux fixe de 4&nbsp;%, avec 30 mois restants au terme.</p>
+          <div class="gd-table-wrap">
+            <table class="gd-table">
+              <thead>
+                <tr><th scope="col">Calcul</th><th scope="col">Pénalité estimée</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>3 mois d'intérêt</td><td>3&nbsp;000&nbsp;$</td></tr>
+                <tr><td>IRD, avec un écart de 0,5&nbsp;point</td><td>3&nbsp;750&nbsp;$</td></tr>
+                <tr><td>IRD, avec un écart de 1,5&nbsp;point</td><td>11&nbsp;250&nbsp;$</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Le prêteur retient le plus élevé des deux calculs. Même solde, même taux : c'est l'écart retenu par
+            la méthode du prêteur qui fait la différence. Votre prêteur peut vous confirmer le montant exact.
+          </p>
+          <p>
+            Si vous vendez pour racheter, la portabilité de votre prêt peut vous permettre d'éviter une partie,
+            voire la totalité de la pénalité — une option à explorer avant toute décision.
+          </p>
+          <p class="gd-outil">
+            <a href="/outils/calculateur-penalite-hypothecaire/">Estimez votre pénalité →</a>
+            <span>Selon la méthode de votre prêteur : 3 mois d'intérêt ou IRD.</span>
+          </p>
+        </section>
+
+        <!-- ============ ERREURS ============ -->
+        <section class="gd-section" aria-labelledby="erreurs">
+          <h2 id="erreurs" class="gd-h2">Cinq erreurs fréquentes</h2>
+          <ol class="gd-erreurs">
+            <li><strong>Signer la lettre sans comparer</strong>, ou la laisser se renouveler seule. C'est une offre, pas une obligation.</li>
+            <li><strong>Attendre la dernière semaine.</strong> Il ne reste plus le temps de comparer, ni de transférer le prêt.</li>
+            <li><strong>Ne comparer que le taux.</strong> Le terme, la pénalité et les conditions comptent autant sur la durée.</li>
+            <li><strong>Choisir un terme sans penser à vos projets.</strong> Vendre ou refinancer en cours de terme coûte une pénalité.</li>
+            <li><strong>Briser un taux fixe sans calculer la pénalité.</strong> L'IRD peut représenter plusieurs milliers de dollars.</li>
+          </ol>
+        </section>
+
+        <!-- ============ AUTRICE + APPEL ============ -->
+        <section class="gd-fin" aria-labelledby="gd-fin-titre">
+          <div class="gd-autrice">
+            <Image src={stephaniePhoto} alt="" width={96} height={96} class="gd-autrice-photo" loading="lazy" />
+            <p>
+              <strong>{config.nom}</strong>, courtière hypothécaire chez {config.organisation}, permis de l'AMF
+              n° {config.amf}. Basée à Repentigny, elle accompagne des propriétaires partout au Québec, par Teams,
+              téléphone ou texto.
+            </p>
+          </div>
+
+          <h2 id="gd-fin-titre" class="sp-section-title">Votre renouvellement <em>approche</em> ?</h2>
+          <p class="gd-fin-texte">
+            Chaque dossier est différent. En 15 minutes, on regarde votre échéance, l'offre reçue s'il y en a
+            une, et vos options.
+          </p>
+          <div class="gd-fin-ctas">
+            <a href="/rendez-vous/" class="btn-cta" data-umami-event="cta_booking_guide_renouvellement">Réserver un appel de 15&nbsp;min</a>
+            <a href="/rappel/" class="btn-secondary">Être rappelé·e au bon moment</a>
+          </div>
+
+          <p class="gd-avertissement">
+            Ce guide présente des règles générales en vigueur en {revision}. Elles peuvent changer, et votre
+            situation peut appeler d'autres solutions : il ne remplace pas un conseil adapté à votre dossier. Les
+            exemples chiffrés sont illustratifs. Les taux et l'approbation du financement relèvent du prêteur.
+          </p>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<style>
+  /* Recopié à l'identique de guides/premier-achat.astro — seuls diffèrent les noms des trois
+     temps (préparer en vert, comparer en argile, échéance en encre). Un changement ici se fait
+     aussi là-bas, tant que les styles des guides ne sont pas mis en commun. */
+  .gd-hero { padding-bottom: 3.5rem; }
+  [data-phase="preparer"] { --phase: var(--forest); }
+  [data-phase="comparer"] { --phase: var(--clay-dk); }
+  [data-phase="echeance"] { --phase: var(--ink); }
+
+  .gd-fil { font-size: .8rem; color: var(--muted); margin-bottom: 1.25rem; }
+  .gd-fil a { color: var(--muted); text-decoration: none; }
+  .gd-fil a:hover { color: var(--clay-dk); text-decoration: underline; }
+
+  .gd-signature { font-size: .85rem; color: var(--muted); line-height: 1.6; margin: 0; }
+  .gd-signature a { color: var(--clay-dk); }
+
+  /* --- L'ESSENTIEL --- */
+  .gd-bref {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.6rem 1.75rem;
+    box-shadow: 0 10px 30px rgba(31, 30, 28, .06);
+  }
+  .gd-bref-titre {
+    font-family: "Lora", serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 .9rem;
+  }
+  .gd-bref ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
+  .gd-bref li {
+    position: relative;
+    padding-left: 1.4rem;
+    font-size: .92rem;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .gd-bref li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .5em;
+    width: .55rem;
+    height: .55rem;
+    border-radius: 50%;
+    background: var(--clay);
+  }
+
+  /* --- MISE EN PAGE : SOMMAIRE + ARTICLE --- */
+  .gd-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    padding-top: 1rem;
+    padding-bottom: 4rem;
+  }
+  @media (min-width: 1080px) {
+    .gd-layout { grid-template-columns: 230px minmax(0, 1fr); gap: 3.5rem; }
+    .gd-sommaire { position: sticky; top: 6.5rem; }
+  }
+  .gd-sommaire {
+    background: var(--sand);
+    border-radius: var(--radius-sm);
+    padding: 1.1rem 1.25rem;
+  }
+  .gd-sommaire-titre {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--clay-dk);
+    margin: 0 0 .6rem;
+  }
+  .gd-sommaire ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; }
+  .gd-sommaire a {
+    display: block;
+    padding: .35rem 0;
+    font-size: .86rem;
+    line-height: 1.4;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .gd-sommaire a:hover { color: var(--clay-dk); text-decoration: underline; text-underline-offset: 3px; }
+  @media (max-width: 1079px) {
+    .gd-sommaire ol { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); column-gap: 1.5rem; }
+  }
+
+  /* --- ARTICLE --- */
+  .gd-article { max-width: 760px; min-width: 0; }
+  .gd-section { margin-bottom: 3.25rem; }
+  .gd-section [id],
+  .gd-section h2[id] { scroll-margin-top: 6.5rem; }
+  .gd-article p,
+  .gd-article li { font-size: 1.02rem; line-height: 1.75; color: var(--ink); }
+  .gd-article p { margin: 0 0 1rem; }
+  .gd-article h3 {
+    font-family: "Lora", serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 1.75rem 0 .6rem;
+  }
+  .gd-article a:not(.btn-cta):not(.btn-secondary):not(.gd-jalon-titre) { color: var(--clay-dk); text-underline-offset: 3px; }
+  .gd-intro { color: var(--muted) !important; margin-top: -.5rem !important; }
+
+  .gd-h2 {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    font-family: "Lora", serif;
+    font-size: clamp(1.5rem, 2.6vw, 1.95rem);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0 0 1rem;
+  }
+  .gd-num {
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    border-radius: 50%;
+    background: var(--phase);
+    color: #fff;
+    font-family: "DM Sans", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .gd-liste { margin: 0 0 1rem; padding-left: 1.2rem; display: grid; gap: .55rem; }
+  .gd-liste--coches { list-style: none; padding-left: 0; }
+  .gd-liste--coches li { position: relative; padding-left: 1.75rem; }
+  .gd-liste--coches li::before {
+    content: "";
+    position: absolute;
+    left: .1rem;
+    top: .45em;
+    width: .9rem;
+    height: .5rem;
+    border-left: 2.5px solid var(--forest);
+    border-bottom: 2.5px solid var(--forest);
+    transform: rotate(-45deg);
+  }
+
+  .gd-astuce,
+  .gd-attention {
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.2rem;
+    margin: 1.25rem 0 !important;
+    font-size: .97rem !important;
+  }
+  .gd-astuce { background: #eef3ef; border-left: 4px solid var(--forest); }
+  .gd-attention { background: #fbeee6; border-left: 4px solid var(--clay-dk); }
+
+  .gd-outil {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .2rem 1rem;
+    padding: .9rem 1.1rem;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .gd-outil a { font-weight: 700; }
+  .gd-outil span { font-size: .88rem; color: var(--muted); }
+
+  .gd-encadre {
+    background: var(--sand);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+  }
+
+  .gd-table-wrap { overflow-x: auto; margin: 0 0 1rem; }
+  .gd-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  .gd-table th,
+  .gd-table td { text-align: left; padding: .7rem .9rem; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  .gd-table th { font-size: .8rem; letter-spacing: .03em; color: var(--muted); font-weight: 700; background: var(--sand); }
+  .gd-table td:first-child { font-weight: 600; white-space: nowrap; }
+  @media (max-width: 520px) {
+    .gd-table td:first-child { white-space: normal; }
+  }
+
+  .gd-erreurs { margin: 0; padding-left: 1.4rem; display: grid; gap: .7rem; }
+  .gd-erreurs li::marker { color: var(--clay-dk); font-weight: 700; }
+
+  /* --- L'INFOGRAPHIE : LE CALENDRIER --- */
+  .gd-legende {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.25rem;
+    margin: 0 0 1.5rem;
+    padding: 0;
+  }
+  .gd-legende li { display: inline-flex; align-items: center; gap: .45rem; font-size: .85rem !important; font-weight: 600; color: var(--muted) !important; }
+  .gd-pastille { width: .75rem; height: .75rem; border-radius: 50%; background: var(--phase); }
+
+  .gd-parcours {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    display: grid;
+    gap: 1rem;
+  }
+  /* Le fil qui relie les étapes. */
+  .gd-parcours::before {
+    content: "";
+    position: absolute;
+    top: 1.4rem;
+    bottom: 1.4rem;
+    left: 1.4rem;
+    width: 3px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, var(--forest) 0%, var(--forest) 40%, var(--clay-dk) 46%, var(--clay-dk) 82%, var(--ink) 88%);
+    opacity: .35;
+  }
+  .gd-jalon {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.8rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+  .gd-jalon-num {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    background: var(--phase);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: 0 0 0 5px var(--white);
+  }
+  .gd-jalon-carte {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: .75rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--phase);
+    border-radius: var(--radius-sm);
+    padding: .95rem 1.1rem 1rem;
+    box-shadow: 0 6px 18px rgba(31, 30, 28, .05);
+  }
+  .gd-jalon-icone {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--phase) 12%, transparent);
+    color: var(--phase);
+  }
+  .gd-jalon-quand {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--phase);
+    align-self: end;
+  }
+  .gd-jalon-titre {
+    font-family: "Lora", serif;
+    font-size: 1.12rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .gd-jalon-titre::after { content: "\00a0→"; color: var(--phase); }
+  .gd-jalon-titre:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .gd-jalon-carte p {
+    grid-column: 1 / -1;
+    margin: .55rem 0 0 !important;
+    font-size: .92rem !important;
+    line-height: 1.55 !important;
+    color: var(--muted) !important;
+  }
+
+  /* Sur grand écran, les étapes se répondent de part et d'autre du fil. */
+  @media (min-width: 760px) {
+    .gd-parcours { gap: 0; }
+    .gd-parcours::before { left: calc(50% - 1.5px); }
+    .gd-jalon { grid-template-columns: minmax(0, 1fr) 2.8rem minmax(0, 1fr); gap: 1.4rem; }
+    .gd-jalon-num { grid-column: 2; grid-row: 1; margin-top: .7rem; }
+    .gd-jalon-carte { grid-row: 1; }
+    .gd-jalon:nth-child(odd) .gd-jalon-carte { grid-column: 1; }
+    .gd-jalon:nth-child(even) .gd-jalon-carte { grid-column: 3; }
+    .gd-jalon:not(:first-child) { margin-top: -1.6rem; }
+  }
+
+  /* --- CHIFFRES CLÉS --- */
+  .gd-chiffres {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+    gap: .75rem;
+    margin: 0 0 .75rem;
+  }
+  .gd-chiffres div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: .2rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .9rem .95rem;
+  }
+  .gd-chiffres dd {
+    margin: 0;
+    font-family: "Lora", serif;
+    font-size: clamp(1.35rem, 5vw, 1.9rem);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--clay-dk);
+    white-space: nowrap;
+  }
+  .gd-chiffres dt { font-size: .85rem; line-height: 1.45; color: var(--muted); }
+  @media (min-width: 600px) { .gd-chiffres { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .gd-note { font-size: .82rem !important; color: var(--muted) !important; }
+
+  /* --- FIN --- */
+  .gd-fin {
+    border-top: 1px solid var(--border);
+    padding-top: 2.5rem;
+  }
+  .gd-autrice {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--sand);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.2rem;
+    margin-bottom: 2.5rem;
+  }
+  .gd-autrice p { margin: 0 !important; font-size: .92rem !important; line-height: 1.6 !important; }
+  .gd-autrice-photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
+  .gd-fin-texte { color: var(--muted) !important; }
+  .gd-fin-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; margin: 1.5rem 0 2rem; }
+  .gd-avertissement { font-size: .8rem !important; line-height: 1.6 !important; color: var(--muted) !important; }
+
+  @media (max-width: 520px) {
+    .gd-autrice { align-items: flex-start; }
+    .gd-autrice-photo { width: 56px; height: 56px; }
+  }
+</style>

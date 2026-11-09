@@ -44,7 +44,7 @@ src/
 | Route | Rendu | Description |
 |-------|-------|-------------|
 | `/` | SSR | Accueil (taux live, hero, services, avis, FAQ) |
-| `/outils` | SSR | Hub outils avec onglets (`#simulateur`, `#calculateur`, `#comparateur`) |
+| `/outils` | SSR | Hub outils avec sept onglets (`#simulateur`, `#calculateur`, `#comparateur`, `#penalite`, `#refinancement`, `#droits-mutation`, `#rap-celiapp`) |
 | `/outils/calculateur-penalite-hypothecaire` | SSR | Calculateur de pénalité dédié |
 | `/amortissement` | Statique | Tableau d'amortissement (noindex : vide sans les paramètres du calculateur) |
 | `/rappel` | Statique | Formulaire de prise de rappel |
@@ -165,6 +165,11 @@ Toute page du tableau ci-dessus marquée « SSR » doit donc porter `prerender =
 - `Comparateur.astro` — Comparateur de scénarios hypothécaires
 - `RefinancementSimulator.astro` — Simulateur de refinancement
 - `PenaliteCalculator.astro` — Calculateur de pénalité de remboursement anticipé
+- `RapCeliappSimulator.astro` — RAP ou CELIAPP (`/outils/#rap-celiapp`) : RAP seul, CELIAPP seul
+  ou les deux, comparés en barres (le chiffre toujours écrit à côté). Rien n'est envoyé ni stocké.
+  Chaque chiffre vit dans un élément à lui, à côté de son libellé fixe : aucune phrase chiffrée
+  à traduire. Sur ordinateur, `outils.astro` resserre les onglets pour que les sept tiennent
+  sur une ligne — un huitième obligera à revoir la rangée
 
 ## Services (fetch + cache)
 
@@ -307,6 +312,24 @@ Validation des tracés de signature (PNG), partagée par le profil et le contrat
 nombre magique, poids, et dimensions lues dans le chunk IHDR **avant** que pdf-lib ne
 touche aux octets. `src/utils/profilEmprunteurs.ts` la réexporte pour les appelants
 historiques.
+
+### `src/utils/rapCeliapp.ts`
+Le comparateur « RAP ou CELIAPP » : trois façons de bâtir une mise de fonds, **par personne**.
+Paramètres fiscaux 2026 (fédéral et Québec : paliers, montants personnels de base, abattement
+de 16,5 %), plafonds du CELIAPP (8 000 $/an, report d'au plus 8 000 $, 40 000 $ à vie), du
+RAP (60 000 $, 15 ans, début du remboursement selon l'année du retrait) et des droits REER
+(18 %, au plus 33 810 $) — chacun commenté avec sa source et sa date.
+- **Le remboursement d'impôt est une différence d'impôt** (`economieImpot`), année par année,
+  jamais « taux marginal × déduction » : faux dès qu'une cotisation fait changer de palier.
+- **L'épargne déjà en REER ne rembourse rien** : déduite l'année de la cotisation, le RAP la
+  rend seulement accessible. **Aucun rendement supposé.** Le report d'impôt du RAP (imposé à la
+  retraite) est dit en mots, jamais chiffré : il faudrait deviner un taux futur.
+- Les cotisations REER s'arrêtent quand le RAP est plein (60 000 $, REER actuels compris) : au-delà,
+  l'épargne reste disponible plutôt que bloquée dans le REER. Le CELIAPP passe en premier.
+- Une entrée absurde rend un motif (`MotifRapCeliapp`), jamais un NaN. `lireNombre` lit aussi
+  « 70,000 » tapé sur `/en/` — une virgule suivie de trois chiffres n'est pas une décimale.
+- **Chaque janvier** : reprendre les paliers, montants personnels et plafonds de l'année
+  (`ANNEE_PARAMETRES`), la date de l'avertissement du composant, et les tests vérifiés à la main.
 
 ### `src/utils/refinancementV2.ts`
 Source de vérité du funnel `/refinancement-v2`, partagée entre la page et `/api/refinancement-v2-submit`.
@@ -1211,6 +1234,9 @@ npx vitest              # mode watch
   comprise), prêt assuré entre 1 M$ et 1,5 M$, jamais de conventionnel sous 20 % de mise
 - `src/utils/mortgageCalc.test.ts` — tranches de mise de fonds et plafond de 1,5 M$, surprime
   de 0,20 % au-delà de 25 ans, prime de 4 % conservée à exactement 5 % de mise
+- `src/utils/rapCeliapp.test.ts` — impôt 2026 vérifié à la main sur quatre revenus, déduction
+  qui franchit un palier, REER existant sans remboursement, plafonds CELIAPP/RAP/REER, RAP sur
+  15 ans et début du remboursement, entrées absurdes → motif, jamais NaN
 - `src/services/emailService.test.ts` — un 429 est réessayé (`Retry-After` respecté et
   plafonné), un 422 ne l'est pas, et l'abandon nomme le statut
 - `src/utils/profilPreparation.test.ts` — aller-retour du lien préparé (accents compris), champs
