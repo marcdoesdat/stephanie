@@ -8,6 +8,7 @@ import Comparateur from '../components/Comparateur.astro';
 import PenaliteCalculator from '../components/PenaliteCalculator.astro';
 import RefinancementSimulator from '../components/RefinancementSimulator.astro';
 import DroitsMutationCalculator from '../components/DroitsMutationCalculator.astro';
+import RapCeliappSimulator from '../components/RapCeliappSimulator.astro';
 import { fetchHypothecaRates, rateCacheControl } from '../services/ratesService';
 import { loadSiteConfig } from '../config';
 import { preteursParCategorie } from '../data/preteurs';
@@ -46,6 +47,7 @@ const tabs = [
   { id: 'penalite', label: 'Calculer ma pénalité', sub: 'IRD' },
   { id: 'refinancement', label: 'Simulateur de refinancement', sub: '+ consolidation' },
   { id: 'droits-mutation', label: 'Droits de mutation', sub: 'Taxe de bienvenue' },
+  { id: 'rap-celiapp', label: 'RAP ou CELIAPP', sub: 'Mise de fonds' },
 ];
 
 // FAQ sur les calculateurs — affichée en bas de page et balisée en FAQPage.
@@ -71,8 +73,12 @@ const outilsFaq = [
     a: `Oui. Dès que la mise de fonds est inférieure à 20 %, la <strong>prime d'assurance SCHL</strong> est calculée automatiquement et ajoutée au prêt dans le simulateur et le calculateur de versement.`
   },
   {
+    q: "Comment le comparateur RAP ou CELIAPP calcule-t-il les remboursements d'impôt ?",
+    a: `Comme une <strong>différence d'impôt</strong> : l'impôt sur votre revenu, moins l'impôt sur votre revenu diminué de vos cotisations, année par année, au fédéral et au Québec, selon les paliers et les montants personnels de base de 2026. C'est plus juste qu'un taux marginal, qui se trompe dès qu'une cotisation fait changer de palier. Aucun rendement de placement n'est supposé, et l'épargne déjà dans vos REER ne produit aucun nouveau remboursement : elle a été déduite l'année où vous l'avez versée. C'est une <strong>estimation simplifiée</strong>, qui ne remplace pas l'avis d'un fiscaliste ou d'un planificateur financier.`
+  },
+  {
     q: "Dois-je m'inscrire ou fournir mes coordonnées pour utiliser les outils ?",
-    a: `Non. Les six outils sont <strong>gratuits et sans inscription</strong> : les calculs s'exécutent directement dans votre navigateur. Vous ne laissez vos coordonnées que si vous choisissez d'envoyer vos résultats à Stéphanie.`
+    a: `Non. Les sept outils sont <strong>gratuits et sans inscription</strong> : les calculs s'exécutent directement dans votre navigateur. Vous ne laissez vos coordonnées que si vous choisissez d'envoyer vos résultats à Stéphanie.`
   }
 ];
 
@@ -104,11 +110,12 @@ const outilsFaqSchema = {
       <div class="section-inner outils-intro-inner">
         <h1 class="section-title">Calculateurs hypothécaires <em>gratuits</em> au Québec</h1>
         <p class="section-sub">
-          Six calculateurs hypothécaires gratuits pour le Québec : estimez votre capacité
+          Sept outils hypothécaires gratuits pour le Québec : estimez votre capacité
           d'emprunt, calculez un versement, comparez les taux affichés en banque avec ceux
           qu'un courtier peut négocier, évaluez votre pénalité de remboursement anticipé,
-          simulez un refinancement et calculez vos droits de mutation (taxe de bienvenue) —
-          le tout dans un même endroit, sans inscription.
+          simulez un refinancement, calculez vos droits de mutation (taxe de bienvenue) et
+          comparez le RAP et le CELIAPP pour bâtir votre mise de fonds — le tout dans un même
+          endroit, sans inscription.
         </p>
       </div>
     </section>
@@ -212,6 +219,17 @@ const outilsFaqSchema = {
           hidden
         >
           <DroitsMutationCalculator />
+        </div>
+
+        <div
+          class="outils-panel"
+          id="panel-rap-celiapp"
+          role="tabpanel"
+          aria-labelledby="tab-rap-celiapp"
+          data-panel="rap-celiapp"
+          hidden
+        >
+          <RapCeliappSimulator />
         </div>
       </div>
     </section>
@@ -773,6 +791,20 @@ const outilsFaqSchema = {
   </script>
 
   <style>
+    /* Sept onglets sur une ligne, au-delà de 1140 px (en deçà, global.css les met en grille).
+       Avec les marges et la police de global.css, la rangée française mesurait 1 213 px pour
+       1 100 de large : le 7ᵉ onglet était coupé au bord, sans indice qu'il existait. Resserrés,
+       les sept tiennent en 1 066 px (961 en anglais), et se partagent l'espace qui reste. */
+    @media (min-width: 1141px) {
+      .outils-tab.comp-pill {
+        flex: 1 1 auto;
+        padding: .75rem .55rem .65rem;
+      }
+      .outils-tab .outils-tab-label {
+        font-size: .82rem;
+      }
+    }
+
     .outil-standalone-link {
       text-align: center;
       margin-top: 2rem;

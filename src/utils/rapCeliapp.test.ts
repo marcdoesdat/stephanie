@@ -312,6 +312,13 @@ describe('lecture des champs', () => {
     expect(lireNombre('80 000 $')).toBe(80_000);
     expect(lireNombre('1 250,50')).toBe(1_250.5);
     expect(lireNombre('3')).toBe(3);
+    expect(lireNombre('12,5')).toBe(12.5);
+  });
+
+  it('lit aussi les milliers à l’anglaise, tapés sur /en/', () => {
+    expect(lireNombre('70,000')).toBe(70_000);
+    expect(lireNombre('$1,250,000')).toBe(1_250_000);
+    expect(lireNombre('1,250.50')).toBe(1_250.5);
   });
 
   it('vide → null ; illisible → NaN ; négatif lu tel quel (la validation tranche)', () => {

@@ -409,9 +409,13 @@ export function messageMotif(motif: MotifRapCeliapp): string {
 /**
  * Lit un champ : null s'il est vide, NaN s'il est illisible, sinon le nombre écrit (« 80 000 »,
  * « 80000 », « 1 250,50 », « -5 » compris — c'est la validation qui juge, pas la lecture).
+ *
+ * Une virgule suivie de trois chiffres est un séparateur de milliers à l'anglaise (« 70,000 »,
+ * tapé sur /en/), jamais une décimale : lue comme 70, elle ferait comparer un revenu de 70 $.
  */
 export function lireNombre(saisie: string): number | null {
-  const s = saisie.replace(/[\s  $]/g, '').replace(',', '.');
+  let s = saisie.replace(/[\s  $]/g, '');
   if (s === '') return null;
+  s = /^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.');
   return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN;
 }
