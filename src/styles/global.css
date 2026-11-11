@@ -1848,14 +1848,18 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
    étoiles touchaient le coin arrondi. */
 #main-content > .hero-fixe ~ .av-section{padding-top:2.75rem}
 /* --hero-h et --hero-haut sont posés par MainLayout.astro. Sur téléphone le hero dépasse
-   l'écran : il défile jusqu'à ce que son bas touche le bas de l'écran, puis s'arrête là. */
-#main-content > .hero-fixe{position:sticky;top:min(0px,calc(100vh - var(--hero-h,100vh)));z-index:0}
+   l'écran : il défile jusqu'à ce que son bas touche le bas de l'écran, puis s'arrête là.
+   « svh », pas « vh » : sur iPhone, 100vh compte la hauteur cachée sous la barre du
+   navigateur. Le hero s'arrêtait donc avec son bas hors de vue, et la feuille suivante le
+   recouvrait avant qu'on ait pu le voir (la carte des taux et des avis, sur l'accueil).
+   La ligne en vh ne sert qu'aux navigateurs qui ne connaissent pas svh. */
+#main-content > .hero-fixe{position:sticky;top:min(0px,calc(100vh - var(--hero-h,100vh)));top:min(0px,calc(100svh - var(--hero-h,100svh)));z-index:0}
 
 /* Pendant qu'il est recouvert, le hero recule : il rétrécit un peu et s'estompe.
    --hero-haut : sa distance au haut de la page (0 presque partout ; la page du
    renouvellement a une section avant lui). */
 @supports (animation-timeline:scroll()){
-  #main-content > .hero-fixe > :is(.hero-inner,.sp-inner,.rep-inner){animation:hero-recule linear both;animation-timeline:scroll(root);animation-range:calc(var(--hero-haut,0px) + max(0px,var(--hero-h,100vh) - 100vh)) calc(var(--hero-haut,0px) + var(--hero-h,100vh));transform-origin:50% 100%}
+  #main-content > .hero-fixe > :is(.hero-inner,.sp-inner,.rep-inner){animation:hero-recule linear both;animation-timeline:scroll(root);animation-range:calc(var(--hero-haut,0px) + max(0px,var(--hero-h,100svh) - 100svh)) calc(var(--hero-haut,0px) + var(--hero-h,100svh));transform-origin:50% 100%}
   @keyframes hero-recule{to{transform:scale(.9);opacity:.15}}
 
   /* Chaque feuille arrive légèrement en retrait et se met à plat en montant. */
