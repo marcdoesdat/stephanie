@@ -287,6 +287,15 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
           var haut = avant ? avant.offsetTop + avant.offsetHeight : hero.parentElement.offsetTop;
           racine.style.setProperty('--hero-h', hero.offsetHeight + 'px');
           racine.style.setProperty('--hero-haut', haut + 'px');
+          // Chrome ne recalcule pas toujours la plage d'une animation liée au défilement
+          // quand ces mesures changent : d'un chargement à l'autre, le hero s'estompait
+          // trop tôt. On relance l'animation, qui repart alors des bonnes valeurs.
+          var dedans = hero.firstElementChild;
+          if (dedans) {
+            dedans.style.animationName = 'none';
+            void dedans.offsetWidth;
+            dedans.style.animationName = '';
+          }
         });
         observateur.observe(hero);
         if (avant) observateur.observe(avant);

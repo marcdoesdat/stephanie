@@ -1859,7 +1859,7 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
    --hero-haut : sa distance au haut de la page (0 presque partout ; la page du
    renouvellement a une section avant lui). */
 @supports (animation-timeline:scroll()){
-  #main-content > .hero-fixe > :is(.hero-inner,.sp-inner,.rep-inner){animation:hero-recule linear both;animation-timeline:scroll(root);animation-range:calc(var(--hero-haut,0px) + max(0px,var(--hero-h,100svh) - 100svh)) calc(var(--hero-haut,0px) + var(--hero-h,100svh));transform-origin:50% 100%}
+  #main-content > .hero-fixe > :is(.hero-inner,.sp-inner,.rep-inner){animation:hero-recule linear both;animation-timeline:scroll(root);animation-range:calc(var(--hero-haut,0px) + max(0px,var(--hero-h,100vh) - 100vh)) calc(var(--hero-haut,0px) + var(--hero-h,100vh));transform-origin:50% 100%}
   @keyframes hero-recule{to{transform:scale(.9);opacity:.15}}
 
   /* Chaque feuille arrive légèrement en retrait et se met à plat en montant. */
