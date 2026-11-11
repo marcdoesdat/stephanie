@@ -31,9 +31,9 @@ const prenom = config.nom.split(' ')[0];
                plupart des cas ») et pour l'accompagnement (Teams, téléphone ou texto). -->
           <div class="apropos-bref">
             <!-- « Bref » en français, « TLDR » en anglais (dictionnaire) : le ton est voulu
-                 jeune. L'émoji est décoratif, hors du texte à traduire. -->
+                 jeune, et le mot est traité en affiche. L'émoji est décoratif, hors du texte à traduire. -->
             <div class="apropos-bref-tete">
-              <p class="apropos-bref-titre" id="apropos-bref-titre">Bref</p>
+              <h3 class="apropos-bref-titre" id="apropos-bref-titre">Bref</h3>
               <span class="apropos-bref-emoji" aria-hidden="true">🤑</span>
             </div>
             <dl aria-labelledby="apropos-bref-titre">
@@ -101,39 +101,39 @@ const prenom = config.nom.split(' ')[0];
   }
 
 
-  /* « En bref » : une carte blanche sur le fond vert de la section, deux colonnes sur
+  /* « Bref » : une carte lilas sur le fond vert de la section, deux colonnes sur
      ordinateur, une seule sur téléphone. */
   .apropos-bref {
-    background: var(--white);
-    border-radius: var(--radius-md);
-    padding: 1.25rem 1.5rem 1.4rem;
-    margin-bottom: 1.6rem;
+    background: var(--lilac);
+    border-radius: var(--radius-lg);
+    padding: 2rem 2.1rem 2.1rem;
+    margin-bottom: 2rem;
   }
-  .apropos-text .apropos-bref-titre {
-    display: inline-block;
-    background: var(--ink);
-    color: var(--sun);
-    font-size: 0.8rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    line-height: 1;
-    padding: 0.45rem 0.75rem;
-    border-radius: 999px;
-    margin-bottom: 0;
-  }
+  /* Le titre est un mot-affiche : très gros, très gras, l'émoji à sa taille. */
   .apropos-bref-tete {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 1rem;
+    gap: 0.12em;
+    font-size: clamp(3.2rem, 7vw, 4.6rem);
+    margin-bottom: 1.4rem;
+  }
+  .apropos-text .apropos-bref-titre {
+    font-family: var(--font-display);
+    font-size: 1em;
+    font-weight: 800;
+    font-style: normal;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    line-height: 0.9;
+    color: var(--ink);
+    margin: 0;
   }
   /* L'émoji se dandine, puis saute : une boucle courte suivie d'une pause, pour attirer
      l'œil sans tourner en continu à côté du texte. Coupé par prefers-reduced-motion
      (règle globale). */
   .apropos-bref-emoji {
     display: inline-block;
-    font-size: 1.7rem;
+    font-size: 0.92em;
     line-height: 1;
     transform-origin: 50% 85%;
     animation: bref-emoji 2.6s ease-in-out infinite;
@@ -150,7 +150,7 @@ const prenom = config.nom.split(' ')[0];
   .apropos-bref dl {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem 1.75rem;
+    gap: 1.15rem 1.75rem;
     margin: 0;
   }
   .apropos-bref dt {
@@ -158,18 +158,19 @@ const prenom = config.nom.split(' ')[0];
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--forest);
-    margin-bottom: 0.2rem;
+    color: var(--ink);
+    opacity: 0.68;
+    margin-bottom: 0.25rem;
   }
   .apropos-bref dd {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 1.02rem;
     font-weight: 600;
     line-height: 1.4;
     color: var(--ink);
   }
   @media (max-width: 600px) {
-    .apropos-bref { padding: 1.1rem 1.15rem 1.2rem; }
+    .apropos-bref { padding: 1.6rem 1.4rem 1.7rem; }
     .apropos-bref dl { grid-template-columns: 1fr; gap: 0.85rem; }
   }
 </style>
