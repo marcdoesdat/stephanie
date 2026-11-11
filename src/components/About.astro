@@ -132,24 +132,27 @@ const prenom = config.nom.split(' ')[0];
     color: var(--ink);
     margin: 0;
   }
-  /* L'émoji se dandine, puis saute : une boucle courte suivie d'une pause, pour attirer
-     l'œil sans tourner en continu à côté du texte. Coupé par prefers-reduced-motion
-     (règle globale). */
+  /* L'émoji fait un petit bond en penchant la tête, puis se repose longtemps : un seul
+     geste souple toutes les six secondes. L'ancienne boucle (trois secousses, un saut, un
+     écrasement, toutes les 2,6 s) s'agitait sans arrêt à côté du texte qu'on essaie de lire.
+     Chaque étape porte sa propre courbe : montée amortie, retombée qui accélère, puis un
+     léger tassement à l'atterrissage — c'est ce qui donne du poids au mouvement.
+     Coupé par prefers-reduced-motion (règle globale). */
   .apropos-bref-emoji {
     display: inline-block;
     font-size: 0.92em;
     line-height: 1;
-    transform-origin: 50% 85%;
-    animation: bref-emoji 2.6s ease-in-out infinite;
+    transform-origin: 50% 90%;
+    animation: bref-emoji 6s 1.2s infinite both;
+    will-change: transform;
   }
   @keyframes bref-emoji {
-    0%, 52%, 100% { transform: none; }
-    8%  { transform: rotate(-16deg) scale(1.08); }
-    16% { transform: rotate(14deg) scale(1.08); }
-    24% { transform: rotate(-10deg) scale(1.05); }
-    32% { transform: translateY(-9px) scale(1.2); }
-    40% { transform: translateY(0) scale(0.94); }
-    46% { transform: scale(1.04); }
+    0%   { transform: translateY(0) rotate(0) scale(1, 1); animation-timing-function: ease-in-out; }
+    3%   { transform: translateY(0) rotate(0) scale(1.06, 0.92); animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
+    10%  { transform: translateY(-0.16em) rotate(-9deg) scale(0.97, 1.04); animation-timing-function: cubic-bezier(.6, 0, .9, .5); }
+    16%  { transform: translateY(0) rotate(3deg) scale(1.07, 0.93); animation-timing-function: ease-out; }
+    21%  { transform: translateY(-0.03em) rotate(-1deg) scale(0.99, 1.01); animation-timing-function: ease-in-out; }
+    26%, 100% { transform: translateY(0) rotate(0) scale(1, 1); }
   }
   .apropos-bref dl {
     display: grid;
