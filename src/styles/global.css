@@ -1876,8 +1876,19 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
 }
 
 /* --- 3. Le surlignage du mot fort se trace, une fois le titre affiché. */
-.hero-left .hero-value-prop em{background-repeat:no-repeat;background-size:0% 100%;animation:surligne .9s var(--sortie) .55s forwards}
-@keyframes surligne{to{background-size:100% 100%}}
+/* Un vrai coup de surligneur : bords irréguliers, deux passes qui se chevauchent (la 2ᵉ plus
+   foncée, translucide), et un tracé qui avance par à-coups — élan, petite pause, fin du trait. */
+.hero-left h1.hero-value-prop em{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 40' preserveAspectRatio='none'%3E%3Cpath d='M1 24 C18 20 46 24 78 21 S138 24 168 20 S195 22 199 25 L198 33 C194 37 170 34 140 37 S62 34 32 37 S6 36 2 33 Z' fill='%23ffd23f'/%3E%3Cpath d='M3 29 C30 26 62 30 98 27 S164 30 197 27 L196 35 C170 38 120 36 80 38 S20 37 4 36 Z' fill='%23ffb400' fill-opacity='.35'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:0 0;background-size:0% 100%;
+  animation:surligne 1.1s cubic-bezier(.4,0,.2,1) .55s forwards;
+}
+@keyframes surligne{
+  0%{background-size:0% 100%}
+  45%{background-size:62% 100%}
+  55%{background-size:64% 100%}
+  100%{background-size:102% 100%}
+}
 
 /* --- 4. D'une page à l'autre : fondu-glissé natif (aucun script, aucun routeur).
    Le menu garde sa place d'une page à la suivante. */
@@ -1899,7 +1910,7 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
   #main-content > .hero-fixe > :is(.hero-inner,.sp-inner,.rep-inner),
   #main-content > .hero-fixe ~ section > :is(.section-inner,.sp-inner,.rep-inner,.av-inner,.sv-inner,.cv-inner){animation:none}
   nav#navbar::after{display:none}
-  .hero-left .hero-value-prop em{animation:none;background-size:100% 100%}
+  .hero-left h1.hero-value-prop em{animation:none;background-size:102% 100%}
   ::view-transition-old(root),::view-transition-new(root){animation:none}
 }
 
