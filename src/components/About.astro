@@ -132,27 +132,16 @@ const prenom = config.nom.split(' ')[0];
     color: var(--ink);
     margin: 0;
   }
-  /* L'émoji fait un petit bond en penchant la tête, puis se repose longtemps : un seul
-     geste souple toutes les six secondes. L'ancienne boucle (trois secousses, un saut, un
-     écrasement, toutes les 2,6 s) s'agitait sans arrêt à côté du texte qu'on essaie de lire.
-     Chaque étape porte sa propre courbe : montée amortie, retombée qui accélère, puis un
-     léger tassement à l'atterrissage — c'est ce qui donne du poids au mouvement.
-     Coupé par prefers-reduced-motion (règle globale). */
+  /* L'émoji tourne avec le défilement : c'est le script au bas du composant qui pose
+     l'angle, proportionnel à la position de la page. Aucune animation qui tourne seule —
+     page immobile, émoji immobile. Sans JavaScript ou sous prefers-reduced-motion, il
+     reste droit. */
   .apropos-bref-emoji {
     display: inline-block;
     font-size: 0.92em;
     line-height: 1;
-    transform-origin: 50% 90%;
-    animation: bref-emoji 6s 1.2s infinite both;
+    transform-origin: 50% 50%;
     will-change: transform;
-  }
-  @keyframes bref-emoji {
-    0%   { transform: translateY(0) rotate(0) scale(1, 1); animation-timing-function: ease-in-out; }
-    3%   { transform: translateY(0) rotate(0) scale(1.06, 0.92); animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
-    10%  { transform: translateY(-0.16em) rotate(-9deg) scale(0.97, 1.04); animation-timing-function: cubic-bezier(.6, 0, .9, .5); }
-    16%  { transform: translateY(0) rotate(3deg) scale(1.07, 0.93); animation-timing-function: ease-out; }
-    21%  { transform: translateY(-0.03em) rotate(-1deg) scale(0.99, 1.01); animation-timing-function: ease-in-out; }
-    26%, 100% { transform: translateY(0) rotate(0) scale(1, 1); }
   }
   .apropos-bref dl {
     display: grid;
@@ -181,3 +170,42 @@ const prenom = config.nom.split(' ')[0];
     .apropos-bref dl { grid-template-columns: 1fr; gap: 0.85rem; }
   }
 </style>
+
+<script>
+  // L'émoji de « Bref » tourne au rythme du défilement : un tour complet par 720 px,
+  // dans le sens des aiguilles en descendant, à rebours en remontant. L'angle est lu sur
+  // la position de la page, pas accumulé : revenir au même endroit redonne le même angle.
+  // On n'écoute le défilement que lorsque l'émoji est à l'écran, et on n'écrit qu'une fois
+  // par image.
+  const DEGRES_PAR_PIXEL = 0.5;
+  const emoji = document.querySelector<HTMLElement>('.apropos-bref-emoji');
+  const calme = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  if (emoji && 'IntersectionObserver' in window) {
+    let enAttente = false;
+    let ecoute = false;
+
+    const tourner = () => {
+      enAttente = false;
+      emoji.style.transform = calme.matches ? '' : `rotate(${(window.scrollY * DEGRES_PAR_PIXEL) % 360}deg)`;
+    };
+    const auDefilement = () => {
+      if (enAttente) return;
+      enAttente = true;
+      requestAnimationFrame(tourner);
+    };
+
+    new IntersectionObserver(([entree]) => {
+      const visible = !!entree?.isIntersecting;
+      if (visible && !ecoute) {
+        window.addEventListener('scroll', auDefilement, { passive: true });
+        tourner();
+      } else if (!visible && ecoute) {
+        window.removeEventListener('scroll', auDefilement);
+      }
+      ecoute = visible;
+    }, { rootMargin: '100px 0px' }).observe(emoji);
+
+    calme.addEventListener('change', tourner);
+  }
+</script>
