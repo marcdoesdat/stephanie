@@ -1,4 +1,5 @@
 ---
+import IconeSection from './IconeSection.astro';
 // Carte CTA réutilisable — à insérer en bas des articles de blogue liés au
 // renouvellement / refinancement. Renvoie vers le formulaire de rappel (/rappel).
 //
@@ -30,6 +31,7 @@ const {
 
 <aside class="rappel-cta" aria-label="Demande de rappel">
   <div class="rappel-cta-body">
+    <IconeSection nom="rappel" />
     <h2 class="rappel-cta-title">{titre}</h2>
     <p class="rappel-cta-text">{texte}</p>
   </div>

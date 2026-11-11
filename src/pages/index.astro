@@ -12,6 +12,7 @@ import Contact from '../components/Contact.astro';
 import Footer from '../components/Footer.astro';
 import MessengerBtn from '../components/MessengerBtn.astro';
 import CapaciteExpress from '../components/CapaciteExpress.astro';
+import IconeSection from '../components/IconeSection.astro';
 import { fetchHypothecaRates, rateCacheControl } from '../services/ratesService';
 import { getReviews } from '../services/reviewsService';
 import { loadSiteConfig } from '../config';
@@ -84,6 +85,7 @@ const autresOutils = [
     <section id="outils-teaser" aria-labelledby="outils-teaser-titre">
       <div class="section-inner">
         <div class="fade-up">
+          <IconeSection nom="capacite" />
           <h2 class="section-title" id="outils-teaser-titre">Combien pouvez-vous<br /><em>emprunter ?</em></h2>
           <p class="section-sub">
             Trois chiffres suffisent pour une première estimation, calculée comme le ferait un

@@ -1,4 +1,5 @@
 ---
+import IconeSection from './IconeSection.astro';
 // Liste des services. Chaque carte est entièrement cliquable et pointe vers sa sous-page dédiée.
 // Sans `href`, on retombe sur l'ancre #contact (parcours de prise de rendez-vous).
 import { House, Repeat, Lightbulb, LockKeyholeOpen, Briefcase, Globe } from '@lucide/astro';
@@ -69,6 +70,7 @@ const services: ServiceItem[] = [
   <div class="section-inner">
 
     <div class="fade-up">
+      <IconeSection nom="services" />
       <h2 class="section-title">Ce que je peux<br />faire pour <em>vous</em></h2>
       <p class="section-sub">
         Du premier achat au renouvellement, du refinancement au dossier complexe — je vous accompagne à chaque étape, où que vous soyez au Québec.
