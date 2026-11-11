@@ -1008,6 +1008,9 @@ recouvrent en feuilles arrondies.
   formulaires, ni les écrans de signature ou de la courtière : on y vient calculer, lire ou
   remplir. Seul le hero est épinglé — épingler chaque section bloquerait le défilement dès
   qu'elle dépasse l'écran, c'est-à-dire presque toujours sur téléphone.
+- **Sur téléphone (≤ 900 px), le hero de l'accueil n'est pas épinglé** : sa photo est son
+  dernier élément, et la feuille suivante la recouvrait à peine entrée à l'écran. Il défile
+  normalement, sans s'estomper ; les pages services et villes gardent l'effet.
 - **Toute section qui suit un `hero-fixe` doit être un `<section>` enfant direct de `<main>`,
   à fond opaque** : un autre élément passerait *sous* le hero collé, et un fond transparent le
   laisserait voir au travers (un fond blanc est posé par défaut, à spécificité zéro).

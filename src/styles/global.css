@@ -1871,6 +1871,15 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
   @keyframes progression{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 }
 
+/* Sur téléphone, le hero de l'accueil est en une colonne et la photo en est le dernier
+   élément : collé par le bas, il se faisait recouvrir — et estomper — en commençant par
+   elle, à peine entrée à l'écran. Il défile donc normalement ; la feuille suivante le suit
+   au lieu de passer dessus. Les pages services et villes n'ont rien en bas de leur hero. */
+@media(max-width:900px){
+  #main-content > #hero.hero-fixe{position:relative;top:auto}
+  #main-content > #hero.hero-fixe > .hero-inner{animation:none}
+}
+
 /* --- 3. Le surlignage du mot fort se trace, une fois le titre affiché. */
 .hero-left .hero-value-prop em{background-repeat:no-repeat;background-size:0% 100%;animation:surligne .9s var(--sortie) .55s forwards}
 @keyframes surligne{to{background-size:100% 100%}}
