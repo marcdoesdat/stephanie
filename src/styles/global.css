@@ -1827,26 +1827,39 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
   nav#navbar .nav-links.open{top:calc(100% + 8px);height:auto;max-height:calc(100dvh - 68px - 28px);padding:1.5rem 1rem;border-radius:20px;box-shadow:0 20px 50px rgba(18,16,31,.18);overflow-y:auto}
 }
 
-/* --- 2. Accueil : les sections sont des feuilles qui glissent l'une sur l'autre.
-   Le hero reste en place (sticky) pendant que la feuille suivante le recouvre.
+/* --- 2. Les sections sont des feuilles qui glissent l'une sur l'autre.
+   Le hero (.hero-fixe) reste en place (sticky) pendant que la feuille suivante le
+   recouvre. Accueil, pages services et pages villes ; ni les outils, ni les guides, ni
+   les formulaires — là, on vient calculer, lire ou remplir, pas regarder défiler.
    :where() garde la spécificité à zéro : le fond propre à chaque section l'emporte,
    celui d'ici ne sert qu'aux sections qui n'en déclarent pas — toutes doivent être
    opaques, sinon le hero resté dessous se verrait au travers. */
-:where(#main-content:has(> #hero)) > section{position:relative;z-index:1;background:var(--white)}
+:where(#main-content > .hero-fixe ~ section){background:var(--white)}
 /* #rappel-teaser prolonge la section des taux (même fond) : pas une feuille à part. */
-#main-content:has(> #hero) > section:not(#hero,#rappel-teaser){border-radius:36px 36px 0 0;margin-top:-36px;padding-top:calc(clamp(2.5rem,5vw,4rem) + 20px);padding-bottom:calc(clamp(2.5rem,5vw,4rem) + 36px);box-shadow:0 -14px 40px rgba(18,16,31,.07)}
-#main-content:has(> #hero) > section:last-child{padding-bottom:clamp(2.5rem,5vw,4rem)}
-/* --hero-h est posé par Hero.astro. Sur téléphone le hero dépasse l'écran : il défile
-   jusqu'à ce que son bas touche le bas de l'écran, puis s'arrête là. */
-#main-content > #hero{position:sticky;top:min(0px,calc(100vh - var(--hero-h,100vh)));z-index:0}
+#main-content > .hero-fixe ~ section{position:relative;z-index:1}
+#main-content > .hero-fixe ~ section:not(#rappel-teaser){border-radius:36px 36px 0 0;margin-top:-36px;box-shadow:0 -14px 40px rgba(18,16,31,.07)}
+/* Chaque feuille passe 36 px sous la suivante : il faut les lui rendre en bas. L'accueil
+   le fait par ses marges intérieures, communes à toutes ses sections ; ailleurs chaque
+   section a les siennes, et une cale en fin de section les laisse intactes. */
+#main-content > #hero ~ section:not(#rappel-teaser){padding-top:calc(clamp(2.5rem,5vw,4rem) + 20px);padding-bottom:calc(clamp(2.5rem,5vw,4rem) + 36px)}
+#main-content > #hero ~ section:last-child{padding-bottom:clamp(2.5rem,5vw,4rem)}
+#main-content > .hero-fixe:not(#hero) ~ section:not(:last-child)::after{content:"";display:block;height:36px}
+/* Les avis des pages villes n'avaient aucune marge en haut : devenus une feuille, leurs
+   étoiles touchaient le coin arrondi. */
+#main-content > .hero-fixe ~ .av-section{padding-top:2.75rem}
+/* --hero-h et --hero-haut sont posés par MainLayout.astro. Sur téléphone le hero dépasse
+   l'écran : il défile jusqu'à ce que son bas touche le bas de l'écran, puis s'arrête là. */
+#main-content > .hero-fixe{position:sticky;top:min(0px,calc(100vh - var(--hero-h,100vh)));z-index:0}
 
-/* Pendant qu'il est recouvert, le hero recule : il rétrécit un peu et s'estompe. */
+/* Pendant qu'il est recouvert, le hero recule : il rétrécit un peu et s'estompe.
+   --hero-haut : sa distance au haut de la page (0 presque partout ; la page du
+   renouvellement a une section avant lui). */
 @supports (animation-timeline:scroll()){
-  #main-content > #hero .hero-inner{animation:hero-recule linear both;animation-timeline:scroll(root);animation-range:max(0px,calc(var(--hero-h,100vh) - 100vh)) var(--hero-h,100vh);transform-origin:50% 100%}
+  #main-content > .hero-fixe > :is(.hero-inner,.sp-inner,.rep-inner){animation:hero-recule linear both;animation-timeline:scroll(root);animation-range:calc(var(--hero-haut,0px) + max(0px,var(--hero-h,100vh) - 100vh)) calc(var(--hero-haut,0px) + var(--hero-h,100vh));transform-origin:50% 100%}
   @keyframes hero-recule{to{transform:scale(.9);opacity:.15}}
 
   /* Chaque feuille arrive légèrement en retrait et se met à plat en montant. */
-  #main-content:has(> #hero) > section:not(#hero,#rappel-teaser) > .section-inner{animation:feuille-arrive linear both;animation-timeline:view();animation-range:entry 0% entry 60vh}
+  #main-content > .hero-fixe ~ section:not(#rappel-teaser) > :is(.section-inner,.sp-inner,.rep-inner,.av-inner,.sv-inner,.cv-inner){animation:feuille-arrive linear both;animation-timeline:view();animation-range:entry 0% entry 60vh}
   @keyframes feuille-arrive{from{transform:translateY(48px) scale(.97)}to{transform:none}}
 
   /* Barre de progression de lecture, sous le menu */
@@ -1874,9 +1887,9 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
 .hero-stats .stat-item:nth-child(2):hover{transform:translateY(-5px) rotate(1.5deg)}
 
 @media(prefers-reduced-motion:reduce){
-  #main-content > #hero{position:relative;top:auto}
-  #main-content > #hero .hero-inner,
-  #main-content:has(> #hero) > section:not(#hero,#rappel-teaser) > .section-inner{animation:none}
+  #main-content > .hero-fixe{position:relative;top:auto}
+  #main-content > .hero-fixe > :is(.hero-inner,.sp-inner,.rep-inner),
+  #main-content > .hero-fixe ~ section > :is(.section-inner,.sp-inner,.rep-inner,.av-inner,.sv-inner,.cv-inner){animation:none}
   nav#navbar::after{display:none}
   .hero-left .hero-value-prop em{animation:none;background-size:100% 100%}
   ::view-transition-old(root),::view-transition-new(root){animation:none}

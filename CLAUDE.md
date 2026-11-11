@@ -991,6 +991,25 @@ les cinq.
 - Les cartes de tâches sont bâties en JavaScript, donc habillées par un bloc `is:global`
   circonscrit par `#tb-app` — même raison que `#rs-app`, `#dc-app` et `#ct-suivi`.
 
+## Transitions au défilement (branche `v2`)
+
+Bloc « V2 — TRANSITIONS » de `global.css`, tout en CSS. Le hero d'une page porte la classe
+`hero-fixe` : il reste en place, recule et s'estompe pendant que les sections suivantes le
+recouvrent en feuilles arrondies.
+
+- **Accueil, pages services et pages villes seulement.** Ni `/outils/`, ni les guides, ni les
+  formulaires, ni les écrans de signature ou de la courtière : on y vient calculer, lire ou
+  remplir. Seul le hero est épinglé — épingler chaque section bloquerait le défilement dès
+  qu'elle dépasse l'écran, c'est-à-dire presque toujours sur téléphone.
+- **Toute section qui suit un `hero-fixe` doit être un `<section>` enfant direct de `<main>`,
+  à fond opaque** : un autre élément passerait *sous* le hero collé, et un fond transparent le
+  laisserait voir au travers (un fond blanc est posé par défaut, à spécificité zéro).
+- Les mesures (`--hero-h`, `--hero-haut`) sont posées par un script de `MainLayout.astro` ;
+  le calcul reste en CSS. Sans prise en charge du navigateur, ou avec
+  `prefers-reduced-motion`, la page s'affiche sans l'effet.
+- Hors accueil, chaque feuille rend en bas, par une cale `::after`, les 36 px qu'elle passe
+  sous la suivante : les marges propres à chaque section restent intactes.
+
 ## Version anglaise (`/en/…`)
 
 Chaque page publique a un équivalent anglais, **à sa propre adresse** — `/en/`, `/en/outils/`,

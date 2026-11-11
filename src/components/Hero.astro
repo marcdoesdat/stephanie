@@ -20,7 +20,7 @@ function fmtRate(val: number | null | undefined): string {
 const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null;
 ---
 
-<section id="hero">
+<section id="hero" class="hero-fixe">
   <div class="hero-inner">
     <div class="hero-left fade-up">
       <div class="hero-badge" aria-hidden="true">
@@ -423,18 +423,6 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
 </style>
 
 <script>
-  // V2 — le hero reste en place pendant que la section suivante le recouvre (global.css,
-  // « TRANSITIONS »). Sur téléphone il dépasse l'écran : le CSS a besoin de sa hauteur pour
-  // savoir où l'arrêter. On ne pose que la mesure ; le calcul reste en CSS.
-  (function() {
-    const hero = document.getElementById('hero');
-    if (!hero || typeof ResizeObserver === 'undefined') return;
-    const racine = document.documentElement;
-    new ResizeObserver(function() {
-      racine.style.setProperty('--hero-h', hero.offsetHeight + 'px');
-    }).observe(hero);
-  })();
-
   // Parallaxe subtil : la photo se déplace plus lentement que le texte au scroll.
   // Désactivé sous 900px (layout empilé) pour éviter que la photo remonte sur le texte.
   (function() {

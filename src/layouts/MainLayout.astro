@@ -272,6 +272,27 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
       })();
     </script>
 
+    <!-- Le hero reste en place pendant que la section suivante le recouvre (global.css,
+         « TRANSITIONS »). Le CSS a besoin de sa hauteur — sur téléphone il dépasse l'écran —
+         et de sa distance au haut de la page. On ne pose que les mesures ; le calcul reste
+         en CSS. La distance se lit sur ce qui le précède : une fois collé, son propre
+         offsetTop suit le défilement. -->
+    <script is:inline>
+      (function() {
+        var hero = document.querySelector('#main-content > .hero-fixe');
+        if (!hero || typeof ResizeObserver === 'undefined') return;
+        var racine = document.documentElement;
+        var avant = hero.previousElementSibling;
+        var observateur = new ResizeObserver(function() {
+          var haut = avant ? avant.offsetTop + avant.offsetHeight : hero.parentElement.offsetTop;
+          racine.style.setProperty('--hero-h', hero.offsetHeight + 'px');
+          racine.style.setProperty('--hero-haut', haut + 'px');
+        });
+        observateur.observe(hero);
+        if (avant) observateur.observe(avant);
+      })();
+    </script>
+
     <!-- Tooltips frais de courtage (global) -->
     <script is:inline>
       (function() {
