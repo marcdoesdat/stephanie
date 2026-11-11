@@ -738,7 +738,7 @@ const outilsFaqSchema = {
         try {
           const { default: html2canvas } = await import('html2canvas');
           const canvas = await html2canvas(activePanel, {
-            backgroundColor: '#fdfaf6',
+            backgroundColor: '#ffffff',
             scale: 1.5,
             useCORS: true,
             logging: false,
@@ -836,7 +836,7 @@ const outilsFaqSchema = {
       margin-bottom: 1.5rem;
     }
     .outils-faq-title {
-      font-family: "Lora", serif;
+      font-family:var(--font-display);
       font-size: clamp(1.4rem, 3vw, 1.9rem);
       font-weight: 600;
       color: var(--ink);
@@ -941,7 +941,7 @@ const outilsFaqSchema = {
       color: var(--muted);
     }
     .outils-contact-title {
-      font-family: "Lora", serif;
+      font-family:var(--font-display);
       font-size: 1.5rem;
       font-weight: 700;
       color: var(--ink);
@@ -989,7 +989,7 @@ const outilsFaqSchema = {
       line-height: 1.5;
     }
     .outils-contact-status[data-state="error"] {
-      background: #fbeae3;
+      background: #f1ecff;
       border: 1px solid var(--clay-dk);
       color: var(--clay-dk);
     }

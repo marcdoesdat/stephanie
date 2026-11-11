@@ -128,12 +128,12 @@ Toute page du tableau ci-dessus marquée « SSR » doit donc porter `prerender =
 - `Footer.astro` — Pied de page
 - `SEO.astro` — Meta tags, canonique à barre finale, hreflang, JSON-LD de l'entreprise (`#business`) — voir « Référencement »
 - `MainLayout.astro` — Layout global (Nav + Footer + scripts analytics/consent)
-- `Polices.astro` — Les polices (Lora, DM Sans), **servies par le site** depuis `src/assets/fonts/`
+- `Polices.astro` — Les polices (Bricolage Grotesque pour les titres, DM Sans — **branche `v2`** ; Lora sur `main`), **servies par le site** depuis `src/assets/fonts/`
   (fichiers de Google Fonts, latin et latin étendu, licence OFL à côté) : `@font-face` dans le
   `<head>`, noms hachés dans `/_astro/` (cache d'un an). Plus de Google Fonts : ni connexion
   tierce, ni IP du visiteur transmise à Google — la CSP n'autorise plus que `'self'` pour les
-  polices, et la politique de confidentialité ne le mentionne plus. **DM Sans et Lora droit
-  sont préchargés** : chargées en différé, elles arrivaient après le premier affichage et la
+  polices, et la politique de confidentialité ne le mentionne plus. **DM Sans et la police des titres
+  sont préchargées** : chargées en différé, elles arrivaient après le premier affichage et la
   page sautait (CLS 0,2 sur `/outils/` et les pages services, ≈ 0 avec). Le préchargement
   coûte ~150 ms de premier affichage en 4G lente simulée ; l'italique n'est pas préchargé, il
   ne gagnait rien au CLS. Ajouter une graisse : élargir `graisses` dans le composant, le

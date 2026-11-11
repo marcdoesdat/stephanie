@@ -438,12 +438,12 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     font-size: 0.72rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--clay, #c47a52);
+    color: var(--clay, #6d47ff);
     font-weight: 600;
     margin-bottom: 0.9rem;
   }
   .rep-section-title {
-    font-family: 'Lora', serif;
+    font-family:var(--font-display);
     font-size: clamp(1.6rem, 4vw, 2.4rem);
     line-height: 1.2;
     margin: 0 0 1.5rem;
@@ -451,7 +451,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     font-weight: 700;
   }
   .rep-section-title em {
-    color: var(--clay, #c47a52);
+    color: var(--clay, #6d47ff);
     font-style: italic;
   }
   .rep-section-title--center {
@@ -462,7 +462,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
   /* L'en-tête est fixe (68 px) : sans ce dégagement, le haut de la photo passait dessous. */
   .rep-hero {
     padding: 7rem 0 3.5rem;
-    background: linear-gradient(180deg, var(--cream, #f7f2ec) 0%, var(--white, #fff) 100%);
+    background: linear-gradient(180deg, var(--cream, #f6f3ff) 0%, var(--white, #fff) 100%);
   }
   .rep-hero-grid {
     display: grid;
@@ -475,12 +475,12 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     font-size: 0.75rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--clay, #c47a52);
+    color: var(--clay, #6d47ff);
     font-weight: 600;
     margin-bottom: 1rem;
   }
   .rep-h1 {
-    font-family: 'Lora', serif;
+    font-family:var(--font-display);
     font-size: clamp(2rem, 5vw, 3.2rem);
     line-height: 1.15;
     margin: 0 0 1rem;
@@ -522,18 +522,18 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     align-items: center;
     gap: 0.5rem;
     padding: 0.95rem 1.6rem;
-    background: linear-gradient(135deg, var(--clay, #c47a52), #b56f4c);
+    background: linear-gradient(135deg, var(--clay, #6d47ff), #6d47ff);
     color: #fff;
     border-radius: 999px;
     text-decoration: none;
     font-weight: 700;
-    box-shadow: 0 10px 24px rgba(196, 122, 82, 0.3);
+    box-shadow: 0 10px 24px rgba(109,71,255, 0.3);
     transition: transform 0.2s, box-shadow 0.2s;
   }
   .rep-cta-primary:hover,
   .rep-cta-primary:focus-visible {
     transform: translateY(-2px);
-    box-shadow: 0 14px 30px rgba(196, 122, 82, 0.4);
+    box-shadow: 0 14px 30px rgba(109,71,255, 0.4);
   }
   .rep-cta-secondary {
     color: var(--ink, #1a1a1a);
@@ -542,7 +542,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
   }
   /* Le strong est rendu dans PhoneLink (scope différent) — :global obligatoire */
   .rep-cta-secondary :global(strong) {
-    color: var(--clay, #c47a52);
+    color: var(--clay, #6d47ff);
     text-decoration: underline;
   }
   .rep-hero-photo {
@@ -566,7 +566,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     gap: 0.2rem;
   }
   .rep-photo-caption strong {
-    font-family: 'Lora', serif;
+    font-family:var(--font-display);
     font-size: 1.15rem;
   }
   .rep-photo-caption span {
@@ -584,7 +584,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
   }
   .rep-market,
   .rep-process {
-    background: var(--cream, #f7f2ec);
+    background: var(--cream, #f6f3ff);
   }
 
   /* ============ CARTES SERVICES ============ */
@@ -619,14 +619,14 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
   .rep-card:focus-visible {
     transform: translateY(-4px);
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
-    border-color: var(--clay, #c47a52);
+    border-color: var(--clay, #6d47ff);
   }
   .rep-card-icon {
     font-size: 2rem;
     margin-bottom: 0.6rem;
   }
   .rep-card-title {
-    font-family: 'Lora', serif;
+    font-family:var(--font-display);
     font-size: 1.2rem;
     margin: 0 0 0.5rem;
     font-weight: 700;
@@ -640,7 +640,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
   .rep-card-cta {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--clay, #c47a52);
+    color: var(--clay, #6d47ff);
   }
 
   /* ============ MARCHÉ ============ */
@@ -672,7 +672,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
   .rep-compare-card--good {
     background: #f2f9f4;
     border: 1.5px solid #b8d4c4;
-    box-shadow: 0 8px 30px rgba(61, 90, 74, 0.12);
+    box-shadow: 0 8px 30px rgba(0,107,82, 0.12);
     position: relative;
   }
   .rep-compare-card--good::before {
@@ -680,7 +680,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     position: absolute;
     top: -12px;
     left: 1.5rem;
-    background: var(--forest, #3d5a4a);
+    background: var(--forest, #006b52);
     color: #fff;
     font-size: 0.68rem;
     font-weight: 600;
@@ -692,7 +692,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     font-size: 1.8rem;
   }
   .rep-compare-card-title {
-    font-family: 'Lora', serif;
+    font-family:var(--font-display);
     font-size: 1.15rem;
     font-weight: 700;
     margin: 0;
@@ -716,9 +716,9 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
   .rep-compare-bonus {
     margin: 0;
     padding-top: 0.85rem;
-    border-top: 1px solid rgba(61, 90, 74, 0.15);
+    border-top: 1px solid rgba(0,107,82, 0.15);
     font-size: 0.9rem;
-    color: var(--forest, #3d5a4a);
+    color: var(--forest, #006b52);
   }
   .rep-check {
     color: #2d7a4d;
@@ -757,7 +757,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
-    background: var(--clay, #c47a52);
+    background: var(--clay, #6d47ff);
     color: #fff;
     font-weight: 700;
     display: flex;
@@ -766,7 +766,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     margin-bottom: 1rem;
   }
   .rep-step-title {
-    font-family: 'Lora', serif;
+    font-family:var(--font-display);
     font-size: 1.15rem;
     margin: 0 0 0.5rem;
     font-weight: 700;
@@ -832,7 +832,7 @@ Astro.response.headers.set('Cache-Control', rateCacheControl(tauxDuJour));
     margin-left: 1.5rem;
   }
   .faq-item:hover .faq-icon {
-    background: rgba(196, 122, 82, 0.1);
+    background: rgba(109,71,255, 0.1);
   }
   .faq-item.open .faq-icon {
     background: var(--clay);

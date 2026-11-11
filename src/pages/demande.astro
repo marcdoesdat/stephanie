@@ -849,7 +849,7 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
     display: flex;
     align-items: center;
     gap: .75rem;
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.35rem;
     font-weight: 600;
     color: var(--ink);
@@ -933,13 +933,13 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
   .demande-field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
   .demande-field input:focus,
   .demande-field select:focus,
-  .demande-field textarea:focus { outline: none; border-color: var(--clay); box-shadow: 0 0 0 3px rgba(196,122,82,.12); }
+  .demande-field textarea:focus { outline: none; border-color: var(--clay); box-shadow: 0 0 0 3px rgba(109,71,255,.12); }
   .demande-field input::placeholder,
   .demande-field textarea::placeholder { color: #b8a99a; }
   .demande-field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a5f50' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; }
   .demande-field input[aria-invalid="true"],
   .demande-field select[aria-invalid="true"],
-  .demande-field textarea[aria-invalid="true"] { border-color: var(--clay-dk); box-shadow: 0 0 0 3px rgba(168,95,56,.14); }
+  .demande-field textarea[aria-invalid="true"] { border-color: var(--clay-dk); box-shadow: 0 0 0 3px rgba(91,52,240,.14); }
   /* Un groupe de boutons radio n'a pas de bordure à rougir : on encadre le groupe. */
   .demande-field[data-invalide] > label { color: var(--clay-dk); }
   .demande-field[data-invalide] .demande-radio-group {
@@ -1128,7 +1128,7 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
     text-underline-offset: 3px;
     cursor: pointer;
   }
-  .demande-sortie-btn:hover { color: #8e4f30; }
+  .demande-sortie-btn:hover { color: #4322c9; }
 
   .demande-partiel {
     margin-top: 1.25rem;
@@ -1138,7 +1138,7 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
     border-radius: var(--radius-sm);
   }
   .demande-partiel-titre {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.15rem;
     font-weight: 600;
     color: var(--ink);
@@ -1176,7 +1176,7 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
   }
   #demande-erreur { margin: 0 0 1rem; }
   .demande-status[data-state="error"] {
-    background: #fbeae3;
+    background: #f1ecff;
     border: 1px solid var(--clay-dk);
     color: var(--clay-dk);
   }
@@ -1192,7 +1192,7 @@ const totalEtapes = etapesApplicables((champ) => (champ === 'type_demande' ? 'ac
   }
   .demande-success-check { font-size: 2.2rem; display: block; margin-bottom: .5rem; }
   .demande-success strong {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.4rem;
     color: var(--forest);
     display: block;

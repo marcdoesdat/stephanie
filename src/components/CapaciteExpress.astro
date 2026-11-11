@@ -363,7 +363,7 @@ const fraisFixes = `${FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage}\u00a0$`;
   .ce-saisie input:focus {
     outline: none;
     border-color: var(--clay);
-    box-shadow: 0 0 0 3px rgba(196, 122, 82, .18);
+    box-shadow: 0 0 0 3px rgba(109,71,255, .18);
   }
   .ce-saisie input::placeholder {
     color: #a39888;
@@ -446,7 +446,7 @@ const fraisFixes = `${FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage}\u00a0$`;
     margin-bottom: .6rem;
   }
   .ce-res-val {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: clamp(2.4rem, 5vw, 3.2rem);
     font-weight: 600;
     line-height: 1.1;
@@ -486,10 +486,19 @@ const fraisFixes = `${FRAIS_DEFAUT.taxes + FRAIS_DEFAUT.chauffage}\u00a0$`;
     line-height: 1.5;
     color: rgba(255, 255, 255, .92);
   }
+  /* Sur le panneau vert, le bouton encre se fondait : jaune, texte encre. */
   .ce-cta {
     display: block;
     width: 100%;
     text-align: center;
+    background: var(--sun);
+    border-color: var(--sun);
+    color: var(--ink);
+  }
+  .ce-cta:hover {
+    background: #fff;
+    border-color: #fff;
+    color: var(--ink);
   }
   .ce-affiner {
     display: inline-block;

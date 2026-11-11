@@ -696,7 +696,7 @@ const tauxMarcheDisponible = Object.values(tauxMarcheDefaut).some((taux) => taux
           try {
             const { default: html2canvas } = await import('html2canvas');
             const canvas = await html2canvas(targetEl, {
-              backgroundColor: '#fdfaf6',
+              backgroundColor: '#ffffff',
               scale: 1.5,
               useCORS: true,
               logging: false,
@@ -757,7 +757,7 @@ const tauxMarcheDisponible = Object.values(tauxMarcheDefaut).some((taux) => taux
 
   .penalite-form{display:flex;flex-direction:column;gap:1.5rem;}
   .penalite-fieldset{border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;}
-  .penalite-legend{font-family:"Lora",serif;font-size:1.05rem;font-weight:600;color:var(--ink);padding:0 .5rem;}
+  .penalite-legend{font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);padding:0 .5rem;}
   .penalite-field{display:flex;flex-direction:column;gap:.35rem;flex:1;min-width:0;}
   /* Les deux champs d'une rangée partagent leurs pistes (subgrid) : une étiquette qui passe
      sur deux lignes abaisse aussi le champ voisin, et les cases restent alignées. */
@@ -782,14 +782,14 @@ const tauxMarcheDisponible = Object.values(tauxMarcheDefaut).some((taux) => taux
   .penalite-rates-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
   .penalite-field--rate{gap:.25rem;}
   .penalite-rate-wrap{position:relative;display:flex;align-items:center;}
-  .penalite-input--rate{padding-right:2.5rem;font-family:"Lora",serif;font-size:1.1rem;font-weight:600;}
-  .penalite-rate-suffix{position:absolute;right:1rem;font-family:"Lora",serif;font-size:.95rem;color:var(--muted);font-weight:500;pointer-events:none;}
+  .penalite-input--rate{padding-right:2.5rem;font-family:var(--font-display);font-size:1.1rem;font-weight:600;}
+  .penalite-rate-suffix{position:absolute;right:1rem;font-family:var(--font-display);font-size:.95rem;color:var(--muted);font-weight:500;pointer-events:none;}
 
-  .penalite-methode-badge{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;font-weight:600;letter-spacing:.02em;padding:.35rem .85rem;border-radius:999px;background:rgba(61,90,74,.08);color:var(--forest);border:1.5px solid rgba(61,90,74,.25);}
+  .penalite-methode-badge{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;font-weight:600;letter-spacing:.02em;padding:.35rem .85rem;border-radius:999px;background:rgba(0,107,82,.08);color:var(--forest);border:1.5px solid rgba(0,107,82,.25);}
   .penalite-badge-icon{flex-shrink:0;opacity:.7;width:14px;height:14px;}
-  .penalite-methode-badge--taux_affiche{background:rgba(61,90,74,.08);color:var(--forest);border-color:rgba(61,90,74,.25);}
-  .penalite-methode-badge--taux_reel{background:rgba(61,90,74,.08);color:var(--forest);border-color:rgba(61,90,74,.25);}
-  .penalite-methode-badge--taux_obligataire{background:rgba(61,90,74,.08);color:var(--forest);border-color:rgba(61,90,74,.25);}
+  .penalite-methode-badge--taux_affiche{background:rgba(0,107,82,.08);color:var(--forest);border-color:rgba(0,107,82,.25);}
+  .penalite-methode-badge--taux_reel{background:rgba(0,107,82,.08);color:var(--forest);border-color:rgba(0,107,82,.25);}
+  .penalite-methode-badge--taux_obligataire{background:rgba(0,107,82,.08);color:var(--forest);border-color:rgba(0,107,82,.25);}
 
   .penalite-toggle-group{display:flex;gap:.75rem;}
   .penalite-toggle{flex:1;background:var(--sand);border:1.5px solid var(--border);border-radius:14px;padding:.85rem 1rem;cursor:pointer;transition:background .2s,border-color .2s,transform .15s;display:flex;flex-direction:column;align-items:center;gap:.2rem;font-family:"DM Sans",sans-serif;}
@@ -807,24 +807,24 @@ const tauxMarcheDisponible = Object.values(tauxMarcheDefaut).some((taux) => taux
   .penalite-btn--secondary{flex:0;}
 
   .penalite-results{position:sticky;top:100px;}
-  .penalite-sticky-mobile{display:none;position:sticky;top:0;z-index:20;background:rgba(250,246,239,.96);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-bottom:1px solid var(--border);padding:.75rem 1.25rem;align-items:center;justify-content:space-between;}
+  .penalite-sticky-mobile{display:none;position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-bottom:1px solid var(--border);padding:.75rem 1.25rem;align-items:center;justify-content:space-between;}
   .penalite-sticky-mobile-label{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
-  .penalite-sticky-mobile-value{font-family:"Lora",serif;font-size:1.5rem;font-weight:700;}
+  .penalite-sticky-mobile-value{font-family:var(--font-display);font-size:1.5rem;font-weight:700;}
   .penalite-placeholder{text-align:center;padding:4rem 2rem;border:2px dashed var(--border);border-radius:20px;background:var(--sand);}
   .penalite-placeholder-icon{font-size:2.5rem;margin-bottom:1rem;}
-  .penalite-placeholder-title{font-family:"Lora",serif;font-size:1.2rem;color:var(--ink);margin-bottom:.5rem;}
+  .penalite-placeholder-title{font-family:var(--font-display);font-size:1.2rem;color:var(--ink);margin-bottom:.5rem;}
   .penalite-placeholder-sub{font-size:.85rem;color:var(--muted);max-width:320px;margin:0 auto;line-height:1.7;}
 
   .penalite-result-hero{background:var(--sand);border:1px solid var(--border);border-radius:20px;padding:2.5rem 2rem;text-align:center;margin-bottom:1.5rem;}
   .penalite-result-hero-label{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem;}
-  .penalite-result-hero-value{font-family:"Lora",serif;font-size:2.8rem;font-weight:700;color:var(--clay);line-height:1.1;}
+  .penalite-result-hero-value{font-family:var(--font-display);font-size:2.8rem;font-weight:700;color:var(--clay);line-height:1.1;}
   .penalite-result-hero-sub{font-size:.82rem;color:var(--muted);margin-top:.5rem;}
 
   .penalite-decomposition{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:1.5rem;}
   .penalite-decomp-card{background:var(--sand);border:1px solid var(--border);border-radius:14px;padding:1rem;text-align:center;}
-  .penalite-decomp-card--retenue{background:rgba(61,90,74,.06);border-color:rgba(61,90,74,.2);}
+  .penalite-decomp-card--retenue{background:rgba(0,107,82,.06);border-color:rgba(0,107,82,.2);}
   .penalite-decomp-label{font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem;}
-  .penalite-decomp-value{font-family:"Lora",serif;font-size:1.2rem;font-weight:600;color:var(--ink);}
+  .penalite-decomp-value{font-family:var(--font-display);font-size:1.2rem;font-weight:600;color:var(--ink);}
 
   .penalite-contexte{display:flex;gap:1.5rem;font-size:.82rem;color:var(--muted);margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
 
@@ -839,7 +839,7 @@ const tauxMarcheDisponible = Object.values(tauxMarcheDefaut).some((taux) => taux
   .penalite-barre-label--retenue{font-weight:600;color:var(--forest);}
   .penalite-barre-value--retenue{font-weight:600;color:var(--forest);}
   .penalite-barre-note{font-size:.7rem;color:var(--muted);margin-top:.35rem;text-align:right;}
-  .penalite-comparaison{display:flex;gap:1rem;align-items:flex-start;background:rgba(61,90,74,.05);border:1px solid rgba(61,90,74,.15);border-radius:14px;padding:1.25rem;margin-bottom:1.5rem;}
+  .penalite-comparaison{display:flex;gap:1rem;align-items:flex-start;background:rgba(0,107,82,.05);border:1px solid rgba(0,107,82,.15);border-radius:14px;padding:1.25rem;margin-bottom:1.5rem;}
   .penalite-comparaison-icon{font-size:1.4rem;flex-shrink:0;}
   .penalite-comparaison-text{font-size:.85rem;color:var(--ink);line-height:1.7;}
 
@@ -851,7 +851,7 @@ const tauxMarcheDisponible = Object.values(tauxMarcheDefaut).some((taux) => taux
   .penalite-details-content{padding:1.25rem;font-family:"DM Sans",monospace;font-size:.78rem;line-height:1.7;color:var(--muted);background:white;white-space:pre-wrap;border-top:1px solid var(--border);margin:0;}
 
   .penalite-avertissements{margin-bottom:1.5rem;}
-  .penalite-avertissement-details{border:1px solid rgba(196,122,82,.2);border-radius:12px;overflow:hidden;background:#fffaf2;}
+  .penalite-avertissement-details{border:1px solid rgba(109,71,255,.2);border-radius:12px;overflow:hidden;background:#fffaf2;}
   .penalite-avertissement-summary{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;font-size:.78rem;font-weight:600;color:var(--clay);cursor:pointer;list-style:none;user-select:none;}
   .penalite-avertissement-summary::-webkit-details-marker{display:none;}
   .penalite-avertissement-summary::after{content:'▸';font-size:.7rem;margin-left:auto;transition:transform .2s;}
@@ -862,7 +862,7 @@ const tauxMarcheDisponible = Object.values(tauxMarcheDefaut).some((taux) => taux
   .penalite-cta-section{margin-bottom:1.5rem;}
 
   .penalite-capture{margin-top:1.25rem;padding:1.5rem;border:1px solid var(--border);border-radius:16px;background:var(--sand);}
-  .penalite-capture-label{font-family:"Lora",serif;font-size:1.1rem;font-weight:600;color:var(--ink);margin-bottom:.5rem;}
+  .penalite-capture-label{font-family:var(--font-display);font-size:1.1rem;font-weight:600;color:var(--ink);margin-bottom:.5rem;}
   .penalite-capture-note{font-size:.82rem;color:var(--muted);margin-bottom:1rem;line-height:1.6;}
 
   .penalite-rapport-contenu{margin-bottom:.85rem;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
@@ -883,7 +883,7 @@ const tauxMarcheDisponible = Object.values(tauxMarcheDefaut).some((taux) => taux
   .penalite-capture-submit:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:2px 2px 0 var(--ink);}
   .penalite-capture-msg{margin-top:.75rem;font-size:.8rem;text-align:center;}
 
-  .penalite-disclaimer{margin-top:2rem;padding:1.25rem 1.5rem;background:#fff9e6;border:1px solid rgba(196,122,82,.25);border-radius:14px;font-size:.75rem;color:var(--muted);line-height:1.7;}
+  .penalite-disclaimer{margin-top:2rem;padding:1.25rem 1.5rem;background:#fff9e6;border:1px solid rgba(109,71,255,.25);border-radius:14px;font-size:.75rem;color:var(--muted);line-height:1.7;}
 
   @media (max-width:768px){
     #penalite-calculator{padding-left:1.5rem;padding-right:1.5rem;}

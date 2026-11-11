@@ -135,7 +135,7 @@ const { defaultRate = null } = Astro.props;
           </button>
 
           <div class="email-capture" id="email-capture-section" style="display:none; border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; background: var(--sand);">
-            <div class="email-capture-label" style="font-family: 'Lora', serif; font-size: 1.1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.5rem;">Recevoir ce résumé par courriel ou texto</div>
+            <div class="email-capture-label" style="font-family:var(--font-display); font-size: 1.1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.5rem;">Recevoir ce résumé par courriel ou texto</div>
             <div class="email-capture-note" style="font-size: .82rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.6;">Je vous enverrai personnellement le résumé. Merci d'indiquer vos coordonnées.</div>
             <div class="email-capture-row">
               <div style="flex:1;min-width:0;">
@@ -555,7 +555,7 @@ const { defaultRate = null } = Astro.props;
         try {
           const { default: html2canvas } = await import('html2canvas');
           const canvas = await html2canvas(targetEl, {
-            backgroundColor: '#fdfaf6',
+            backgroundColor: '#ffffff',
             scale: 1.5,
             useCORS: true,
             logging: false,

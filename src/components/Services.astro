@@ -117,19 +117,20 @@ const services: ServiceItem[] = [
   }
   /* Remplacement du radial-gradient par un suivi souris fluide */
   .service-card::before {
-    background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 0%), rgba(196, 122, 82, 0.08), transparent 40%);
+    background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 0%), rgba(255,255,255, 0.45), transparent 40%);
   }
   .service-card h3 {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.3rem;
     margin-bottom: 0.8rem;
     font-weight: 600;
     color: var(--ink);
   }
+  /* Encre, pas violet : sur les aplats jaune et rose, le violet ne se lit pas assez. */
   .service-card .learn {
     margin-top: auto;
     padding-top: 1.2rem;
-    color: var(--clay);
+    color: var(--ink);
   }
   
   .service-court {

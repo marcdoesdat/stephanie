@@ -168,21 +168,19 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
     font-size: 0.95rem;
     font-weight: 600;
     border-radius: 50px;
-    background: var(--clay-dk);
+    background: var(--ink);
     color: #fff;
     text-decoration: none;
-    border: 2px solid var(--clay-dk);
-    box-shadow: 6px 6px 0 var(--ink);
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+    border: 2px solid var(--ink);
+    transition: transform 0.25s var(--rebond), background 0.2s ease, border-color 0.2s ease;
   }
   .hero-btns .btn-tools:hover {
-    transform: translate(2px, 2px);
-    box-shadow: 3px 3px 0 var(--ink);
-    background: #8e4f30;
+    transform: translateY(-2px);
+    background: var(--clay-dk);
+    border-color: var(--clay-dk);
   }
   .hero-btns .btn-tools:active {
-    transform: translate(4px, 4px);
-    box-shadow: 1px 1px 0 var(--clay);
+    transform: scale(0.97);
   }
 
   /* CTA secondaire (outils) : version outline, hiérarchie visuelle sous le booking */
@@ -193,9 +191,10 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
     box-shadow: none;
   }
   .hero-btns .btn-tools--ghost:hover {
-    background: rgba(0, 0, 0, 0.05);
-    box-shadow: none;
-    transform: translate(0, 0);
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+    transform: translateY(-2px);
   }
   .hero-btns .btn-tools--ghost:active {
     transform: translate(1px, 1px);
@@ -223,7 +222,7 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
   .blob-1 {
     width: 160px;
     height: 160px;
-    background: radial-gradient(circle, rgba(196, 122, 82, 0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(109,71,255, 0.15) 0%, transparent 70%);
     bottom: 10%;
     right: 5%;
     animation: appear-blob 0.6s cubic-bezier(0.16, 1, 0.3, 1) both, float-idle 6s ease-in-out 0.6s infinite;
@@ -232,7 +231,7 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
   .blob-2 {
     width: 144px;
     height: 144px;
-    background: radial-gradient(circle, rgba(61, 90, 74, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0,107,82, 0.1) 0%, transparent 70%);
     top: 5%;
     right: 8%;
     animation: appear-blob 0.6s cubic-bezier(0.16, 1, 0.3, 1) both, float-idle 8s ease-in-out 2s infinite;
@@ -313,7 +312,7 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
   .ribbon-card .card-val--link {
     color: var(--clay);
     text-decoration: none;
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-weight: 600;
   }
   .ribbon-card .card-val--link:hover { text-decoration: underline; }
@@ -332,7 +331,7 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
   }
   a.ribbon-card--reviews:hover,
   a.ribbon-card--reviews:focus-visible {
-    background: rgba(196, 122, 82, 0.1);
+    background: rgba(109,71,255, 0.1);
   }
 
   @media (max-width: 900px) {

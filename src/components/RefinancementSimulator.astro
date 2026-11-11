@@ -1235,7 +1235,7 @@ const nouveauTauxDefaut =
   }
 
   .rsim-legend {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.05rem;
     font-weight: 600;
     color: var(--ink);
@@ -1340,9 +1340,9 @@ const nouveauTauxDefaut =
     font-weight: 700;
     letter-spacing: .04em;
     text-transform: uppercase;
-    background: rgba(61, 90, 74, .1);
+    background: rgba(0,107,82, .1);
     color: var(--forest);
-    border: 1px solid rgba(61, 90, 74, .2);
+    border: 1px solid rgba(0,107,82, .2);
     border-radius: 6px;
     padding: .12rem .4rem;
   }
@@ -1365,9 +1365,9 @@ const nouveauTauxDefaut =
     font-weight: 600;
     letter-spacing: .05em;
     text-transform: uppercase;
-    background: rgba(61, 90, 74, .1);
+    background: rgba(0,107,82, .1);
     color: var(--forest);
-    border: 1px solid rgba(61, 90, 74, .2);
+    border: 1px solid rgba(0,107,82, .2);
     border-radius: 6px;
     padding: .15rem .4rem;
     vertical-align: middle;
@@ -1380,7 +1380,7 @@ const nouveauTauxDefaut =
     padding-block: .3rem;
     font-size: .78rem;
     font-weight: 600;
-    /* #8a4820 sur fond --sand (#f7f2eb) = ratio ~5.6:1, passe WCAG AA */
+    /* #8a4820 sur fond --sand (#f6f3ff) = ratio ~5.6:1, passe WCAG AA */
     color: #8a4820;
     text-decoration: underline;
     text-underline-offset: 2px;
@@ -1415,7 +1415,7 @@ const nouveauTauxDefaut =
   .rsim-placeholder-icon { font-size: 2.5rem; margin-bottom: 1rem; }
 
   .rsim-placeholder h3 {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.2rem;
     color: var(--ink);
     margin: 0 0 .5rem;
@@ -1439,8 +1439,8 @@ const nouveauTauxDefaut =
     background: var(--sand);
   }
 
-  .rsim-verdict--oui     { border-color: rgba(61,90,74,.4);  background: rgba(61,90,74,.06); }
-  .rsim-verdict--evaluer { border-color: rgba(196,122,52,.4); background: rgba(196,122,52,.06); }
+  .rsim-verdict--oui     { border-color: rgba(0,107,82,.4);  background: rgba(0,107,82,.06); }
+  .rsim-verdict--evaluer { border-color: rgba(109,71,255,.4); background: rgba(109,71,255,.06); }
   .rsim-verdict--non     { border-color: rgba(180,60,50,.35); background: rgba(180,60,50,.05); }
 
   .rsim-verdict-badge {
@@ -1459,7 +1459,7 @@ const nouveauTauxDefaut =
   .rsim-verdict--non .rsim-verdict-badge     { background: #b43c32; }
 
   .rsim-verdict-title {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.15rem;
     font-weight: 600;
     color: var(--ink);
@@ -1478,8 +1478,8 @@ const nouveauTauxDefaut =
   }
 
   .rsim-hero--positive {
-    background: linear-gradient(135deg, #3d5a4a 0%, #2e4538 100%);
-    box-shadow: 0 8px 32px rgba(61, 90, 74, .25);
+    background: linear-gradient(135deg, #006b52 0%, #00503d 100%);
+    box-shadow: 0 8px 32px rgba(0,107,82, .25);
   }
 
   .rsim-hero--negative {
@@ -1504,7 +1504,7 @@ const nouveauTauxDefaut =
   .rsim-hero--neutral .rsim-hero-eyebrow { color: var(--muted); }
 
   .rsim-hero-amount {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: clamp(2.2rem, 5vw, 3.2rem);
     font-weight: 700;
     line-height: 1;
@@ -1528,8 +1528,8 @@ const nouveauTauxDefaut =
 
   .rsim-amort-warning {
     margin-top: .5rem;
-    background: rgba(196, 122, 82, .12);
-    border: 1px solid rgba(196, 122, 82, .3);
+    background: rgba(109,71,255, .12);
+    border: 1px solid rgba(109,71,255, .3);
     border-radius: 10px;
     padding: .6rem .85rem;
     font-size: .75rem;
@@ -1562,8 +1562,8 @@ const nouveauTauxDefaut =
   }
 
   .rsim-compare-card--new {
-    border-color: rgba(61, 90, 74, .25);
-    background: linear-gradient(180deg, rgba(61, 90, 74, .04), white 60%);
+    border-color: rgba(0,107,82, .25);
+    background: linear-gradient(180deg, rgba(0,107,82, .04), white 60%);
   }
 
   .rsim-compare-tag {
@@ -1612,8 +1612,8 @@ const nouveauTauxDefaut =
     gap: .35rem;
   }
 
-  .rsim-pointmort--vert { border-color: rgba(61,90,74,.35); background: rgba(61,90,74,.05); }
-  .rsim-pointmort--orange { border-color: rgba(196,122,52,.35); background: rgba(196,122,52,.05); }
+  .rsim-pointmort--vert { border-color: rgba(0,107,82,.35); background: rgba(0,107,82,.05); }
+  .rsim-pointmort--orange { border-color: rgba(109,71,255,.35); background: rgba(109,71,255,.05); }
   .rsim-pointmort--rouge { border-color: rgba(180,60,50,.3); background: rgba(180,60,50,.05); }
 
   .rsim-pointmort-label {
@@ -1625,7 +1625,7 @@ const nouveauTauxDefaut =
   }
 
   .rsim-pointmort-value {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.9rem;
     font-weight: 700;
     color: var(--ink);
@@ -1667,8 +1667,8 @@ const nouveauTauxDefaut =
 
   /* Équité */
   .rsim-equite {
-    background: rgba(196, 122, 82, .06);
-    border: 1px solid rgba(196, 122, 82, .2);
+    background: rgba(109,71,255, .06);
+    border: 1px solid rgba(109,71,255, .2);
     border-radius: 16px;
     padding: 1.25rem 1.5rem;
     display: flex;
@@ -1772,7 +1772,7 @@ const nouveauTauxDefaut =
     padding: .55rem .95rem;
     border: 1px dashed var(--clay);
     border-radius: 10px;
-    background: rgba(196, 122, 82, .06);
+    background: rgba(109,71,255, .06);
     color: var(--clay);
     font-size: .82rem;
     font-weight: 600;
@@ -1781,7 +1781,7 @@ const nouveauTauxDefaut =
   }
 
   .rsim-dette-add-btn:hover {
-    background: rgba(196, 122, 82, .12);
+    background: rgba(109,71,255, .12);
     border-style: solid;
   }
 
@@ -1793,8 +1793,8 @@ const nouveauTauxDefaut =
     gap: .75rem;
     width: 100%;
     padding: .95rem 1.1rem;
-    background: rgba(61, 90, 74, .05);
-    border: 1.5px solid rgba(61, 90, 74, .2);
+    background: rgba(0,107,82, .05);
+    border: 1.5px solid rgba(0,107,82, .2);
     border-radius: 12px;
     color: var(--forest);
     font-family: inherit;
@@ -1806,8 +1806,8 @@ const nouveauTauxDefaut =
   }
 
   .rsim-conso-toggle:hover {
-    background: rgba(61, 90, 74, .09);
-    border-color: rgba(61, 90, 74, .35);
+    background: rgba(0,107,82, .09);
+    border-color: rgba(0,107,82, .35);
   }
 
   .rsim-conso-chevron {
@@ -1838,8 +1838,8 @@ const nouveauTauxDefaut =
 
   /* ===== Consolidation de dettes (résultats) ===== */
   .rsim-conso {
-    background: rgba(61, 90, 74, .04);
-    border: 1px solid rgba(61, 90, 74, .25);
+    background: rgba(0,107,82, .04);
+    border: 1px solid rgba(0,107,82, .25);
     border-radius: 16px;
     padding: 1.25rem 1.5rem;
     display: flex;
@@ -1870,7 +1870,7 @@ const nouveauTauxDefaut =
   }
 
   .rsim-conso-amount {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.7rem;
     font-weight: 800;
     line-height: 1.1;
@@ -1916,10 +1916,10 @@ const nouveauTauxDefaut =
   }
 
   .rsim-net--positive {
-    border-color: rgba(61, 90, 74, .3);
-    background: rgba(61, 90, 74, .04);
+    border-color: rgba(0,107,82, .3);
+    background: rgba(0,107,82, .04);
   }
-  .rsim-net--negative { border-color: rgba(196, 122, 82, .3); }
+  .rsim-net--negative { border-color: rgba(109,71,255, .3); }
 
   .rsim-net-label {
     font-size: .7rem;
@@ -1931,7 +1931,7 @@ const nouveauTauxDefaut =
   }
 
   .rsim-net-value {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.9rem;
     font-weight: 700;
     line-height: 1.1;
@@ -2064,7 +2064,7 @@ const nouveauTauxDefaut =
     position: sticky; /* remplacé par fixed sur mobile via .js-visible */
     top: 0;
     z-index: 20;
-    background: rgba(250, 246, 239, 0.96);
+    background: rgba(255,255,255, 0.96);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--border);
@@ -2108,7 +2108,7 @@ const nouveauTauxDefaut =
   }
 
   .rsim-sticky-mobile-value {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--ink);
@@ -2133,8 +2133,8 @@ const nouveauTauxDefaut =
 
   /* CTA expert (bouton de contact dans les résultats) */
   .rsim-cta-expert {
-    background: linear-gradient(135deg, rgba(196, 122, 82, .08), rgba(61, 90, 74, .06));
-    border: 1px solid rgba(196, 122, 82, .25);
+    background: linear-gradient(135deg, rgba(109,71,255, .08), rgba(0,107,82, .06));
+    border: 1px solid rgba(109,71,255, .25);
     border-radius: 18px;
     padding: 1.25rem 1.5rem;
     display: flex;
@@ -2143,7 +2143,7 @@ const nouveauTauxDefaut =
   }
 
   .rsim-cta-expert-msg {
-    font-family: "Lora", serif;
+    font-family:var(--font-display);
     font-size: 1rem;
     font-weight: 600;
     color: var(--ink);
