@@ -25,7 +25,32 @@ const prenom = config.nom.split(' ')[0];
       <div class="fade-right" style="transition-delay:.15s">
         <div class="apropos-text">
           <h2>Bonjour, moi c'est {prenom}.</h2>
-          
+
+          <!-- L'essentiel en quatre lignes, pour qui ne lira pas les paragraphes. Rien ici
+               qui ne soit dit ailleurs sur la page : mêmes mots pour les frais (« dans la
+               plupart des cas ») et pour l'accompagnement (Teams, téléphone ou texto). -->
+          <div class="apropos-bref">
+            <p class="apropos-bref-titre" id="apropos-bref-titre">En bref</p>
+            <dl aria-labelledby="apropos-bref-titre">
+              <div>
+                <dt>Rôle</dt>
+                <dd>Courtière hypothécaire chez {config.organisation} depuis quatre ans</dd>
+              </div>
+              <div>
+                <dt>Prêteurs</dt>
+                <dd>Plus de 20 comparés pour vous</dd>
+              </div>
+              <div>
+                <dt>Où</dt>
+                <dd>Partout au Québec, par Teams, téléphone ou texto</dd>
+              </div>
+              <div>
+                <dt>Frais</dt>
+                <dd>0&nbsp;$ pour vous dans la plupart des cas</dd>
+              </div>
+            </dl>
+          </div>
+
           <p>
             Courtière hypothécaire chez <strong>Hypotheca</strong> depuis quatre ans, j'accompagne des clients partout au <strong>Québec</strong>, à partir de <strong>Repentigny</strong>, au cœur de <strong>Lanaudière</strong> — pour l'une des décisions financières les plus importantes de leur vie.
           </p>
@@ -71,4 +96,50 @@ const prenom = config.nom.split(' ')[0];
   }
 
 
+  /* « En bref » : une carte blanche sur le fond vert de la section, deux colonnes sur
+     ordinateur, une seule sur téléphone. */
+  .apropos-bref {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem 1.4rem;
+    margin-bottom: 1.6rem;
+  }
+  .apropos-text .apropos-bref-titre {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--sun);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+  }
+  .apropos-bref dl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.75rem;
+    margin: 0;
+  }
+  .apropos-bref dt {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--forest);
+    margin-bottom: 0.2rem;
+  }
+  .apropos-bref dd {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--ink);
+  }
+  @media (max-width: 600px) {
+    .apropos-bref { padding: 1.1rem 1.15rem 1.2rem; }
+    .apropos-bref dl { grid-template-columns: 1fr; gap: 0.85rem; }
+  }
 </style>
