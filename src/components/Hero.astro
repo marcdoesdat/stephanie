@@ -23,6 +23,8 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
 <section id="hero" class="hero-fixe">
   <div class="hero-inner">
     <div class="hero-left fade-up">
+      <p class="hero-lieu" aria-hidden="true">Courtière hypothécaire à {config.region}</p>
+
       <h1 class="hero-value-prop">
         <span class="sr-only">Courtière hypothécaire à {config.region} — </span>
         Acheter ou renouveler,<br /> <em>c'est stressant.</em><br /> Pas avec moi.
@@ -199,6 +201,16 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
   .hero-btns .btn-tools--ghost:active {
     transform: translate(1px, 1px);
     box-shadow: none;
+  }
+
+  /* Texte simple au-dessus du titre : pas de pastille, pas de fond. */
+  .hero-left .hero-lieu {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--clay);
+    max-width: none;
+    margin: 0 0 1rem;
+    line-height: 1.4;
   }
 
   .hero-blob {
