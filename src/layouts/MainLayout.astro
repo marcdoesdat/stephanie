@@ -385,7 +385,7 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
       border-radius: 50px;
       background: var(--clay-dk);
       border: 2px solid var(--clay-dk);
-      box-shadow: 3px 3px 0 var(--ink);
+      box-shadow: 0 8px 22px rgba(109,71,255,.35);
       color: #fff;
       font-family: "DM Sans", sans-serif;
       font-size: 0.95rem;
@@ -402,8 +402,8 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
     .sticky-btn:active {
       background: var(--clay-dk);
       border-color: var(--clay-dk);
-      box-shadow: 1px 1px 0 var(--ink);
-      transform: translate(2px, 2px);
+      box-shadow: 0 4px 12px rgba(109,71,255,.35);
+      transform: scale(.97);
     }
 
     /* Scroll-aware : la bande descend hors de l'écran (le bouton Messenger
@@ -427,7 +427,7 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
       font-weight: 700;
     }
     .mobile-sticky-cta.sticky-converted .sticky-btn:active {
-      background: linear-gradient(135deg, var(--clay-dk), #9e5f3e);
+      background: linear-gradient(135deg, var(--clay-dk), #4322c9);
       box-shadow: 0 3px 12px rgba(109,71,255, 0.45);
     }
   }

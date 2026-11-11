@@ -11,6 +11,8 @@
   --font-display:"Bricolage Grotesque","DM Sans",sans-serif;
   /* Rebond des boutons et des cartes au survol */
   --rebond:cubic-bezier(.34,1.56,.64,1);
+  /* Décélération des apparitions au défilement */
+  --sortie:cubic-bezier(.16,1,.3,1);
   /* Ombres — du plus léger au plus marqué */
   --shadow-xs:0 1px 4px rgba(0,0,0,.04);
   --shadow-sm:0 4px 16px rgba(0,0,0,.06);
@@ -1472,26 +1474,27 @@ footer strong{color:rgba(255,255,255,.85)}
 .footer-disclaimer{margin-top:2rem;padding-top:2rem;border-top:1px solid rgba(255,255,255,.1);font-size:.68rem;line-height:1.9;color:rgba(255,255,255,.35);max-width:860px;margin-left:auto;margin-right:auto;text-align:left}
 
 /* ANIMATIONS */
-.fade-up{transition:opacity .6s ease,transform .6s ease}
-.js-enabled .fade-up{opacity:0;transform:translateY(24px)}
+/* V2 : course plus longue et décélération franche (--sortie) — l'élément arrive vite et se pose. */
+.fade-up{transition:opacity .8s var(--sortie),transform .8s var(--sortie)}
+.js-enabled .fade-up{opacity:0;transform:translateY(44px)}
 .js-enabled .fade-up.visible{opacity:1;transform:translateY(0)}
 
-.fade-left{transition:opacity .6s ease,transform .6s ease}
-.js-enabled .fade-left{opacity:0;transform:translateX(-32px)}
+.fade-left{transition:opacity .8s var(--sortie),transform .8s var(--sortie)}
+.js-enabled .fade-left{opacity:0;transform:translateX(-48px)}
 .js-enabled .fade-left.visible{opacity:1;transform:translateX(0)}
 
-.fade-right{transition:opacity .6s ease,transform .6s ease}
-.js-enabled .fade-right{opacity:0;transform:translateX(32px)}
+.fade-right{transition:opacity .8s var(--sortie),transform .8s var(--sortie)}
+.js-enabled .fade-right{opacity:0;transform:translateX(48px)}
 .js-enabled .fade-right.visible{opacity:1;transform:translateX(0)}
 
-.scale-in{transition:opacity .55s ease,transform .55s ease}
-.js-enabled .scale-in{opacity:0;transform:scale(.93)}
+.scale-in{transition:opacity .7s var(--sortie),transform .7s var(--rebond)}
+.js-enabled .scale-in{opacity:0;transform:scale(.88)}
 .js-enabled .scale-in.visible{opacity:1;transform:scale(1)}
 
 /* Stagger children : chaque enfant direct apparaît en cascade */
-.stagger-children > *{transition:opacity .5s ease,transform .5s ease}
-.js-enabled .stagger-children > *{opacity:0;transform:translateY(20px)}
-.js-enabled .stagger-children.visible > *{opacity:1;transform:translateY(0)}
+.stagger-children > *{transition:opacity .7s var(--sortie),transform .7s var(--rebond)}
+.js-enabled .stagger-children > *{opacity:0;transform:translateY(36px) scale(.96)}
+.js-enabled .stagger-children.visible > *{opacity:1;transform:none}
 .js-enabled .stagger-children.visible > *:nth-child(1){transition-delay:0s}
 .js-enabled .stagger-children.visible > *:nth-child(2){transition-delay:.08s}
 .js-enabled .stagger-children.visible > *:nth-child(3){transition-delay:.16s}
@@ -1806,3 +1809,75 @@ footer strong{color:rgba(255,255,255,.85)}
 .outil-case{display:flex;align-items:center;gap:.6rem;min-height:44px;cursor:pointer;font-size:.9rem;font-weight:500;color:var(--ink)}
 .outil-case input{width:1.15rem;height:1.15rem;margin:0;accent-color:var(--clay);flex-shrink:0;cursor:pointer}
 .outil-case-aide{display:block;padding-left:1.75rem;color:var(--muted);font-size:.8rem;line-height:1.45}
+
+
+/* ==========================================================================
+   V2 — TRANSITIONS
+   Tout est en CSS. Rien ici n'est nécessaire à la lecture : un navigateur qui ne
+   connaît pas une de ces fonctions affiche la page sans l'effet, et
+   « prefers-reduced-motion » les coupe toutes (bloc en fin de section).
+   ========================================================================== */
+
+/* --- 1. Le menu flotte : une pilule détachée du bord, sur toutes les pages. */
+nav#navbar{top:10px;left:10px;right:10px;border-radius:20px;border:1px solid rgba(18,16,31,.06);box-shadow:0 6px 24px rgba(18,16,31,.08);view-transition-name:menu}
+nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(18,16,31,.06)}
+@media(max-width:1180px){
+  /* Le panneau du menu mobile suit la pilule : même largeur, mêmes coins, et il s'arrête
+     avant le bas de l'écran au lieu de dépasser des 10 px du décalage. */
+  nav#navbar .nav-links.open{top:calc(100% + 8px);height:auto;max-height:calc(100dvh - 68px - 28px);padding:1.5rem 1rem;border-radius:20px;box-shadow:0 20px 50px rgba(18,16,31,.18);overflow-y:auto}
+}
+
+/* --- 2. Accueil : les sections sont des feuilles qui glissent l'une sur l'autre.
+   Le hero reste en place (sticky) pendant que la feuille suivante le recouvre.
+   :where() garde la spécificité à zéro : le fond propre à chaque section l'emporte,
+   celui d'ici ne sert qu'aux sections qui n'en déclarent pas — toutes doivent être
+   opaques, sinon le hero resté dessous se verrait au travers. */
+:where(#main-content:has(> #hero)) > section{position:relative;z-index:1;background:var(--white)}
+/* #rappel-teaser prolonge la section des taux (même fond) : pas une feuille à part. */
+#main-content:has(> #hero) > section:not(#hero,#rappel-teaser){border-radius:36px 36px 0 0;margin-top:-36px;padding-top:calc(clamp(2.5rem,5vw,4rem) + 20px);padding-bottom:calc(clamp(2.5rem,5vw,4rem) + 36px);box-shadow:0 -14px 40px rgba(18,16,31,.07)}
+#main-content:has(> #hero) > section:last-child{padding-bottom:clamp(2.5rem,5vw,4rem)}
+/* --hero-h est posé par Hero.astro. Sur téléphone le hero dépasse l'écran : il défile
+   jusqu'à ce que son bas touche le bas de l'écran, puis s'arrête là. */
+#main-content > #hero{position:sticky;top:min(0px,calc(100vh - var(--hero-h,100vh)));z-index:0}
+
+/* Pendant qu'il est recouvert, le hero recule : il rétrécit un peu et s'estompe. */
+@supports (animation-timeline:scroll()){
+  #main-content > #hero .hero-inner{animation:hero-recule linear both;animation-timeline:scroll(root);animation-range:max(0px,calc(var(--hero-h,100vh) - 100vh)) var(--hero-h,100vh);transform-origin:50% 100%}
+  @keyframes hero-recule{to{transform:scale(.9);opacity:.15}}
+
+  /* Chaque feuille arrive légèrement en retrait et se met à plat en montant. */
+  #main-content:has(> #hero) > section:not(#hero,#rappel-teaser) > .section-inner{animation:feuille-arrive linear both;animation-timeline:view();animation-range:entry 0% entry 60vh}
+  @keyframes feuille-arrive{from{transform:translateY(48px) scale(.97)}to{transform:none}}
+
+  /* Barre de progression de lecture, sous le menu */
+  nav#navbar::after{content:"";position:absolute;left:18px;right:18px;bottom:0;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--clay),var(--rose),var(--sun));transform-origin:0 50%;animation:progression linear both;animation-timeline:scroll(root)}
+  @keyframes progression{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+}
+
+/* --- 3. Le surlignage du mot fort se trace, une fois le titre affiché. */
+.hero-left .hero-value-prop em{background-repeat:no-repeat;background-size:0% 100%;animation:surligne .9s var(--sortie) .55s forwards}
+@keyframes surligne{to{background-size:100% 100%}}
+
+/* --- 4. D'une page à l'autre : fondu-glissé natif (aucun script, aucun routeur).
+   Le menu garde sa place d'une page à la suivante. */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:page-sort .22s ease-in both}
+::view-transition-new(root){animation:page-entre .45s var(--sortie) both}
+@keyframes page-sort{to{opacity:0;transform:translateY(-14px)}}
+@keyframes page-entre{from{opacity:0;transform:translateY(28px)}}
+
+/* --- 5. Micro-interactions */
+.faq-item,.outils-autres li a{transition:transform .3s var(--rebond),box-shadow .2s,border-color .2s}
+.faq-item:hover,.outils-autres li a:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+.hero-stats .stat-item{transition:transform .35s var(--rebond)}
+.hero-stats .stat-item:hover{transform:translateY(-5px) rotate(-1.5deg)}
+.hero-stats .stat-item:nth-child(2):hover{transform:translateY(-5px) rotate(1.5deg)}
+
+@media(prefers-reduced-motion:reduce){
+  #main-content > #hero{position:relative;top:auto}
+  #main-content > #hero .hero-inner,
+  #main-content:has(> #hero) > section:not(#hero,#rappel-teaser) > .section-inner{animation:none}
+  nav#navbar::after{display:none}
+  .hero-left .hero-value-prop em{animation:none;background-size:100% 100%}
+  ::view-transition-old(root),::view-transition-new(root){animation:none}
+}
