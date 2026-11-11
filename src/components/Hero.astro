@@ -108,13 +108,17 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
         <div class="hero-blob blob-2"></div>
         
         <div class="hero-cards-ribbon">
-          <div class="ribbon-card">
-            <span class="card-sm">Taux variable</span>
-            {baseRate != null
-              ? <span class="card-val">Dès {fmtRate(baseRate)}</span>
-              : <a class="card-val card-val--link" href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener">hypotheca.ca</a>
-            }
-          </div>
+          {baseRate != null ? (
+            <a class="ribbon-card ribbon-card--reviews" href="#taux-section" aria-label={`Taux variable dès ${fmtRate(baseRate)} — voir le tableau des taux`}>
+              <span class="card-sm">Taux variable</span>
+              <span class="card-val">Dès {fmtRate(baseRate)}</span>
+            </a>
+          ) : (
+            <div class="ribbon-card">
+              <span class="card-sm">Taux variable</span>
+              <a class="card-val card-val--link" href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener">hypotheca.ca</a>
+            </div>
+          )}
           <div class="ribbon-card ribbon-card--logo">
             <img src="/images/hypotheca-couleur.svg" alt="Hypotheca" width="76" height="76" style="display:block;" loading="lazy" />
           </div>
