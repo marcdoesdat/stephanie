@@ -26,36 +26,6 @@ const prenom = config.nom.split(' ')[0];
         <div class="apropos-text">
           <h2>Bonjour, moi c'est {prenom}.</h2>
 
-          <!-- L'essentiel en quatre lignes, pour qui ne lira pas les paragraphes. Rien ici
-               qui ne soit dit ailleurs sur la page : mêmes mots pour les frais (« dans la
-               plupart des cas ») et pour l'accompagnement (Teams, téléphone ou texto). -->
-          <div class="apropos-bref">
-            <!-- « Bref » en français, « TLDR » en anglais (dictionnaire) : le ton est voulu
-                 jeune, et le mot est traité en affiche. L'émoji est décoratif, hors du texte à traduire. -->
-            <div class="apropos-bref-tete">
-              <h3 class="apropos-bref-titre" id="apropos-bref-titre">Bref</h3>
-              <span class="apropos-bref-emoji" aria-hidden="true">🤑</span>
-            </div>
-            <dl aria-labelledby="apropos-bref-titre">
-              <div>
-                <dt>Rôle</dt>
-                <dd>Courtière hypothécaire chez {config.organisation} depuis quatre ans</dd>
-              </div>
-              <div>
-                <dt>Prêteurs</dt>
-                <dd>Plus de 20 comparés pour vous</dd>
-              </div>
-              <div>
-                <dt>Où</dt>
-                <dd>Partout au Québec, par Teams, téléphone ou texto</dd>
-              </div>
-              <div>
-                <dt>Frais</dt>
-                <dd>0&nbsp;$ pour vous dans la plupart des cas</dd>
-              </div>
-            </dl>
-          </div>
-
           <p>
             Courtière hypothécaire chez <strong>Hypotheca</strong> depuis quatre ans, j'accompagne des clients partout au <strong>Québec</strong>, à partir de <strong>Repentigny</strong>, au cœur de <strong>Lanaudière</strong> — pour l'une des décisions financières les plus importantes de leur vie.
           </p>
@@ -84,6 +54,38 @@ const prenom = config.nom.split(' ')[0];
             </li>
           </ul>
 
+          <!-- L'essentiel en quatre lignes, en clôture du texte : après « Bonjour », un résumé
+               arrivait avant que rien n'ait été dit, et son titre-affiche disputait la place
+               au titre de la section. Rien ici qui ne soit dit ailleurs sur la page : mêmes
+               mots pour les frais (« dans la plupart des cas ») et pour l'accompagnement
+               (Teams, téléphone ou texto). -->
+          <div class="apropos-bref">
+            <!-- « Bref » en français, « TLDR » en anglais (dictionnaire) : le ton est voulu
+                 jeune, et le mot est traité en affiche. L'émoji est décoratif, hors du texte à traduire. -->
+            <div class="apropos-bref-tete">
+              <h3 class="apropos-bref-titre" id="apropos-bref-titre">Bref</h3>
+              <span class="apropos-bref-emoji" aria-hidden="true">🤑</span>
+            </div>
+            <dl aria-labelledby="apropos-bref-titre">
+              <div>
+                <dt>Rôle</dt>
+                <dd>Courtière hypothécaire chez {config.organisation} depuis quatre ans</dd>
+              </div>
+              <div>
+                <dt>Prêteurs</dt>
+                <dd>Plus de 20 comparés pour vous</dd>
+              </div>
+              <div>
+                <dt>Où</dt>
+                <dd>Partout au Québec, par Teams, téléphone ou texto</dd>
+              </div>
+              <div>
+                <dt>Frais</dt>
+                <dd>0&nbsp;$ pour vous dans la plupart des cas</dd>
+              </div>
+            </dl>
+          </div>
+
 
         </div>
       </div>
@@ -107,7 +109,7 @@ const prenom = config.nom.split(' ')[0];
     background: var(--lilac);
     border-radius: var(--radius-lg);
     padding: 2rem 2.1rem 2.1rem;
-    margin-bottom: 2rem;
+    margin-top: 2.4rem;
   }
   /* Le titre est un mot-affiche : très gros, très gras, l'émoji à sa taille. */
   .apropos-bref-tete {
