@@ -23,10 +23,6 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
 <section id="hero" class="hero-fixe">
   <div class="hero-inner">
     <div class="hero-left fade-up">
-      <div class="hero-badge" aria-hidden="true">
-        Courtière hypothécaire à {config.region}
-      </div>
-
       <h1 class="hero-value-prop">
         <span class="sr-only">Courtière hypothécaire à {config.region} — </span>
         Acheter ou renouveler,<br /> <em>c'est stressant.</em><br /> Pas avec moi.
@@ -108,13 +104,17 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
         <div class="hero-blob blob-2"></div>
         
         <div class="hero-cards-ribbon">
-          <div class="ribbon-card">
-            <span class="card-sm">Taux variable</span>
-            {baseRate != null
-              ? <span class="card-val">Dès {fmtRate(baseRate)}</span>
-              : <a class="card-val card-val--link" href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener">hypotheca.ca</a>
-            }
-          </div>
+          {baseRate != null ? (
+            <a class="ribbon-card ribbon-card--reviews" href="#taux-section" aria-label={`Taux variable dès ${fmtRate(baseRate)} — voir le tableau des taux`}>
+              <span class="card-sm">Taux variable</span>
+              <span class="card-val">Dès {fmtRate(baseRate)}</span>
+            </a>
+          ) : (
+            <div class="ribbon-card">
+              <span class="card-sm">Taux variable</span>
+              <a class="card-val card-val--link" href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener">hypotheca.ca</a>
+            </div>
+          )}
           <div class="ribbon-card ribbon-card--logo">
             <img src="/images/hypotheca-couleur.svg" alt="Hypotheca" width="76" height="76" style="display:block;" loading="lazy" />
           </div>
@@ -199,17 +199,6 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
   .hero-btns .btn-tools--ghost:active {
     transform: translate(1px, 1px);
     box-shadow: none;
-  }
-
-  .hero-badge::before {
-    display: none !important;
-    content: none !important;
-  }
-
-  .hero-badge-sep {
-    color: var(--clay);
-    margin: 0 0.25rem;
-    font-weight: bold;
   }
 
   .hero-blob {

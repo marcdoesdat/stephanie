@@ -81,8 +81,6 @@ nav#navbar.scrolled{box-shadow:var(--shadow-sm);border-bottom-color:var(--border
 #hero::after{content:"";position:absolute;top:-180px;left:-140px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,var(--sun) 0%,transparent 68%);opacity:.5;pointer-events:none}
 .hero-inner{position:relative;z-index:1}
 .hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
-.hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:var(--ink);border:0;padding:.45rem 1rem;border-radius:50px;font-size:.72rem;color:#fff;margin-bottom:1.8rem;font-weight:600}
-.hero-badge::before{content:"●";color:var(--sun);font-size:.5rem}
 .hero-left .hero-value-prop{font-family:var(--font-display);font-size:4.4rem;font-weight:800;line-height:1.02;color:var(--ink);margin-bottom:1.5rem;letter-spacing:-.04em}
 /* Le mot fort : surligné au feutre plutôt que penché (la police des titres n'a pas d'italique). */
 .hero-left .hero-value-prop em{font-style:normal;color:var(--ink);background:linear-gradient(transparent 58%,var(--sun) 58%,var(--sun) 92%,transparent 92%);padding:0 .08em;margin:0 -.08em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
@@ -1254,7 +1252,6 @@ td:last-child{text-align:center}
   line-height:1.4;letter-spacing:0;color:var(--clay);
   margin-bottom:1.1rem;padding-bottom:.5rem;border-bottom:2px solid var(--clay);
 }
-#main-content .hero-badge,
 #main-content .sp-h1-sujet,
 #main-content .rep-eyebrow{
   display:inline-flex;align-items:center;width:fit-content;max-width:100%;
@@ -1263,7 +1260,6 @@ td:last-child{text-align:center}
   font-family:"DM Sans",sans-serif;font-size:.68rem;font-weight:700;
   letter-spacing:.07em;line-height:1.3;text-transform:uppercase;
 }
-#main-content .hero-badge{margin-bottom:1.5rem}
 #main-content .sp-h1-sujet,
 #main-content .rep-eyebrow{margin-bottom:1rem}
 /* Dans le H1, la pastille doit rester un surtitre : en inline-flex, elle se plaçait sur la même
@@ -1517,7 +1513,6 @@ footer strong{color:rgba(255,255,255,.85)}
   .hero-inner{grid-template-columns:1fr;gap:2rem}
   .hero-inner,.hero-inner>*{min-width:0}
   .hero-left{width:100%;min-width:0}
-  .hero-badge{max-width:100%;flex-wrap:wrap;white-space:normal}
   .hero-stats{width:100%;gap:.5rem;margin-top:2rem;padding-top:1.5rem;justify-content:space-between}
   .hero-stats .stat-item{flex:1;min-width:0}
   .hero-stats .stat-num{font-size:2rem}
