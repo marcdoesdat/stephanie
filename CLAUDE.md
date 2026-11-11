@@ -1,9 +1,9 @@
 # Stephanie Weyman — Site courtière hypothécaire
 
-Site Astro 6 hybride (SSR + statique) déployé sur Netlify. Taux hypothécaires en temps réel scrapés depuis hypotheca.ca, outils de calcul interactifs, et intégration Google Reviews.
+Site Astro 7 hybride (SSR + statique) déployé sur Netlify. Taux hypothécaires en temps réel scrapés depuis hypotheca.ca, outils de calcul interactifs, et intégration Google Reviews.
 
 ## Stack
-- **Astro 6.0.8** avec adapter `@astrojs/netlify` (SSR)
+- **Astro 7** avec adapter `@astrojs/netlify` 8 (SSR) — `compressHTML: true` obligatoire, voir `astro.config.mjs`
 - **TypeScript** strict (`noUncheckedIndexedAccess` activé)
 - **Netlify Blobs** pour cache des taux et des avis en production
 - **Vitest 4** pour les tests unitaires
@@ -111,7 +111,7 @@ src/
 | `/api/dossier-acces` | API | Demande d'un lien d'accès au portail — **la seule route publique du CRM** |
 | `/api/crm-lien` | API | Ce que les autres carnets savent d'une même personne (résolution paresseuse) |
 
-**Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro 6
+**Le défaut est le statique, pas le SSR.** `astro.config.mjs` ne définit pas `output`, donc Astro
 prérend chaque page au build sauf si elle déclare `export const prerender = false`.
 
 - Page qui lit des données à l'exécution (taux, avis) ou route API → `export const prerender = false` **obligatoire**.
