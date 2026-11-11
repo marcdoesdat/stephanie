@@ -1,0 +1,59 @@
+---
+// Icône animée d'une section : un dessin au trait posé sur une tache pastel, un seul détail
+// violet qui bouge. Purement décorative (aria-hidden) — elle ne porte aucun texte, donc rien
+// à traduire. Les styles et animations vivent dans global.css (bloc « ICÔNES DE SECTION ») :
+// l'entrée attend que le bloc `.fade-*` parent soit visible, et tout s'arrête sous
+// `prefers-reduced-motion`.
+interface Props {
+  nom: keyof typeof DESSINS;
+  /** Centre l'icône (sections au texte centré). */
+  centre?: boolean;
+}
+
+const DESSINS = {
+  capacite: `<circle class="is-tache" cx="38" cy="26" r="19" fill="var(--lilac)"/>
+<path class="is-t" pathLength="1" d="M10 30 32 11 54 30"/>
+<path class="is-t is-t2" pathLength="1" d="M17 25v21h30V25"/>
+<path class="is-t is-t2" pathLength="1" d="M14 56h36" opacity=".35"/>
+<g class="is-vie is-glisse"><circle class="is-p" cx="19" cy="56" r="3.6"/></g>`,
+  services: `<rect class="is-tache" x="22" y="14" width="34" height="34" rx="9" fill="var(--sun)" transform="rotate(12)"/>
+<g class="is-vie is-balance"><circle class="is-t" pathLength="1" cx="24" cy="24" r="10"/>
+<path class="is-t is-t2" pathLength="1" d="M31 31 52 52M44 44l-5 5M50 50l-5 5"/>
+<circle class="is-p" cx="24" cy="24" r="3"/></g>`,
+  taux: `<circle class="is-tache" cx="27" cy="36" r="19" fill="var(--mint)"/>
+<path class="is-t" pathLength="1" d="M46 14 18 50"/>
+<g class="is-vie is-respire"><circle class="is-t is-t2" pathLength="1" cx="21" cy="21" r="7"/></g>
+<g class="is-vie is-respire is-decale"><circle class="is-t is-t2 is-a" pathLength="1" cx="43" cy="43" r="7"/></g>`,
+  rappel: `<circle class="is-tache" cx="37" cy="37" r="19" fill="var(--peach)"/>
+<circle class="is-t" pathLength="1" cx="32" cy="32" r="19"/>
+<path class="is-t is-t2" pathLength="1" d="M32 32l8 5"/>
+<g class="is-vie is-aiguille"><path class="is-t is-t2 is-a" pathLength="1" d="M32 32V19"/></g>
+<path class="is-t is-t2 is-a" pathLength="1" d="M32 6a26 26 0 0 1 26 26"/>`,
+  apropos: `<circle class="is-tache" cx="27" cy="38" r="19" fill="var(--rose)"/>
+<circle class="is-t" pathLength="1" cx="32" cy="22" r="9"/>
+<path class="is-t is-t2" pathLength="1" d="M14 53c0-12 8-17 18-17s18 5 18 17"/>
+<g class="is-vie is-scintille"><path class="is-p" d="M51 6q1 6 7 7-6 1-7 7-1-6-7-7 6-1 7-7Z"/></g>`,
+  avis: `<circle class="is-tache" cx="40" cy="25" r="19" fill="var(--sun)"/>
+<path class="is-t" pathLength="1" d="M12 14h40a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H30l-10 9v-9h-8a4 4 0 0 1-4-4V18a4 4 0 0 1 4-4Z"/>
+<g class="is-vie is-bat"><path class="is-p" d="M32 21l2 5.25 5.61.28-4.38 3.52 1.47 5.42L32 32.4l-4.7 3.07 1.47-5.42-4.38-3.52 5.61-.28Z"/></g>`,
+  faq: `<circle class="is-tache" cx="37" cy="27" r="19" fill="var(--sky)"/>
+<path class="is-t" pathLength="1" d="M22 24c0-8 5-12 10-12 6 0 10 4 10 10 0 8-10 8-10 18"/>
+<g class="is-vie is-saute"><circle class="is-p" cx="32" cy="51" r="2.8"/></g>`,
+  contact: `<circle class="is-tache" cx="29" cy="35" r="19" fill="var(--lilac)"/>
+<g class="is-vie is-plane"><path class="is-t" pathLength="1" d="M54 10 10 28l16 7 6 17Z"/>
+<path class="is-t is-t2" pathLength="1" d="M26 35 54 10"/></g>
+<path class="is-t is-a is-sillage" pathLength="1" d="M6 56q7-9 16-7"/>`,
+} as const;
+
+const { nom, centre = false } = Astro.props;
+---
+
+<svg
+  class:list={['icone-section', { 'icone-section--centre': centre }]}
+  viewBox="0 0 64 64"
+  width="56"
+  height="56"
+  aria-hidden="true"
+  focusable="false"
+  set:html={DESSINS[nom]}
+/>

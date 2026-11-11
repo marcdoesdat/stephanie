@@ -150,6 +150,13 @@ Toute page du tableau ci-dessus marquée « SSR » doit donc porter `prerender =
 - `TauxSection.astro` — Affichage des taux live (depuis `ratesService`)
 - `ConsentBanner.astro`, `MessengerBtn.astro`
 
+- `IconeSection.astro` — L'icône animée au-dessus du titre de chaque section de l'accueil
+  (`nom` : capacite, services, taux, rappel, apropos, avis, faq, contact). SVG en ligne,
+  décoratif (`aria-hidden`, aucun texte à traduire) ; styles et animations en CSS pur dans
+  `global.css` (classes `is-*`). L'entrée attend que le bloc `.fade-*` parent soit visible ;
+  image fixe sous `prefers-reduced-motion`. Les composants partagés (FAQ, contact, taux…)
+  la portent aussi sur les autres pages qui les emploient.
+
 **Outils interactifs (scripts inline) :**
 - `CapaciteExpress.astro` — Calculateur de capacité express de l'accueil (section `#outils-teaser`) :
   revenu, mise de fonds, paiements fixes, et frais de condo si la case est cochée. **Son appel à

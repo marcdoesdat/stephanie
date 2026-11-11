@@ -1898,3 +1898,42 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
   .hero-left .hero-value-prop em{animation:none;background-size:100% 100%}
   ::view-transition-old(root),::view-transition-new(root){animation:none}
 }
+
+/* ICÔNES DE SECTION (IconeSection.astro)
+   Un dessin au trait sur une tache pastel, un seul détail violet en mouvement.
+   Entrée (une fois) : la tache se pose, le trait se dessine. Puis un geste lent, en boucle.
+   L'entrée attend que le bloc .fade-* parent soit visible ; sans JavaScript, elle joue au
+   chargement. Sous prefers-reduced-motion : image fixe, complète. */
+.icone-section{display:block;width:56px;height:56px;margin-bottom:.9rem;overflow:visible}
+.icone-section--centre{margin-inline:auto}
+@media(min-width:900px){.icone-section{width:64px;height:64px}}
+.icone-section *{transform-box:fill-box;transform-origin:center}
+.icone-section .is-t{fill:none;stroke:var(--ink);stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 1;animation:is-tracer 1.1s var(--sortie) .15s both}
+.icone-section .is-t2{animation-delay:.45s}
+.icone-section .is-a{stroke:var(--clay)}
+.icone-section .is-tache{stroke:none;animation:is-poser .7s var(--rebond) both}
+.icone-section .is-p{fill:var(--clay);animation:is-poser .5s var(--rebond) .9s both}
+@keyframes is-poser{from{transform:scale(0);opacity:0}}
+@keyframes is-tracer{from{stroke-dashoffset:1;opacity:0}5%{opacity:1}}
+.icone-section .is-vie{animation:4s ease-in-out 1.4s infinite}
+.icone-section .is-glisse{animation-name:is-glisse}
+.icone-section .is-balance{animation-name:is-balance;transform-box:view-box;transform-origin:24px 24px}
+.icone-section .is-respire{animation-name:is-respire}
+.icone-section .is-decale{animation-delay:3.4s}
+.icone-section .is-aiguille{animation-name:is-tour;animation-duration:8s;animation-timing-function:linear;transform-box:view-box;transform-origin:32px 32px}
+.icone-section .is-scintille{animation-name:is-scintille;animation-duration:3s}
+.icone-section .is-bat{animation-name:is-bat;animation-duration:3s}
+.icone-section .is-saute{animation-name:is-saute;animation-duration:2.4s}
+.icone-section .is-plane{animation-name:is-plane}
+.icone-section .is-sillage{stroke-dasharray:.12 .1;animation:is-file 1.6s linear infinite}
+@keyframes is-glisse{0%,100%{transform:translateX(0)}50%{transform:translateX(26px)}}
+@keyframes is-balance{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+@keyframes is-respire{0%,100%{transform:scale(1)}50%{transform:scale(.72)}}
+@keyframes is-tour{to{transform:rotate(360deg)}}
+@keyframes is-scintille{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(.55) rotate(45deg)}}
+@keyframes is-bat{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.18) rotate(12deg)}}
+@keyframes is-saute{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+@keyframes is-plane{0%,100%{transform:translate(0,0)}50%{transform:translate(3px,-3px)}}
+@keyframes is-file{to{stroke-dashoffset:-.44}}
+.js-enabled :is(.fade-up,.fade-left,.fade-right):not(.visible) .icone-section *{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.icone-section *{animation:none!important}}

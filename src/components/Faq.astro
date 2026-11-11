@@ -1,4 +1,5 @@
 ---
+import IconeSection from './IconeSection.astro';
 import { loadSiteConfig } from '../config';
 
 const config = loadSiteConfig();
@@ -139,6 +140,7 @@ const faqSchema = {
 <section id="faq">
   <div class="section-inner">
     <div class="fade-up">
+      <IconeSection nom="faq" />
       <h2 class="section-title">Questions <em>fréquentes</em></h2>
       <p class="section-sub">
         Les réponses à vos questions sur l'hypothèque — sans le jargon bancaire.

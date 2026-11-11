@@ -1,4 +1,5 @@
 ---
+import IconeSection from './IconeSection.astro';
 import { Image } from 'astro:assets';
 import stephaniePhoto from '../assets/stephanie-2.webp';
 import { loadSiteConfig } from '../config';
@@ -24,6 +25,7 @@ const prenom = config.nom.split(' ')[0];
       
       <div class="fade-right" style="transition-delay:.15s">
         <div class="apropos-text">
+          <IconeSection nom="apropos" />
           <h2>Bonjour, moi c'est {prenom}.</h2>
 
           <p>
