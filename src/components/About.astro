@@ -30,7 +30,12 @@ const prenom = config.nom.split(' ')[0];
                qui ne soit dit ailleurs sur la page : mêmes mots pour les frais (« dans la
                plupart des cas ») et pour l'accompagnement (Teams, téléphone ou texto). -->
           <div class="apropos-bref">
-            <p class="apropos-bref-titre" id="apropos-bref-titre">En bref</p>
+            <!-- « Bref » en français, « TLDR » en anglais (dictionnaire) : le ton est voulu
+                 jeune. L'émoji est décoratif, hors du texte à traduire. -->
+            <div class="apropos-bref-tete">
+              <p class="apropos-bref-titre" id="apropos-bref-titre">Bref</p>
+              <span class="apropos-bref-emoji" aria-hidden="true">🤑</span>
+            </div>
             <dl aria-labelledby="apropos-bref-titre">
               <div>
                 <dt>Rôle</dt>
@@ -108,14 +113,39 @@ const prenom = config.nom.split(' ')[0];
     display: inline-block;
     background: var(--ink);
     color: var(--sun);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     line-height: 1;
     padding: 0.45rem 0.75rem;
     border-radius: 999px;
+    margin-bottom: 0;
+  }
+  .apropos-bref-tete {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
     margin-bottom: 1rem;
+  }
+  /* L'émoji se dandine, puis saute : une boucle courte suivie d'une pause, pour attirer
+     l'œil sans tourner en continu à côté du texte. Coupé par prefers-reduced-motion
+     (règle globale). */
+  .apropos-bref-emoji {
+    display: inline-block;
+    font-size: 1.7rem;
+    line-height: 1;
+    transform-origin: 50% 85%;
+    animation: bref-emoji 2.6s ease-in-out infinite;
+  }
+  @keyframes bref-emoji {
+    0%, 52%, 100% { transform: none; }
+    8%  { transform: rotate(-16deg) scale(1.08); }
+    16% { transform: rotate(14deg) scale(1.08); }
+    24% { transform: rotate(-10deg) scale(1.05); }
+    32% { transform: translateY(-9px) scale(1.2); }
+    40% { transform: translateY(0) scale(0.94); }
+    46% { transform: scale(1.04); }
   }
   .apropos-bref dl {
     display: grid;
