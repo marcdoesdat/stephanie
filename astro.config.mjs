@@ -28,6 +28,11 @@ export default defineConfig({
   // L'URL est indispensable pour générer les liens du sitemap
   site: SITE,
   adapter: netlify(),
+  // Astro 7 applique par défaut les règles d'espacement de JSX ('jsx') : un retour à la ligne
+  // entre un texte et une balise ne vaut plus une espace (« et40 000 $ », « Weyman(conseils »),
+  // et les clés du dictionnaire anglais, bâties sur le texte rendu, ne correspondent plus.
+  // `true` garde le comportement d'Astro 6 : compression sans perte d'espaces.
+  compressHTML: true,
   // La vérification d'origine (CSRF) est reprise à la main dans src/middleware.ts, à
   // l'identique — mais avec une dispense pour /api/reseau-retrait, que les clients de
   // messagerie appellent sans en-tête « Origin ». Voir l'entête de ce module.
