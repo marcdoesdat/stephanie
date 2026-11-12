@@ -134,7 +134,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const internalTable = renderDataRows([
     ['Nom', ePrenom],
-    ['Courriel', `<a href="mailto:${eEmail}" style="color:#a85f38;">${eEmail}</a>`],
+    ['Courriel', `<a href="mailto:${eEmail}" style="color:#6d47ff;">${eEmail}</a>`],
     ['Téléphone', eTel],
     ['Pénalité estimée', `<strong>${ePenalite}</strong>`],
     ['Prêteur', escapeHtml(scenario.preteur ?? '')],
@@ -146,20 +146,20 @@ export const POST: APIRoute = async ({ request }) => {
   ]);
 
   const internalHtml = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouvelle demande — Calculateur de pénalité</h1>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Nouvelle demande — Calculateur de pénalité</h1>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2ddf0;border-radius:8px;overflow:hidden;">
         ${internalTable}
       </table>
-      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">Répondez directement à ce courriel pour écrire à ${ePrenom}.</p>
+      <p style="margin:20px 0 0;font-size:12px;color:#575268;">Répondez directement à ce courriel pour écrire à ${ePrenom}.</p>
   `);
 
   const clientHtml = wrapEmailHtml(`
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${ePrenom} 🌿</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+      <div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#12101f;line-height:1.3;">Merci, ${ePrenom} 🌿</h1>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           J'ai bien reçu votre demande de rapport de pénalité (estimation&nbsp;: <strong>${ePenalite}</strong>). Merci de votre confiance.
         </p>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#12101f;">
           Je vous envoie votre rapport détaillé personnellement sous peu, avec une analyse adaptée à votre situation.
         </p>
         ${renderInvitationRendezVous({ campagne: 'penalite', texte: 'Vous aimeriez qu\'on regarde ensemble ce que cette pénalité change à votre projet&nbsp;? Choisissez vous-même le moment qui vous convient dans mon agenda&nbsp;: un appel de 15&nbsp;minutes, gratuit et sans engagement.' })}

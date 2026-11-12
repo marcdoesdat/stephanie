@@ -250,17 +250,17 @@ export async function alerterRetraitNonEnregistre(
   ];
 
   const html = wrapEmailHtml(
-    `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#1f1e1c;">
+    `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#12101f;">
         <strong>Un désabonnement n’a pas été enregistré.</strong>
       </p>
-      <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#1f1e1c;">
+      <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#12101f;">
         La personne a vu la page « c’est fait » — c’est ce qu’il fallait lui répondre. Mais sa
         fiche est <strong>toujours active</strong> dans le carnet du réseau. Retrouvez-la sur
-        <a href="${escapeHtml(config.site_url)}/reseau" style="color:#a85f38;">/reseau</a> et
+        <a href="${escapeHtml(config.site_url)}/reseau" style="color:#6d47ff;">/reseau</a> et
         passez-la à « Ne plus contacter ». Tant que ce n’est pas fait, elle peut recevoir un
         autre courriel.
       </p>
-      <table style="border-collapse:collapse;font-size:13px;color:#1f1e1c;">
+      <table style="border-collapse:collapse;font-size:13px;color:#12101f;">
         ${lignes
           .map(
             ([cle, valeur]) =>

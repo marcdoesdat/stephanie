@@ -101,10 +101,57 @@ export function escapeHtml(value: unknown): string {
 /*  Gabarit visuel commun                                              */
 /* ------------------------------------------------------------------ */
 
-/** Enveloppe un corps de courriel dans le gabarit visuel commun (fond sable, Arial, 600px). */
+/**
+ * La palette des courriels : celle du site (`:root` de `global.css`), en valeurs écrites — un
+ * courriel ne lit pas de variables CSS. Changer une couleur du site, c'est la changer ici aussi.
+ */
+export const COULEURS_COURRIEL = {
+  fond: '#f6f3ff', // --sand
+  lilas: '#ece6ff', // --warm
+  mauve: '#6d47ff', // --clay
+  mauveFonce: '#5b34f0', // --clay-dk
+  encre: '#12101f', // --ink
+  attenue: '#575268', // --muted
+  bordure: '#e2ddf0', // --border
+  rose: '#ffc6e0', // --rose
+  soleil: '#ffd23f', // --sun
+} as const;
+
+const C = COULEURS_COURRIEL;
+
+/**
+ * Police des titres, puis celle du texte, puis les polices système. Les clients de courriel
+ * n'ont presque jamais Bricolage Grotesque ni DM Sans : le repli doit tenir seul. Aucune police
+ * n'est chargée à distance — le site a quitté Google Fonts pour ne pas transmettre l'IP du
+ * visiteur, ce n'est pas pour la transmettre à l'ouverture d'un courriel.
+ */
+const POLICE_TEXTE = `'DM Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
+const POLICE_TITRES = `'Bricolage Grotesque',${POLICE_TEXTE}`;
+
+/**
+ * Enveloppe un corps de courriel dans le gabarit visuel du site : fond lilas, en-tête au nom
+ * de la courtière avec le filet dégradé de la navigation, 600 px de large.
+ *
+ * Les styles du `<head>` ne font qu'ajouter (police des titres, liens) : tout ce qui compte
+ * est écrit en ligne, puisque certains clients retirent le `<style>`.
+ */
 export function wrapEmailHtml(bodyHtml: string, padding = '24px'): string {
-  return `<!doctype html><html lang="fr-CA"><body style="margin:0;background:#f7f2eb;font-family:Arial,Helvetica,sans-serif;color:#1f1e1c;">
-    <div style="max-width:600px;margin:0 auto;padding:${padding};">
+  const config = loadSiteConfig();
+  const [prenom, ...reste] = config.nom.split(' ');
+  const nomFamille = reste.join(' ');
+  return `<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">
+<style>
+  h1,h2,h3{font-family:${POLICE_TITRES};letter-spacing:-0.01em;}
+  a{color:${C.mauve};}
+  @media (max-width:480px){.sw-enveloppe{padding:16px 10px!important;}}
+</style></head>
+<body style="margin:0;padding:0;background:${C.fond};font-family:${POLICE_TEXTE};color:${C.encre};-webkit-font-smoothing:antialiased;">
+    <div class="sw-enveloppe" style="max-width:600px;margin:0 auto;padding:${padding};">
+      <div style="background:#ffffff;border:1px solid ${C.bordure};border-radius:20px;padding:18px 24px 0;margin:0 0 20px;overflow:hidden;">
+        <p style="margin:0;font-family:${POLICE_TITRES};font-size:20px;font-weight:700;line-height:1.2;color:${C.encre};">${escapeHtml(prenom)}${nomFamille ? ` <span style="color:${C.mauve};font-weight:600;">${escapeHtml(nomFamille)}</span>` : ''}</p>
+        <p style="margin:4px 0 16px;font-size:13px;line-height:1.4;color:${C.attenue};">${escapeHtml(config.titre)} &middot; ${escapeHtml(config.organisation)}</p>
+        <div style="height:4px;margin:0 -24px;background-color:${C.mauve};background-image:linear-gradient(90deg,${C.mauve} 0%,${C.rose} 55%,${C.soleil} 100%);font-size:0;line-height:0;">&nbsp;</div>
+      </div>
       ${bodyHtml}
     </div></body></html>`;
 }
@@ -116,7 +163,7 @@ export function wrapEmailHtml(bodyHtml: string, padding = '24px'): string {
 export function renderDataRows(rows: Array<[label: string, value: string]>): string {
   return rows
     .map(([label, value], i) => {
-      const border = i === rows.length - 1 ? '' : 'border-bottom:1px solid #e3d9cc;';
+      const border = i === rows.length - 1 ? '' : `border-bottom:1px solid ${C.bordure};`;
       return `<tr><td style="padding:12px 16px;${border}font-size:14px;vertical-align:top;"><strong>${label}</strong></td><td style="padding:12px 16px;${border}font-size:14px;">${value || '—'}</td></tr>`;
     })
     .join('\n');
@@ -127,13 +174,12 @@ export function renderSignatureBlock(): string {
   const config = loadSiteConfig();
   const eSiteUrl = escapeHtml(config.site_url);
   const siteHost = escapeHtml(config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''));
-  return `<div style="border-top:1px solid #e3d9cc;padding-top:20px;margin-top:8px;">
-      <p style="margin:0;font-size:14px;line-height:1.6;color:#1f1e1c;">
-        <strong>${escapeHtml(config.nom)}</strong><br>
-        ${escapeHtml(config.titre)}<br>
-        ${escapeHtml(config.organisation)}<br>
-        N&deg; de certificat AMF&nbsp;: ${escapeHtml(config.amf)}<br>
-        <a href="${eSiteUrl}" style="color:#a85f38;">${siteHost}</a>
+  return `<div style="border-top:1px solid ${C.bordure};padding-top:20px;margin-top:8px;">
+      <p style="margin:0;font-size:14px;line-height:1.6;color:${C.encre};">
+        <strong style="font-family:${POLICE_TITRES};font-size:16px;">${escapeHtml(config.nom)}</strong><br>
+        <span style="color:${C.attenue};">${escapeHtml(config.titre)} &middot; ${escapeHtml(config.organisation)}<br>
+        N&deg; de certificat AMF&nbsp;: ${escapeHtml(config.amf)}</span><br>
+        <a href="${eSiteUrl}" style="color:${C.mauve};font-weight:600;text-decoration:none;">${siteHost}</a>
       </p>
     </div>`;
 }
@@ -175,9 +221,10 @@ export function renderInvitationRendezVous(options: OptionsRendezVous): string {
     (options.tutoiement
       ? 'Tu veux aller plus vite&nbsp;? Choisis toi-même le moment qui te convient dans mon agenda&nbsp;: un appel de 15&nbsp;minutes, gratuit et sans engagement.'
       : 'Vous préférez qu\'on en parle de vive voix&nbsp;? Choisissez vous-même le moment qui vous convient dans mon agenda&nbsp;: un appel de 15&nbsp;minutes, gratuit et sans engagement.');
-  return `<div style="background:#f7f2eb;border-radius:12px;padding:20px;margin:0 0 24px;">
-      <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#1f1e1c;">${texte}</p>
-      <a href="${eLien}" style="display:inline-block;background:#a85f38;color:#ffffff;font-size:15px;font-weight:700;line-height:1.2;text-decoration:none;padding:13px 22px;border-radius:999px;">Réserver un appel de 15&nbsp;min</a>
+  return `<div style="background:${C.fond};border:1px solid ${C.bordure};border-radius:18px;padding:22px;margin:0 0 24px;">
+      <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.mauve};">Appel de 15&nbsp;min &middot; gratuit</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${C.encre};">${texte}</p>
+      <a href="${eLien}" style="display:inline-block;background:${C.mauve};color:#ffffff;font-size:15px;font-weight:700;line-height:1.2;text-decoration:none;padding:14px 22px;border-radius:999px;border-bottom:3px solid ${C.mauveFonce};">Réserver un appel de 15&nbsp;min &rarr;</a>
     </div>`;
 }
 

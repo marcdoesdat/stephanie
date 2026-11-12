@@ -49,7 +49,7 @@ export function piecesManquantes(dossier: DossierClient): string[] {
 
 function bouton(lien: string, libelle: string): string {
   return `<p style="margin:24px 0;">
-      <a href="${escapeHtml(lien)}" style="display:inline-block;background:#a85f38;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:999px;font-size:15px;font-weight:600;">${escapeHtml(libelle)}</a>
+      <a href="${escapeHtml(lien)}" style="display:inline-block;background:#6d47ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:999px;font-size:15px;font-weight:700;border-bottom:3px solid #5b34f0;">${escapeHtml(libelle)}</a>
     </p>`;
 }
 
@@ -58,7 +58,7 @@ function bouton(lien: string, libelle: string): string {
  * panne du site ; le même lien mort annoncé comme expirable se redemande sans y penser.
  */
 function piedLien(minutes: number): string {
-  return `<p style="margin:0;font-size:13px;line-height:1.6;color:#6a5f50;">
+  return `<p style="margin:0;font-size:13px;line-height:1.6;color:#575268;">
       Ce lien est valable ${minutes} minutes et ne sert qu’une fois. Passé ce délai, redemandez-en un depuis la page.
       Si vous n’avez rien demandé, ignorez ce message : personne n’a eu accès à quoi que ce soit.
     </p>`;
@@ -78,9 +78,9 @@ export async function envoyerLienAcces(
   const prenom = config.nom.split(' ')[0] ?? config.nom;
 
   const html = wrapEmailHtml(
-    `<div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:20px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Votre lien d’accès</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+    `<div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:20px;margin:0 0 16px;color:#12101f;line-height:1.3;">Votre lien d’accès</h1>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           Voici le lien pour consulter le suivi de votre dossier hypothécaire.
         </p>
         ${bouton(lien, 'Ouvrir mon dossier')}
@@ -124,19 +124,19 @@ export async function envoyerSuivi(env: ResendEnv, dossier: DossierClient, lien:
   const manquantes = piecesManquantes(dossier);
 
   const listeHtml = manquantes.length
-    ? `<h2 style="font-size:16px;margin:24px 0 8px;color:#a85f38;">Ce qu’il reste à réunir</h2>
-       <ul style="margin:0 0 16px;padding-left:20px;font-size:15px;line-height:1.8;color:#1f1e1c;">
+    ? `<h2 style="font-size:16px;margin:24px 0 8px;color:#6d47ff;">Ce qu’il reste à réunir</h2>
+       <ul style="margin:0 0 16px;padding-left:20px;font-size:15px;line-height:1.8;color:#12101f;">
          ${manquantes.map((piece) => `<li>${escapeHtml(piece)}</li>`).join('\n')}
        </ul>`
-    : `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+    : `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
          <strong>Tous les documents sont reçus.</strong> Rien à faire de votre côté pour l’instant.
        </p>`;
 
   const html = wrapEmailHtml(
-    `<div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;line-height:1.3;">${escapeHtml(dossier.nom)}, voici où en est votre dossier</h1>
-        <p style="margin:0 0 20px;font-size:14px;color:#6a5f50;">${escapeHtml(etape.libelleClient)}</p>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">${escapeHtml(etape.explicationClient)}</p>
+    `<div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;line-height:1.3;">${escapeHtml(dossier.nom)}, voici où en est votre dossier</h1>
+        <p style="margin:0 0 20px;font-size:14px;color:#575268;">${escapeHtml(etape.libelleClient)}</p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">${escapeHtml(etape.explicationClient)}</p>
         ${listeHtml}
         ${bouton(lien, 'Voir mon dossier')}
         ${piedLien(30)}

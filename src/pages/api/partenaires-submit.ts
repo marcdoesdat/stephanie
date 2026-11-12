@@ -165,7 +165,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const internalTable = renderDataRows([
     ['Partenaire', `${eNomPartenaire} (${eProfession})`],
-    ['Contact partenaire', contactEstCourriel ? `<a href="mailto:${eContact}" style="color:#a85f38;">${eContact}</a>` : eContact],
+    ['Contact partenaire', contactEstCourriel ? `<a href="mailto:${eContact}" style="color:#6d47ff;">${eContact}</a>` : eContact],
     ['Client référé', eClientNom],
     ['Téléphone du client', eClientTel],
     ['Type de projet', eProjet],
@@ -173,12 +173,12 @@ export const POST: APIRoute = async ({ request }) => {
   ]);
 
   const internalHtml = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouvelle référence partenaire</h1>
-      <p style="margin:0 0 20px;color:#6a5f50;font-size:14px;">Référé par <strong>${eNomPartenaire}</strong> (${eProfession})</p>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Nouvelle référence partenaire</h1>
+      <p style="margin:0 0 20px;color:#575268;font-size:14px;">Référé par <strong>${eNomPartenaire}</strong> (${eProfession})</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2ddf0;border-radius:8px;overflow:hidden;">
         ${internalTable}
       </table>
-      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">Répondez directement à ce courriel pour écrire à ${eNomPartenaire}.</p>
+      <p style="margin:20px 0 0;font-size:12px;color:#575268;">Répondez directement à ce courriel pour écrire à ${eNomPartenaire}.</p>
   `);
 
   const emailsToSend = [
@@ -195,12 +195,12 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (contactEstCourriel) {
     const clientHtml = wrapEmailHtml(`
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${eNomPartenaire} 🌿</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+      <div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#12101f;line-height:1.3;">Merci, ${eNomPartenaire} 🌿</h1>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           J'ai bien reçu votre référence pour <strong>${eClientNom}</strong>. Merci de votre confiance.
         </p>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#12101f;">
           Je communique avec ${eClientNom} rapidement et je vous tiens informé·e de l'avancement du dossier.
         </p>
         ${renderInvitationRendezVous({ campagne: 'partenaires', texte: 'Envie qu\'on se parle de ce dossier, ou d\'une collaboration&nbsp;? Réservez 15&nbsp;minutes dans mon agenda, au moment qui vous convient.' })}

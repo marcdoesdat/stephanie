@@ -53,8 +53,8 @@ async function envoyerEnSerie(envois: ReadonlyArray<() => Promise<void>>): Promi
 
 function bloc(titre: string, lignes: string): string {
   if (!lignes) return '';
-  return `<h2 style="font-size:15px;margin:22px 0 8px;color:#a85f38;">${titre}</h2>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
+  return `<h2 style="font-size:15px;margin:22px 0 8px;color:#6d47ff;">${titre}</h2>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2ddf0;border-radius:8px;overflow:hidden;">
         ${lignes}
       </table>`;
 }
@@ -136,16 +136,16 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
     : '';
   const alerteCertificat = envoi.certificat
     ? ''
-    : `<p style="margin:8px 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fbeae3;border:1px solid #a85f38;color:#a85f38;">
+    : `<p style="margin:8px 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fff0f7;border:1px solid #ffc6e0;color:#12101f;">
         Le certificat de signature (PDF) n'a pas pu être produit. La trace de preuve ci-dessous reste complète : conservez ce courriel.
       </p>`;
 
   const interne = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Profil des emprunteurs signé</h1>
-      <p style="margin:0 0 12px;color:#6a5f50;font-size:14px;">
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Profil des emprunteurs signé</h1>
+      <p style="margin:0 0 12px;color:#575268;font-size:14px;">
         <strong>${escapeHtml(noms)}</strong> · ${envoi.preuves.length} signataire${envoi.preuves.length > 1 ? 's' : ''}
       </p>
-      <p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#f0f7f1;border:1px solid #c5dac8;color:#2d5a3a;">
+      <p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#eafbf2;border:1px solid #b6f2d3;color:#00513e;">
         Le formulaire rempli et signé est en pièce jointe (<strong>${escapeHtml(envoi.nomFichier)}</strong>).
         Vous êtes seule à le recevoir : les signataires n'ont eu qu'un accusé de signature, sans le document.${mentionCertificat}
       </p>
@@ -153,7 +153,7 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
       ${sectionReponses(envoi.reponses)}
       ${sectionPreuves(envoi.preuves)}
       ${bloc('Document', renderDataRows([['Empreinte du PDF (SHA-256)', `<code style="font-size:11px;">${escapeHtml(envoi.empreintePdf)}</code>`]]))}
-      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">
+      <p style="margin:20px 0 0;font-size:12px;color:#575268;">
         Conservez ce courriel : c'est lui qui porte la trace de signature. Le PDF, lui, est
         strictement identique au modèle d'Hypotheca — aucune mention technique n'y a été ajoutée.
       </p>
@@ -174,17 +174,17 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
   for (const preuve of envoi.preuves) {
     const client = wrapEmailHtml(
       `
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${escapeHtml(preuve.nom.split(' ')[0] ?? preuve.nom)} 🌿</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+      <div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#12101f;line-height:1.3;">Merci, ${escapeHtml(preuve.nom.split(' ')[0] ?? preuve.nom)} 🌿</h1>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           Votre profil d'emprunteur est signé et m'a été transmis. Je le conserve à votre
           dossier&nbsp;; demandez-le-moi quand vous voulez et je vous en envoie une copie.
         </p>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           Ce profil me sert à vous recommander le produit hypothécaire qui correspond vraiment à
           vos objectifs, et pas seulement au taux le plus bas de la semaine.
         </p>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#12101f;">
           Une question d'ici notre prochain échange&nbsp;? Répondez simplement à ce courriel.
         </p>
         ${renderSignatureBlock()}
@@ -248,24 +248,24 @@ export async function envoyerInvitations(
     invitations.map((invitation) => () => {
       const html = wrapEmailHtml(
         `
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Il ne manque que votre signature</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+      <div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#12101f;line-height:1.3;">Il ne manque que votre signature</h1>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           Bonjour ${escapeHtml(invitation.nom.split(' ')[0] ?? invitation.nom)},<br />
           ${escapeHtml(initiateur)} vient de remplir avec moi le <strong>profil des emprunteurs</strong>,
           le formulaire qui me sert à vous recommander le bon produit hypothécaire.
         </p>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           Puisque le prêt est un engagement conjoint et solidaire, les réponses doivent refléter
           votre vision commune. <strong>Prenez le temps de les lire</strong> — si quelque chose ne
           vous convient pas, vous pourrez me le signaler plutôt que de signer.
         </p>
         <p style="margin:0 0 24px;">
-          <a href="${escapeHtml(invitation.lien)}" style="display:inline-block;background:#a85f38;color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:10px;font-weight:600;font-size:15px;">
+          <a href="${escapeHtml(invitation.lien)}" style="display:inline-block;background:#6d47ff;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:999px;font-weight:700;font-size:15px;border-bottom:3px solid #5b34f0;">
             Lire et signer
           </a>
         </p>
-        <p style="margin:0 0 24px;font-size:13px;line-height:1.7;color:#6a5f50;">
+        <p style="margin:0 0 24px;font-size:13px;line-height:1.7;color:#575268;">
           Ce lien vous est personnel, il ne fonctionne qu'une fois et expire dans 14 jours.
           Ne le transférez à personne.
         </p>
@@ -307,14 +307,14 @@ export async function envoyerAvisEnAttente(
     renderDataRows(
       invitations.map((i) => [
         escapeHtml(i.nom),
-        `${escapeHtml(i.courriel)}<br /><a href="${escapeHtml(i.lien)}" style="color:#a85f38;font-size:12px;">lien de signature (à renvoyer au besoin)</a>`,
+        `${escapeHtml(i.courriel)}<br /><a href="${escapeHtml(i.lien)}" style="color:#6d47ff;font-size:12px;">lien de signature (à renvoyer au besoin)</a>`,
       ]),
     );
 
   // Un envoi manqué ne doit pas se lire entre les lignes d'une liste d'attente : c'est le
   // seul point du dossier qui exige un geste d'elle, et elle est la seule à pouvoir le faire.
   const alerte = bilan.echecs.length
-    ? `<p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fbeae3;border:1px solid #a85f38;color:#a85f38;">
+    ? `<p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fff0f7;border:1px solid #ffc6e0;color:#12101f;">
         <strong>Le courriel d'invitation n'a pas pu être envoyé</strong> à
         ${escapeHtml(bilan.echecs.map((i) => `${i.nom} (${i.courriel})`).join(', '))}.
         Le dossier et le lien restent valides : transmettez-le-lui vous-même depuis le tableau
@@ -323,10 +323,10 @@ export async function envoyerAvisEnAttente(
     : '';
 
   const html = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Profil des emprunteurs — en attente de signature</h1>
-      <p style="margin:0 0 12px;color:#6a5f50;font-size:14px;"><strong>${escapeHtml(initiateur.nom)}</strong> a rempli et signé.</p>
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Profil des emprunteurs — en attente de signature</h1>
+      <p style="margin:0 0 12px;color:#575268;font-size:14px;"><strong>${escapeHtml(initiateur.nom)}</strong> a rempli et signé.</p>
       ${alerte}
-      <p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#f7f2eb;border:1px solid #e3d9cc;color:#6a5f50;">
+      <p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#f6f3ff;border:1px solid #e2ddf0;color:#575268;">
         Aucun PDF n'est produit tant que tout le monde n'a pas signé. Vous recevrez le document
         complet automatiquement à la dernière signature.
       </p>
@@ -353,8 +353,8 @@ export async function envoyerAvisDesaccord(
   motif: string,
 ): Promise<void> {
   const html = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Profil des emprunteurs — désaccord signalé</h1>
-      <p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fbeae3;border:1px solid #a85f38;color:#a85f38;">
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Profil des emprunteurs — désaccord signalé</h1>
+      <p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fff0f7;border:1px solid #ffc6e0;color:#12101f;">
         <strong>${escapeHtml(opposant.nom)}</strong> ne se reconnaît pas dans les réponses soumises.
         Le dossier est gelé : aucun PDF ne sera produit et les liens de signature ne fonctionnent plus.
         À reprendre avec les emprunteurs.

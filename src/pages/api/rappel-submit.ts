@@ -192,21 +192,21 @@ export const POST: APIRoute = async ({ request }) => {
   /* ---------- Courriel 1 — notification interne ---------- */
 
   const rappelBanner = rappelDate
-    ? `<div style="margin:0 0 24px;padding:16px 20px;background:#f0e8da;border-left:4px solid #c47a52;border-radius:8px;">
-         <p style="margin:0;font-size:15px;color:#1f1e1c;line-height:1.6;">
+    ? `<div style="margin:0 0 24px;padding:16px 20px;background:#f6f3ff;border-left:4px solid #6d47ff;border-radius:8px;">
+         <p style="margin:0;font-size:15px;color:#12101f;line-height:1.6;">
            <strong>📅 Suggestion de rappel à placer au calendrier&nbsp;: ${eRappel}</strong><br>
-           <span style="color:#6a5f50;">(≈ 4 mois avant l'échéance${echeanceFmt ? ` de ${eEcheance}` : ''})</span>
+           <span style="color:#575268;">(≈ 4 mois avant l'échéance${echeanceFmt ? ` de ${eEcheance}` : ''})</span>
          </p>
        </div>`
-    : `<div style="margin:0 0 24px;padding:16px 20px;background:#f0e8da;border-left:4px solid #c47a52;border-radius:8px;">
-         <p style="margin:0;font-size:15px;color:#6a5f50;line-height:1.6;">
+    : `<div style="margin:0 0 24px;padding:16px 20px;background:#f6f3ff;border-left:4px solid #6d47ff;border-radius:8px;">
+         <p style="margin:0;font-size:15px;color:#575268;line-height:1.6;">
            Aucune date d'échéance fournie — à valider lors du contact.
          </p>
        </div>`;
 
   const internalTable = renderDataRows([
     ['Nom', eNom],
-    ['Courriel', `<a href="mailto:${eCourriel}" style="color:#a85f38;">${eCourriel}</a>`],
+    ['Courriel', `<a href="mailto:${eCourriel}" style="color:#6d47ff;">${eCourriel}</a>`],
     ['Téléphone', eTel],
     ['Type de demande', eType],
     ['Échéance actuelle', echeanceFmt ? eEcheance : ''],
@@ -215,13 +215,13 @@ export const POST: APIRoute = async ({ request }) => {
   ]);
 
   const internalHtml = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouvelle demande de rappel</h1>
-      <p style="margin:0 0 20px;color:#6a5f50;font-size:14px;">Type&nbsp;: <strong>${eType}</strong></p>
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Nouvelle demande de rappel</h1>
+      <p style="margin:0 0 20px;color:#575268;font-size:14px;">Type&nbsp;: <strong>${eType}</strong></p>
       ${rappelBanner}
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2ddf0;border-radius:8px;overflow:hidden;">
         ${internalTable}
       </table>
-      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">Répondez directement à ce courriel pour écrire à ${eNom}.</p>
+      <p style="margin:20px 0 0;font-size:12px;color:#575268;">Répondez directement à ce courriel pour écrire à ${eNom}.</p>
   `);
 
   /* ---------- Courriel 2 — confirmation client ---------- */
@@ -233,18 +233,18 @@ export const POST: APIRoute = async ({ request }) => {
   const siteHost = escapeHtml(config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''));
 
   const clientHtml = wrapEmailHtml(`
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${eNom} 🌿</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+      <div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#12101f;line-height:1.3;">Merci, ${eNom} 🌿</h1>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           J'ai bien reçu votre demande de suivi pour votre <strong>${eType.toLowerCase()}</strong> hypothécaire. Merci de votre confiance.
         </p>
 
-        <h2 style="font-size:16px;margin:24px 0 8px;color:#a85f38;">Ce qui suit</h2>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <h2 style="font-size:16px;margin:24px 0 8px;color:#6d47ff;">Ce qui suit</h2>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           ${escapeHtml(prenomCourtiere)} examine votre demande et vous contactera personnellement. ${suiteEcheance}
         </p>
 
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#12101f;">
           Une question d'ici là&nbsp;? Vous pouvez simplement répondre à ce courriel — il se rend directement à moi.
         </p>
 
@@ -252,7 +252,7 @@ export const POST: APIRoute = async ({ request }) => {
         ${renderSignatureBlock()}
       </div>
 
-      <p style="margin:20px 4px 0;font-size:11px;line-height:1.6;color:#6a5f50;">
+      <p style="margin:20px 4px 0;font-size:11px;line-height:1.6;color:#575268;">
         Vous recevez ce courriel parce que vous avez soumis une demande de suivi sur ${siteHost}.
         Vos renseignements sont utilisés uniquement à cette fin.
       </p>
