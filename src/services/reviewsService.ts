@@ -20,6 +20,7 @@
  */
 
 import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { loadSiteConfig } from '../config';
 
@@ -80,12 +81,12 @@ interface PlacesApiResponse {
 const BLOB_STORE = 'reviews';
 const BLOB_KEY = 'google-reviews';
 
-const CACHE_DIR = path.resolve('.cache');
-const CACHE_FILE = path.join(CACHE_DIR, 'google-reviews.json');
+// `.cache` en dev ; en fonction serverless le disque est en lecture seule sauf /tmp.
+const CACHE_DIRS = [path.resolve('.cache'), path.join(os.tmpdir(), 'google-reviews')];
+const CACHE_FILENAME = 'google-reviews.json';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;       // 24 heures
 const CACHE_STALE_MAX_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
 
-const useBlobs = Boolean(process.env.NETLIFY);
 
 interface CachedReviews {
   timestamp: number;
@@ -99,106 +100,136 @@ interface CacheReadResult {
 
 // ── Blob helpers (production) ──
 
-async function readBlobCache(): Promise<CacheReadResult | null> {
+// Netlify Blobs n'est disponible qu'avec un contexte Netlify. Comme ratesService, on ne le
+// déduit pas de `process.env.NETLIFY` — absente au runtime de certaines fonctions : le service
+// se croyait en dev, écrivait dans `.cache/` (disque en lecture seule), ne gardait rien, et
+// chaque page rappelait l'API Google jusqu'à épuiser son quota de 100 requêtes par jour. On
+// essaie donc, et on retient le résultat pour l'instance.
+let _blobsUnavailable = false;
+
+async function getBlobStore(): Promise<import('@netlify/blobs').Store | null> {
+  if (_blobsUnavailable) return null;
   const getStore = await loadGetStore();
-  if (!getStore) return null;
+  if (!getStore) {
+    _blobsUnavailable = true;
+    return null;
+  }
   try {
-    const store = getStore(BLOB_STORE);
+    return getStore(BLOB_STORE);
+  } catch (err) {
+    // Pas de contexte Blobs (astro dev/preview, build local) — cache fichier.
+    debug('Netlify Blobs indisponible, repli sur le cache fichier :', err);
+    _blobsUnavailable = true;
+    return null;
+  }
+}
+
+/** Valide un enregistrement de cache et en calcule l'âge. */
+function toCacheResult(raw: string, origine: string): CacheReadResult | null {
+  const cached: CachedReviews = JSON.parse(raw);
+  if (!cached || typeof cached.timestamp !== 'number' || !Number.isFinite(cached.timestamp)) {
+    console.warn(`[reviewsService] Cache ${origine} ignoré : timestamp invalide`);
+    return null;
+  }
+  if (!cached.reviews || !Array.isArray(cached.reviews.reviews)) {
+    console.warn(`[reviewsService] Cache ${origine} ignoré : contenu invalide`);
+    return null;
+  }
+  const age = Date.now() - cached.timestamp;
+  if (!Number.isFinite(age) || age < 0) {
+    console.warn(`[reviewsService] Cache ${origine} ignoré : âge invalide`);
+    return null;
+  }
+  return { reviews: cached.reviews, ageMs: age };
+}
+
+async function readBlobCache(): Promise<CacheReadResult | null> {
+  const store = await getBlobStore();
+  if (!store) return null;
+  try {
     const raw = await store.get(BLOB_KEY, { type: 'text' });
     if (!raw) return null;
-
-    const cached: CachedReviews = JSON.parse(raw);
-    if (!cached || typeof cached.timestamp !== 'number' || !Number.isFinite(cached.timestamp)) {
-      console.warn('[reviewsService] Cache blob ignoré : timestamp invalide');
-      return null;
-    }
-
-    const age = Date.now() - cached.timestamp;
-    if (!Number.isFinite(age) || age < 0) {
-      console.warn('[reviewsService] Cache blob ignoré : âge invalide');
-      return null;
-    }
-
-    return { reviews: cached.reviews, ageMs: age };
+    return toCacheResult(raw, 'blob');
   } catch (err) {
     console.warn('[reviewsService] Échec de lecture du cache blob :', err);
     return null;
   }
 }
 
-async function writeBlobCache(reviews: GoogleReviews): Promise<void> {
-  const getStore = await loadGetStore();
-  if (!getStore) return;
+/** `true` si l'écriture a réussi — sinon l'appelant retombe sur le fichier. */
+async function writeBlobCache(reviews: GoogleReviews): Promise<boolean> {
+  const store = await getBlobStore();
+  if (!store) return false;
   try {
-    const store = getStore(BLOB_STORE);
     const data: CachedReviews = { timestamp: Date.now(), reviews };
     await store.set(BLOB_KEY, JSON.stringify(data));
     debug('Avis cachés dans Netlify Blob');
+    return true;
   } catch (err) {
-    console.warn('[reviewsService] Échec d\'écriture du cache blob :', err);
+    console.warn("[reviewsService] Échec d'écriture du cache blob :", err);
+    return false;
   }
 }
 
-// ── File helpers (dev) ──
+// ── File helpers (dev + repli serverless) ──
 
 async function readFileCache(): Promise<CacheReadResult | null> {
-  try {
-    const raw = await fs.readFile(CACHE_FILE, 'utf-8');
-    const cached: CachedReviews = JSON.parse(raw);
-
-    if (!cached || typeof cached.timestamp !== 'number' || !Number.isFinite(cached.timestamp)) {
-      console.warn('[reviewsService] Cache fichier ignoré : timestamp invalide');
-      return null;
+  let freshest: CacheReadResult | null = null;
+  for (const dir of CACHE_DIRS) {
+    try {
+      const raw = await fs.readFile(path.join(dir, CACHE_FILENAME), 'utf-8');
+      const result = toCacheResult(raw, 'fichier');
+      if (result && (!freshest || result.ageMs < freshest.ageMs)) freshest = result;
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') continue;
+      console.warn('[reviewsService] Échec de lecture du cache fichier :', err);
     }
-
-    const age = Date.now() - cached.timestamp;
-    if (!Number.isFinite(age) || age < 0) {
-      console.warn('[reviewsService] Cache fichier ignoré : âge invalide');
-      return null;
-    }
-
-    return { reviews: cached.reviews, ageMs: age };
-  } catch (err: unknown) {
-    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') return null;
-    console.warn('[reviewsService] Échec de lecture du cache fichier :', err);
-    return null;
   }
+  return freshest;
 }
 
 async function writeFileCache(reviews: GoogleReviews): Promise<void> {
-  try {
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-    const data: CachedReviews = { timestamp: Date.now(), reviews };
-    const tempFile = path.join(CACHE_DIR, `.reviews-cache.tmp-${process.pid}-${Date.now()}`);
-    await fs.writeFile(tempFile, JSON.stringify(data, null, 2), 'utf-8');
-    await fs.rename(tempFile, CACHE_FILE);
-    debug('Avis cachés dans le fichier local');
-  } catch (err) {
-    console.warn('[reviewsService] Échec d\'écriture du cache fichier :', err);
+  const payload = JSON.stringify({ timestamp: Date.now(), reviews } satisfies CachedReviews, null, 2);
+  for (const dir of CACHE_DIRS) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const tempFile = path.join(dir, `.reviews-cache.tmp-${process.pid}-${Date.now()}`);
+      await fs.writeFile(tempFile, payload, 'utf-8');
+      await fs.rename(tempFile, path.join(dir, CACHE_FILENAME));
+      debug(`Avis cachés dans le fichier local (${dir})`);
+      return;
+    } catch {
+      // Dossier en lecture seule : on essaie le suivant (/tmp survit aux invocations à chaud).
+    }
   }
+  console.warn("[reviewsService] Aucun dossier de cache accessible en écriture : les avis seront relus à chaque expiration");
 }
 
 // ── Cache unifié ──
 
+/** Le relevé le plus récent, blob d'abord puis fichier. */
 async function readCacheAny(): Promise<CacheReadResult | null> {
-  return useBlobs ? readBlobCache() : readFileCache();
+  const blob = await readBlobCache();
+  if (blob && blob.ageMs <= CACHE_TTL_MS) return blob;
+  const fichier = await readFileCache();
+  if (blob && fichier) return blob.ageMs <= fichier.ageMs ? blob : fichier;
+  return blob ?? fichier;
 }
 
 async function readCache(): Promise<GoogleReviews | null> {
   const cached = await readCacheAny();
   if (!cached) return null;
-
   if (cached.ageMs > CACHE_TTL_MS) {
     debug('Cache expiré, rafraîchissement');
     return null;
   }
-
   debug(`Avis servis depuis le cache (âge : ${Math.round(cached.ageMs / 60_000)} min)`);
   return cached.reviews;
 }
 
 async function writeCache(reviews: GoogleReviews): Promise<void> {
-  return useBlobs ? writeBlobCache(reviews) : writeFileCache(reviews);
+  if (await writeBlobCache(reviews)) return;
+  await writeFileCache(reviews);
 }
 
 // ── Formatage ──
@@ -343,6 +374,37 @@ function formatApiResponse(
 // ── Export principal ──
 
 /**
+ * Un échec (quota dépassé, panne) ne se retente pas à chaque rendu : l'API Google plafonne à
+ * 100 requêtes par jour, et insister à chaque visite empêchait le quota de se rétablir. Pendant
+ * ce délai, on sert le dernier relevé connu, ou le repli.
+ */
+const COOLDOWN_ECHEC_MS = 30 * 60 * 1000;
+let _prochainEssaiPermisA = 0;
+
+/**
+ * Une seule résolution à la fois, de la lecture du cache à la requête : dix rendus simultanés
+ * ne font qu'un appel à Google. Le verrou doit couvrir la lecture du cache elle-même — posé
+ * seulement autour de la requête, tous les rendus lisaient un cache vide avant que le premier
+ * n'ait pu l'emplir.
+ */
+let _enCours: Promise<GoogleReviews> | null = null;
+
+async function actualiser(apiKey: string, placeId: string): Promise<GoogleReviews | null> {
+  try {
+    const data = await fetchGoogleReviews(apiKey, placeId);
+    const result = formatApiResponse(data, 'fresh');
+    await writeCache(result);
+    console.log(`[reviewsService] Avis frais : ${result.totalReviews} avis, note ${result.rating}`);
+    return result;
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.warn(`[reviewsService] Échec fetch Places API : ${errMsg} — prochain essai dans 30 min`);
+    _prochainEssaiPermisA = Date.now() + COOLDOWN_ECHEC_MS;
+    return null;
+  }
+}
+
+/**
  * Récupère les avis Google pour la courtière.
  *
  * Stratégie :
@@ -351,6 +413,8 @@ function formatApiResponse(
  * 3. Fetch échoué + cache périmé (< 7 jours) → retourne le cache stale
  * 4. Rien de disponible → fallback statique (fallbackReviews.json)
  * 5. Si google_place_id est vide → fallback direct
+ *
+ * Après un échec, l'API n'est plus appelée pendant 30 min (voir COOLDOWN_ECHEC_MS).
  *
  * @returns Les avis formatés — ne retourne jamais null.
  */
@@ -368,36 +432,40 @@ export async function getReviews(): Promise<GoogleReviews> {
     return loadFallback();
   }
 
+  if (!_enCours) {
+    _enCours = resoudre(apiKey, placeId).finally(() => {
+      _enCours = null;
+    });
+  }
+  return _enCours;
+}
+
+async function resoudre(apiKey: string, placeId: string): Promise<GoogleReviews> {
   // 1. Cache valide ?
   const cached = await readCache();
   if (cached) return cached;
 
   const staleCache = await readCacheAny();
+  const stale: GoogleReviews | null =
+    staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.reviews.source !== 'fallback'
+      ? { ...staleCache.reviews, source: 'stale' }
+      : null;
 
-  // 2. Fetch live
-  try {
-    const data = await fetchGoogleReviews(apiKey, placeId);
-    const result = formatApiResponse(data, 'fresh');
-    await writeCache(result);
-    console.log(`[reviewsService] Avis frais : ${result.totalReviews} avis, note ${result.rating}`);
-    return result;
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    console.warn(`[reviewsService] Échec fetch Places API : ${errMsg}`);
-
-    // 3. Cache stale ?
-    if (
-      staleCache &&
-      staleCache.ageMs <= CACHE_STALE_MAX_MS &&
-      staleCache.reviews.source !== 'fallback'
-    ) {
-      const ageMin = Math.round(staleCache.ageMs / 60_000);
-      console.log(`[reviewsService] Cache stale (âge : ${ageMin} min)`);
-      return { ...staleCache.reviews, source: 'stale' };
-    }
-
-    // 4. Fallback
-    console.warn('[reviewsService] Aucun cache → fallbackReviews.json');
-    return loadFallback();
+  // 2. Échec récent : on ne rappelle pas Google.
+  if (Date.now() < _prochainEssaiPermisA) {
+    debug('Cooldown actif — pas de requête vers Places API');
+    return stale ?? loadFallback();
   }
+
+  // 3. Fetch live
+  const frais = await actualiser(apiKey, placeId);
+  if (frais) return frais;
+
+  // 4. Cache périmé, puis fallback
+  if (stale) {
+    console.log(`[reviewsService] Cache stale servi (âge : ${Math.round((staleCache?.ageMs ?? 0) / 60_000)} min)`);
+    return stale;
+  }
+  console.warn('[reviewsService] Aucun cache → fallbackReviews.json');
+  return loadFallback();
 }

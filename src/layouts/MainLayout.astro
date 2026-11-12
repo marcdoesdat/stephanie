@@ -188,6 +188,10 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
          visiteurs serait par définition sans consentement (Loi 25). -->
 
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
+    <!-- La bannière de consentement vient avant le contenu : en position fixe, sa place dans
+         le document ne change rien à l'écran, mais au clavier et au lecteur d'écran elle est
+         atteinte tout de suite au lieu d'attendre la fin du pied de page. -->
+    {!sansConsentement && <ConsentBanner />}
     <slot />
     <!-- Barre CTA mobile : bande + bouton pilule centré. Le bouton Messenger
          (position:fixed, rendu par page) vient se placer dans cette bande à droite. -->
@@ -198,7 +202,6 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
         </a>
       </div>
     )}
-    {!sansConsentement && <ConsentBanner />}
 
     {!sansTraduction && <script is:inline defer src="/js/i18n-core.js"></script>}
     {!sansTraduction && <script is:inline defer src="/js/i18n-regles.js"></script>}

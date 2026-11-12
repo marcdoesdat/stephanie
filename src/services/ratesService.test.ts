@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { extractAllRates, rowsToFlat, rateCacheControl, fetchHypothecaRates, type HypothecaRates } from './ratesService';
+import {
+  extractAllRates,
+  rowsToFlat,
+  rateCacheControl,
+  fetchHypothecaRates,
+  releveEncoreAffichable,
+  AGE_MAX_TAUX_MS,
+  type HypothecaRates,
+} from './ratesService';
 
 /**
  * Encode comme `occ()` sur hypotheca.ca : ROT13 sur les lettres, ROT5 sur les
@@ -197,12 +205,56 @@ describe('budget de scraping (SSR)', () => {
 });
 
 describe('rateCacheControl', () => {
-  it('met en cache 6 h quand les taux sont présents', () => {
-    const rates = { rows: [] } as unknown as HypothecaRates;
-    expect(rateCacheControl(rates)).toContain('s-maxage=21600');
+  const MAINTENANT = Date.parse('2026-05-14T12:00:00Z');
+  const releveIlYA = (heures: number) =>
+    ({ rows: [], fetchedAt: new Date(MAINTENANT - heures * 3_600_000).toISOString() }) as unknown as HypothecaRates;
+
+  it('met en cache 6 h quand les taux sont frais', () => {
+    expect(rateCacheControl(releveIlYA(1), MAINTENANT)).toBe('s-maxage=21600, stale-while-revalidate=3600');
+    expect(rateCacheControl(releveIlYA(30), MAINTENANT)).toBe('s-maxage=21600, stale-while-revalidate=3600');
   });
 
   it('réduit fortement le cache CDN quand les taux manquent', () => {
     expect(rateCacheControl(null)).toBe('s-maxage=120, stale-while-revalidate=120');
+  });
+
+  it("ne laisse pas le CDN garder un taux au-delà de 48 h", () => {
+    // Relevé de 47 h : il reste une heure, pas les 7 h du cache habituel.
+    for (const heures of [42, 45, 47, 47.9]) {
+      const entete = rateCacheControl(releveIlYA(heures), MAINTENANT);
+      const [, sMax, swr] = /s-maxage=(\d+), stale-while-revalidate=(\d+)/.exec(entete) ?? [];
+      const finDeVie = heures * 3600 + Number(sMax) + Number(swr);
+      expect(finDeVie, `relevé de ${heures} h`).toBeLessThanOrEqual(48 * 3600 + 120);
+    }
+    expect(rateCacheControl(releveIlYA(47), MAINTENANT)).toBe('s-maxage=3480, stale-while-revalidate=120');
+  });
+
+  it('garde un cache court quand la date du relevé est illisible', () => {
+    const rates = { rows: [] } as unknown as HypothecaRates;
+    expect(rateCacheControl(rates)).toBe('s-maxage=120, stale-while-revalidate=120');
+  });
+});
+
+describe('releveEncoreAffichable — jamais de taux de plus de 48 h', () => {
+  const H = 3_600_000;
+
+  it('la limite est de 48 h', () => {
+    expect(AGE_MAX_TAUX_MS).toBe(48 * H);
+  });
+
+  it('sert un relevé récent quand hypotheca.ca ne répond pas', () => {
+    expect(releveEncoreAffichable(25 * H, 'live')).toBe(true);
+    expect(releveEncoreAffichable(48 * H, 'live')).toBe(true);
+  });
+
+  it('refuse un relevé de plus de 48 h, même faute de mieux', () => {
+    expect(releveEncoreAffichable(48 * H + 1, 'live')).toBe(false);
+    expect(releveEncoreAffichable(14 * 24 * H, 'live')).toBe(false);
+  });
+
+  it("refuse un relevé qui n'est pas un vrai relevé, ou d'âge absurde", () => {
+    expect(releveEncoreAffichable(H, 'fallback')).toBe(false);
+    expect(releveEncoreAffichable(Number.NaN, 'live')).toBe(false);
+    expect(releveEncoreAffichable(-1, 'live')).toBe(false);
   });
 });

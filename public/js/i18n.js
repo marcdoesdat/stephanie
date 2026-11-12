@@ -33,11 +33,10 @@
   // ---------------------------------------------------------------------------------------
   // Bascule
   // ---------------------------------------------------------------------------------------
+  // Seule l'autre langue est proposée : « EN » sur une page française, « FR » sur une page anglaise.
   function marquerBoutons() {
-    var bs = document.querySelectorAll('.lang-switch [data-lang]');
-    for (var i = 0; i < bs.length; i++) {
-      bs[i].setAttribute('aria-pressed', bs[i].getAttribute('data-lang') === (natif ? 'en' : 'fr') ? 'true' : 'false');
-    }
+    var cs = document.querySelectorAll('.lang-switch');
+    for (var i = 0; i < cs.length; i++) cs[i].setAttribute('data-langue', natif ? 'en' : 'fr');
   }
 
   // Les pages sans barre de navigation reçoivent la bascule en haut à droite.

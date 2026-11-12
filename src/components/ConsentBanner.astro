@@ -1,145 +1,222 @@
 ---
 // Bannière de consentement Loi 25 (Québec).
 // Affichage et logique de chargement conditionnel dans /public/js/consent.js.
+//
+// Une barre flottante au bas de l'écran : le texte à gauche, « Refuser » et « Accepter » à
+// droite, une croix au bout. Sur téléphone, les mêmes éléments s'empilent.
+//
+// À garder :
+//  - « Accepter » est plein, « Refuser » en contour — choix de style assumé (novembre 2026).
+//    En contrepartie, les deux boutons ont la même taille, sont côte à côte, et refuser reste
+//    à un seul clic : ne jamais reléguer « Refuser » dans un lien ou un second écran.
+//  - Le texte dit ce que le consentement déclenche réellement (témoins Google : mesure
+//    d'audience et publicité) et ce que coûte un refus (rien). Il doit rester vrai de
+//    consent.js et de /confidentialite/.
+//  - Tant qu'elle est ouverte, la barre « Prendre rendez-vous » et la bulle Messenger lui
+//    cèdent la place (body.consent-open) : elles logent au même endroit.
+//  - La croix n'est jamais un accord. À la première visite, elle vaut un refus et le dit
+//    (« Fermer sans accepter ») ; rouverte par « Gérer mes cookies », la bannière rappelle le
+//    choix en vigueur et la croix (ou Échap) ferme sans rien changer.
 ---
 
-<div id="consent-banner" class="consent-banner" hidden role="dialog" aria-labelledby="consent-title" aria-describedby="consent-desc">
-  <div class="consent-inner">
-    <div class="consent-text">
-      <strong id="consent-title">Confidentialité — Loi 25</strong>
-      <p id="consent-desc">
-        Ce site utilise des témoins (cookies) pour analyser son trafic, personnaliser les publicités et gérer les prises de rendez-vous.
-        <a href="/confidentialite/">En savoir plus sur les témoins</a>.
-      </p>
-    </div>
-    <div class="consent-actions">
-      <button type="button" id="consent-refuse" class="consent-btn consent-btn-secondary">Refuser</button>
-      <button type="button" id="consent-accept" class="consent-btn consent-btn-primary">Accepter</button>
-    </div>
+<div
+  id="consent-banner"
+  class="consent-banner"
+  hidden
+  role="dialog"
+  aria-modal="false"
+  aria-labelledby="consent-title"
+  aria-describedby="consent-desc"
+  tabindex="-1"
+  data-nosnippet
+>
+  <div class="consent-text">
+    <p id="consent-desc" class="consent-desc">
+      <strong id="consent-title">Votre vie privée compte.</strong>
+      Avec votre accord, des témoins (cookies) de Google mesurent la fréquentation du site et servent à mesurer et à personnaliser mes publicités. Un refus ne change rien à votre visite.
+      <a href="/confidentialite/#temoins">Détail des témoins</a>
+    </p>
+    <p id="consent-status-accepted" class="consent-status" hidden>Votre choix actuel&nbsp;: témoins acceptés.</p>
+    <p id="consent-status-refused" class="consent-status" hidden>Votre choix actuel&nbsp;: témoins refusés.</p>
   </div>
+
+  <div class="consent-actions">
+    <button type="button" id="consent-refuse" class="consent-btn consent-btn-refuse">Refuser</button>
+    <button type="button" id="consent-accept" class="consent-btn consent-btn-accept">Accepter</button>
+  </div>
+
+  <button type="button" id="consent-close" class="consent-close">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    <span id="consent-close-first" class="sr-only">Fermer sans accepter</span>
+    <span id="consent-close-manage" class="sr-only" hidden>Fermer sans modifier mon choix</span>
+  </button>
 </div>
 
 <style>
+  /* Téléphone d'abord : texte, puis les deux boutons côte à côte, la croix en haut à droite. */
   .consent-banner {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
     z-index: 9999;
-    background: var(--ink, #1a1a1a);
-    color: #fff;
-    padding: 0.6rem 1.5rem;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
-    animation: consent-slide-up 0.35s ease-out;
-  }
-
-  @keyframes consent-slide-up {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-
-  .consent-inner {
-    max-width: 1300px;
-    margin: 0 auto;
+    max-height: calc(100dvh - 1.5rem);
+    overflow-y: auto;
     display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1rem 1.1rem 1.1rem;
+    background: var(--sand, #f6f3ff);
+    color: var(--ink, #12101f);
+    border: 1px solid var(--border, #e2ddf0);
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(18, 16, 31, 0.18);
+    font-family: 'DM Sans', sans-serif;
+    animation: consent-entree 0.3s ease-out;
+  }
+
+  .consent-banner:focus {
+    outline: none;
+  }
+
+  @keyframes consent-entree {
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
   }
 
   .consent-text {
-    flex: 1 1 320px;
     min-width: 0;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.78rem;
-    line-height: 1.4;
+    padding-right: 2rem; /* la croix */
   }
 
-  .consent-text strong#consent-title {
-    display: block;
-    margin-bottom: 0.2rem;
-    font-size: 0.82rem;
-    letter-spacing: 0.02em;
-  }
-
-  .consent-text p {
+  .consent-desc {
     margin: 0;
-    color: rgba(255, 255, 255, 0.88);
+    font-size: 0.9rem;
+    line-height: 1.5;
   }
 
-  .consent-text a {
-    color: var(--clay, #6d47ff);
+  .consent-desc strong {
+    font-weight: 700;
+  }
+
+  .consent-desc a {
+    color: inherit;
     text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .consent-status {
+    display: inline-block;
+    margin: 0.5rem 0 0;
+    padding: 0.2rem 0.7rem;
+    border-radius: 50px;
+    background: var(--warm, #ece6ff);
+    font-size: 0.82rem;
+    font-weight: 600;
   }
 
   .consent-actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.6rem;
-    flex-shrink: 0;
   }
 
   .consent-btn {
-    padding: 0.45rem 1rem;
-    border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 600;
-    font-size: 0.78rem;
+    min-height: 48px;
+    padding: 0.5rem 1.2rem;
+    border-radius: 50px;
+    border: 1.5px solid var(--ink, #12101f);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    white-space: nowrap;
     cursor: pointer;
-    border: 1px solid transparent;
-    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
 
-  .consent-btn:focus-visible {
-    outline: 2px solid var(--clay, #6d47ff);
+  .consent-btn-refuse {
+    background: var(--white, #fff);
+    color: var(--ink, #12101f);
+  }
+  .consent-btn-refuse:hover {
+    background: var(--warm, #ece6ff);
+  }
+
+  .consent-btn-accept {
+    background: var(--ink, #12101f);
+    color: #fff;
+  }
+  .consent-btn-accept:hover {
+    background: var(--clay-dk, #5b34f0);
+    border-color: var(--clay-dk, #5b34f0);
+  }
+
+  .consent-btn:focus-visible,
+  .consent-close:focus-visible {
+    outline: 2px solid var(--clay-dk, #5b34f0);
     outline-offset: 2px;
   }
 
-  .consent-btn-primary {
-    background: var(--clay, #6d47ff);
-    color: #fff;
-  }
-  .consent-btn-primary:hover {
-    background: var(--clay-dk, #a36540);
-  }
-
-  .consent-btn-secondary {
+  .consent-close {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
     background: transparent;
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.35);
-  }
-  .consent-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.55);
+    color: var(--ink, #12101f);
+    cursor: pointer;
   }
 
-  @media (max-width: 700px) {
+  .consent-close:hover {
+    background: var(--warm, #ece6ff);
+  }
+
+  /* Ordinateur et tablette : tout sur une ligne. */
+  @media (min-width: 801px) {
     .consent-banner {
-      padding: 0.55rem 1rem;
-    }
-    .consent-inner {
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      max-width: 1380px;
+      margin: 0 auto;
       flex-direction: row;
       align-items: center;
-      flex-wrap: nowrap;
-      gap: 0.75rem;
+      gap: 1.25rem;
+      padding: 0.8rem 0.8rem 0.8rem 1.5rem;
+      border-radius: 18px;
     }
     .consent-text {
-      font-size: 0.72rem;
-      line-height: 1.3;
-      flex: 1 1 0;
-      min-width: 0;
+      flex: 1 1 auto;
+      padding-right: 0;
     }
-    .consent-text strong#consent-title {
-      display: none; /* titre masqué sur mobile pour gagner de la place */
+    .consent-desc {
+      max-width: 62rem;
     }
-    .consent-text p { margin: 0; }
     .consent-actions {
+      display: flex;
       flex-shrink: 0;
-      gap: 0.4rem;
     }
     .consent-btn {
-      padding: 0.4rem 0.7rem;
-      font-size: 0.72rem;
-      white-space: nowrap;
+      min-height: 44px;
     }
+    .consent-close {
+      position: static;
+    }
+  }
+</style>
+
+<style is:global>
+  /* Tant que la bannière est ouverte, elle est seule au bas de l'écran : la barre
+     « Prendre rendez-vous » (téléphone) et la bulle Messenger lui cèdent la place. */
+  body.consent-open .mobile-sticky-cta,
+  body.consent-open .messenger-btn {
+    visibility: hidden;
   }
 </style>

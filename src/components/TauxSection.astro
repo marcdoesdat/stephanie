@@ -41,7 +41,7 @@ const displayRows = hypothecaRates?.rows?.length
         <h2 class="section-title">Consulter les meilleurs taux hypothécaires<br />du moment <em>via notre réseau</em></h2>
         <p class="section-sub">
           Taux obtenus via notre réseau de 20+ prêteurs.
-          {hypothecaRates?.source === 'live' ? ' Mis à jour automatiquement.' : ' Taux indicatifs.'}
+          {hypothecaRates?.source === 'live' ? '' : ' Taux indicatifs.'}
         </p>
         <p id="tv-freshness" data-updated-at={hypothecaRates.fetchedAt} style="margin:.45rem 0 0;font-size:.78rem;color:var(--clay-dk);font-weight:600;">Mise à jour en cours…</p>
       </div>

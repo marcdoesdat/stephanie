@@ -1,0 +1,776 @@
+---
+export const prerender = true;
+
+import MainLayout from '../../layouts/MainLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import MessengerBtn from '../../components/MessengerBtn.astro';
+import { Image } from 'astro:assets';
+import stephaniePhoto from '../../assets/stephanie.webp';
+import { Blend, CalendarClock, DoorOpen, LockKeyhole, PenLine, TrendingUp, Wallet } from '@lucide/astro';
+import { loadSiteConfig } from '../../config';
+import { cheminGuide, guideParSlug, moisRevision } from '../../data/guides';
+import { schemaCourtiere } from '../../utils/schemaVille';
+
+const config = loadSiteConfig();
+const guide = guideParSlug('taux-fixe-ou-variable');
+const site = config.site_url.replace(/\/$/, '');
+const pageUrl = `${site}${cheminGuide(guide.slug)}`;
+const revision = moisRevision(guide.revise);
+
+const titre = 'Guide du taux fixe ou variable';
+const description =
+  "Taux fixe ou variable : ce que chacun change à votre versement, à la pénalité et à votre marge de manœuvre. Un guide sans prédiction de taux.";
+
+// Même construction que les deux autres guides : l'autrice est le nœud `#stephanie`, l'éditeur
+// le `#business` de SEO.astro. En anglais, traductionPage.ts ne garde que ce dernier.
+const schemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: titre,
+    description,
+    inLanguage: 'fr-CA',
+    datePublished: guide.revise,
+    dateModified: guide.revise,
+    mainEntityOfPage: pageUrl,
+    author: { '@id': `${site}#stephanie` },
+    publisher: { '@id': `${site}#business` },
+  },
+  schemaCourtiere(config, `${site}${stephaniePhoto.src}`),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: `${site}/` },
+      { '@type': 'ListItem', position: 2, name: 'Guides', item: `${site}/guides/` },
+      { '@type': 'ListItem', position: 3, name: titre, item: pageUrl },
+    ],
+  },
+];
+
+// L'infographie : la décision en trois temps (3 + 3 + 1 étapes, comme les deux autres guides : le
+// dégradé du fil est le même). Les clés de phase (`preparer`, `comparer`, `echeance`) sont celles
+// du style recopié des autres guides ; seuls les noms affichés changent. Chaque étape mène à sa
+// section. Aucun taux du jour n'y figure : ce guide ne prédit rien, et un taux affiché ici
+// vieillirait sans que personne ne s'en aperçoive.
+const PHASES = {
+  preparer: 'Comprendre',
+  comparer: 'Peser',
+  echeance: 'Décider',
+} as const;
+
+const JALONS = [
+  { ancre: 'fixe', phase: 'preparer', quand: 'Le taux fixe', titre: 'La stabilité', texte: 'Un taux et un versement connus pour tout le terme.', Icone: LockKeyhole },
+  { ancre: 'variable', phase: 'preparer', quand: 'Le taux variable', titre: 'La souplesse', texte: 'Un taux qui suit le marché : il peut baisser comme monter.', Icone: TrendingUp },
+  { ancre: 'entre-deux', phase: 'preparer', quand: 'Entre les deux', titre: 'Mixte et convertible', texte: "Certains prêteurs offrent des formules qui ne sont ni l'un ni l'autre.", Icone: Blend },
+  { ancre: 'sortie', phase: 'comparer', quand: 'Si vous sortez avant', titre: 'Le prix de la sortie', texte: "Ce que chacun coûte à briser : le calcul n'est pas le même.", Icone: DoorOpen },
+  { ancre: 'marge', phase: 'comparer', quand: 'Votre budget', titre: 'Votre marge de manœuvre', texte: "Que se passe-t-il si le taux monte de 1 ou 2 points ?", Icone: Wallet },
+  { ancre: 'projets', phase: 'comparer', quand: 'Vos prochaines années', titre: 'Vos projets', texte: 'Vendre, refinancer, déménager : tout ce qui peut interrompre le terme.', Icone: CalendarClock },
+  { ancre: 'decider', phase: 'echeance', quand: 'Au moment de choisir', titre: 'Décider', texte: 'Quatre questions pour trancher selon votre situation, pas selon une prévision.', Icone: PenLine },
+] as const;
+---
+
+<MainLayout title={titre} description={description}>
+  <Fragment slot="head">
+    {schemas.map((schema) => (
+      <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+    ))}
+  </Fragment>
+
+  <MessengerBtn />
+  <Nav />
+
+  <main id="main-content">
+
+    <!-- ============ EN-TÊTE ============ -->
+    <section class="sp-hero gd-hero">
+      <div class="sp-inner">
+        <div class="sp-hero-grid">
+          <div class="sp-hero-text">
+            <nav aria-label="Fil d'Ariane" class="gd-fil">
+              <a href="/">Accueil</a> <span aria-hidden="true">›</span> <a href="/guides/">Guides</a>
+            </nav>
+
+            <h1 class="sp-h1">
+              <span class="sp-h1-sujet">Guide du taux fixe ou variable</span>
+              Fixe ou variable : <em>choisir selon vous, pas selon une prévision</em>.
+            </h1>
+
+            <p class="sp-h2">
+              Ce que chaque type de taux change à votre versement, à la pénalité si vous sortez du prêt et à votre
+              marge de manœuvre : de quoi décider avec les bonnes questions, sans jargon et sans deviner où iront
+              les taux.
+            </p>
+
+            <p class="gd-signature">
+              Par <a href="/#apropos">{config.nom}</a>, courtière hypothécaire chez {config.organisation}
+              · Mis à jour en {revision} · Lecture : {guide.minutes} min
+            </p>
+          </div>
+
+          <aside class="gd-bref" aria-labelledby="gd-bref-titre">
+            <h2 id="gd-bref-titre" class="gd-bref-titre">L'essentiel en 30 secondes</h2>
+            <ul>
+              <li>Le <strong>taux fixe</strong> garde votre taux et votre versement stables pendant tout le terme.</li>
+              <li>Le <strong>taux variable</strong> suit le taux préférentiel du prêteur : il peut baisser, comme monter.</li>
+              <li><strong>Personne ne sait où seront les taux.</strong> Décidez selon ce que votre budget supporte et ce que vous prévoyez faire, pas selon une prévision.</li>
+              <li>Sortir d'un variable coûte généralement <strong>3 mois d'intérêt</strong> ; sortir d'un fixe, le plus élevé entre 3 mois et l'<strong>IRD</strong> — souvent plus cher.</li>
+              <li>La bonne question : <strong>mon budget tient-il si le taux monte de 1 ou 2 points ?</strong></li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <div class="sp-inner gd-layout">
+      <!-- ============ SOMMAIRE ============ -->
+      <aside class="gd-cote">
+        <nav class="gd-sommaire" aria-labelledby="gd-sommaire-titre">
+          <p id="gd-sommaire-titre" class="gd-sommaire-titre">Dans ce guide</p>
+          <ol>
+            <li><a href="#carte">Le choix en un coup d'œil</a></li>
+            <li><a href="#chiffres">Les chiffres à connaître</a></li>
+            {JALONS.map((j, i) => (
+              <li><a href={`#${j.ancre}`}>{i + 1}. {j.titre}</a></li>
+            ))}
+            <li><a href="#erreurs">Cinq erreurs fréquentes</a></li>
+          </ol>
+        </nav>
+      </aside>
+
+      <article class="gd-article">
+
+        <!-- ============ L'INFOGRAPHIE ============ -->
+        <section class="gd-section" aria-labelledby="carte">
+          <h2 id="carte" class="sp-section-title">Le choix <em>en un coup d'œil</em></h2>
+          <p class="gd-intro">Sept étapes : comprendre chaque formule, peser ce qu'elle implique pour vous, puis décider.</p>
+
+          <ul class="gd-legende" aria-label="Les trois temps de la décision">
+            {Object.entries(PHASES).map(([cle, nom]) => (
+              <li data-phase={cle}><span class="gd-pastille" aria-hidden="true"></span>{nom}</li>
+            ))}
+          </ul>
+
+          <ol class="gd-parcours">
+            {JALONS.map((j, i) => (
+              <li class="gd-jalon" data-phase={j.phase}>
+                <span class="gd-jalon-num" aria-hidden="true">{i + 1}</span>
+                <div class="gd-jalon-carte">
+                  <span class="gd-jalon-icone" aria-hidden="true"><j.Icone size={22} stroke-width={1.8} /></span>
+                  <span class="gd-jalon-quand">{j.quand}</span>
+                  <a class="gd-jalon-titre" href={`#${j.ancre}`}>{j.titre}</a>
+                  <p>{j.texte}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <!-- ============ CHIFFRES CLÉS ============ -->
+        <section class="gd-section" aria-labelledby="chiffres">
+          <h2 id="chiffres" class="sp-section-title">Les chiffres <em>à connaître</em></h2>
+          <dl class="gd-chiffres">
+            <div><dt>d'intérêt : la pénalité habituelle pour sortir d'un taux variable</dt><dd>3&nbsp;mois</dd></div>
+            <div><dt>d'intérêt ou IRD, le plus élevé des deux : la pénalité habituelle d'un taux fixe</dt><dd>3&nbsp;mois&nbsp;ou&nbsp;IRD</dd></div>
+            <div><dt>d'intérêt de plus la première année si le taux monte de 1 point, sur 300&nbsp;000&nbsp;$</dt><dd>3&nbsp;000&nbsp;$</dd></div>
+            <div><dt>les durées de terme fixe les plus courantes</dt><dd>1&nbsp;à&nbsp;10&nbsp;ans</dd></div>
+            <div><dt>de pénalité pour changer de prêteur à l'échéance, quel que soit le type de taux</dt><dd>0&nbsp;$</dd></div>
+            <div><dt>prêteurs comparés pour votre dossier</dt><dd>20+</dd></div>
+          </dl>
+          <p class="gd-note">Règles générales en vigueur en {revision}. Aucun taux du jour n'est cité ici : ils changent chaque semaine, et ce guide ne prédit rien.</p>
+        </section>
+
+        <!-- ============ 1. FIXE ============ -->
+        <section class="gd-section" aria-labelledby="fixe">
+          <h2 id="fixe" class="gd-h2"><span class="gd-num" data-phase="preparer">1</span> Le taux fixe : la stabilité</h2>
+          <p>
+            Avec un taux fixe, votre taux est connu pour toute la durée du terme. Votre versement ne bouge pas :
+            vous savez, à la signature, ce que vous paierez chaque mois jusqu'à l'échéance, quoi que fassent les
+            taux entre-temps.
+          </p>
+          <ul class="gd-liste gd-liste--coches">
+            <li>un budget prévisible, du premier versement à l'échéance ;</li>
+            <li>aucune surprise si les taux montent pendant le terme ;</li>
+            <li>le choix du terme, qui s'étend couramment de 1 à 10 ans, selon le prêteur.</li>
+          </ul>
+          <h3>Ce que la stabilité ne vous donne pas</h3>
+          <p>
+            Si les taux baissent, votre taux, lui, ne suit pas : vous gardez celui que vous avez signé. Et, si vous
+            devez sortir du prêt avant la fin du terme, la pénalité d'un taux fixe est généralement la plus élevée
+            entre 3 mois d'intérêt et l'IRD — voir <a href="#sortie">le prix de la sortie</a>.
+          </p>
+        </section>
+
+        <!-- ============ 2. VARIABLE ============ -->
+        <section class="gd-section" aria-labelledby="variable">
+          <h2 id="variable" class="gd-h2"><span class="gd-num" data-phase="preparer">2</span> Le taux variable : la souplesse</h2>
+          <p>
+            Un taux variable est lié au taux préférentiel de votre prêteur, qui suit généralement le taux directeur
+            de la Banque du Canada. Quand ce dernier change, le vôtre change aussi, peu après : il peut baisser,
+            comme monter.
+          </p>
+          <ul class="gd-liste gd-liste--coches">
+            <li>un taux qui profite d'une baisse, sans que vous ayez à renégocier ;</li>
+            <li>une pénalité de sortie généralement plus simple et moins élevée ;</li>
+            <li>chez certains prêteurs, la possibilité de passer au taux fixe en cours de terme (voir <a href="#entre-deux">plus bas</a>).</li>
+          </ul>
+
+          <h3>Deux façons de payer, selon le prêteur</h3>
+          <p>La façon dont un taux variable se reflète dans votre versement n'est pas la même chez tous les prêteurs :</p>
+          <ul class="gd-liste">
+            <li>
+              <strong>Versement qui reste le même.</strong> Quand le taux change, c'est la part d'intérêt et la part
+              de capital de chaque versement qui se déplacent. Si les taux montent, une plus grande part sert aux
+              intérêts : le solde baisse moins vite.
+            </li>
+            <li>
+              <strong>Versement qui s'ajuste.</strong> Quand le taux change, votre versement change aussi, à la
+              hausse comme à la baisse.
+            </li>
+          </ul>
+          <p class="gd-attention">
+            <strong>Posez la question avant de signer :</strong> lequel des deux s'applique ? Et que se passe-t-il
+            si le taux monte au point où le versement ne couvre plus les intérêts ? Les conditions varient d'un
+            prêteur à l'autre, et c'est dans le contrat qu'elles se trouvent.
+          </p>
+        </section>
+
+        <!-- ============ 3. ENTRE-DEUX ============ -->
+        <section class="gd-section" aria-labelledby="entre-deux">
+          <h2 id="entre-deux" class="gd-h2"><span class="gd-num" data-phase="preparer">3</span> Entre les deux : mixte et convertible</h2>
+          <p>
+            Fixe ou variable n'est pas toujours un choix en tout ou rien. Selon le prêteur, d'autres formules
+            existent :
+          </p>
+          <ul class="gd-liste">
+            <li>
+              <strong>Le prêt mixte.</strong> Le prêt est divisé en une partie à taux fixe et une partie à taux
+              variable. C'est un compromis : vous gardez de la stabilité sur une partie, et de la souplesse sur
+              l'autre.
+            </li>
+            <li>
+              <strong>Le variable convertible.</strong> Certains prêteurs permettent de passer d'un taux variable à
+              un taux fixe en cours de terme. Le taux fixe offert à ce moment-là, et les frais éventuels, dépendent
+              du prêteur : ce n'est pas un retour au taux d'origine.
+            </li>
+          </ul>
+          <p>
+            Aucune de ces formules n'est meilleure en soi. Elles méritent d'être comparées au même titre que les
+            autres : par la pénalité, les conditions et ce qu'elles supposent pour votre budget.
+          </p>
+        </section>
+
+        <!-- ============ 4. SORTIE ============ -->
+        <section class="gd-section gd-encadre" aria-labelledby="sortie">
+          <h2 id="sortie" class="gd-h2"><span class="gd-num" data-phase="comparer">4</span> Le prix de la sortie</h2>
+          <p>
+            Vendre, refinancer ou changer de prêteur avant l'échéance, c'est rembourser le prêt plus tôt que
+            prévu : le prêteur réclame une pénalité. Elle n'est pas la même selon le type de taux, et c'est une
+            des différences les plus concrètes entre les deux.
+          </p>
+          <ul class="gd-liste">
+            <li><strong>Taux variable :</strong> généralement 3 mois d'intérêt — un calcul simple, que vous pouvez faire vous-même.</li>
+            <li>
+              <strong>Taux fixe :</strong> le plus élevé entre 3 mois d'intérêt et l'<strong>IRD</strong>
+              (différentiel de taux d'intérêt). La méthode de calcul de l'IRD varie d'un prêteur à l'autre, et
+              l'écart entre deux prêteurs peut représenter plusieurs milliers de dollars.
+            </li>
+          </ul>
+          <p>
+            Exemple illustratif : sur un solde de 300&nbsp;000&nbsp;$ à 4&nbsp;%, 3 mois d'intérêt représentent
+            3&nbsp;000&nbsp;$. C'est la pénalité habituelle d'un taux variable à ce niveau ; pour un taux fixe,
+            ce n'est que le plancher, et l'IRD peut la dépasser largement.
+          </p>
+          <p>
+            Le détail du calcul, et pourquoi deux prêteurs n'arrivent pas au même chiffre, se trouve dans
+            <a href="/guides/renouvellement/#penalite">le guide du renouvellement</a>.
+          </p>
+          <p class="gd-outil">
+            <a href="/outils/calculateur-penalite-hypothecaire/">Estimez votre pénalité →</a>
+            <span>Selon la méthode de votre prêteur : 3 mois d'intérêt ou IRD.</span>
+          </p>
+          <p>
+            Et à l'échéance du terme, il n'y a plus de pénalité du tout : changer de type de taux, ou de prêteur,
+            ne coûte rien à ce moment-là. C'est le bon moment pour réviser votre choix.
+          </p>
+        </section>
+
+        <!-- ============ 5. MARGE ============ -->
+        <section class="gd-section" aria-labelledby="marge">
+          <h2 id="marge" class="gd-h2"><span class="gd-num" data-phase="comparer">5</span> Votre marge de manœuvre</h2>
+          <p>
+            Plutôt que de chercher quel taux sera le meilleur — personne ne le sait —, mesurez ce que votre budget
+            supporterait. Le test est simple : imaginez que votre taux monte, et regardez si le mois reste
+            confortable.
+          </p>
+          <p>Exemple illustratif, sur un solde de 300&nbsp;000&nbsp;$ : l'intérêt supplémentaire de la première année si le taux monte.</p>
+          <div class="gd-table-wrap">
+            <table class="gd-table">
+              <thead>
+                <tr><th scope="col">Hausse du taux</th><th scope="col">Intérêt de plus, la 1<sup>re</sup> année</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>0,5&nbsp;point</td><td>1&nbsp;500&nbsp;$ (environ 125&nbsp;$ par mois)</td></tr>
+                <tr><td>1&nbsp;point</td><td>3&nbsp;000&nbsp;$ (environ 250&nbsp;$ par mois)</td></tr>
+                <tr><td>2&nbsp;points</td><td>6&nbsp;000&nbsp;$ (environ 500&nbsp;$ par mois)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            C'est l'ordre de grandeur de l'intérêt, calculé sur le solde de départ ; l'effet exact sur votre
+            versement dépend de la façon dont votre prêteur l'applique (voir
+            <a href="#variable">le taux variable</a>).
+          </p>
+          <ul class="gd-liste gd-liste--coches">
+            <li>Si une hausse de 1 ou 2 points vous mettrait en difficulté, la stabilité du taux fixe a une vraie valeur pour vous.</li>
+            <li>Si votre budget l'absorberait sans stress, la souplesse du variable est une option qui reste ouverte.</li>
+          </ul>
+          <p class="gd-outil">
+            <a href="/outils/#comparateur">Comparez deux taux →</a>
+            <span>Le comparateur calcule le versement de votre solde à deux taux, côte à côte.</span>
+          </p>
+        </section>
+
+        <!-- ============ 6. PROJETS ============ -->
+        <section class="gd-section" aria-labelledby="projets">
+          <h2 id="projets" class="gd-h2"><span class="gd-num" data-phase="comparer">6</span> Vos projets</h2>
+          <p>
+            Le type de taux dépend autant de votre vie que du marché. Plus un projet peut vous faire sortir du
+            prêt avant l'échéance, plus la pénalité compte dans votre choix :
+          </p>
+          <ul class="gd-liste">
+            <li><strong>Vendre ou déménager</strong> dans les prochaines années ;</li>
+            <li><strong>Refinancer</strong> pour des rénovations ou pour regrouper des dettes ;</li>
+            <li><strong>Un changement de situation</strong> : emploi, famille, séparation, retraite ;</li>
+            <li><strong>Un remboursement important</strong> prévu avant l'échéance (héritage, vente d'un bien).</li>
+          </ul>
+          <p>
+            Si vous vendez pour racheter, la portabilité du prêt peut vous permettre d'éviter une partie, voire
+            la totalité de la pénalité : une option à explorer avant de trancher, quel que soit le type de taux.
+          </p>
+          <p class="gd-astuce">
+            <strong>Bon à savoir :</strong> le terme et le type de taux sont deux choix distincts. Un terme court
+            à taux fixe se termine plus tôt, donc vous ramène plus vite à un moment sans pénalité.
+          </p>
+        </section>
+
+        <!-- ============ 7. DÉCIDER ============ -->
+        <section class="gd-section" aria-labelledby="decider">
+          <h2 id="decider" class="gd-h2"><span class="gd-num" data-phase="echeance">7</span> Décider</h2>
+          <p>Quatre questions, dans cet ordre, mènent généralement à une réponse claire :</p>
+          <ol class="gd-erreurs">
+            <li><strong>Mon budget tient-il si le taux monte de 1 ou 2 points ?</strong> Sinon, le taux fixe mérite d'être sérieusement considéré.</li>
+            <li><strong>Pourrais-je sortir du prêt avant l'échéance ?</strong> Si oui, comparez le prix de la sortie, pas seulement le taux.</li>
+            <li><strong>Que se passe-t-il, concrètement, si le taux monte ?</strong> Versement fixe ou ajusté : la réponse est dans le contrat du prêteur.</li>
+            <li><strong>Comment je me sentirais, un matin où le taux a bougé ?</strong> Un choix qui vous empêche de dormir n'est pas le bon, même s'il est avantageux sur papier.</li>
+          </ol>
+          <p>
+            Aucune réponse n'est universelle : deux personnes au même solde, au même revenu, peuvent faire un
+            choix différent, et avoir raison toutes les deux. Un appel de 15 minutes suffit généralement à voir
+            ce que chaque formule donnerait pour votre dossier, chez plus de 20 prêteurs.
+          </p>
+        </section>
+
+        <!-- ============ ERREURS ============ -->
+        <section class="gd-section" aria-labelledby="erreurs">
+          <h2 id="erreurs" class="gd-h2">Cinq erreurs fréquentes</h2>
+          <ol class="gd-erreurs">
+            <li><strong>Choisir selon l'écart du moment entre les deux taux</strong>, sans tester une hausse. L'écart change ; votre budget, lui, doit tenir dans tous les cas.</li>
+            <li><strong>Croire que le fixe est « sans risque ».</strong> Il protège le versement, pas la sortie : l'IRD peut représenter plusieurs milliers de dollars.</li>
+            <li><strong>Se fier à une prévision</strong> — d'un proche, d'un article, d'un bulletin de nouvelles. Personne ne connaît le prochain mouvement des taux.</li>
+            <li><strong>Oublier ses projets.</strong> Vendre ou refinancer en cours de terme change le calcul.</li>
+            <li><strong>Comparer le taux sans comparer la pénalité et les conditions.</strong> Deux prêteurs au même taux peuvent coûter très différemment à la sortie.</li>
+          </ol>
+        </section>
+
+        <!-- ============ AUTRICE + APPEL ============ -->
+        <section class="gd-fin" aria-labelledby="gd-fin-titre">
+          <div class="gd-autrice">
+            <Image src={stephaniePhoto} alt="" width={96} height={96} class="gd-autrice-photo" loading="lazy" />
+            <p>
+              <strong>{config.nom}</strong>, courtière hypothécaire chez {config.organisation}, permis de l'AMF
+              n° {config.amf}. Basée à Repentigny, elle accompagne des propriétaires partout au Québec, par Teams,
+              téléphone ou texto.
+            </p>
+          </div>
+
+          <h2 id="gd-fin-titre" class="sp-section-title">Fixe ou variable : <em>et pour vous</em> ?</h2>
+          <p class="gd-fin-texte">
+            Chaque dossier est différent. En 15 minutes, on regarde votre budget, vos projets et ce que chaque
+            formule donnerait chez les prêteurs qui conviennent à votre situation.
+          </p>
+          <div class="gd-fin-ctas">
+            <a href="/rendez-vous/" class="btn-cta" data-umami-event="cta_booking_guide_taux">Réserver un appel de 15&nbsp;min</a>
+            <a href="/rappel/" class="btn-secondary">Être rappelé·e</a>
+          </div>
+
+          <p class="gd-avertissement">
+            Ce guide présente des règles générales en vigueur en {revision}. Elles peuvent changer, et votre
+            situation peut appeler d'autres solutions : il ne remplace pas un conseil adapté à votre dossier. Les
+            exemples chiffrés sont illustratifs et ne constituent ni une prévision de taux ni une promesse. Les
+            taux, les conditions et l'approbation du financement relèvent du prêteur.
+          </p>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <Footer />
+</MainLayout>
+
+<style>
+  /* Recopié à l'identique de guides/premier-achat.astro et renouvellement.astro — seuls diffèrent les noms des trois
+     temps (préparer en vert, comparer en argile, échéance en encre). Un changement ici se fait
+     aussi là-bas, tant que les styles des guides ne sont pas mis en commun. */
+  .gd-hero { padding-bottom: 3.5rem; }
+  [data-phase="preparer"] { --phase: var(--forest); }
+  [data-phase="comparer"] { --phase: var(--clay-dk); }
+  [data-phase="echeance"] { --phase: var(--ink); }
+
+  .gd-fil { font-size: .8rem; color: var(--muted); margin-bottom: 1.25rem; }
+  .gd-fil a { color: var(--muted); text-decoration: none; }
+  .gd-fil a:hover { color: var(--clay-dk); text-decoration: underline; }
+
+  .gd-signature { font-size: .85rem; color: var(--muted); line-height: 1.6; margin: 0; }
+  .gd-signature a { color: var(--clay-dk); }
+
+  /* --- L'ESSENTIEL --- */
+  .gd-bref {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.6rem 1.75rem;
+    box-shadow: 0 10px 30px rgba(31, 30, 28, .06);
+  }
+  .gd-bref-titre {
+    font-family: "Lora", serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 .9rem;
+  }
+  .gd-bref ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
+  .gd-bref li {
+    position: relative;
+    padding-left: 1.4rem;
+    font-size: .92rem;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .gd-bref li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .5em;
+    width: .55rem;
+    height: .55rem;
+    border-radius: 50%;
+    background: var(--clay);
+  }
+
+  /* --- MISE EN PAGE : SOMMAIRE + ARTICLE --- */
+  .gd-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    padding-top: 1rem;
+    padding-bottom: 4rem;
+  }
+  @media (min-width: 1080px) {
+    .gd-layout { grid-template-columns: 230px minmax(0, 1fr); gap: 3.5rem; }
+    .gd-sommaire { position: sticky; top: 6.5rem; }
+  }
+  .gd-sommaire {
+    background: var(--sand);
+    border-radius: var(--radius-sm);
+    padding: 1.1rem 1.25rem;
+  }
+  .gd-sommaire-titre {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--clay-dk);
+    margin: 0 0 .6rem;
+  }
+  .gd-sommaire ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; }
+  .gd-sommaire a {
+    display: block;
+    padding: .35rem 0;
+    font-size: .86rem;
+    line-height: 1.4;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .gd-sommaire a:hover { color: var(--clay-dk); text-decoration: underline; text-underline-offset: 3px; }
+  @media (max-width: 1079px) {
+    .gd-sommaire ol { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); column-gap: 1.5rem; }
+  }
+
+  /* --- ARTICLE --- */
+  .gd-article { max-width: 760px; min-width: 0; }
+  .gd-section { margin-bottom: 3.25rem; }
+  .gd-section [id],
+  .gd-section h2[id] { scroll-margin-top: 6.5rem; }
+  .gd-article p,
+  .gd-article li { font-size: 1.02rem; line-height: 1.75; color: var(--ink); }
+  .gd-article p { margin: 0 0 1rem; }
+  .gd-article h3 {
+    font-family: "Lora", serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 1.75rem 0 .6rem;
+  }
+  .gd-article a:not(.btn-cta):not(.btn-secondary):not(.gd-jalon-titre) { color: var(--clay-dk); text-underline-offset: 3px; }
+  .gd-intro { color: var(--muted) !important; margin-top: -.5rem !important; }
+
+  .gd-h2 {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    font-family: "Lora", serif;
+    font-size: clamp(1.5rem, 2.6vw, 1.95rem);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0 0 1rem;
+  }
+  .gd-num {
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    border-radius: 50%;
+    background: var(--phase);
+    color: #fff;
+    font-family: "DM Sans", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .gd-liste { margin: 0 0 1rem; padding-left: 1.2rem; display: grid; gap: .55rem; }
+  .gd-liste--coches { list-style: none; padding-left: 0; }
+  .gd-liste--coches li { position: relative; padding-left: 1.75rem; }
+  .gd-liste--coches li::before {
+    content: "";
+    position: absolute;
+    left: .1rem;
+    top: .45em;
+    width: .9rem;
+    height: .5rem;
+    border-left: 2.5px solid var(--forest);
+    border-bottom: 2.5px solid var(--forest);
+    transform: rotate(-45deg);
+  }
+
+  .gd-astuce,
+  .gd-attention {
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.2rem;
+    margin: 1.25rem 0 !important;
+    font-size: .97rem !important;
+  }
+  .gd-astuce { background: #eef3ef; border-left: 4px solid var(--forest); }
+  .gd-attention { background: #fbeee6; border-left: 4px solid var(--clay-dk); }
+
+  .gd-outil {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .2rem 1rem;
+    padding: .9rem 1.1rem;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .gd-outil a { font-weight: 700; }
+  .gd-outil span { font-size: .88rem; color: var(--muted); }
+
+  .gd-encadre {
+    background: var(--sand);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+  }
+
+  .gd-table-wrap { overflow-x: auto; margin: 0 0 1rem; }
+  .gd-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  .gd-table th,
+  .gd-table td { text-align: left; padding: .7rem .9rem; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  .gd-table th { font-size: .8rem; letter-spacing: .03em; color: var(--muted); font-weight: 700; background: var(--sand); }
+  .gd-table td:first-child { font-weight: 600; white-space: nowrap; }
+  @media (max-width: 520px) {
+    .gd-table td:first-child { white-space: normal; }
+  }
+
+  .gd-erreurs { margin: 0; padding-left: 1.4rem; display: grid; gap: .7rem; }
+  .gd-erreurs li::marker { color: var(--clay-dk); font-weight: 700; }
+
+  /* --- L'INFOGRAPHIE : LE CALENDRIER --- */
+  .gd-legende {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.25rem;
+    margin: 0 0 1.5rem;
+    padding: 0;
+  }
+  .gd-legende li { display: inline-flex; align-items: center; gap: .45rem; font-size: .85rem !important; font-weight: 600; color: var(--muted) !important; }
+  .gd-pastille { width: .75rem; height: .75rem; border-radius: 50%; background: var(--phase); }
+
+  .gd-parcours {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    display: grid;
+    gap: 1rem;
+  }
+  /* Le fil qui relie les étapes. */
+  .gd-parcours::before {
+    content: "";
+    position: absolute;
+    top: 1.4rem;
+    bottom: 1.4rem;
+    left: 1.4rem;
+    width: 3px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, var(--forest) 0%, var(--forest) 40%, var(--clay-dk) 46%, var(--clay-dk) 82%, var(--ink) 88%);
+    opacity: .35;
+  }
+  .gd-jalon {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.8rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+  .gd-jalon-num {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    background: var(--phase);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: 0 0 0 5px var(--white);
+  }
+  .gd-jalon-carte {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: .75rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--phase);
+    border-radius: var(--radius-sm);
+    padding: .95rem 1.1rem 1rem;
+    box-shadow: 0 6px 18px rgba(31, 30, 28, .05);
+  }
+  .gd-jalon-icone {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--phase) 12%, transparent);
+    color: var(--phase);
+  }
+  .gd-jalon-quand {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--phase);
+    align-self: end;
+  }
+  .gd-jalon-titre {
+    font-family: "Lora", serif;
+    font-size: 1.12rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .gd-jalon-titre::after { content: "\00a0→"; color: var(--phase); }
+  .gd-jalon-titre:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .gd-jalon-carte p {
+    grid-column: 1 / -1;
+    margin: .55rem 0 0 !important;
+    font-size: .92rem !important;
+    line-height: 1.55 !important;
+    color: var(--muted) !important;
+  }
+
+  /* Sur grand écran, les étapes se répondent de part et d'autre du fil. */
+  @media (min-width: 760px) {
+    .gd-parcours { gap: 0; }
+    .gd-parcours::before { left: calc(50% - 1.5px); }
+    .gd-jalon { grid-template-columns: minmax(0, 1fr) 2.8rem minmax(0, 1fr); gap: 1.4rem; }
+    .gd-jalon-num { grid-column: 2; grid-row: 1; margin-top: .7rem; }
+    .gd-jalon-carte { grid-row: 1; }
+    .gd-jalon:nth-child(odd) .gd-jalon-carte { grid-column: 1; }
+    .gd-jalon:nth-child(even) .gd-jalon-carte { grid-column: 3; }
+    .gd-jalon:not(:first-child) { margin-top: -1.6rem; }
+  }
+
+  /* --- CHIFFRES CLÉS --- */
+  .gd-chiffres {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+    gap: .75rem;
+    margin: 0 0 .75rem;
+  }
+  .gd-chiffres div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: .2rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .9rem .95rem;
+  }
+  .gd-chiffres dd {
+    margin: 0;
+    font-family: "Lora", serif;
+    font-size: clamp(1.35rem, 5vw, 1.9rem);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--clay-dk);
+    white-space: nowrap;
+  }
+  .gd-chiffres dt { font-size: .85rem; line-height: 1.45; color: var(--muted); }
+  @media (min-width: 600px) { .gd-chiffres { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .gd-note { font-size: .82rem !important; color: var(--muted) !important; }
+
+  /* --- FIN --- */
+  .gd-fin {
+    border-top: 1px solid var(--border);
+    padding-top: 2.5rem;
+  }
+  .gd-autrice {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--sand);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.2rem;
+    margin-bottom: 2.5rem;
+  }
+  .gd-autrice p { margin: 0 !important; font-size: .92rem !important; line-height: 1.6 !important; }
+  .gd-autrice-photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
+  .gd-fin-texte { color: var(--muted) !important; }
+  .gd-fin-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; margin: 1.5rem 0 2rem; }
+  .gd-avertissement { font-size: .8rem !important; line-height: 1.6 !important; color: var(--muted) !important; }
+
+  @media (max-width: 520px) {
+    .gd-autrice { align-items: flex-start; }
+    .gd-autrice-photo { width: 56px; height: 56px; }
+  }
+</style>

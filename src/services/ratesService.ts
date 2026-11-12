@@ -74,7 +74,22 @@ const CACHE_DIRS = [path.resolve('.cache'), path.join(os.tmpdir(), 'hypotheca-ra
 // 24 h : les taux bougent peu d'un jour à l'autre et hypotheca.ca rate-limite
 // agressivement (429) — un TTL court multiplie les fetchs inutiles.
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const CACHE_STALE_MAX_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/**
+ * Âge au-delà duquel un taux n'est plus affiché, même faute de mieux : 48 h.
+ *
+ * Quand hypotheca.ca ne répond pas, on sert le dernier relevé plutôt que rien — mais un taux
+ * hypothécaire bouge, et un relevé de deux semaines présenté comme « taux du jour » est une
+ * fausse information. Passé 48 h, la page dit « taux indisponibles » et renvoie à hypotheca.ca.
+ * La limite était de 30 jours jusqu'en novembre 2026.
+ * `rateCacheControl` borne le cache du CDN sur la même limite.
+ */
+export const AGE_MAX_TAUX_MS = 48 * 60 * 60 * 1000;
+
+/** Un relevé en cache peut-il encore être affiché faute de relevé frais ? */
+export function releveEncoreAffichable(ageMs: number, source: HypothecaRates['source']): boolean {
+  return source === 'live' && Number.isFinite(ageMs) && ageMs >= 0 && ageMs <= AGE_MAX_TAUX_MS;
+}
 
 // Cooldown après un échec de fetch : on sert le cache périmé (stale) sans
 // retenter l'upstream pendant ce délai, pour ne pas marteler hypotheca.ca
@@ -487,11 +502,23 @@ function buildFull(rows: RateEntry[], flat: Partial<HypothecaRates>, source: 'li
  *
  * Sans taux, on ne met en cache CDN que quelques minutes : autrement un seul
  * rendu raté fige « taux indisponibles » pendant 6 h pour tous les visiteurs.
+ *
+ * Avec un relevé qui approche de 48 h (hypotheca.ca muet depuis la veille), le cache du CDN
+ * est raccourci d'autant : sans cela, une page rendue à 47 h resterait servie 7 h de plus et
+ * la limite de `AGE_MAX_TAUX_MS` ne tiendrait que côté serveur.
  */
-export function rateCacheControl(rates: HypothecaRates | null): string {
-  return rates
-    ? 's-maxage=21600, stale-while-revalidate=3600'
-    : 's-maxage=120, stale-while-revalidate=120';
+export function rateCacheControl(rates: HypothecaRates | null, maintenant: number = Date.now()): string {
+  const court = 's-maxage=120, stale-while-revalidate=120';
+  if (!rates) return court;
+
+  const age = maintenant - Date.parse(rates.fetchedAt);
+  // Date de relevé illisible : on ne sait pas ce qu'on mettrait en cache.
+  if (!Number.isFinite(age)) return court;
+
+  const resteS = Math.floor((AGE_MAX_TAUX_MS - age) / 1000);
+  if (resteS >= 21600 + 3600) return 's-maxage=21600, stale-while-revalidate=3600';
+  if (resteS <= 240) return 's-maxage=60, stale-while-revalidate=60';
+  return `s-maxage=${resteS - 120}, stale-while-revalidate=120`;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -645,7 +672,7 @@ let _inflightPromise: Promise<HypothecaRates | null> | null = null;
  * Concurrent calls are coalesced into a single upstream fetch to avoid
  * triggering rate-limiting (HTTP 429) on hypotheca.ca after cold starts.
  * After a failed refresh, upstream is left alone for 15 min (cooldown) and
- * the stale cache (< 30 days) is served instead.
+ * the stale cache (at most 48 h old — AGE_MAX_TAUX_MS) is served instead.
  */
 export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
   // 1. Return cached rates if still valid (< 24 h old)
@@ -664,7 +691,7 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
   // 3. Cooldown actif après un échec récent : servir le stale sans toucher l'upstream
   if (Date.now() < _nextFetchAllowedAt) {
     debug('Fetch cooldown actif — cache périmé servi sans requête upstream');
-    if (staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.rates.source === 'live') {
+    if (staleCache && releveEncoreAffichable(staleCache.ageMs, staleCache.rates.source)) {
       return staleCache.rates;
     }
     return null;
@@ -692,7 +719,7 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
         );
         _nextFetchAllowedAt = Date.now() + FETCH_FAILURE_COOLDOWN_MS;
         // Return stale cache if available, otherwise null
-        if (staleCache && staleCache.ageMs <= CACHE_STALE_MAX_MS && staleCache.rates.source === 'live') {
+        if (staleCache && releveEncoreAffichable(staleCache.ageMs, staleCache.rates.source)) {
           debug(`Using stale cache (age: ${Math.round(staleCache.ageMs / 60_000)} min)`);
           return staleCache.rates;
         }
@@ -714,8 +741,7 @@ export async function fetchHypothecaRates(): Promise<HypothecaRates | null> {
 
       if (
         staleCache &&
-        staleCache.ageMs <= CACHE_STALE_MAX_MS &&
-        staleCache.rates.source === 'live'
+        releveEncoreAffichable(staleCache.ageMs, staleCache.rates.source)
       ) {
         debug(
           `Using stale live cache as backup (age: ${Math.round(staleCache.ageMs / 60_000)} min)`,

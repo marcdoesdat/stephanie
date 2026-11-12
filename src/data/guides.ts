@@ -38,6 +38,14 @@ export const GUIDES: readonly Guide[] = [
     minutes: 11,
     revise: '2026-11-08',
   },
+  {
+    slug: 'taux-fixe-ou-variable',
+    titre: 'Taux fixe ou variable, comment choisir',
+    resume:
+      "Ce que chaque type de taux change à votre versement, à la pénalité de sortie et à votre marge de manœuvre : quatre questions pour décider selon votre situation, sans prévision de taux.",
+    minutes: 9,
+    revise: '2026-11-08',
+  },
 ];
 
 export function cheminGuide(slug: string): string {

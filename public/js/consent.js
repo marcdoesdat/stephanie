@@ -58,12 +58,37 @@
     }
   }
 
-  function showBanner() {
-    if (banner) banner.hidden = false;
+  var closeBtn = document.getElementById('consent-close');
+  var closeFirst = document.getElementById('consent-close-first');
+  var closeManage = document.getElementById('consent-close-manage');
+  var statusAccepted = document.getElementById('consent-status-accepted');
+  var statusRefused = document.getElementById('consent-status-refused');
+  // Le lien « Gérer mes cookies » qui a rouvert la bannière : le focus y revient à la fermeture.
+  var opener = null;
+
+  // `manage` : rouverte par le visiteur. La bannière rappelle alors le choix en vigueur, peut se
+  // fermer sans rien changer, et prend le focus. À la première visite, elle ne le prend pas :
+  // elle n'interrompt pas la lecture, elle est seulement la première chose atteinte au clavier.
+  function showBanner(manage) {
+    if (!banner) return;
+    var state = read();
+    if (statusAccepted) statusAccepted.hidden = state !== 'accepted';
+    if (statusRefused) statusRefused.hidden = state !== 'refused';
+    // La croix change de sens selon qu'un choix existe déjà — son libellé aussi.
+    if (closeFirst) closeFirst.hidden = !!state;
+    if (closeManage) closeManage.hidden = !state;
+    banner.hidden = false;
+    // Sur téléphone, la barre « Prendre rendez-vous » cède la place (voir ConsentBanner.astro).
+    document.body.classList.add('consent-open');
+    if (manage) banner.focus();
   }
 
   function hideBanner() {
-    if (banner) banner.hidden = true;
+    if (!banner) return;
+    banner.hidden = true;
+    document.body.classList.remove('consent-open');
+    if (opener && opener.focus) opener.focus();
+    opener = null;
   }
 
   function save(state) {
@@ -104,10 +129,27 @@
   // Lien permanent "Gérer mes cookies" (présent dans le footer)
   document.addEventListener('click', function (e) {
     var t = e.target;
-    if (t && t.closest && t.closest('[data-consent-manage]')) {
+    var lien = t && t.closest ? t.closest('[data-consent-manage]') : null;
+    if (lien) {
       e.preventDefault();
-      showBanner();
+      opener = lien;
+      showBanner(true);
     }
+  });
+
+  // La croix : avec un choix enregistré, elle ferme sans rien changer. Sans choix, elle vaut
+  // un refus (son libellé dit « Fermer sans accepter ») — jamais un accord, et pas un
+  // non-choix qui ferait revenir la bannière à chaque page.
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function () {
+      if (read()) hideBanner();
+      else if (refuseBtn) refuseBtn.click();
+    });
+  }
+  // Échap ne ferme que si un choix existe déjà : à la première visite, la touche sert à autre
+  // chose sur la page (infobulles) et ne doit pas valoir un refus par accident.
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && banner && !banner.hidden && read()) hideBanner();
   });
 
   var existing = read();

@@ -181,12 +181,13 @@ Toute page du tableau ci-dessus marquée « SSR » doit donc porter `prerender =
 ## Services (fetch + cache)
 
 ### `src/services/ratesService.ts`
-Scrape les taux depuis hypotheca.ca, cache 24h via Netlify Blobs (fichier en dev). Après un échec de fetch (ex. 429), cooldown de 15 min pendant lequel le cache périmé (< 30 jours) est servi sans retenter l'upstream.
+Scrape les taux depuis hypotheca.ca, cache 24h via Netlify Blobs (fichier en dev). Après un échec de fetch (ex. 429), cooldown de 15 min pendant lequel le dernier relevé est servi sans retenter l'upstream — **à condition qu'il ait 48 h au plus** (`AGE_MAX_TAUX_MS`).
 
 **Flux :** `hypotheca.ca` → parse HTML → Netlify Blob (store `rates`, TTL 24h) → pages SSR → CDN (`s-maxage=21600, stale-while-revalidate=3600`)
 
 **Règles critiques :**
-- **Jamais de faux taux en fallback.** Si fetch échoue et qu'aucun cache stale < 30 jours n'existe, retourner `null` et afficher un lien vers hypotheca.ca.
+- **Jamais de faux taux en fallback.** Si fetch échoue et qu'aucun relevé de 48 h au plus n'existe, retourner `null` et afficher un lien vers hypotheca.ca.
+- **Jamais de taux de plus de 48 h.** Un relevé plus vieux n'est plus affiché, même faute de mieux (`releveEncoreAffichable`) : un taux de deux semaines présenté comme taux du jour est une fausse information. `rateCacheControl` raccourcit le cache du CDN quand le relevé approche de la limite, sans quoi elle ne tiendrait que côté serveur. La limite était de 30 jours jusqu'en novembre 2026.
 - Parsing en cascade : `<tr>` HTML visible → `occ(...)` obfusqué → markdown (proxy r.jina.ai).
 - Le proxy r.jina.ai est désactivé par défaut (`ENABLE_RATES_PROXY=1` pour l'activer).
 - Validation des taux : entre 0.5 % et 20 %.
@@ -206,6 +207,13 @@ interface HypothecaRates {
 ### `src/services/reviewsService.ts`
 Fetch les avis Google via l'API Google Places (New), cache 24h via Netlify Blobs.
 - Fallback : `src/data/fallbackReviews.json` (avis statiques)
+- **Le cache ne dépend jamais de `process.env.NETLIFY`** (même règle que `ratesService`) : on essaie Blobs, puis `.cache/`,
+  puis `/tmp`. Avec le test de la variable, la production écrivait dans un disque en lecture seule, ne gardait rien et
+  rappelait Google à chaque page — jusqu'au quota de **100 requêtes par jour** (429), après quoi le site n'affichait plus que
+  les 3 avis du repli. Après un échec, l'API n'est plus appelée pendant 30 min, et une seule résolution tourne à la fois.
+- **L'API ne rend jamais plus de 5 avis** par fiche, choisis par Google : les afficher tous exige l'API Google Business Profile
+  (accès à demander) ou un complément saisi à la main. Un total (`userRatingCount`) supérieur au nombre d'avis affichés est normal.
+- Tests : `src/services/reviewsService.test.ts` (cache sans `NETLIFY`, un seul appel pour des rendus simultanés, délai après 429).
 - Variables d'env requises : `GOOGLE_PLACES_API_KEY` + `google_place_id` dans siteConfig.json
 
 ## Logique métier

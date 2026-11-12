@@ -2,7 +2,7 @@
 [hidden]{display:none!important}
 :root{
   --sand:#f6f3ff;--warm:#ece6ff;--clay:#6d47ff;--clay-dk:#5b34f0;
-  --forest:#006b52;--ink:#12101f;--muted:#575268;--border:#e2ddf0;--white:#ffffff;
+  --forest:#006b52;--ink:#12101f;--muted:#575268;--placeholder:#8a8698;--border:#e2ddf0;--white:#ffffff;
   --messenger:#0084ff;
   /* V2 — couleurs d'appoint : aplats des cartes, surlignages, pastilles. Toujours sous du texte
      encre (--ink), jamais sous du texte blanc : aucune n'est assez foncée pour ça. */
@@ -86,9 +86,9 @@ nav#navbar.scrolled{box-shadow:var(--shadow-sm);border-bottom-color:var(--border
 .hero-left .hero-value-prop em{font-style:normal;color:var(--ink);background:linear-gradient(transparent 58%,var(--sun) 58%,var(--sun) 92%,transparent 92%);padding:0 .08em;margin:0 -.08em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .hero-left p{font-size:1.12rem;color:var(--muted);line-height:1.7;max-width:480px;margin-bottom:2.5rem}
 .hero-btns{display:flex;gap:1rem;flex-wrap:wrap}
-.btn-primary{background:var(--ink);color:white;padding:.95rem 2rem;border-radius:50px;font-size:.92rem;font-weight:600;text-decoration:none;border:2px solid var(--ink);transition:background .2s,border-color .2s,transform .25s var(--rebond);display:inline-block}
-.btn-primary:hover{background:var(--clay-dk);border-color:var(--clay-dk);transform:translateY(-2px)}
-.btn-primary:active{transform:scale(.97)}
+.btn-primary{background:var(--clay);color:white;padding:.95rem 2rem;border-radius:50px;font-size:.92rem;font-weight:600;text-decoration:none;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);transition:background .2s,transform .15s,box-shadow .15s;display:inline-block}
+.btn-primary:hover{background:var(--clay-dk);transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.btn-primary:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--ink)}
 .btn-primary:focus-visible{outline:3px solid var(--clay);outline-offset:3px}
 .btn-primary--sm{font-size:.82rem;padding:.7rem 1.6rem}
 .btn-secondary{background:transparent;color:var(--ink);padding:.95rem 2rem;border-radius:50px;border:2px solid var(--ink);font-size:.92rem;font-weight:600;text-decoration:none;transition:background .2s,color .2s,transform .25s var(--rebond);display:inline-block}
@@ -115,16 +115,16 @@ nav#navbar.scrolled{box-shadow:var(--shadow-sm);border-bottom-color:var(--border
    Effet : hard drop shadow chunky, s'enfonce au hover/active. */
 .btn-cta{
   display:inline-flex;align-items:center;justify-content:center;gap:.55rem;
-  background:var(--ink);color:white;
+  background:var(--clay);color:white;
   padding:1.05rem 1.8rem;border-radius:50px;
   font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:600;letter-spacing:-.005em;
-  text-decoration:none;border:2px solid var(--ink);cursor:pointer;
-  transition:background .2s,border-color .2s,transform .25s var(--rebond);
+  text-decoration:none;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);cursor:pointer;
+  transition:background .2s,transform .15s,box-shadow .15s;
 }
-.btn-cta:hover{background:var(--clay-dk);border-color:var(--clay-dk);transform:translateY(-2px)}
-.btn-cta:active{transform:scale(.97)}
+.btn-cta:hover{background:var(--clay-dk);transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.btn-cta:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--ink)}
 .btn-cta:focus-visible{outline:3px solid var(--clay);outline-offset:3px}
-.btn-cta:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn-cta:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:2px 2px 0 var(--ink)}
 .btn-cta svg{transition:transform .2s;flex-shrink:0}
 .btn-cta:hover svg{transform:translateX(3px)}
 .btn-cta--block{display:flex;width:100%}
@@ -139,6 +139,8 @@ nav#navbar.scrolled{box-shadow:var(--shadow-sm);border-bottom-color:var(--border
 @media (prefers-reduced-motion: reduce){
   .btn-cta,.btn-cta svg{transition:none}
   .btn-cta:hover,.btn-cta:active{transform:none}
+  .btn-primary{transition:none}
+  .btn-primary:hover,.btn-primary:active{transform:none}
 }
 .hero-stats{display:flex;gap:1rem;margin-top:3rem;justify-content:flex-start;text-align:left}
 /* Chaque chiffre dans sa pastille de couleur */
@@ -204,7 +206,7 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 .form-group label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
 .form-group input,.form-group select{width:100%;padding:.85rem 1.1rem;background:var(--sand);border:1.5px solid var(--border);border-radius:12px;color:var(--ink);font-family:"DM Sans",sans-serif;font-size:.95rem;transition:border-color .2s;-webkit-appearance:none;appearance:none}
 .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--clay)}
-.form-group input::placeholder{color:var(--muted)}
+.form-group input::placeholder{color:var(--placeholder);opacity:1}
 .form-group select option{background:var(--white);color:var(--ink)}
 .calc-btn{width:100%;padding:1rem;background:var(--clay);border:none;border-radius:12px;color:white;font-family:"DM Sans",sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .2s}
 .calc-btn:hover{background:var(--clay-dk)}
@@ -606,7 +608,7 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 .email-capture-row + .email-capture-row{margin-top:.65rem}
 .email-capture-input{flex:1;min-width:0;padding:.78rem 1rem;background:var(--white);border:1.5px solid var(--border);border-radius:10px;color:var(--ink);font-family:"DM Sans",sans-serif;font-size:.88rem}
 .email-capture-input:focus{outline:none;border-color:var(--clay)}
-.email-capture-input::placeholder{color:var(--muted)}
+.email-capture-input::placeholder{color:var(--placeholder);opacity:1}
 .email-capture-btn{background:var(--clay);border:none;border-radius:10px;color:white;font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:600;padding:.78rem 1rem;cursor:pointer;white-space:nowrap;transition:background .2s}
 .email-capture-btn:hover{background:var(--clay-dk)}
 .email-capture-msg{font-size:.75rem;margin-top:.5rem;line-height:1.5;color:var(--muted)}
@@ -989,6 +991,7 @@ td:last-child{text-align:center}
   cursor:pointer;padding:.2rem .4rem;border-radius:6px;
   transition:background .15s;
 }
+.quiz-back[hidden]{display:inline-block;visibility:hidden} /* garde sa place : l'indicateur ne saute pas à l'étape 2 */
 .quiz-back:hover{background:rgba(109,71,255,.1)}
 .quiz-back:focus-visible{outline:2px solid var(--clay);outline-offset:2px}
 .quiz-progress-bar{
@@ -1061,8 +1064,8 @@ td:last-child{text-align:center}
   border-color:var(--clay);
 }
 .quiz-card.selected{
-  border-color:var(--forest);
-  background:rgba(0,107,82,.08);
+  border-color:var(--clay);
+  background:rgba(109,71,255,.08);
 }
 .quiz-card-icon{
   font-size:1.45rem;flex-shrink:0;
@@ -1071,7 +1074,7 @@ td:last-child{text-align:center}
   background:var(--sand);border-radius:10px;
   color:var(--clay);
 }
-.quiz-card.selected .quiz-card-icon{background:rgba(0,107,82,.15)}
+.quiz-card.selected .quiz-card-icon{background:rgba(109,71,255,.15)}
 .quiz-card-text{display:flex;flex-direction:column;line-height:1.35;gap:.1rem;min-width:0}
 .quiz-card-text strong{font-size:.95rem;font-weight:600;color:var(--ink)}
 .quiz-card-text span{font-size:.78rem;color:var(--muted);font-weight:400}
@@ -1079,30 +1082,23 @@ td:last-child{text-align:center}
 /* Étape finale */
 .quiz-step--final{gap:1.1rem}
 .quiz-value{
-  background:linear-gradient(135deg,#006b52 0%,#00503d 100%);
-  color:white;
+  background:#eaf5f1;
+  color:#1f2937;
+  border:1px solid rgba(0,107,82,.18);
   border-radius:14px;
-  padding:1.1rem 1.2rem;
-  position:relative;overflow:hidden;
-  box-shadow:0 8px 24px rgba(0,107,82,.2);
-}
-.quiz-value::before{
-  content:"";position:absolute;top:-40px;right:-40px;
-  width:130px;height:130px;border-radius:50%;
-  background:radial-gradient(circle,rgba(109,71,255,.25),transparent 70%);
-  pointer-events:none;
+  padding:1rem 1.2rem;
 }
 .quiz-value-eyebrow{
   display:block;
-  font-size:.66rem;font-weight:600;
-  color:rgba(255,255,255,.7);
-  margin-bottom:.4rem;position:relative;z-index:1;
+  font-size:.7rem;font-weight:700;
+  color:#1f2937;
+  margin-bottom:.35rem;
 }
 .quiz-value p{
   margin:0;font-size:.95rem;line-height:1.55;
-  color:rgba(255,255,255,.95);
-  position:relative;z-index:1;
+  color:#1f2937;
 }
+.quiz-value p *{color:inherit}
 
 .quiz-fields{display:flex;flex-direction:column;gap:.85rem}
 .quiz-field{display:flex;flex-direction:column;gap:.35rem}
@@ -1125,8 +1121,10 @@ td:last-child{text-align:center}
   transition:border-color .2s,background .2s;
   margin:0;
 }
+.quiz-field input::placeholder,.quiz-field textarea::placeholder{color:var(--placeholder);opacity:1}
 .quiz-field input:focus,.quiz-field textarea:focus{
   outline:none;border-color:var(--clay);background:white;
+  box-shadow:0 0 0 3px rgba(109,71,255,.18);
 }
 .quiz-field textarea{resize:vertical;min-height:80px}
 .quiz-field .cform-label{margin-bottom:.1rem}
@@ -1146,7 +1144,7 @@ td:last-child{text-align:center}
   transition:background .15s,border-color .15s,color .15s;
 }
 .quiz-pref:hover:not(.active){border-color:var(--clay);background:white}
-.quiz-pref.active{background:var(--forest);color:white;border-color:transparent}
+.quiz-pref.active{background:var(--clay);color:white;border-color:var(--clay)}
 .quiz-pref:focus-visible{outline:3px solid var(--clay);outline-offset:2px}
 
 .quiz-final-note{
@@ -1763,7 +1761,11 @@ footer strong{color:rgba(255,255,255,.85)}
 .lang-switch{display:inline-flex;align-items:center;gap:.15rem;flex-shrink:0;font-family:"DM Sans",sans-serif;font-size:.74rem;font-weight:500;color:var(--muted);letter-spacing:.04em;line-height:1}
 .lang-switch button{appearance:none;background:none;border:0;padding:.55rem .3rem;min-width:28px;min-height:36px;font:inherit;color:inherit;cursor:pointer;border-radius:6px}
 .lang-switch button:hover{color:var(--ink)}
-.lang-switch button[aria-pressed="true"]{color:var(--ink);font-weight:700;cursor:default}
+.lang-switch button{font-weight:600;color:var(--ink)}
+/* Seule l'alternative s'affiche : EN sur la page française (défaut, avant le script), FR sur /en/. */
+.lang-switch>span{display:none}
+.lang-switch [data-lang="fr"],.lang-switch[data-langue="en"] [data-lang="en"]{display:none}
+.lang-switch[data-langue="en"] [data-lang="fr"]{display:inline-block}
 .lang-switch button:focus-visible{outline:2px solid var(--clay);outline-offset:1px}
 .lang-switch--flottant{position:absolute;top:.4rem;right:.75rem;z-index:150;background:rgba(255,255,255,.85);backdrop-filter:blur(6px);border-radius:999px;padding:0 .35rem}
 /* ── OUTILS SUR MOBILE ──

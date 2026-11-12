@@ -5,6 +5,7 @@ import stephaniePhoto from '../assets/stephanie.webp';
 import { loadSiteConfig } from '../config';
 import { Mail, MapPin, Contact as ContactIcon, Clock, Zap } from '@lucide/astro';
 import PhoneLink from './PhoneLink.astro';
+import { villePar } from '../data/villes';
 const config = loadSiteConfig();
 const telephoneHref = `tel:+1${config.telephone.replace(/\D/g, '')}`;
 const courrielHref = `mailto:${config.courriel}`;
@@ -16,6 +17,7 @@ interface Props {
   ville?: string;
 }
 const { ville } = Astro.props;
+const villePage = ville ? villePar(ville) : undefined;
 ---
 
 <section id="contact" data-prenom={prenomCourtiere} data-ville={ville ?? ''}>
@@ -80,7 +82,14 @@ const { ville } = Astro.props;
             <!-- 5. Zone -->
             <div class="contact-item">
               <div class="contact-icon" aria-hidden="true"><MapPin size={18} stroke-width={1.8} /></div>
-              <span>{config.region}</span>
+              {villePage ? (
+                <div style="line-height:1.45;">
+                  <div><strong>{villePage.nom}</strong></div>
+                  <div style="font-size:.85rem;color:var(--muted);">Par Teams, téléphone ou texto</div>
+                </div>
+              ) : (
+                <span>{config.region}</span>
+              )}
             </div>
 
             <!-- Séparateur visuel -->
@@ -159,8 +168,8 @@ const { ville } = Astro.props;
         <!-- Barre de progression -->
         <div class="quiz-progress" aria-hidden="true">
           <div class="quiz-progress-meta">
-            <span class="quiz-progress-label">Étape <span data-quiz-step-num>1</span> sur <span data-quiz-step-total>5</span></span>
             <button type="button" class="quiz-back" data-quiz-back hidden>← Retour</button>
+            <span class="quiz-progress-label">Étape <span data-quiz-step-num>1</span> sur <span data-quiz-step-total>5</span></span>
           </div>
           <div class="quiz-progress-bar"><div class="quiz-progress-fill" data-quiz-fill></div></div>
         </div>

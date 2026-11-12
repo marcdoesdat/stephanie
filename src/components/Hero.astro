@@ -170,19 +170,25 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
     font-size: 0.95rem;
     font-weight: 600;
     border-radius: 50px;
-    background: var(--ink);
+    background: var(--clay);
     color: #fff;
     text-decoration: none;
     border: 2px solid var(--ink);
-    transition: transform 0.25s var(--rebond), background 0.2s ease, border-color 0.2s ease;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
   }
   .hero-btns .btn-tools:hover {
-    transform: translateY(-2px);
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--ink);
     background: var(--clay-dk);
-    border-color: var(--clay-dk);
   }
   .hero-btns .btn-tools:active {
-    transform: scale(0.97);
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-btns .btn-tools { transition: none; }
+    .hero-btns .btn-tools:hover, .hero-btns .btn-tools:active { transform: none; }
   }
 
   /* CTA secondaire (outils) : version outline, hiérarchie visuelle sous le booking */
@@ -197,6 +203,7 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
     border-color: var(--ink);
     color: #fff;
     transform: translateY(-2px);
+    box-shadow: none;
   }
   .hero-btns .btn-tools--ghost:active {
     transform: translate(1px, 1px);
@@ -263,7 +270,7 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
     right: 8%;
     display: flex;
     gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255, 255, 255, 0.55);
@@ -299,14 +306,17 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
   }
 
   .ribbon-card .card-sm {
-    font-size: 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--ink);
   }
 
   .ribbon-card .card-val {
-    font-size: 0.9rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
     white-space: nowrap;
   }
 
@@ -366,8 +376,8 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
       padding: 0.45rem 0.5rem;
       gap: 0.3rem;
     }
-    .ribbon-card .card-sm { font-size: 0.6rem; }
-    .ribbon-card .card-val { font-size: 0.8rem; }
+    .ribbon-card .card-sm { font-size: 0.68rem; }
+    .ribbon-card .card-val { font-size: 0.95rem; }
     .ribbon-card--logo img { height: 60px; }
   }
 
@@ -405,8 +415,8 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
       padding: 0.4rem 0.4rem;
       gap: 0.2rem;
     }
-    .ribbon-card .card-sm { font-size: 0.56rem; }
-    .ribbon-card .card-val { font-size: 0.74rem; }
+    .ribbon-card .card-sm { font-size: 0.62rem; }
+    .ribbon-card .card-val { font-size: 0.84rem; }
     .ribbon-card--logo img { height: 52px; }
   }
 
