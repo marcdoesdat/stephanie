@@ -607,10 +607,10 @@ section{padding:clamp(2.5rem,5vw,4rem) clamp(1rem,3vw,4rem)}
 .email-capture-row{display:flex;gap:.65rem;align-items:stretch}
 .email-capture-row + .email-capture-row{margin-top:.65rem}
 .email-capture-choix{border:0;padding:0;margin:.65rem 0 0;min-width:0}
-.email-capture-choix-options{display:flex;gap:.55rem;flex-wrap:wrap}
-.email-capture-choix-option{flex:1 1 8rem;display:flex;align-items:center;gap:.55rem;min-height:44px;padding:.6rem .9rem;background:var(--white);border:1.5px solid var(--border);border-radius:10px;color:var(--ink);font-size:16px;font-weight:600;cursor:pointer}
-.email-capture-choix-option input{accent-color:var(--clay);width:1.1rem;height:1.1rem;margin:0}
-.email-capture-choix-option:has(input:checked){border-color:var(--clay);background:color-mix(in srgb,var(--clay) 8%,var(--white))}
+.email-capture-choix-options{display:flex;gap:.5rem}
+.email-capture-choix-option{position:relative;flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;min-height:44px;padding:.6rem .5rem;background:var(--white);border:1.5px solid var(--border);border-radius:10px;color:var(--ink);font-size:.95rem;font-weight:600;white-space:nowrap;cursor:pointer;transition:border-color .2s,background .2s}
+.email-capture-choix-option input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.email-capture-choix-option:has(input:checked){border-color:var(--clay);background:color-mix(in srgb,var(--clay) 10%,var(--white));color:var(--clay)}
 .email-capture-choix-option:has(input:focus-visible){outline:2px solid var(--clay);outline-offset:2px}
 .email-capture-choix + .email-capture-row{margin-top:.65rem}
 .email-capture-facultatif{text-transform:none;letter-spacing:0;font-weight:500}
