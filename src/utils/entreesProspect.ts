@@ -185,7 +185,12 @@ export function depuisCalculateur(payload: unknown): Resultat<DonneesDossier> {
     nom: champ(source, 'nom', 'prenom'),
     courriel: normaliser(source.email, LONGUEURS.courriel),
     telephone: normaliser(source.telephone, LONGUEURS.telephone),
-    notes: notes(['', 'A demandé son calcul de versement par courriel. N’a pas demandé à être rappelé.']),
+    notes: notes([
+      '',
+      source.preference === 'texto'
+        ? 'A demandé son calcul de versement par texto. N’a pas demandé à être rappelé.'
+        : 'A demandé son calcul de versement par courriel. N’a pas demandé à être rappelé.',
+    ]),
     profil: { source: 'Calculateur de versement' },
   });
 }

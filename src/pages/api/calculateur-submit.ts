@@ -31,6 +31,7 @@ interface CalculateurPayload {
   nom?: unknown;
   telephone?: unknown;
   email?: unknown;
+  preference?: unknown; // 'courriel' | 'texto' — absent d'une page encore en cache
   labelFrequence?: unknown;
   versement?: unknown;
   montantPret?: unknown;
@@ -70,9 +71,23 @@ export const POST: APIRoute = async ({ request }) => {
   const telephone = asTrimmedString(payload.telephone);
   const email = asTrimmedString(payload.email);
 
-  if (nom.length < 2 || (!telephone && !EMAIL_RE.test(email))) {
+  const preference =
+    payload.preference === 'texto' || payload.preference === 'courriel' ? payload.preference : null;
+  if (payload.preference !== undefined && preference === null) {
     return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
   }
+
+  // Le moyen choisi doit être joignable ; sans préférence (ancienne page), l'un ou l'autre suffit.
+  const joignable =
+    preference === 'texto'
+      ? telephone.replace(/\D/g, '').length >= 10
+      : preference === 'courriel'
+        ? EMAIL_RE.test(email)
+        : Boolean(telephone) || EMAIL_RE.test(email);
+  if (nom.length < 2 || !joignable || (email && !EMAIL_RE.test(email))) {
+    return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
+  }
+  const libellePreference = preference === 'texto' ? 'Texto' : preference === 'courriel' ? 'Courriel' : '';
 
   const labelFrequence = asTrimmedString(payload.labelFrequence);
   const versement = asTrimmedString(payload.versement);
@@ -121,6 +136,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const internalTable = renderDataRows([
     ['Nom', eNom],
+    ['Envoyer le résumé par', libellePreference ? `<strong>${libellePreference}</strong>` : ''],
     ['Courriel', email ? `<a href="mailto:${eEmail}" style="color:#a85f38;">${eEmail}</a>` : ''],
     ['Téléphone', eTel],
     [escapeHtml(labelFrequence || 'Versement'), escapeHtml(versement)],
@@ -142,7 +158,7 @@ export const POST: APIRoute = async ({ request }) => {
     sendEmail(apiKey, {
       from: fromEmail,
       to: notifyEmail,
-      subject: `Nouvelle demande — Calculateur — ${nom}`,
+      subject: `Nouvelle demande — Calculateur — ${nom}${libellePreference ? ` (par ${libellePreference.toLowerCase()})` : ''}`,
       html: internalHtml,
       ...(email ? { reply_to: email } : {}),
       ...(screenshotBase64 ? { attachments: [toResendAttachment('calculateur-resultat.png', screenshotBase64)] } : {}),
@@ -159,7 +175,7 @@ export const POST: APIRoute = async ({ request }) => {
           J'ai bien reçu votre demande de résumé pour le calculateur de versement. Merci de votre confiance.
         </p>
         <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
-          Je vous envoie votre résumé personnellement sous peu.
+          Je vous envoie votre résumé personnellement sous peu${preference === 'texto' ? ', par texto comme vous l\'avez demandé' : ''}.
         </p>
         ${renderInvitationRendezVous({ campagne: 'calculateur', texte: 'Vous aimeriez qu\'on regarde ces chiffres ensemble&nbsp;? Choisissez vous-même le moment qui vous convient dans mon agenda&nbsp;: un appel de 15&nbsp;minutes, gratuit et sans engagement.' })}
         ${renderSignatureBlock()}

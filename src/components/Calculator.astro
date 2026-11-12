@@ -142,15 +142,31 @@ const { defaultRate = null } = Astro.props;
                 <label class="email-capture-field-label" for="calc-name">Nom complet</label>
                 <input type="text" id="calc-name" placeholder="Marie Tremblay" class="email-capture-input" autocomplete="name" required />
               </div>
+            </div>
+            <!-- Pas de réponse par défaut : la préférence se déclare, elle ne se suppose pas. -->
+            <fieldset class="email-capture-choix" id="calc-preference">
+              <legend class="email-capture-field-label">Comment préférez-vous le recevoir&nbsp;?</legend>
+              <div class="email-capture-choix-options">
+                <label class="email-capture-choix-option">
+                  <input type="radio" name="calc-preference" value="courriel" />
+                  <span>Par courriel</span>
+                </label>
+                <label class="email-capture-choix-option">
+                  <input type="radio" name="calc-preference" value="texto" />
+                  <span>Par texto</span>
+                </label>
+              </div>
+            </fieldset>
+            <div class="email-capture-row" id="calc-row-email" hidden>
               <div style="flex:1;min-width:0;">
-                <label class="email-capture-field-label" for="calc-phone">Téléphone</label>
-                <input type="tel" id="calc-phone" placeholder="514 000-0000" class="email-capture-input" inputmode="tel" autocomplete="tel" />
+                <label class="email-capture-field-label" for="calc-email">Courriel <span class="email-capture-facultatif" id="calc-email-facultatif">(facultatif)</span></label>
+                <input type="email" id="calc-email" placeholder="marie@exemple.com" class="email-capture-input" autocomplete="email" />
               </div>
             </div>
-            <div class="email-capture-row">
+            <div class="email-capture-row" id="calc-row-phone" hidden>
               <div style="flex:1;min-width:0;">
-                <label class="email-capture-field-label" for="calc-email">Courriel</label>
-                <input type="email" id="calc-email" placeholder="marie@exemple.com" class="email-capture-input" autocomplete="email" />
+                <label class="email-capture-field-label" for="calc-phone">Cellulaire <span class="email-capture-facultatif" id="calc-phone-facultatif">(facultatif)</span></label>
+                <input type="tel" id="calc-phone" placeholder="514 000-0000" class="email-capture-input" inputmode="tel" autocomplete="tel" />
               </div>
             </div>
             <p class="email-capture-note-sub">
@@ -234,6 +250,34 @@ const { defaultRate = null } = Astro.props;
     const emailInput   = document.getElementById('calc-email') as HTMLInputElement;
     const emailBtn     = document.getElementById('calc-email-btn') as HTMLButtonElement;
     const emailMsg     = document.getElementById('calc-email-msg')!;
+    const prefFieldset = document.getElementById('calc-preference')!;
+    const rowEmail     = document.getElementById('calc-row-email')!;
+    const rowPhone     = document.getElementById('calc-row-phone')!;
+    const emailFacult  = document.getElementById('calc-email-facultatif')!;
+    const phoneFacult  = document.getElementById('calc-phone-facultatif')!;
+
+    type Preference = 'courriel' | 'texto';
+    function preferenceChoisie(): Preference | null {
+      const coche = prefFieldset.querySelector<HTMLInputElement>('input[name="calc-preference"]:checked');
+      return coche?.value === 'courriel' || coche?.value === 'texto' ? coche.value : null;
+    }
+
+    // Le moyen choisi vient en premier et devient requis ; l'autre reste offert, facultatif.
+    function appliquerPreference() {
+      const pref = preferenceChoisie();
+      rowEmail.hidden = pref === null;
+      rowPhone.hidden = pref === null;
+      if (!pref) return;
+      const [premier, second] = pref === 'texto' ? [rowPhone, rowEmail] : [rowEmail, rowPhone];
+      prefFieldset.after(premier);
+      premier.after(second);
+      emailFacult.hidden = pref === 'courriel';
+      phoneFacult.hidden = pref === 'texto';
+      emailInput.required = pref === 'courriel';
+      phoneInput.required = pref === 'texto';
+      emailMsg.style.display = 'none';
+    }
+    prefFieldset.addEventListener('change', appliquerPreference);
     const INPUT_DEBOUNCE_MS = 120;
     let calcDebounceTimer: number | undefined;
 
@@ -524,8 +568,23 @@ const { defaultRate = null } = Astro.props;
         return;
       }
 
-      if (!telephone && !email) {
-        emailMsg.textContent   = 'Veuillez indiquer au moins un moyen de vous joindre (téléphone ou courriel).';
+      const preference = preferenceChoisie();
+      if (!preference) {
+        emailMsg.textContent   = 'Veuillez indiquer si vous préférez le recevoir par courriel ou par texto.';
+        emailMsg.style.display = '';
+        emailMsg.style.color   = '#c0392b';
+        return;
+      }
+
+      if (preference === 'texto' && telephone.replace(/\D/g, '').length < 10) {
+        emailMsg.textContent   = 'Veuillez entrer votre numéro de cellulaire pour recevoir le texto.';
+        emailMsg.style.display = '';
+        emailMsg.style.color   = '#c0392b';
+        return;
+      }
+
+      if (preference === 'courriel' && !email) {
+        emailMsg.textContent   = 'Veuillez entrer votre adresse courriel.';
         emailMsg.style.display = '';
         emailMsg.style.color   = '#c0392b';
         return;
@@ -585,6 +644,7 @@ const { defaultRate = null } = Astro.props;
             nom,
             telephone,
             email,
+            preference,
             labelFrequence,
             versement,
             montantPret,
@@ -599,12 +659,17 @@ const { defaultRate = null } = Astro.props;
           throw new Error('Erreur serveur');
         }
 
-        emailMsg.textContent   = 'Merci. Je vous enverrai votre résumé sous peu.';
+        emailMsg.textContent   = preference === 'texto'
+          ? 'Merci. Je vous enverrai votre résumé par texto sous peu.'
+          : 'Merci. Je vous enverrai votre résumé par courriel sous peu.';
         emailMsg.style.display = '';
         emailMsg.style.color   = 'var(--clay)';
         nameInput.value = '';
         phoneInput.value = '';
         emailInput.value = '';
+        prefFieldset.querySelectorAll<HTMLInputElement>('input[name="calc-preference"]').forEach((r) => { r.checked = false; });
+        appliquerPreference();
+        emailMsg.style.display = '';
 
         // Signaler la conversion au sticky CTA
         document.body.dataset.outilsConverted = 'true';
@@ -638,7 +703,7 @@ const { defaultRate = null } = Astro.props;
       const field = el as HTMLInputElement | HTMLSelectElement;
 
       // Email capture input is not part of mortgage calculations
-      if (field.id === 'calc-name' || field.id === 'calc-phone' || field.id === 'calc-email') return;
+      if (field.id === 'calc-name' || field.id === 'calc-phone' || field.id === 'calc-email' || field.name === 'calc-preference') return;
 
       field.addEventListener('change', doCalculation);
       if (field.tagName === 'INPUT') {
