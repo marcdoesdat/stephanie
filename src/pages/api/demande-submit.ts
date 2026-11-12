@@ -254,7 +254,7 @@ export const POST: APIRoute = async ({ request }) => {
     ['Statut de résidence', l('statut_residence')],
     ['État civil', l('etat_civil')],
     ['Téléphone', s('telephone')],
-    ['Courriel', `<a href="mailto:${eCourriel}" style="color:#a85f38;">${eCourriel}</a>`],
+    ['Courriel', `<a href="mailto:${eCourriel}" style="color:#6d47ff;">${eCourriel}</a>`],
   ]);
 
   const coEmprunteur = asTrimmedString(payload.co_emprunteur);
@@ -334,8 +334,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   function tableBlock(title: string, rows: string): string {
     if (!rows) return '';
-    return `<h2 style="font-size:15px;margin:22px 0 8px;color:#a85f38;">${title}</h2>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
+    return `<h2 style="font-size:15px;margin:22px 0 8px;color:#6d47ff;">${title}</h2>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2ddf0;border-radius:8px;overflow:hidden;">
         ${rows}
       </table>`;
   }
@@ -344,16 +344,16 @@ export const POST: APIRoute = async ({ request }) => {
   // la liste avec laquelle Stéphanie le rappelle ; les sections plus bas portent des « — »
   // là où rien n'a été répondu.
   const bandeauIncomplet = incomplete
-    ? `<div style="background:#fef3e4;border:1px solid #c47a52;border-radius:8px;padding:14px 16px;margin:14px 0 6px;">
-        <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#a85f38;">Demande incomplète${envoiPartiel ? ' — envoyée avant la fin' : ''}</p>
-        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#1f1e1c;">
+    ? `<div style="background:#fff8db;border:1px solid #ffd23f;border-radius:8px;padding:14px 16px;margin:14px 0 6px;">
+        <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#6d47ff;">Demande incomplète${envoiPartiel ? ' — envoyée avant la fin' : ''}</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#12101f;">
           ${envoiPartiel
             ? `${eNom} a choisi d'envoyer ses réponses en cours de route${etapeArret ? `, depuis l'étape «&nbsp;${escapeHtml(etapeArret.titre)}&nbsp;»` : ''}. On lui a dit que vous lui reviendriez avec ce qui manque.`
             : 'Des réponses requises manquent à cette demande.'}
         </p>
         ${bilan.aCompleter.length > 0
-          ? `<p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#1f1e1c;">À compléter avec ${eNom}&nbsp;:</p>
-        <ul style="margin:0;padding-left:20px;font-size:14px;line-height:1.6;color:#1f1e1c;">
+          ? `<p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#12101f;">À compléter avec ${eNom}&nbsp;:</p>
+        <ul style="margin:0;padding-left:20px;font-size:14px;line-height:1.6;color:#12101f;">
           ${bilan.aCompleter
             .map((e) => `<li><strong>${escapeHtml(e.titre)}</strong> — ${e.vide ? 'rien de rempli' : `manque&nbsp;: ${escapeHtml(e.manquants.join(', '))}`}</li>`)
             .join('\n          ')}
@@ -363,8 +363,8 @@ export const POST: APIRoute = async ({ request }) => {
     : '';
 
   const internalHtml = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouvelle demande de financement${incomplete ? ' (incomplète)' : ''}</h1>
-      <p style="margin:0 0 4px;color:#6a5f50;font-size:14px;">${l('type_demande')} — <strong>${eNom}</strong></p>
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Nouvelle demande de financement${incomplete ? ' (incomplète)' : ''}</h1>
+      <p style="margin:0 0 4px;color:#575268;font-size:14px;">${l('type_demande')} — <strong>${eNom}</strong></p>
       ${bandeauIncomplet}
       ${tableBlock('1. Type de demande', sectionType)}
       ${tableBlock('2. Identité et situation personnelle', sectionIdentite)}
@@ -377,7 +377,7 @@ export const POST: APIRoute = async ({ request }) => {
       ${tableBlock('9. Préférences de financement', sectionPreferences)}
       ${tableBlock('10. Propriété visée', sectionPropriete)}
       ${tableBlock('Contact et source', sectionFinal)}
-      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">Répondez directement à ce courriel pour écrire à ${eNom}.</p>
+      <p style="margin:20px 0 0;font-size:12px;color:#575268;">Répondez directement à ce courriel pour écrire à ${eNom}.</p>
   `);
 
   /* ---------- Confirmation client — générique, aucune donnée sensible répétée ---------- */
@@ -385,19 +385,19 @@ export const POST: APIRoute = async ({ request }) => {
   // Un envoi incomplet est un choix offert par le formulaire : l'accusé le confirme sans le
   // reprocher, et nomme les étapes à compléter (des titres, aucune réponse) pour que le
   // client sache à quoi s'attendre quand Stéphanie le rappellera.
-  const ePara = 'margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;';
+  const ePara = 'margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;';
   const debutClient = incomplete
     ? `<p style="${ePara}">
           J'ai bien reçu votre demande de financement, telle que vous l'avez remplie — et c'est très bien ainsi. Merci de la confiance que vous m'accordez.
         </p>
-        <h2 style="font-size:16px;margin:24px 0 8px;color:#a85f38;">Ce qui suit</h2>
+        <h2 style="font-size:16px;margin:24px 0 8px;color:#6d47ff;">Ce qui suit</h2>
         <p style="${ePara}">
           Je regarde vos réponses et je vous reviens moi-même, habituellement le jour ouvrable même, pour compléter avec vous ce qui manque${titresPourClient.length > 0 ? `&nbsp;: <strong>${escapeHtml(titresPourClient.join(', '))}</strong>` : ''}. Vous n'avez rien à remplir d'ici là.
         </p>`
     : `<p style="${ePara}">
           J'ai bien reçu votre demande de financement. Merci de la confiance que vous m'accordez — je sais que remplir un formulaire aussi complet demande du temps.
         </p>
-        <h2 style="font-size:16px;margin:24px 0 8px;color:#a85f38;">Ce qui suit</h2>
+        <h2 style="font-size:16px;margin:24px 0 8px;color:#6d47ff;">Ce qui suit</h2>
         <p style="${ePara}">
           J'analyse votre dossier et je vous reviens moi-même, habituellement le jour ouvrable même, pour discuter des prochaines étapes et des documents à réunir (talons de paie, avis de cotisation, relevés bancaires, etc.).
         </p>`;
@@ -409,15 +409,15 @@ export const POST: APIRoute = async ({ request }) => {
     : renderInvitationRendezVous({ campagne: 'demande' });
 
   const clientHtml = wrapEmailHtml(`
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${eNom} 🌿</h1>
+      <div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#12101f;line-height:1.3;">Merci, ${eNom} 🌿</h1>
         ${debutClient}
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           Vous pourrez suivre l'avancement de votre dossier et voir la liste des documents attendus sur
-          <a href="${escapeHtml(config.site_url.replace(/\/$/, ''))}/mon-dossier" style="color:#a85f38;">${escapeHtml(config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''))}/mon-dossier</a>&nbsp;:
+          <a href="${escapeHtml(config.site_url.replace(/\/$/, ''))}/mon-dossier" style="color:#6d47ff;">${escapeHtml(config.site_url.replace(/^https?:\/\//, '').replace(/\/$/, ''))}/mon-dossier</a>&nbsp;:
           entrez cette adresse courriel et vous recevrez un lien d'accès. Aucun mot de passe à créer.
         </p>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#12101f;">
           Vos renseignements sont strictement confidentiels. Aucune enquête de crédit ne sera lancée sans votre consentement écrit.
         </p>
         ${invitation}

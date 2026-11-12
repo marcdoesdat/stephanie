@@ -54,8 +54,8 @@ function asTrimmedString(value: FieldValue): string {
 
 function tableBlock(title: string, rows: string): string {
   if (!rows) return '';
-  return `<h2 style="font-size:15px;margin:22px 0 8px;color:#a85f38;">${title}</h2>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
+  return `<h2 style="font-size:15px;margin:22px 0 8px;color:#6d47ff;">${title}</h2>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2ddf0;border-radius:8px;overflow:hidden;">
         ${rows}
       </table>`;
 }
@@ -66,18 +66,18 @@ function bandeauEquite(equite: Equite): string {
     'margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;';
 
   if (equite.niveau === 'faible') {
-    return `<p style="${styleBase}background:#fbeae3;border:1px solid #a85f38;color:#a85f38;">
+    return `<p style="${styleBase}background:#fff0f7;border:1px solid #ffc6e0;color:#12101f;">
         <strong>⚠️ Équité estimée faible (moins de 20 %)</strong><br />
         À valider avant l'appel — un refinancement conventionnel est peu probable en l'état.
       </p>`;
   }
   if (equite.niveau === 'inconnue') {
-    return `<p style="${styleBase}background:#f7f2eb;border:1px solid #e3d9cc;color:#6a5f50;">
+    return `<p style="${styleBase}background:#f6f3ff;border:1px solid #e2ddf0;color:#575268;">
         <strong>Solde hypothécaire inconnu</strong><br />
         Le prospect ignore son solde — équité à confirmer pendant l'appel.
       </p>`;
   }
-  return `<p style="${styleBase}background:#f0f7f1;border:1px solid #c5dac8;color:#2d5a3a;">
+  return `<p style="${styleBase}background:#eafbf2;border:1px solid #b6f2d3;color:#00513e;">
       <strong>Équité estimée correcte</strong><br />
       Environ ${escapeHtml(formatCAD(equite.disponible80 ?? 0))} refinançables selon les tranches choisies.
     </p>`;
@@ -192,19 +192,19 @@ export const POST: APIRoute = async ({ request }) => {
 
   const sectionContact = renderDataRows([
     ['Prénom', ePrenom],
-    ['Courriel', `<a href="mailto:${eCourriel}" style="color:#a85f38;">${eCourriel}</a>`],
+    ['Courriel', `<a href="mailto:${eCourriel}" style="color:#6d47ff;">${eCourriel}</a>`],
     ['Cellulaire', escapeHtml(cellulaire)],
     ['Consentement aux communications', 'Oui'],
     ['Source', 'Landing publicitaire /refinancement-v2'],
   ]);
 
   const internalHtml = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouveau lead — Refinancement V2 (publicité)</h1>
-      <p style="margin:0 0 12px;color:#6a5f50;font-size:14px;"><strong>${ePrenom}</strong> · ${eVille}</p>
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Nouveau lead — Refinancement V2 (publicité)</h1>
+      <p style="margin:0 0 12px;color:#575268;font-size:14px;"><strong>${ePrenom}</strong> · ${eVille}</p>
       ${bandeauEquite(equite)}
       ${tableBlock('1. Projet', sectionProjet)}
       ${tableBlock('2. Contact', sectionContact)}
-      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">
+      <p style="margin:20px 0 0;font-size:12px;color:#575268;">
         Les montants ci-dessus sont des milieux de tranche déduits du questionnaire, pas des chiffres
         déclarés par le prospect. Répondez directement à ce courriel pour écrire à ${ePrenom}.
       </p>
@@ -213,18 +213,18 @@ export const POST: APIRoute = async ({ request }) => {
   /* ---------- Confirmation client — aucune donnée financière répétée ---------- */
 
   const clientHtml = wrapEmailHtml(`
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${ePrenom} 🌿</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+      <div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#12101f;line-height:1.3;">Merci, ${ePrenom} 🌿</h1>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           J'ai bien reçu ta demande d'analyse de refinancement. Merci de la confiance que tu m'accordes.
         </p>
-        <h2 style="font-size:16px;margin:24px 0 8px;color:#a85f38;">Ce qui suit</h2>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <h2 style="font-size:16px;margin:24px 0 8px;color:#6d47ff;">Ce qui suit</h2>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           Je calcule ton économie potentielle et je te reviens en moins de 24 h ouvrables, avec les
           scénarios possibles parmi plus de 20 institutions prêteuses. C'est gratuit et sans engagement.
         </p>
         ${renderInvitationRendezVous({ campagne: 'refinancement-v2', tutoiement: true })}
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#12101f;">
           Tes renseignements sont strictement confidentiels. Aucune enquête de crédit ne sera lancée
           sans ton consentement écrit.
         </p>

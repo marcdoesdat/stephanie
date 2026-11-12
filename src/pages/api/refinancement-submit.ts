@@ -193,7 +193,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const sectionContact = renderDataRows([
     ['Nom complet', eNomComplet],
-    ['Courriel', `<a href="mailto:${eCourriel}" style="color:#a85f38;">${eCourriel}</a>`],
+    ['Courriel', `<a href="mailto:${eCourriel}" style="color:#6d47ff;">${eCourriel}</a>`],
     ['Cellulaire', escapeHtml(cellulaire)],
     ['Consentement aux communications', 'Oui'],
     ['Source', 'Landing publicitaire /refinancement'],
@@ -201,35 +201,35 @@ export const POST: APIRoute = async ({ request }) => {
 
   function tableBlock(title: string, rows: string): string {
     if (!rows) return '';
-    return `<h2 style="font-size:15px;margin:22px 0 8px;color:#a85f38;">${title}</h2>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
+    return `<h2 style="font-size:15px;margin:22px 0 8px;color:#6d47ff;">${title}</h2>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2ddf0;border-radius:8px;overflow:hidden;">
         ${rows}
       </table>`;
   }
 
   const internalHtml = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouveau lead — Refinancement (publicité)</h1>
-      <p style="margin:0 0 4px;color:#6a5f50;font-size:14px;"><strong>${eNomComplet}</strong></p>
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Nouveau lead — Refinancement (publicité)</h1>
+      <p style="margin:0 0 4px;color:#575268;font-size:14px;"><strong>${eNomComplet}</strong></p>
       ${tableBlock('1. Projet et propriété', sectionPropriete)}
       ${tableBlock('2. Profil financier', sectionProfil)}
       ${tableBlock('3. Contact', sectionContact)}
-      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">Répondez directement à ce courriel pour écrire à ${ePrenom}.</p>
+      <p style="margin:20px 0 0;font-size:12px;color:#575268;">Répondez directement à ce courriel pour écrire à ${ePrenom}.</p>
   `);
 
   /* ---------- Confirmation client — aucune donnée financière répétée ---------- */
 
   const clientHtml = wrapEmailHtml(`
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${ePrenom} 🌿</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+      <div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#12101f;line-height:1.3;">Merci, ${ePrenom} 🌿</h1>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           J'ai bien reçu votre demande d'analyse de refinancement. Merci de la confiance que vous m'accordez.
         </p>
-        <h2 style="font-size:16px;margin:24px 0 8px;color:#a85f38;">Ce qui suit</h2>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <h2 style="font-size:16px;margin:24px 0 8px;color:#6d47ff;">Ce qui suit</h2>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           J'analyse votre situation et je vous contacte personnellement dans les meilleurs délais pour vous présenter
           les scénarios possibles — parmi plus de 30 institutions prêteuses. C'est gratuit et sans engagement.
         </p>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#12101f;">
           Vos renseignements sont strictement confidentiels. Aucune enquête de crédit ne sera lancée sans votre consentement écrit.
         </p>
         ${renderInvitationRendezVous({ campagne: 'refinancement' })}

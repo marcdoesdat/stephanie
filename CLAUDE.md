@@ -1371,6 +1371,12 @@ npx vitest              # mode watch
   `utm_medium=accuse` et `utm_campaign=<formulaire>` pour compter ce que chaque accusé
   produit. Un nouveau formulaire l'ajoute à son accusé ; `entreesRoutes.test.ts` le vérifie
   porte par porte. L'avis interne n'en porte pas.
+- **Les courriels portent l'allure du site** : `wrapEmailHtml` pose l'en-tête au nom de la
+  courtière et le filet dégradé de la navigation, sur la palette `COULEURS_COURRIEL`
+  (`emailService.ts`) — copie écrite du `:root` de `global.css`, qu'un courriel ne peut pas lire.
+  Changer une couleur du site, c'est la changer aux deux endroits. Aucune police chargée à
+  distance. Seul le courriel d'approche du réseau reste nu (voir « Réseau de partenaires »).
+  `emailService.test.ts` interdit le retour de l'ancienne palette sable et argile.
 - **`/confidentialite` décrit ce que le code fait.** Ajouter un champ sensible à un formulaire,
   un témoin, un stockage côté navigateur ou un sous-traitant (service tiers qui reçoit des
   données), c'est mettre à jour la politique — et sa date — dans le même changement. Elle nomme

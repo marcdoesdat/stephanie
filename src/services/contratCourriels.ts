@@ -64,8 +64,8 @@ async function envoyerEnSerie(envois: ReadonlyArray<() => Promise<void>>): Promi
 
 function bloc(titre: string, lignes: string): string {
   if (!lignes) return '';
-  return `<h2 style="font-size:15px;margin:22px 0 8px;color:#a85f38;">${titre}</h2>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
+  return `<h2 style="font-size:15px;margin:22px 0 8px;color:#6d47ff;">${titre}</h2>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2ddf0;border-radius:8px;overflow:hidden;">
         ${lignes}
       </table>`;
 }
@@ -116,7 +116,7 @@ function sectionPreuves(preuves: readonly PreuveSignature[]): string {
  */
 function alerteCertificat(certificat: CertificatJoint | null): string {
   if (certificat) return '';
-  return `<p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fbeae3;border:1px solid #a85f38;color:#a85f38;">
+  return `<p style="margin:0 0 4px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.55;background:#fff0f7;border:1px solid #ffc6e0;color:#12101f;">
     Le certificat de signature (PDF) n’a pas pu être produit. La trace de preuve ci-dessous
     reste complète : conservez ce courriel.
   </p>`;
@@ -155,7 +155,7 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
       reply_to: principal?.courriel,
       html: wrapEmailHtml(
         `<h1 style="font-size:19px;margin:0 0 6px;">Contrat de courtage signé</h1>
-         <p style="margin:0 0 18px;color:#6b6257;font-size:14px;">
+         <p style="margin:0 0 18px;color:#575268;font-size:14px;">
            Toutes les signatures ont été recueillies. Le contrat estampé est en pièce jointe${
              envoi.certificat ? ', avec son certificat de signature (journal d’audit)' : ''
            }.
@@ -173,7 +173,7 @@ export async function envoyerDossierComplet(env: ResendEnv, envoi: EnvoiComplet)
                : []),
            ]),
          )}
-         <p style="margin:20px 0 0;color:#6b6257;font-size:12px;">
+         <p style="margin:20px 0 0;color:#575268;font-size:12px;">
            Conservez ce courriel : il constitue la trace de preuve des signatures. Les
            empreintes permettent de démontrer, plus tard, qu'un document présenté est bien
            celui qui a été signé.
@@ -295,11 +295,11 @@ export async function envoyerInvitation(
            ${suite ? `<p style="margin:0 0 14px;font-size:14px;">${escapeHtml(suite)}</p>` : ''}
            <p style="margin:22px 0;">
              <a href="${escapeHtml(invitation.lien)}"
-                style="display:inline-block;background:#a85f38;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:600;">
+                style="display:inline-block;background:#6d47ff;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:999px;font-size:15px;font-weight:700;border-bottom:3px solid #5b34f0;">
                Lire et signer mon contrat
              </a>
            </p>
-           <p style="margin:0 0 14px;color:#6b6257;font-size:13px;">
+           <p style="margin:0 0 14px;color:#575268;font-size:13px;">
              Ce lien vous est personnel, il ne fonctionne qu'une fois et expire dans 10 jours.
              Ne le transférez à personne : chaque emprunteur reçoit le sien.
            </p>
@@ -343,7 +343,7 @@ export async function envoyerAvisEnAttente(
        }</p>`
            : ''
        }
-       <p style="margin:0 0 18px;color:#6b6257;font-size:14px;">
+       <p style="margin:0 0 18px;color:#575268;font-size:14px;">
          ${
            mode === 'presence'
              ? 'Le contrat est prêt. Tendez l’appareil au premier signataire ; les suivants passeront à leur tour, dans l’ordre ci-dessous.'
@@ -398,11 +398,11 @@ export async function envoyerAvisAFinaliser(
        </p>
        <p style="margin:22px 0;">
          <a href="${escapeHtml(lien)}"
-            style="display:inline-block;background:#a85f38;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:600;">
+            style="display:inline-block;background:#6d47ff;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:999px;font-size:15px;font-weight:700;border-bottom:3px solid #5b34f0;">
            Relire et signer le contrat
          </a>
        </p>
-       <p style="margin:0 0 18px;color:#6b6257;font-size:13px;">
+       <p style="margin:0 0 18px;color:#575268;font-size:13px;">
          Le contrat n'est produit qu'à ce moment-là, et vous le recevrez aussitôt. Sans votre
          signature, le dossier expire dans 10 jours et les signatures recueillies sont perdues.
        </p>
@@ -425,7 +425,7 @@ export async function envoyerAvisRefus(
     reply_to: refus.courriel,
     html: wrapEmailHtml(
       `<h1 style="font-size:19px;margin:0 0 6px;">Un emprunteur n'a pas signé</h1>
-       <p style="margin:0 0 18px;color:#6b6257;font-size:14px;">
+       <p style="margin:0 0 18px;color:#575268;font-size:14px;">
          Le dossier est gelé : aucun contrat ne sera produit et les liens restants ne
          fonctionnent plus. Rappelez la personne, puis renvoyez un contrat corrigé.
        </p>
@@ -471,7 +471,7 @@ export async function envoyerAnnulation(
            </p>
            <p style="margin:0;font-size:14px;">
              Si vous avez une question, écrivez à
-             <a href="mailto:${escapeHtml(config.courriel)}" style="color:#a85f38;">${escapeHtml(config.courriel)}</a>
+             <a href="mailto:${escapeHtml(config.courriel)}" style="color:#6d47ff;">${escapeHtml(config.courriel)}</a>
              ou appelez le ${escapeHtml(config.telephone)}.
            </p>`,
         ),
@@ -516,7 +516,7 @@ export async function envoyerAvisCorrection(
            ${blocCorrection(changements)}
            <p style="margin:0;font-size:14px;">
              Si vous avez une question, écrivez à
-             <a href="mailto:${escapeHtml(config.courriel)}" style="color:#a85f38;">${escapeHtml(config.courriel)}</a>
+             <a href="mailto:${escapeHtml(config.courriel)}" style="color:#6d47ff;">${escapeHtml(config.courriel)}</a>
              ou appelez le ${escapeHtml(config.telephone)}.
            </p>`,
         ),

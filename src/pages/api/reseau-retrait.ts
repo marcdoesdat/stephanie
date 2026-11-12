@@ -43,15 +43,15 @@ function page(titre: string, corps: string, bouton: { c: string; j: string } | n
   <meta name="robots" content="noindex, nofollow">
   <title>${escapeHtml(titre)} — ${escapeHtml(config.nom)}</title>
   <style>
-    body { margin:0; background:#f7f2eb; color:#1f1e1c; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
+    body { margin:0; background:#f6f3ff; color:#12101f; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
     main { max-width:34rem; margin:0 auto; padding:3rem 1.5rem; }
-    .carte { background:#fff; border:1px solid #e3d9cc; border-radius:16px; padding:2rem; }
+    .carte { background:#fff; border:1px solid #e2ddf0; border-radius:16px; padding:2rem; }
     h1 { font-size:1.35rem; margin:0 0 1rem; }
     p { font-size:.98rem; line-height:1.65; margin:0 0 1rem; }
-    button { background:#a85f38; color:#fff; border:none; border-radius:50px; padding:.85rem 1.8rem; font-size:.95rem; font-weight:600; cursor:pointer; }
-    button:hover { background:#8d4d2c; }
-    .pied { font-size:.8rem; color:#6b6459; margin-top:1.5rem; }
-    a { color:#a85f38; }
+    button { background:#6d47ff; color:#fff; border:none; border-radius:50px; padding:.85rem 1.8rem; font-size:.95rem; font-weight:600; cursor:pointer; }
+    button:hover { background:#5b34f0; }
+    .pied { font-size:.8rem; color:#575268; margin-top:1.5rem; }
+    a { color:#6d47ff; }
   </style>
 </head>
 <body>

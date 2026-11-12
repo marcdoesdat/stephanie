@@ -8,6 +8,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadSiteConfig } from '../config';
+import { COULEURS_COURRIEL } from './emailService';
 import {
   adresseDediee,
   construireCourrielApproche,
@@ -68,7 +69,7 @@ describe('construireCourrielApproche', () => {
   // pour qu'un futur « harmonisons les courriels » ne le défasse pas sans le voir.
   it('n’emprunte pas l’habillage d’infolettre du site', () => {
     const { html } = construireCourrielApproche(MESSAGE, LIEN);
-    expect(html).not.toContain('#f7f2eb'); // le fond sable de wrapEmailHtml
+    expect(html).not.toContain(COULEURS_COURRIEL.fond); // le fond du gabarit de wrapEmailHtml
     expect(html).not.toContain('border-radius');
   });
 

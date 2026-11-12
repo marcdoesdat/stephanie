@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { checkRateLimit, clientIpFromRequest, sendEmail } from './emailService';
+import { checkRateLimit, clientIpFromRequest, COULEURS_COURRIEL, renderInvitationRendezVous, sendEmail, wrapEmailHtml } from './emailService';
 
 // Netlify Blobs en mémoire : le compteur de la limite de débit y vit, comme en production.
 const blobs = vi.hoisted(() => new Map<string, string>());
@@ -155,5 +155,35 @@ describe('checkRateLimit', () => {
   it('reste ouverte en dev local', async () => {
     vi.stubEnv('DEV', true);
     for (let i = 0; i < 10; i++) expect(await checkRateLimit('127.0.0.1', 'contrat-acces')).toBe(true);
+  });
+});
+
+// Les courriels portent l'allure du site : sa palette, son en-tête au nom de la courtière.
+// L'ancienne palette (sable, argile) ne doit pas revenir par un copier-coller d'un vieux gabarit.
+describe('gabarit visuel des courriels', () => {
+  it('reprend la palette et l’en-tête du site', () => {
+    const html = wrapEmailHtml('<p>Bonjour</p>');
+    expect(html).toContain(COULEURS_COURRIEL.fond);
+    expect(html).toContain(COULEURS_COURRIEL.mauve);
+    expect(html).toContain('Stéphanie');
+    expect(html).toContain('Weyman');
+    expect(html).toContain('<p>Bonjour</p>');
+  });
+
+  it('ne charge aucune police à distance', () => {
+    expect(wrapEmailHtml('')).not.toMatch(/fonts\.googleapis|@import|<link/);
+  });
+
+  it('n’emploie plus l’ancienne palette', async () => {
+    const { readFileSync, readdirSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const fichiers = [
+      ...readdirSync('src/services').map((f) => join('src/services', f)),
+      ...readdirSync('src/pages/api').map((f) => join('src/pages/api', f)),
+    ].filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'));
+    for (const f of fichiers) {
+      expect(readFileSync(f, 'utf8'), f).not.toMatch(/#(a85f38|f7f2eb|e3d9cc|6a5f50)\b/i);
+    }
+    expect(renderInvitationRendezVous({ campagne: 'test' })).toContain(COULEURS_COURRIEL.mauve);
   });
 });

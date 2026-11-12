@@ -31,6 +31,7 @@ interface CalculateurPayload {
   nom?: unknown;
   telephone?: unknown;
   email?: unknown;
+  preference?: unknown; // 'courriel' | 'texto' — absent d'une page encore en cache
   labelFrequence?: unknown;
   versement?: unknown;
   montantPret?: unknown;
@@ -70,9 +71,23 @@ export const POST: APIRoute = async ({ request }) => {
   const telephone = asTrimmedString(payload.telephone);
   const email = asTrimmedString(payload.email);
 
-  if (nom.length < 2 || (!telephone && !EMAIL_RE.test(email))) {
+  const preference =
+    payload.preference === 'texto' || payload.preference === 'courriel' ? payload.preference : null;
+  if (payload.preference !== undefined && preference === null) {
     return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
   }
+
+  // Le moyen choisi doit être joignable ; sans préférence (ancienne page), l'un ou l'autre suffit.
+  const joignable =
+    preference === 'texto'
+      ? telephone.replace(/\D/g, '').length >= 10
+      : preference === 'courriel'
+        ? EMAIL_RE.test(email)
+        : Boolean(telephone) || EMAIL_RE.test(email);
+  if (nom.length < 2 || !joignable || (email && !EMAIL_RE.test(email))) {
+    return jsonResponse({ error: 'Champs invalides ou manquants' }, 400);
+  }
+  const libellePreference = preference === 'texto' ? 'Texto' : preference === 'courriel' ? 'Courriel' : '';
 
   const labelFrequence = asTrimmedString(payload.labelFrequence);
   const versement = asTrimmedString(payload.versement);
@@ -121,28 +136,29 @@ export const POST: APIRoute = async ({ request }) => {
 
   const internalTable = renderDataRows([
     ['Nom', eNom],
-    ['Courriel', email ? `<a href="mailto:${eEmail}" style="color:#a85f38;">${eEmail}</a>` : ''],
+    ['Envoyer le résumé par', libellePreference ? `<strong>${libellePreference}</strong>` : ''],
+    ['Courriel', email ? `<a href="mailto:${eEmail}" style="color:#6d47ff;">${eEmail}</a>` : ''],
     ['Téléphone', eTel],
     [escapeHtml(labelFrequence || 'Versement'), escapeHtml(versement)],
     ['Montant du prêt', escapeHtml(montantPret)],
     ['Prime SCHL', escapeHtml(primeSchl)],
     ['Coût mensuel total', escapeHtml(coutMensuelTotal)],
-    ['Tableau d\'amortissement', amortissementUrl ? `<a href="${escapeHtml(amortissementUrl)}" style="color:#a85f38;">Voir le détail</a>` : ''],
+    ['Tableau d\'amortissement', amortissementUrl ? `<a href="${escapeHtml(amortissementUrl)}" style="color:#6d47ff;">Voir le détail</a>` : ''],
   ]);
 
   const internalHtml = wrapEmailHtml(`
-      <h1 style="font-size:20px;margin:0 0 4px;color:#1f1e1c;">Nouvelle demande — Calculateur de versement</h1>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e3d9cc;border-radius:8px;overflow:hidden;">
+      <h1 style="font-size:20px;margin:0 0 4px;color:#12101f;">Nouvelle demande — Calculateur de versement</h1>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2ddf0;border-radius:8px;overflow:hidden;">
         ${internalTable}
       </table>
-      <p style="margin:20px 0 0;font-size:12px;color:#6a5f50;">Répondez directement à ce courriel pour écrire à ${eNom}.</p>
+      <p style="margin:20px 0 0;font-size:12px;color:#575268;">Répondez directement à ce courriel pour écrire à ${eNom}.</p>
   `);
 
   const emailsToSend = [
     sendEmail(apiKey, {
       from: fromEmail,
       to: notifyEmail,
-      subject: `Nouvelle demande — Calculateur — ${nom}`,
+      subject: `Nouvelle demande — Calculateur — ${nom}${libellePreference ? ` (par ${libellePreference.toLowerCase()})` : ''}`,
       html: internalHtml,
       ...(email ? { reply_to: email } : {}),
       ...(screenshotBase64 ? { attachments: [toResendAttachment('calculateur-resultat.png', screenshotBase64)] } : {}),
@@ -153,13 +169,13 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (email) {
     const clientHtml = wrapEmailHtml(`
-      <div style="background:#ffffff;border:1px solid #e3d9cc;border-radius:16px;padding:32px;">
-        <h1 style="font-size:22px;margin:0 0 16px;color:#1f1e1c;line-height:1.3;">Merci, ${eNom} 🌿</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f1e1c;">
+      <div style="background:#ffffff;border:1px solid #e2ddf0;border-radius:24px;padding:32px 28px;">
+        <h1 style="font-size:22px;margin:0 0 16px;color:#12101f;line-height:1.3;">Merci, ${eNom} 🌿</h1>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#12101f;">
           J'ai bien reçu votre demande de résumé pour le calculateur de versement. Merci de votre confiance.
         </p>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#1f1e1c;">
-          Je vous envoie votre résumé personnellement sous peu.
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#12101f;">
+          Je vous envoie votre résumé personnellement sous peu${preference === 'texto' ? ', par texto comme vous l\'avez demandé' : ''}.
         </p>
         ${renderInvitationRendezVous({ campagne: 'calculateur', texte: 'Vous aimeriez qu\'on regarde ces chiffres ensemble&nbsp;? Choisissez vous-même le moment qui vous convient dans mon agenda&nbsp;: un appel de 15&nbsp;minutes, gratuit et sans engagement.' })}
         ${renderSignatureBlock()}
