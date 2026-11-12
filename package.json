@@ -15,17 +15,17 @@
     "@netlify/blobs": "^10.7.13",
     "astro": "^7.4.11",
     "html2canvas": "^1.4.1",
-    "js-yaml": "^4.3.1",
     "linkedom": "^0.18.13",
     "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
-    "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.5.0",
     "playwright-core": "^1.56.0",
-    "potrace": "^2.1.8",
     "typescript": "^5.9.3",
     "vitest": "^4.1.6"
+  },
+  "engines": {
+    "node": ">=22.23.4"
   }
 }
