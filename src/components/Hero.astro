@@ -87,46 +87,49 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
     
     <div class="hero-right fade-up" style="transition-delay:.2s">
       <div class="photo-container">
-        <div class="photo-frame" id="hero-photo">
-          <Image
-            src={stephaniePhoto}
-            alt="Stéphanie Weyman"
-            width={600}
-            height={750}
-            loading="eager" 
-          />
-        </div>
-        
-        <div class="hero-blob blob-1"></div>
-        <div class="hero-blob blob-2"></div>
-        
-        <div class="hero-cards-ribbon">
+        <!-- La photo d'abord. Taux et avis sont deux étiquettes séparées, en coins opposés et
+             à cheval sur le bord du cadre : elles ne couvrent plus le bas du portrait. Elles
+             formaient un bandeau unique avec le logo, trois blocs de même poids qui se
+             disputaient l'attention (novembre 2026). Le logo du cabinet passe sous la photo. -->
+        <div class="photo-scene">
+          <div class="photo-frame" id="hero-photo">
+            <Image
+              src={stephaniePhoto}
+              alt="Stéphanie Weyman"
+              width={600}
+              height={750}
+              loading="eager"
+            />
+          </div>
+
+          <div class="hero-blob blob-1"></div>
+          <div class="hero-blob blob-2"></div>
+
           {baseRate != null ? (
-            <a class="ribbon-card ribbon-card--reviews" href="#taux-section" aria-label={`Taux variable dès ${fmtRate(baseRate)} — voir le tableau des taux`}>
+            <a class="hero-badge hero-badge--taux" href="#taux-section" aria-label={`Taux variable dès ${fmtRate(baseRate)} — voir le tableau des taux`}>
               <span class="card-sm">Taux variable</span>
               <span class="card-val">Dès {fmtRate(baseRate)}</span>
             </a>
           ) : (
-            <div class="ribbon-card">
+            <div class="hero-badge hero-badge--taux">
               <span class="card-sm">Taux variable</span>
               <a class="card-val card-val--link" href="https://hypotheca.ca/taux-hypothecaires" target="_blank" rel="noopener">hypotheca.ca</a>
             </div>
           )}
-          <div class="ribbon-card ribbon-card--logo">
-            <img src="/images/hypotheca-couleur.svg" alt="Hypotheca" width="76" height="76" style="display:block;" loading="lazy" />
-          </div>
           {ratingLabel ? (
-            <a class="ribbon-card ribbon-card--reviews" href="#temoignages" aria-label={`${ratingLabel} sur 5 — voir les avis Google`}>
+            <a class="hero-badge hero-badge--avis" href="#temoignages" aria-label={`${ratingLabel} sur 5 — voir les avis Google`}>
               <span class="card-sm">Avis Google</span>
               <span class="card-val">⭐ {ratingLabel}&nbsp;/&nbsp;5</span>
             </a>
           ) : (
-            <div class="ribbon-card">
+            <div class="hero-badge hero-badge--avis">
               <span class="card-sm">Satisfaction</span>
               <span class="card-val">⭐ 5&nbsp;/&nbsp;5</span>
             </div>
           )}
         </div>
+
+        <img class="hero-cabinet" src="/images/logo-hypotheca.svg" alt="Hypotheca" width="1550" height="883" decoding="async" />
       </div>
     </div>
   </div>
@@ -293,87 +296,87 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
     }
   }
 
-  /* --- Ruban de cartes (glass ribbon) en bas de la photo --- */
-  .hero-cards-ribbon {
-    position: absolute;
-    bottom: -6px;
-    left: 8%;
-    right: 8%;
-    display: flex;
-    gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    border-radius: 18px;
-    padding: 0.55rem 0.65rem;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
-    z-index: 3;
-    animation:
-      appear-ribbon 0.55s cubic-bezier(0.16, 1, 0.3, 1) both,
-      float-ribbon 5s ease-in-out 0.6s infinite;
+  /* --- Taux et avis : deux étiquettes secondaires autour de la photo --- */
+  .photo-scene {
+    position: relative;
   }
 
-  @keyframes appear-ribbon {
-    from { opacity: 0; transform: translateY(12px); }
+  /* Petites, blanches, sans flottement : la photo flotte, elles non. Le texte et les
+     libellés sont ceux de l'ancien bandeau (mêmes clés de traduction). */
+  .hero-badge {
+    position: absolute;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    padding: 0.5rem 0.85rem 0.55rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(18, 16, 31, 0.1);
+    color: var(--ink);
+    text-decoration: none;
+    line-height: 1.2;
+    animation: badge-entree 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  /* Coins opposés : le taux en haut à droite, les avis en bas à gauche — loin du visage,
+     loin l'un de l'autre. Elles entrent après la photo, qui reste la première vue. */
+  .hero-badge--taux {
+    top: 9%;
+    right: -28px;
+    animation-delay: 0.5s;
+  }
+  .hero-badge--avis {
+    bottom: 11%;
+    left: -32px;
+    animation-delay: 0.7s;
+  }
+
+  @keyframes badge-entree {
+    from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  @keyframes float-ribbon {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-6px); }
-  }
-
-  .ribbon-card {
-    flex: 1 1 0;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.15rem;
-    text-align: center;
-    padding: 0.35rem 0.3rem;
-  }
-
-  .ribbon-card .card-sm {
-    font-size: 0.72rem;
+  .hero-badge .card-sm {
+    font-size: 0.66rem;
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--ink);
+    color: var(--muted);
   }
 
-  .ribbon-card .card-val {
-    font-size: 1.05rem;
+  .hero-badge .card-val {
+    font-size: 1rem;
     font-weight: 700;
     color: var(--ink);
     white-space: nowrap;
   }
 
-  .ribbon-card .card-val--link {
+  .hero-badge .card-val--link {
     color: var(--clay);
     text-decoration: none;
-    font-family:var(--font-display);
     font-weight: 600;
   }
-  .ribbon-card .card-val--link:hover { text-decoration: underline; }
+  .hero-badge .card-val--link:hover { text-decoration: underline; }
 
-  .ribbon-card--logo {
-    flex: 0 0 auto;
-    padding: 0.15rem 0.5rem;
+  /* Étiquettes cliquables (vers les taux, vers les avis) : la bordure le dit au survol. */
+  a.hero-badge {
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  a.hero-badge:hover,
+  a.hero-badge:focus-visible {
+    border-color: var(--clay);
+    box-shadow: 0 8px 24px rgba(109, 71, 255, 0.18);
   }
 
-  /* Carte avis : cliquable vers #temoignages, sans changer l'apparence du ruban */
-  a.ribbon-card--reviews {
-    text-decoration: none;
-    color: inherit;
-    border-radius: 12px;
-    transition: background 0.2s;
-  }
-  a.ribbon-card--reviews:hover,
-  a.ribbon-card--reviews:focus-visible {
-    background: rgba(109,71,255, 0.1);
+  /* Le cabinet, sous la photo : présent, mais à l'écart des chiffres. La marge franchit
+     l'ombre décalée du cadre (18 px). */
+  .hero-cabinet {
+    display: block;
+    width: auto;
+    height: 40px;
+    margin: 2.6rem auto 0;
   }
 
   @media (max-width: 900px) {
@@ -399,17 +402,18 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
       width: 108px;
       height: 108px;
     }
-    .hero-cards-ribbon {
-      left: 4%;
-      right: 4%;
-      bottom: -20px;
-      border-radius: 14px;
-      padding: 0.45rem 0.5rem;
-      gap: 0.3rem;
+    .hero-badge {
+      border-radius: 12px;
+      padding: 0.45rem 0.7rem 0.5rem;
     }
-    .ribbon-card .card-sm { font-size: 0.68rem; }
-    .ribbon-card .card-val { font-size: 0.95rem; }
-    .ribbon-card--logo img { height: 60px; }
+    .hero-badge--taux { right: -20px; }
+    .hero-badge--avis { left: -20px; }
+    .hero-badge .card-sm { font-size: 0.62rem; }
+    .hero-badge .card-val { font-size: 0.92rem; }
+    .hero-cabinet {
+      height: 34px;
+      margin-top: 2.4rem;
+    }
   }
 
   @media (max-width: 520px) {
@@ -438,17 +442,17 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
       width: 88px;
       height: 88px;
     }
-    .hero-cards-ribbon {
-      left: 0;
-      right: 0;
-      bottom: -18px;
-      border-radius: 12px;
-      padding: 0.4rem 0.4rem;
-      gap: 0.2rem;
+    /* À 320 px, il reste 30 px entre le cadre et le bord de l'écran : l'étiquette
+       déborde de 14 px au plus, pour ne jamais être rognée. */
+    .hero-badge {
+      border-radius: 10px;
+      padding: 0.35rem 0.6rem 0.4rem;
     }
-    .ribbon-card .card-sm { font-size: 0.62rem; }
-    .ribbon-card .card-val { font-size: 0.84rem; }
-    .ribbon-card--logo img { height: 52px; }
+    .hero-badge--taux { right: -14px; }
+    .hero-badge--avis { left: -14px; }
+    .hero-badge .card-sm { font-size: 0.58rem; }
+    .hero-badge .card-val { font-size: 0.84rem; }
+    .hero-cabinet { height: 30px; }
   }
 
 
