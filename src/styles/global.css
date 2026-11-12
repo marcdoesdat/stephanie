@@ -1548,8 +1548,10 @@ footer strong{color:rgba(255,255,255,.85)}
     z-index:1001;
     transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .2s;
   }
-  /* Scroll-aware : la bulle glisse avec la bande */
-  body.cta-hidden .messenger-btn{
+  /* Scroll-aware : la bulle glisse avec la bande — y compris tant que le bouton du
+     hero se voit (MainLayout, cta-hero-visible) */
+  body.cta-hidden .messenger-btn,
+  body.cta-hero-visible .messenger-btn{
     transform:translateY(calc(100% + var(--cta-bar-h)));
   }
   .messenger-tooltip{display:none}

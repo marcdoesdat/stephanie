@@ -236,9 +236,53 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
           lastY = y;
         }
 
+        // --- Le bouton du hero passe d'abord ---
+        // Tant que le bouton principal du hero ([data-cta-hero]) se voit, la barre et la
+        // bulle Messenger se retirent. À l'accueil, « Réserver un appel de 15 min » et
+        // « Prendre rendez-vous » menaient au même endroit, dans le même mauve, sous des mots
+        // différents : avec le second bouton du hero et la bulle, quatre appels à l'écran
+        // pour deux gestes possibles. La barre n'a de raison d'être qu'une fois ce bouton
+        // hors de vue. Classe à part de cta-hidden : remonter la page ne doit pas la ramener
+        // par-dessus le hero.
+        const boutonsHero = Array.prototype.slice.call(document.querySelectorAll('[data-cta-hero]'));
+        const navbar = document.getElementById('navbar');
+
+        // Bas de ce qui se voit du hero. Sur les pages services et villes, il reste collé
+        // pendant que la feuille suivante le recouvre (global.css, « TRANSITIONS ») : pour le
+        // navigateur, un bouton recouvert est toujours dans l'écran. La limite est donc le
+        // haut de cette feuille, pas le bas de l'écran.
+        function basVisible(bouton) {
+          let bas = window.innerHeight;
+          const hero = bouton.closest('.hero-fixe');
+          let feuille = hero && hero.nextElementSibling;
+          while (feuille && feuille.tagName !== 'SECTION') feuille = feuille.nextElementSibling;
+          if (feuille) bas = Math.min(bas, feuille.getBoundingClientRect().top);
+          return bas;
+        }
+
+        // « Visible » = au moins la moitié du bouton à découvert, sous le menu flottant.
+        function heroVisible() {
+          const haut = navbar ? navbar.getBoundingClientRect().bottom : 0;
+          return boutonsHero.some(function(bouton) {
+            const r = bouton.getBoundingClientRect();
+            if (!r.height) return false;
+            return Math.min(r.bottom, basVisible(bouton)) - Math.max(r.top, haut) >= r.height / 2;
+          });
+        }
+
+        function majHero() {
+          if (boutonsHero.length) document.body.classList.toggle('cta-hero-visible', heroVisible());
+        }
+
+        // Avant le premier affichage : la barre ne doit pas apparaître puis glisser hors de l'écran.
+        majHero();
+        window.addEventListener('resize', majHero, { passive: true });
+        window.addEventListener('load', majHero);
+
         window.addEventListener('scroll', () => {
           if (!ticking) {
             requestAnimationFrame(() => {
+              majHero();
               onScroll();
               ticking = false;
             });
@@ -440,8 +484,9 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
     }
 
     /* Scroll-aware : la bande descend hors de l'écran (le bouton Messenger
-       suit, voir global.css) */
-    body.cta-hidden .mobile-sticky-cta {
+       suit, voir global.css). Même chose tant que le bouton du hero se voit. */
+    body.cta-hidden .mobile-sticky-cta,
+    body.cta-hero-visible .mobile-sticky-cta {
       transform: translateY(calc(100% + env(safe-area-inset-bottom)));
     }
 
