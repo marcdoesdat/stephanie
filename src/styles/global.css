@@ -1876,8 +1876,15 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
 }
 
 /* --- 3. Le surlignage du mot fort se trace, une fois le titre affiché. */
-.hero-left .hero-value-prop em{background-repeat:no-repeat;background-size:0% 100%;animation:surligne .9s var(--sortie) .55s forwards}
-@keyframes surligne{to{background-size:100% 100%}}
+/* Un vrai coup de surligneur, tracé en direct : un SVG (Hero.astro) dont le trait se dessine
+   de gauche à droite (stroke-dashoffset), puis une 2ᵉ passe plus fine revient en sens inverse,
+   comme une main qui repasse. Le texte reste au-dessus (z-index -1 dans un em isolé). */
+.hero-left h1.hero-value-prop em{background:none;position:relative;isolation:isolate;white-space:nowrap}
+.hero-value-prop .surligneur{position:absolute;z-index:-1;left:-2%;bottom:0;width:104%;height:56%;overflow:visible;pointer-events:none}
+.hero-value-prop .surligneur path{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1}
+.hero-value-prop .surligneur .passe-1{stroke:var(--sun);stroke-width:15;animation:trace-surligneur .75s cubic-bezier(.5,0,.25,1) .6s forwards}
+.hero-value-prop .surligneur .passe-2{stroke:#ffb400;stroke-opacity:.45;stroke-width:4.5;animation:trace-surligneur .45s cubic-bezier(.5,0,.25,1) 1.3s forwards}
+@keyframes trace-surligneur{to{stroke-dashoffset:0}}
 
 /* --- 4. D'une page à l'autre : fondu-glissé natif (aucun script, aucun routeur).
    Le menu garde sa place d'une page à la suivante. */
@@ -1899,7 +1906,7 @@ nav#navbar.scrolled{box-shadow:0 10px 32px rgba(18,16,31,.14);border-color:rgba(
   #main-content > .hero-fixe > :is(.hero-inner,.sp-inner,.rep-inner),
   #main-content > .hero-fixe ~ section > :is(.section-inner,.sp-inner,.rep-inner,.av-inner,.sv-inner,.cv-inner){animation:none}
   nav#navbar::after{display:none}
-  .hero-left .hero-value-prop em{animation:none;background-size:100% 100%}
+  .hero-value-prop .surligneur path{animation:none;stroke-dashoffset:0}
   ::view-transition-old(root),::view-transition-new(root){animation:none}
 }
 
