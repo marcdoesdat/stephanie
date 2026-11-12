@@ -264,7 +264,7 @@ export async function alerterRetraitNonEnregistre(
         ${lignes
           .map(
             ([cle, valeur]) =>
-              `<tr><td style="padding:4px 12px 4px 0;color:#6b6459;">${escapeHtml(cle)}</td><td style="padding:4px 0;">${escapeHtml(valeur)}</td></tr>`,
+              `<tr><td style="padding:4px 12px 4px 0;color:#575268;">${escapeHtml(cle)}</td><td style="padding:4px 0;">${escapeHtml(valeur)}</td></tr>`,
           )
           .join('')}
       </table>`,
