@@ -128,6 +128,13 @@ Toute page du tableau ci-dessus marquée « SSR » doit donc porter `prerender =
 - `Footer.astro` — Pied de page
 - `SEO.astro` — Meta tags, canonique à barre finale, hreflang, JSON-LD de l'entreprise (`#business`) — voir « Référencement »
 - `MainLayout.astro` — Layout global (Nav + Footer + scripts analytics/consent)
+  - **La barre « Prendre rendez-vous » (téléphone) et la bulle Messenger s'effacent tant que le
+    bouton principal du hero se voit** (au moins à moitié, `body.cta-hero-visible`). Ce bouton
+    porte `data-cta-hero` : sur l'accueil, les pages services et les pages villes. À l'accueil,
+    « Réserver un appel de 15 min » et la barre menaient au même endroit, dans le même mauve :
+    quatre appels à l'écran pour deux gestes. Le hero collé des pages services et villes reste
+    « dans l'écran » une fois recouvert : la limite est le haut de la feuille suivante, pas le
+    bas de l'écran. Un nouveau hero marque son bouton principal, et un seul.
 - `Polices.astro` — Les polices (Bricolage Grotesque pour les titres, DM Sans — **branche `v2`** ; Lora sur `main`), **servies par le site** depuis `src/assets/fonts/`
   (fichiers de Google Fonts, latin et latin étendu, licence OFL à côté) : `@font-face` dans le
   `<head>`, noms hachés dans `/_astro/` (cache d'un an). Plus de Google Fonts : ni connexion

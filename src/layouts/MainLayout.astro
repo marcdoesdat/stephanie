@@ -156,7 +156,7 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
       nav#navbar{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid transparent;padding:0 clamp(1rem,3vw,4rem);display:flex;align-items:center;justify-content:space-between;min-height:68px}
       nav#navbar.scrolled{box-shadow:var(--shadow-sm);border-bottom-color:var(--border)}
       .nav-logo{font-family:var(--font-display);font-size:1.2rem;font-weight:700;letter-spacing:-.02em;color:var(--ink);text-decoration:none}
-      .nav-logo span,.nav-logo .cabinet-name{color:var(--clay)}
+      .nav-logo span{color:var(--clay)}.nav-logo .cabinet-name{color:var(--muted)}
       .nav-links{display:flex;gap:clamp(1rem,1.8vw,2.5rem);list-style:none;align-items:center;flex-wrap:wrap;min-width:0}
       .nav-links a{font-size:clamp(.8rem,.18vw + .7rem,.9rem);font-weight:500;color:var(--ink);text-decoration:none;white-space:nowrap}
       .nav-cta{display:inline-flex!important;align-items:center;justify-content:center;background:var(--ink);color:#fff!important;padding:.68rem clamp(.95rem,1.4vw,1.4rem);border-radius:50px;white-space:nowrap;line-height:1;text-decoration:none;border:2px solid var(--ink)}
@@ -180,7 +180,7 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
       @media(max-width:1280px){.nav-links{gap:.85rem}.nav-links a{font-size:.74rem}.nav-cta{padding:.5rem 1rem}}
       @media(max-width:1180px){.nav-links{display:none}.hamburger{display:flex}}
       @media(min-width:901px) and (max-width:1180px){.nav-cta-compact{display:inline-flex}}
-      @media(max-width:900px){nav#navbar{padding:0 1.5rem}#hero{padding:6rem 1.5rem 3rem}.hero-inner{grid-template-columns:1fr;gap:2rem}.hero-left .hero-value-prop{font-size:clamp(2.1rem,10.5vw,2.8rem)}.hero-left p{margin-bottom:1.75rem}.hero-right{display:none}}
+      @media(max-width:900px){nav#navbar{padding:0 1.5rem}#hero{padding:6rem 1.5rem 3rem}.hero-inner{grid-template-columns:1fr;gap:2rem}.hero-left .hero-value-prop{font-size:clamp(1.85rem,9.24vw,2.8rem)}.hero-left p{margin-bottom:1.75rem}.hero-right{display:none}}
     </style>
   </head>
   <body>
@@ -236,9 +236,53 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
           lastY = y;
         }
 
+        // --- Le bouton du hero passe d'abord ---
+        // Tant que le bouton principal du hero ([data-cta-hero]) se voit, la barre et la
+        // bulle Messenger se retirent. À l'accueil, « Réserver un appel de 15 min » et
+        // « Prendre rendez-vous » menaient au même endroit, dans le même mauve, sous des mots
+        // différents : avec le second bouton du hero et la bulle, quatre appels à l'écran
+        // pour deux gestes possibles. La barre n'a de raison d'être qu'une fois ce bouton
+        // hors de vue. Classe à part de cta-hidden : remonter la page ne doit pas la ramener
+        // par-dessus le hero.
+        const boutonsHero = Array.prototype.slice.call(document.querySelectorAll('[data-cta-hero]'));
+        const navbar = document.getElementById('navbar');
+
+        // Bas de ce qui se voit du hero. Sur les pages services et villes, il reste collé
+        // pendant que la feuille suivante le recouvre (global.css, « TRANSITIONS ») : pour le
+        // navigateur, un bouton recouvert est toujours dans l'écran. La limite est donc le
+        // haut de cette feuille, pas le bas de l'écran.
+        function basVisible(bouton) {
+          let bas = window.innerHeight;
+          const hero = bouton.closest('.hero-fixe');
+          let feuille = hero && hero.nextElementSibling;
+          while (feuille && feuille.tagName !== 'SECTION') feuille = feuille.nextElementSibling;
+          if (feuille) bas = Math.min(bas, feuille.getBoundingClientRect().top);
+          return bas;
+        }
+
+        // « Visible » = au moins la moitié du bouton à découvert, sous le menu flottant.
+        function heroVisible() {
+          const haut = navbar ? navbar.getBoundingClientRect().bottom : 0;
+          return boutonsHero.some(function(bouton) {
+            const r = bouton.getBoundingClientRect();
+            if (!r.height) return false;
+            return Math.min(r.bottom, basVisible(bouton)) - Math.max(r.top, haut) >= r.height / 2;
+          });
+        }
+
+        function majHero() {
+          if (boutonsHero.length) document.body.classList.toggle('cta-hero-visible', heroVisible());
+        }
+
+        // Avant le premier affichage : la barre ne doit pas apparaître puis glisser hors de l'écran.
+        majHero();
+        window.addEventListener('resize', majHero, { passive: true });
+        window.addEventListener('load', majHero);
+
         window.addEventListener('scroll', () => {
           if (!ticking) {
             requestAnimationFrame(() => {
+              majHero();
               onScroll();
               ticking = false;
             });
@@ -440,8 +484,9 @@ const alternates = !sansTraduction && !noindex && estTraduite(Astro.url.pathname
     }
 
     /* Scroll-aware : la bande descend hors de l'écran (le bouton Messenger
-       suit, voir global.css) */
-    body.cta-hidden .mobile-sticky-cta {
+       suit, voir global.css). Même chose tant que le bouton du hero se voit. */
+    body.cta-hidden .mobile-sticky-cta,
+    body.cta-hero-visible .mobile-sticky-cta {
       transform: translateY(calc(100% + env(safe-area-inset-bottom)));
     }
 

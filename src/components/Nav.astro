@@ -15,7 +15,7 @@ const nomDeFamille = nomArr.join(' ');
       <div class="brand-wrapper">
         <div class="broker-identity">
           <div class="broker-name">{prenom} <span>{nomDeFamille}</span></div>
-          <div class="cabinet-name">Courtière hypothécaire - Hypotheca</div>
+          <div class="cabinet-name">Courtière hypothécaire&nbsp;· Hypotheca</div>
         </div>
       </div>
     </a>
@@ -131,6 +131,7 @@ const nomDeFamille = nomArr.join(' ');
 
   .broker-name {
     white-space: nowrap;
+    line-height: 1.2;
   }
 
   .broker-identity span {
@@ -138,15 +139,18 @@ const nomDeFamille = nomArr.join(' ');
     color: var(--clay);
   }
 
+  /* Le cabinet, en petit et en gris sous le nom : le nom reste dominant. Interlignes serrés
+     pour que les deux lignes tiennent dans les 68 px de l'en-tête sans le faire grandir.
+     L'espace insécable avant « · » : si la ligne doit se couper (320 px), elle se coupe
+     après le point, jamais entre « Courtière » et « hypothécaire ». */
   .cabinet-name {
-    font-family: 'Inter', sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-weight: 400;
-    font-size: 0.65rem;
-    color: var(--clay);
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.72rem;
+    line-height: 1.3;
+    color: var(--muted);
+    letter-spacing: normal;
+    margin-top: 0.1rem;
   }
 
   /* PhoneLink dans le nav : ciblage via :global() depuis l'ancêtre scopé */
@@ -201,14 +205,6 @@ const nomDeFamille = nomArr.join(' ');
     display: none !important;
   }
 
-  @media (max-width: 860px) {
-    .cabinet-name {
-      white-space: normal;
-      overflow: visible;
-      max-width: 28ch;
-    }
-  }
-
   @media (max-width: 600px) {
     .nav-separator {
       display: none;
@@ -221,14 +217,6 @@ const nomDeFamille = nomArr.join(' ');
     }
     .brand-wrapper {
       gap: 0.5rem;
-    }
-    .cabinet-name {
-      font-size: 0.58rem;
-      letter-spacing: 0.03em;
-      white-space: normal;
-      overflow: visible;
-      max-width: 24ch;
-      line-height: 1.3;
     }
   }
 
@@ -246,16 +234,16 @@ const nomDeFamille = nomArr.join(' ');
     .nav-container :global(.phone-wrap) {
       display: none;
     }
+    /* « EN » rejoint le menu au lieu de flotter au milieu : c'est la place qu'il faut au
+       nom du cabinet pour tenir sur une ligne sous le nom. */
+    .lang-switch {
+      margin-left: auto;
+    }
+  }
+
+  @media (max-width: 400px) {
     .cabinet-name {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      padding: 0;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      clip-path: inset(50%);
+      font-size: 0.6875rem;
     }
   }
 

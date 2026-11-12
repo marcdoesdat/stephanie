@@ -40,6 +40,7 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
           href="/rendez-vous/"
           class="btn-tools"
           data-umami-event="cta_booking_hero"
+          data-cta-hero
         >Réserver un appel de 15 min</a>
         <a
           href="#outils-teaser"
@@ -54,10 +55,7 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
           <div class="stat-label">Prêteurs</div>
         </div>
         <div class="stat-item">
-          <div class="stat-num">0&nbsp;$</div>
-          <div class="stat-label">
-            Frais de courtage
-            <span class="fee-tooltip-wrap">
+          <div class="stat-num"><span>0&nbsp;$</span><span class="fee-tooltip-wrap">
               <button
                 class="fee-info-btn"
                 aria-label="En savoir plus sur les frais de courtage"
@@ -67,14 +65,11 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
               <span class="fee-tooltip" role="tooltip">
                 Frais de courtage à 0&nbsp;$ pour la vaste majorité des dossiers. Certains financements alternatifs ou privés peuvent comporter des frais, dont je vous informe avant toute démarche.
               </span>
-            </span>
-          </div>
+            </span></div>
+          <div class="stat-label">Frais de courtage</div>
         </div>
         <div class="stat-item">
-          <div class="stat-num">24&nbsp;h</div>
-          <div class="stat-label">
-            Délai de réponse
-            <span class="fee-tooltip-wrap">
+          <div class="stat-num"><span>24&nbsp;h</span><span class="fee-tooltip-wrap">
               <button
                 class="fee-info-btn"
                 aria-label="En savoir plus sur le délai de réponse"
@@ -84,8 +79,8 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
               <span class="fee-tooltip" role="tooltip">
                 Prise en charge de votre dossier sous 24&nbsp;h (jours ouvrables). Le délai d'approbation finale dépend ensuite de l'institution financière choisie.
               </span>
-            </span>
-          </div>
+            </span></div>
+          <div class="stat-label">Délai de réponse</div>
         </div>
       </div>
     </div>
@@ -208,6 +203,42 @@ const ratingLabel = reviews ? reviews.rating.toFixed(1).replace('.', ',') : null
   .hero-btns .btn-tools--ghost:active {
     transform: translate(1px, 1px);
     box-shadow: none;
+  }
+
+  /* L'icône ⓘ suit le chiffre (« 0 $ ⓘ ») au lieu du libellé : dans une carte étroite,
+     elle tombait seule sur la ligne sous « Frais de courtage » ou « Délai de réponse ».
+     Le chiffre ne se coupe pas avant elle, et il tient avec elle dans la carte : « 24 h »
+     mesure 1,96 fois la taille du chiffre, l'icône et sa marge 17 px, et 100cqi est la
+     largeur intérieure de la carte. Sans ce plafond, l'icône sortait de la carte jaune à
+     320 px et en touchait le bord à 375 px. Le chiffre a son propre <span> : seul, il reste
+     une unité de traduction (« 24 h »), que linkedom ne découpe pas en « 24 » et « h ». */
+  .hero-stats .stat-item {
+    container-type: inline-size;
+  }
+  .hero-stats .stat-num {
+    white-space: nowrap;
+    font-size: min(2.6rem, calc(50cqi - 9px));
+  }
+  /* Centrée sur les chiffres : en bloc en ligne, l'enveloppe prenait la hauteur de ligne
+     du chiffre et l'icône tombait sous la ligne de base. */
+  .stat-num .fee-tooltip-wrap {
+    display: inline-flex;
+    top: -0.1em;
+  }
+  /* L'infobulle hérite du chiffre : on lui rend la police, l'interlettrage et le retour à
+     la ligne du texte courant. */
+  .stat-num .fee-tooltip {
+    font-family: "DM Sans", sans-serif;
+    letter-spacing: normal;
+    white-space: normal;
+  }
+  @media (max-width: 900px) {
+    .hero-stats .stat-item {
+      padding-inline: 0.75rem;
+    }
+    .hero-stats .stat-num {
+      font-size: min(2rem, calc(50cqi - 9px));
+    }
   }
 
   /* Texte simple au-dessus du titre : pas de pastille, pas de fond. */
